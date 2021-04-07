@@ -1,5 +1,5 @@
 # BurstAT-Compiler
-Parser and compiler for arithmetic operations: C-like to BurstAT assembly. [Run now!](https://deleterium.github.io/BurstAT-Compiler/test.html)
+Parser and compiler for arithmetic operations: C-like to BurstAT assembly. [Run now!](https://deleterium.github.io/BurstAT-Compiler/try.html)
 
 ## Objective
 To create a high level programming language for Burstcoin Automated Transactions.
@@ -49,7 +49,7 @@ Tokens are divided in groups and later on checked if their combinations are sync
 Long statements need temporary variables to store intermediate results. Computers have registers and program stack that can be used for this purpose. For this project I decided to use five variables as registers `r0` to `r4`. If it is possible, a variable in left side of assignment will also be used as temporary variable. This is a small optimization but can save one instruction for every statement!
 
 ## Usage
-Download project to your computer and open file `test.html` in your browser. Optionally [run it on gitpages!](https://github.com/deleterium/BurstAT-Compiler/test.html)
+Download project to your computer and open file `test.html` in your browser. Optionally [run it on gitpages!](https://github.com/deleterium/BurstAT-Compiler/try.html)
 
 ## Notes
 * Arrays representations will only work in Burstcoin client version 3 and above, for contracts created after a fork scheduled for 24/apr/2021. 
