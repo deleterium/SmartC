@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+
+<script src="src/tokenizer.js"></script>
+<script src="src/parser.js"></script>
+<script src="src/verifier.js"></script>
+<script src="src/syntax.js"></script>
+<script src="src/generator.js"></script>
+<script src="src/testcases.js"></script>
+
+<script>
+
+function compileCode(){
+
+    var codeString = document.getElementById("source-code").value;
+    try{
+        var token_output = tokenizer(codeString);
+        var parser_output = parser(token_output);
+        verify(parser_output);
+        var synctactic_out = createSyntacticTree(parser_output);
+        var asmCode = codeGenerator(synctactic_out, true);
+
+        document.getElementById("machine-code").innerHTML = asmCode+JSON.stringify(synctactic_out, null, '    ');
+    }catch (e) {
+        document.getElementById("machine-code").innerHTML = e.stack+JSON.stringify(synctactic_out, null, '    ');;
+    }
+}
+
+
+function testCode() {
+    document.getElementById("machine-code").innerHTML = runTestCases();    
+}
+
+</script>
+</head>
+
+<body>
+	<h1>Burstcoin AT Javascript Compiler</h1>      
+    <textarea id="source-code" placeholder="Write here your arithmetic expression..."></textarea>
+	
+	<div>	
+		<button id="compile" onClick="javascript: compileCode();">Compile it!</button>
+		<button id="test" onClick="javascript: testCode();">Run test cases</button>
+	</div>
+	
+	<pre id="machine-code" height="400" contenteditable="true"></pre>
+</body>
+</html>
