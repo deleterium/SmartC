@@ -1,5 +1,5 @@
 # BurstAT-Compiler
-Parser and compiler for arithmetic operations: C-like to BurstAT assembly.
+Parser and compiler for arithmetic operations: C-like to BurstAT assembly. [Run now!](https://deleterium.github.io/BurstAT-Compiler/test.html)
 
 ## Objective
 To create a high level programming language for Burstcoin Automated Transactions.
