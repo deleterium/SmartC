@@ -15,6 +15,7 @@ Expressions are C-like and evaluated from left to right. Rules are simpler than 
 
 ### Operators precedence
 When two or more symbols with same precedence are in an expression, the operations will be evaluated from right to left. Example: `a=16/4/4` will be evaluated as `a=(16/(4/4))`
+
 | Order | Symbol | Description |
 | --- | --- | --- |
 | 1 | `()`   `[]` | Scope, array |
@@ -29,6 +30,7 @@ When two or more symbols with same precedence are in an expression, the operatio
 | 10 | `,`   `\n` | New line of code, comma |
 
 ### Internal names
+
 Tokens are divided in groups and later on checked if their combinations are synctactic valid.
 |Token type | Example/Operators | Description|
 | --- | --- | --- |
