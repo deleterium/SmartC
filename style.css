@@ -12,24 +12,24 @@ h1{ padding: 1vh;
 
 textarea {
 	color: #fff;
-	width: 95vw;
+	width: 92vw;
+	margin: 2vw;
 	height: 20vh;
-	padding: 1vh;
-	min-height: 75px;
+	padding: 1vw;
 	background: #335;
-	margin-left: 2vh;
-	border: solid #ddd; }
+	border: solid 0.5vh #ccc; }
 	
 button { 
 	padding: 1vh;
 	font-size: 4vh;
-	margin-top: 2vh; 
-	margin-left: 25%;
 	background: #fff;
 	border-radius: 5%/10%;
 	border: solid 0.5vh #ccc; }
 
-#test { margin-left: 3vw; }
+#test { margin-left: 2vh; }
 #test:hover { background: #fdd; }
 #compile:hover { background: #dfd; }
 
+div {
+	display: flex;
+	justify-content: center; }
