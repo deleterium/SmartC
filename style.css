@@ -1,10 +1,8 @@
-
-body { 
-	margin: 0;
+body { 	margin: 0;
 	padding: 0;
 	background: #ddd; }
 
-h1{ padding: 1vh;
+h1{	padding: 1vh;
 	background: #da7;
 	margin: 0 0 3vh 0;
 	text-align: center;
@@ -30,6 +28,5 @@ button {
 #test:hover { background: #fdd; }
 #compile:hover { background: #dfd; }
 
-div {
-	display: flex;
+div {	display: flex;
 	justify-content: center; }
