@@ -1,8 +1,8 @@
 "use strict";
 
 // Author: Rui Deleterium
-// Project:
-// License:
+// Project: https://github.com/deleterium/BurstAT-Compiler
+// License: BSD 3-Clause License
 
 // Verifies if an ast produced by parser complies with our syntax rules.
 // Also sets if a Variable/Codecave is pointer operation (to be later used

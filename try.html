@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style-try.css">
 
 <script src="src/tokenizer.js"></script>
 <script src="src/parser.js"></script>
@@ -20,9 +20,28 @@ function compileCode(){
         var parser_output = parser(token_output);
         verify(parser_output);
         var synctactic_out = createSyntacticTree(parser_output);
-        var asmCode = codeGenerator(synctactic_out, true);
 
-        document.getElementById("machine-code").innerHTML = asmCode+JSON.stringify(synctactic_out, null, '    ');
+        var calcmode;
+        var disable_random;
+        var radios = document.getElementsByName('calc_mode');
+        for (var i = 0, len = radios.length; i < len; i++) {
+            if (radios[i].checked) {
+                calcmode = radios[i].value;
+                break;
+            }
+        }
+        if (calcmode === "arithmetic")
+            calcmode = undefined;
+        else
+            calcmode = "__if25_endif";
+        if (document.getElementById('no_random').checked)
+            disable_random = true;
+        else
+            disable_random = false;
+
+        var asmCode = codeGenerator(synctactic_out, calcmode, disable_random);
+
+        document.getElementById("machine-code").innerHTML = asmCode+"\n\n"+asmCode.replace(/\n/g,"\\n")+"\n\n"+JSON.stringify(synctactic_out, null, '    ');
     }catch (e) {
         document.getElementById("machine-code").innerHTML = e.stack+JSON.stringify(synctactic_out, null, '    ');;
     }
@@ -37,14 +56,19 @@ function testCode() {
 </head>
 
 <body>
-	<h1>Burstcoin AT Javascript Compiler</h1>      
-    <textarea id="source-code" placeholder="Write here your arithmetic expression..."></textarea>
-	
-	<div>	
-		<button id="compile" onClick="javascript: compileCode();">Compile it!</button>
-		<button id="test" onClick="javascript: testCode();">Run test cases</button>
-	</div>
-	
-	<pre id="machine-code" height="400" contenteditable="true"></pre>
+    <h1>Burstcoin AT Javascript Compiler</h1>      
+    <textarea id="source-code" placeholder="Write here your arithmetic expression...">a==0&&(b==0||c==0)</textarea>
+    
+    <div>
+        <label><input type="radio" name="calc_mode" id="calc_mode" value="arithmetic"> Arithmetic operations (assignment)</label>&nbsp;&nbsp;&nbsp;
+        <label><input type="radio" name="calc_mode" id="calc_mode" value="logical" checked="checked"> Logical operations (conditionals and loops)</label>&nbsp;&nbsp;&nbsp;
+        <label><input type="checkbox" name="no_random" id="no_random" checked="checked"> Disable random strings generation</label>
+    </div>
+    <div>
+        <button id="compile" onClick="javascript: compileCode();">Compile it!</button>
+        <button id="test" onClick="javascript: testCode();">Run test cases</button>
+    </div>
+    
+    <pre id="machine-code" height="400" contenteditable="true" spellcheck="no"></pre>
 </body>
 </html>

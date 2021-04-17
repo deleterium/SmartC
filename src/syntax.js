@@ -1,8 +1,8 @@
 "use strict";
 
 // Author: Rui Deleterium
-// Project:
-// License:
+// Project: https://github.com/deleterium/BurstAT-Compiler
+// License: BSD 3-Clause License
 
 // Traverse an AST created by parser to create another AST tree based on
 //  simple operations. Only unary or binary operations permitted here.

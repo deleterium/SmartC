@@ -1,5 +1,9 @@
 "use strict";
 
+// Author: Rui Deleterium
+// Project: https://github.com/deleterium/BurstAT-Compiler
+// License: BSD 3-Clause License
+
 /* **************************** LICENSE ***************************** *
  * This file is heavily based on project CaptCC (BSD 3-Clause) from   *
  *   Arash Tohidi Chafi available at                                  *
@@ -47,7 +51,7 @@ function parser(tokens) {
         if (current < maxlen) {
             if (tokens[current].type === 'equal') {
                 ++current;
-                return { type: 'Comparision', recedence: 6, name: 'NotEqualTo', value: token.value + "=" };
+                return { type: 'Comparision', precedence: 6, name: 'NotEqualTo', value: token.value + "=" };
             }
         }
         return { type: 'UnaryOperator', precedence: 2, name: 'Not', value: token.value };

@@ -30,3 +30,6 @@ button {
 
 div {	display: flex;
 	justify-content: center; }
+
+pre {
+	padding: 1vw; }

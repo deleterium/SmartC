@@ -1,5 +1,9 @@
 "use strict";
 
+// Author: Rui Deleterium
+// Project: https://github.com/deleterium/BurstAT-Compiler
+// License: BSD 3-Clause License
+
 /* **************************** LICENSE ***************************** *
  * This file is heavily based on project CaptCC (BSD 3-Clause) from   *
  *   Arash Tohidi Chafi available at                                  *
