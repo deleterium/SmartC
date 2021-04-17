@@ -1,17 +1,19 @@
 # BurstAT-Compiler
-Parser and compiler for arithmetic operations: C-like to BurstAT assembly. [Run now!](https://deleterium.github.io/BurstAT-Compiler/try.html)
+Parser and compiler for arithmetic and logic operations: C-like to BurstAT assembly. [Run now!](https://deleterium.github.io/BurstAT-Compiler/try.html)
 
 ## Objective
 To create a high level programming language for Burstcoin Automated Transactions.
 
 ## Current Status
 - [x] Compile line based arithmetics expressions 
-- [ ] Support for logical operations
+- [x] Support for logical operations
 - [ ] Support keywords and integration with loops and conditionals (Currently present at SimpleIDE)
 - [ ] Option to export machine code in hexadecimal stream, enabling import into Burstcoin wallet (BRS)
 
 ## Language rules
-Expressions are C-like and evaluated from left to right. Rules are simpler than in C, so complexes expressions can have different evaluations from C, but simple expressions shall have same outcome given special caracteristcs in Burstcoin assembly language. Spaces are disregarded. Every line is processed as an expression. Optionally a comma `,` can be used to write more than one expression at same line. Line breaks are also parsed same way.
+Expressions are C-like and evaluated from left to right. Rules are simpler than in C, so complexes expressions can have different evaluations from C, but simple expressions shall have same outcome given special caracteristcs in Burstcoin assembly language. Spaces are disregarded. 
+When using arithmetics operatins, every line is processed as an statement. Optionally a comma `,` can be used to write more than one statement at same line. Line breaks are also parsed same way.
+During logical operations, Assignment, SetOperator and SetUnaryOperator are disabled because jumps can skip these operations. Only one statement is allowed.
 
 ### Operators precedence
 When two or more symbols with same precedence are in an expression, the operations will be evaluated from right to left. Example: `a=16/4/4` will be evaluated as `a=(16/(4/4))`
@@ -45,14 +47,15 @@ Tokens are divided in groups and later on checked if their combinations are sync
 | CheckOperator | `+`   `-`   `*`   `&` | Tokens that have two meanings and need to be checked agains previous tokens to know their behaviour. After parsed they are treated as UnaryOperator or Operator |
 | Arr | `[expr]` | Representation of an array index. Must have a variable before it. |
 | CodeCave | `(expr)` | Surrounding an expression to indicate that it shall be evaluated before others operations. In special case could be a pointer representation. |
-| NewCodeLine	| `,` | Same as a line break. Use if you want to write two expressions on same line |
+| NewCodeLine | `,` | Same as a line break. Use if you want to write two expressions on same line |
 
 ### Temporary variables
 Long statements need temporary variables to store intermediate results. Computers have registers and program stack that can be used for this purpose. For this project I decided to use five variables as registers `r0` to `r4`. If it is possible, a variable in left side of assignment will also be used as temporary variable. This is a small optimization but can save one instruction for every statement!
 
 ## Usage
-Download project to your computer and open file `test.html` in your browser. Optionally [run it on gitpages!](https://deleterium.github.io/BurstAT-Compiler/try.html)
+Download project to your computer and open file `try.html` in your browser. Optionally [run it on gitpages!](https://deleterium.github.io/BurstAT-Compiler/try.html)
 
 ## Notes
 * Arrays representations will only work in Burstcoin client version 3 and above, for contracts created after a fork scheduled for 24/apr/2021. 
-* Some small bugs in code. Run testcases to know them.
+* Run testcases to check tested operations, optimizations and 2 failed cases.
+* Javascript has limitations on representing integers, so do not use number bigger than Number.MAX_SAFE_INTEGER or 9007199254740991 or 2^53 - 1. Burstcoin AT uses 64-bit long variables. Use hexadecimal representation to use full 64-bit values.
