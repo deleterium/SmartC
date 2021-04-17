@@ -15,6 +15,7 @@ Expressions are C-like and evaluated from left to right. Rules are simpler than 
 
 ### Operators precedence
 When two or more symbols with same precedence are in an expression, the operations will be evaluated from right to left. Example: `a=16/4/4` will be evaluated as `a=(16/(4/4))`
+
 | Order | Symbol | Description |
 | --- | --- | --- |
 | 1 | `()`   `[]` | Scope, array |
@@ -29,6 +30,7 @@ When two or more symbols with same precedence are in an expression, the operatio
 | 10 | `,`   `\n` | New line of code, comma |
 
 ### Internal names
+
 Tokens are divided in groups and later on checked if their combinations are synctactic valid.
 |Token type | Example/Operators | Description|
 | --- | --- | --- |
@@ -49,7 +51,7 @@ Tokens are divided in groups and later on checked if their combinations are sync
 Long statements need temporary variables to store intermediate results. Computers have registers and program stack that can be used for this purpose. For this project I decided to use five variables as registers `r0` to `r4`. If it is possible, a variable in left side of assignment will also be used as temporary variable. This is a small optimization but can save one instruction for every statement!
 
 ## Usage
-Download project to your computer and open file `test.html` in your browser. Optionally [run it on gitpages!](https://github.com/deleterium/BurstAT-Compiler/try.html)
+Download project to your computer and open file `test.html` in your browser. Optionally [run it on gitpages!](https://deleterium.github.io/BurstAT-Compiler/try.html)
 
 ## Notes
 * Arrays representations will only work in Burstcoin client version 3 and above, for contracts created after a fork scheduled for 24/apr/2021. 
