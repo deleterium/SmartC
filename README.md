@@ -1,5 +1,5 @@
 # BurstAT-CC
-Burstcoin Automated Transactions C Compiler: C-like to BurstAT assembly writen in Javascript. [Run now!](https://deleterium.github.io/BurstAT-Compiler/try.html)
+Burstcoin Automated Transactions C Compiler: C-like to BurstAT assembly writen in Javascript. [Run now!](https://deleterium.github.io/BurstAT-CC/try.html)
 
 ## Objective
 To create a high level programming language, similar to C, for Burstcoin Automated Transactions.
@@ -13,7 +13,7 @@ To create a high level programming language, similar to C, for Burstcoin Automat
 - [ ] Option to export machine code in hexadecimal stream, enabling import into Burstcoin wallet (BRS)
 
 ## Usage
-Download project to your computer and open file `try.html` in your browser. Optionally [run it on gitpages!](https://deleterium.github.io/BurstAT-Compiler/try.html). After compiling, a text in assembly will be presented and this code must be transformed in bytecode using [Smart Contractor](https://deleterium.github.io/BurstAT/SmartContractor/) AT Tools. Inspect assembly code to check if it is OK, this compiler still is under ALPHA development.
+Download project to your computer and open file `try.html` in your browser. Optionally [run it on gitpages!](https://deleterium.github.io/BurstAT-CC/try.html). After compiling, a text in assembly will be presented and this code must be transformed in bytecode using [Smart Contractor](https://deleterium.github.io/BurstAT/SmartContractor/) AT Tools. Inspect assembly code to check if it is OK, this compiler still is under ALPHA development.
 
 ## Language rules
 Expressions are C-like and evaluated from left to right. Rules are simpler than in C, so complexes expressions can have different evaluations from C, but simple expressions shall have same outcome given special caracteristcs in Burstcoin assembly language.
@@ -97,7 +97,7 @@ Tokens are divided in groups and later on checked if their combinations are sync
 | Macro | `#` | Preprocessor statement, ends at a newline `\n` character. |
 
 ### Internal object structure
-If you plan to learn, inspect or modify the source, read the [Big_AST.md](https://deleterium.github.io/BurstAT-Compiler/try.html) file, where object structure is described.
+If you plan to learn, inspect or modify the source, read the [Big_AST.md](https://github.com/deleterium/BurstAT-CC/blob/main/Big_AST.md) file, where object structure is described.
 
 ## Notes
 * Arrays representations will only work in Burstcoin client version 3 and above, for contracts created after a fork scheduled for 24/apr/2021. 
