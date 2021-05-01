@@ -17,13 +17,28 @@ function tokenizer(input) {
   var current = 0;
   // tokens will be holding all the tokens we found in our input
   var tokens = [];
-
+  var curr_line = 1;
   // some regex for later use
   var NAMES = /\w/;
   var NUMBERS = /[0-9]/;
   var NEWLINE = /\n/;
   var BACKSLASH = /\\/;
   var WHITESPACE = /\s/;
+
+  var keywords_bd = [
+   "asm", "break", "continue", "do", "else", "for", "goto", "if",
+   "long", "return", "void", "while", "sleep", "exit", "halt"
+  ];
+
+  var keywords_bd_forbidden = [
+    "auto", "double", "float", "register", "volatile"
+  ];
+
+  var keywords_bd_not_implemented = [
+    "case", "char", "const", "default", "enum", "extern",
+    "int", "short", "sizeof", "signed", "static", "struct",
+    "switch", "typedef", "union", "unsigned"
+  ];
 
   // now we start looping through each character of our input
   while(current < input.length) {
@@ -35,7 +50,8 @@ function tokenizer(input) {
     if (char === '=') {
       tokens.push({
         type: 'equal',
-        value: '='
+        value: '=',
+        line: curr_line
       });
       current++;
       continue;
@@ -44,7 +60,8 @@ function tokenizer(input) {
     if (char === '*') {
       tokens.push({
         type: 'star',
-        value: '*'
+        value: '*',
+        line: curr_line
       });
       current++;
       continue;
@@ -53,7 +70,8 @@ function tokenizer(input) {
     if (char === '!') {
       tokens.push({
         type: 'not',
-        value: '!'
+        value: '!',
+        line: curr_line
       });
       current++;
       continue;
@@ -63,7 +81,8 @@ function tokenizer(input) {
     if (char === '[' || char === ']') {
       tokens.push({
         type: 'bracket',
-        value: char
+        value: char,
+        line: curr_line
       });
       current++;
       continue;
@@ -72,7 +91,8 @@ function tokenizer(input) {
     if (char === '-') {
       tokens.push({
         type: 'minus',
-        value: '-'
+        value: '-',
+        line: curr_line
       });
       current++;
       continue;
@@ -81,27 +101,54 @@ function tokenizer(input) {
     if (char === '+') {
       tokens.push({
         type: 'plus',
-        value: '+'
+        value: '+',
+        line: curr_line
       });
       current++;
       continue;
     }
 
     if (char === '/') {
+      current++;
+      // 1) one-line comments
+      if (input.charAt(current) === '/') {
+        while (current < input.length && !NEWLINE.test(input[current])) {
+          current++;
+        }
+      }
+      // 2) multiline comments
+      else if (input.charAt(current) === '*') {
+        current++;
+        while (true) {
+          if (input.charAt(current) === '*' && input.charAt(current+1) === '/') {
+            current+=2;
+            break;
+          }
+          if (input.charAt(current) === '') {
+            throw new TypeError('At line: '+curr_line+". Missing multiline comment '*/' end token.");
+          }
+          if ( NEWLINE.test(input[current]) ) {
+            curr_line++;
+          }
+          current++;
+        }
+      }
       // a single slash
+      else {
         tokens.push({
           type: 'forwardslash',
-          value: '/'
+          value: '/',
+          line: curr_line
         });
-      current++;
+      }
       continue;
     }
-
 
     if (BACKSLASH.test(char)) {
       tokens.push({
         type: 'backslash',
-        value: '\\'
+        value: '\\',
+        line: curr_line
       });
       current++;
       continue;
@@ -110,7 +157,8 @@ function tokenizer(input) {
     if (char === '<') {
       tokens.push({
         type: 'less',
-        value: '<'
+        value: '<',
+        line: curr_line
       });
       current++;
       continue;
@@ -119,25 +167,28 @@ function tokenizer(input) {
     if (char === '>') {
       tokens.push({
         type: 'greater',
-        value: '>'
+        value: '>',
+        line: curr_line
       });
       current++;
       continue;
     }
 
     if (char === '|') {
-        tokens.push({
-          type: 'pipe',
-          value: '|'
-        });
-        current++;
-        continue;
+      tokens.push({
+        type: 'pipe',
+        value: '|',
+        line: curr_line
+      });
+      current++;
+      continue;
     }
 
     if (char === '&') {
       tokens.push({
         type: 'and',
-        value: '&'
+        value: '&',
+        line: curr_line
       });
       current++;
       continue;
@@ -146,7 +197,8 @@ function tokenizer(input) {
     if (char === '%') {
       tokens.push({
         type: 'percent',
-        value: '%'
+        value: '%',
+        line: curr_line
       });
       current++;
       continue;
@@ -155,7 +207,8 @@ function tokenizer(input) {
     if (char === '^') {
       tokens.push({
         type: 'caret',
-        value: '^'
+        value: '^',
+        line: curr_line
       });
       current++;
       continue;
@@ -164,7 +217,18 @@ function tokenizer(input) {
     if (char === ',') {
       tokens.push({
         type: 'comma',
-        value: ','
+        value: ',',
+        line: curr_line
+      });
+      current++;
+      continue;
+    }
+
+    if (char === ';') {
+      tokens.push({
+        type: 'semi',
+        value: ';',
+        line: curr_line
       });
       current++;
       continue;
@@ -173,7 +237,8 @@ function tokenizer(input) {
     if (char === '~') {
       tokens.push({
         type: 'tilde',
-        value: '~'
+        value: '~',
+        line: curr_line
       });
       current++;
       continue;
@@ -182,7 +247,8 @@ function tokenizer(input) {
     if (char === '`') {
       tokens.push({
         type: 'grave',
-        value: '`'
+        value: '`',
+        line: curr_line
       });
       current++;
       continue;
@@ -191,18 +257,51 @@ function tokenizer(input) {
     if (char === '(' || char === ')') {
       tokens.push({
         type: 'paren',
-        value: char
+        value: char,
+        line: curr_line
+      });
+      current++;
+      continue;
+    }
+
+    if (char === ':') {
+      tokens.push({
+        type: 'colon',
+        value: ':'
+      });
+      current++;
+      continue;
+    }
+
+    if (char === '#') {
+      current++;
+      var val = "";
+      while (current < input.length && !NEWLINE.test(input[current])) {
+          val+=input[current];
+          current++;
+      }
+      tokens.push({
+        type: 'macro',
+        value: val,
+        line: curr_line
+      });
+      continue;
+    }
+
+    if (char === '{' || char === '}') {
+      tokens.push({
+        type: 'curly',
+        value: char,
+        line: curr_line
       });
       current++;
       continue;
     }
 
     if(NEWLINE.test(char)) {
-        tokens.push({
-            type: 'comma',
-            value: ',' });
-        current++;
-        continue;
+      current++;
+      curr_line++;
+      continue;
     }
     if(WHITESPACE.test(char)) {
       current++;
@@ -214,14 +313,15 @@ function tokenizer(input) {
     if(NAMES.test(input.charAt(current))) {      //matches [a-zA-Z0-9_]
       let val = '';
       if(NUMBERS.test(input.charAt(current))) {  // matches [0-9]
-        if(input[current+2]=='x') {       // matches [0-9]x
+        if(input.charAt(current+1)=='x') {       // matches [0-9]x
           while(NAMES.test(input.charAt(current)) && current<input.length) {
             val += input.charAt(current);
             current++;
           }
           tokens.push({
             type: 'numberHex',
-            value: val
+            value: val,
+            line: curr_line
           });
           continue;
         } else {                          // matches [0-9]+ but not [0-9]x.*
@@ -231,7 +331,8 @@ function tokenizer(input) {
           }
           tokens.push({
             type: 'numberDec',
-            value: val
+            value: val,
+            line: curr_line
           });
           continue;
         }
@@ -240,10 +341,72 @@ function tokenizer(input) {
           val += input.charAt(current);
           current++;
         }
-        tokens.push({
-            type: 'variable',
-            value: val
+        
+        let search=keywords_bd.find(word => word === val);
+        if (search!==undefined) {
+          if (val === "asm") {          // matches asm keyword (must be treated in this step)
+            let started=false;
+            let asmCode="";
+            while(input.charAt(current) !== '}') {
+
+              if (input.charAt(current) === '') {
+                throw new TypeError("At end of file. Missing closing curly '}'.")
+              }
+              if (input.charAt(current) === '{') {
+                started=true;
+                asmCode = "";
+                current++;
+                continue;
+              }
+              if(NEWLINE.test(input.charAt(current))) {
+                asmCode+=input.charAt(current);
+                current++;
+                curr_line++;
+                continue;
+              }
+              if(WHITESPACE.test(input.charAt(current))) {
+                asmCode+=input.charAt(current);
+                current++;
+                continue;
+              }
+              if (started===false)
+                throw new TypeError("At line: "+curr_line+". Expected '{' but found '"+ input.charAt(current) +"'.")
+              asmCode+=input.charAt(current);
+              current++;
+            }
+
+            tokens.push({
+              type: 'keyword',
+              value: val,
+              line: curr_line,
+              asmText: asmCode
+            });
+            current++;
+            continue;
+          }
+          tokens.push({
+            type: 'keyword',
+            value: val,
+            line: curr_line
           });
+          continue;
+        }
+
+        search=keywords_bd_forbidden.find(word => word === val);
+        if (search!==undefined) {
+          throw new TypeError('At line:'+curr_line+". Keyword "+val+" can not be used in BurstAT");
+        }
+
+        search=keywords_bd_not_implemented.find(word => word === val);
+        if (search!==undefined) {
+          throw new TypeError('At line:'+curr_line+". Keyword "+val+" was not implemented");
+        }
+
+        tokens.push({
+          type: 'variable',
+          value: val,
+          line: curr_line
+        });
         continue;
       }
     }
@@ -251,40 +414,29 @@ function tokenizer(input) {
     /* if the character is a sigle quote or a double quote, we will treat it as a string.
     Until we haven't found the next double quote or single quote, we continue looping.
     When found, then we push the whole value as a string. */
-    if(char === '\'') {
+    if(char === '\'' || char === '"') {
+      var quote = char;
       var value = '';
       char = input[++current];
 
-      while(char !== '\''){
+      while(char !== quote){
         value += char;
-        char = input[++current];
+        char = input.charAt(++current);
+        if (char === ''){
+          throw new TypeError('At end of file. Missing ending quote for string.');
+        }
       }
       char = input[++current];
       tokens.push({
         type: 'string',
-        value: value
-      });
-      continue;
-    }
-
-    if(char === '"') {
-      var value = '';
-      char = input[++current];
-
-      while(char !== '"'){
-        value += char;
-        char = input[++current];
-      }
-      char = input[++current];
-      tokens.push({
-        type: 'string',
-        value: value
+        value: value,
+        line: curr_line
       });
       continue;
     }
 
       /*whatever else, we don't know jack! */
-    throw new TypeError('Type Error! Unrecognized Character: ' + char);
+    throw new TypeError("At line:"+curr_line+". Unrecognized Character: " + char);
   }
   return tokens;
 }

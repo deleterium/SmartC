@@ -28,193 +28,230 @@ function parser(tokens) {
         if (current < maxlen) {
             if (tokens[current].type == 'equal') {
                 ++current;
-                return { type: 'Comparision', precedence: 6, name: 'EqualTo', value: '==' };
+                return { type: 'Comparision', precedence: 6, name: 'EqualTo', value: '==', line: tokens[current-1].line};
             }
         } 
-        return { type: 'Assignment', precedence: 9, name: 'Set', value: token.value };
+        return { type: 'Assignment', precedence: 9, name: 'Set', value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'star') {
         current++;
         if (current < maxlen) {
             if (tokens[current].type === 'equal') {
                 ++current;
-                return { type: 'SetOperator', precedence: 9,value: token.value + "=" };
+                return { type: 'SetOperator', precedence: 9,value: token.value + "=", line: tokens[current-1].line };
             }
         }
         if (isBinaryOperator(current))
-           return {  type: 'Operator', precedence: 3, value: token.value };
+           return {  type: 'Operator', precedence: 3, value: token.value, line: tokens[current-1].line };
         else
-            return {  type: 'UnaryOperator', precedence: 2, value: token.value };
+            return {  type: 'UnaryOperator', precedence: 2, value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'not') {
         current++;
         if (current < maxlen) {
             if (tokens[current].type === 'equal') {
                 ++current;
-                return { type: 'Comparision', precedence: 6, name: 'NotEqualTo', value: token.value + "=" };
+                return { type: 'Comparision', precedence: 6, name: 'NotEqualTo', value: token.value + "=", line: tokens[current-1].line };
             }
         }
-        return { type: 'UnaryOperator', precedence: 2, name: 'Not', value: token.value };
+        return { type: 'UnaryOperator', precedence: 2, name: 'Not', value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'plus') {
         current++;
         if (current < maxlen) {
             if (tokens[current].type === 'equal') {
                 ++current;
-                return { type: 'SetOperator', precedence: 9, value: "+=" };
+                return { type: 'SetOperator', precedence: 9, value: "+=", line: tokens[current-1].line };
             } else if (tokens[current].type === 'plus') {
                 ++current;
-                return { type: 'SetUnaryOperator', precedence: 2, value: "++" };
+                return { type: 'SetUnaryOperator', precedence: 2, value: "++", line: tokens[current-1].line };
             }
         }            
         if (isBinaryOperator(current))
-            return {  type: 'Operator', precedence: 4, value: token.value };
+            return {  type: 'Operator', precedence: 4, value: token.value, line: tokens[current-1].line };
         else
-            return {  type: 'UnaryOperator', precedence: 2, value: token.value };
+            return {  type: 'UnaryOperator', precedence: 2, value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'forwardslash') {
         current++;
         if (current < maxlen)
             if (tokens[current].type === 'equal') {
                 ++current;
-                return { type: 'SetOperator', precedence: 9, value: token.value + "=" };
+                return { type: 'SetOperator', precedence: 9, value: token.value + "=", line: tokens[current-1].line };
             }
-        return { type: 'Operator', precedence: 3, value: token.value };
+        return { type: 'Operator', precedence: 3, value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'tilde') {
         current++;
-        return { type: 'UnaryOperator', precedence: 2, value: token.value };
+        return { type: 'UnaryOperator', precedence: 2, value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'minus') {
         current++;
         if (current < maxlen) {
             if(tokens[current].type === 'minus') {
                 current++;
-                return { type: 'SetUnaryOperator', precedence: 2, value: "--" };
+                return { type: 'SetUnaryOperator', precedence: 2, value: "--", line: tokens[current-1].line };
             } else if (tokens[current].type === 'equal') {
                 current++;
-                return { type: 'SetOperator', precedence: 9, value: "-=" };
+                return { type: 'SetOperator', precedence: 9, value: "-=", line: tokens[current-1].line };
             }
         }
         if (isBinaryOperator(current))
-            return {  type: 'Operator', precedence: 4, value: token.value };
+            return {  type: 'Operator', precedence: 4, value: token.value, line: tokens[current-1].line };
         else
-            return {  type: 'UnaryOperator', precedence: 2, value: token.value };
+            return {  type: 'UnaryOperator', precedence: 2, value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'variable') {
         current++;
-        var node = { type: 'Variable', pointer: "no", precedence: 0, value: token.value };
+        if (current < maxlen) {
+            if (tokens[current].type === 'colon') {
+                current++;
+                return { type: 'Keyword', precedence: 11, value: 'label', id: token.value, line: tokens[current-2].line };
+            }
+        }
+        var node = { type: 'Variable', pointer: "no", mod_array: "no", precedence: 0, value: token.value, line: tokens[current-1].line };
        return node;
+    }
+    if (token.type === 'keyword') {
+        current++;
+        var node = { type: 'Keyword', precedence: 11, value: token.value, line: tokens[current-1].line };
+        if (token.value === "asm") {
+            node.asmText = token.asmText;
+        }
+       return node;
+    }
+    if (token.type === 'semi') {
+        current++;
+        return {
+          type: 'Terminator',
+          value: token.value,
+          precedence: 11,
+          line: tokens[current-1].line };
     }
     if (token.type === 'comma') {
         current++;
         return {
-          type: 'NewCodeLine',
+          type: 'Delimiter',
+          value: token.value,
           precedence: 10,
+          line: tokens[current-1].line };
+    }
+    if (token.type === 'colon') {
+        current++;
+        return {
+          type: 'Colon',
+          value: token.value
         };
+    }
+    if (token.type === 'macro') {
+        current++;
+        return {
+          type: 'Macro',
+          value: token.value,
+          line: token.line };
     }
     if (token.type === 'percent') {
         current++;
         if (current < maxlen) {
             if (tokens[current].type === 'equal') {
                 current++;
-                return { type: 'SetOperator', precedence: 9, value: "%="  };
+                return { type: 'SetOperator', precedence: 9, value: "%=" , line: tokens[current-1].line };
             }
         }
-        return {  type: 'Operator', precedence: 3, value: token.value };
+        return {  type: 'Operator', precedence: 3, value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'less') {
         current++;
         if (current < maxlen) {
             if(tokens[current].type === 'equal') {
                 current++;
-                return {type: "Comparision", precedence: 6, value: "<=" };
+                return {type: "Comparision", precedence: 6, value: "<=", line: tokens[current-1].line };
             }
             if(tokens[current].type === 'less') {
                 current++;
                 if (current < maxlen) {
                     if(tokens[current].type === 'equal') {
                         current++;
-                        return { type: "SetOperator",  precedence: 9, value: "<<=" };
+                        return { type: "SetOperator",  precedence: 9, value: "<<=", line: tokens[current-1].line };
                     }
                 }
-                return { type: 'Operator', precedence: 5, value: "<<" };
+                return { type: 'Operator', precedence: 5, value: "<<", line: tokens[current-1].line };
             }
         }
-        return { type: 'Comparision',  precedence: 6, value: "<" };
+        return { type: 'Comparision',  precedence: 6, value: "<", line: tokens[current-1].line };
     }
     if (token.type === 'and') {
         current++;
         if (current < maxlen) {
             if(tokens[current].type === 'and') {
                 current++;
-                return { type: 'Comparision', precedence: 8, value: "&&" };
+                return { type: 'Comparision', precedence: 8, value: "&&", line: tokens[current-1].line };
             }
             if(tokens[current].type === 'equal') {
                 current++;
-                return { type: 'SetOperator', precedence: 9, value: "&=" };
+                return { type: 'SetOperator', precedence: 9, value: "&=", line: tokens[current-1].line };
             }
         }
         if (isBinaryOperator(current))
-            return { type: 'Operator', precedence: 7, value: token.value };
+            return { type: 'Operator', precedence: 7, value: token.value, line: tokens[current-1].line };
         else
-            return { type: 'UnaryOperator', precedence: 2, value: token.value };
+            return { type: 'UnaryOperator', precedence: 2, value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'pipe') {
         current++;
         if (current < maxlen) {
             if(tokens[current].type === 'pipe') {
                 current++;
-                return { type: 'Comparision', precedence: 8, value: "||" };
+                return { type: 'Comparision', precedence: 8, value: "||", line: tokens[current-1].line };
             }
             if(tokens[current].type === 'equal') {
                 current++;
-                return { type: 'SetOperator', precedence: 9, value: "|=" };
+                return { type: 'SetOperator', precedence: 9, value: "|=", line: tokens[current-1].line };
             }
         }
-        return { type: 'Operator', precedence: 7, value: token.value };
+        return { type: 'Operator', precedence: 7, value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'greater') {
         current++;
         if (current < maxlen) {
             if(tokens[current].type === 'equal') {
                 current++;
-                return {type: "Comparision", precedence: 6, value: ">=" };
+                return {type: "Comparision", precedence: 6, value: ">=", line: tokens[current-1].line };
             }
             if(tokens[current].type === 'greater') {
                 current++;
                 if (current < maxlen) {
                     if(tokens[current].type === 'equal') {
                         current++;
-                        return { type: "SetOperator", precedence: 9, value: ">>=" };
+                        return { type: "SetOperator", precedence: 9, value: ">>=", line: tokens[current-1].line };
                     }
                 }
-                return { type: 'Operator', precedence: 5, value: ">>" };
+                return { type: 'Operator', precedence: 5, value: ">>", line: tokens[current-1].line };
             }
         }
-        return { type: 'Comparision', precedence: 6, value: ">" };
+        return { type: 'Comparision', precedence: 6, value: ">", line: tokens[current-1].line };
     }
     if (token.type === 'caret') {
         current++;
         if (current < maxlen) {
             if(tokens[current].type === 'equal') {
                 current++;
-                return { type: 'SetOperator', precedence: 9, name: 'XorEqual', value: '^=' };
+                return { type: 'SetOperator', precedence: 9, name: 'XorEqual', value: '^=', line: tokens[current-1].line };
             }
         }
-        return { type: 'Operator', precedence: 7, name: 'Xor', value: token.value };
+        return { type: 'Operator', precedence: 7, name: 'Xor', value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'numberDec') {
         current++;
-        return { type: 'Constant', precedence: 0, name: 'NumberDecimalStr', value: token.value };
+        return { type: 'Constant', precedence: 0, name: 'NumberDecimalStr', value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'numberHex') {
         current++;
-        return { type: 'Constant', precedence: 0,name: 'NumberHexStr', value: token.value };
+        return { type: 'Constant', precedence: 0,name: 'NumberHexStr', value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'string') {
         current++;
-        return { type: 'Constant', precedence: 0, name: 'String', value: token.value };
+        return { type: 'Constant', precedence: 0, name: 'String', value: token.value, line: tokens[current-1].line };
     }
 
     /* here we perform some recursive acrobatics. If we encounter an opening bracket, we create a
@@ -223,11 +260,15 @@ function parser(tokens) {
     in its parent node */
     if (token.type === 'bracket' && token.value === '[' ) {
         token = tokens[++current];
-        var node = { type: 'Arr', precedence: 1, params: [] };
+        var node = { type: 'Arr', precedence: 1, params: [], line: tokens[current-1].line };
         while (    (token.type !== 'bracket')
                 || (token.type === 'bracket' && token.value !== ']') ) {
             node.params.push(walk());
             token = tokens[current];
+            if (token === undefined) {
+                throw new SyntaxError("At end of file. Missing closing ']' for Arr started at line: "+node.line+".");
+            }
+
         }
         current++;
         return node;
@@ -236,18 +277,38 @@ function parser(tokens) {
     // same as brackets and curly braces but for paranthesis, we call it 'CodeCave'
     if (token.type === 'paren' && token.value === '(' ) {
         token = tokens[++current];
-        var node= { type: 'CodeCave', precedence: 1, pointer: "no", params: [] };
+        var node= { type: 'CodeCave', precedence: 1, pointer: "no", mod_array: "no", params: [], line: tokens[current-1].line };
         while (    (token.type !== 'paren')
                 || (token.type === 'paren' && token.value !== ')') ) {
             node.params.push(walk());
             token = tokens[current];
+            if (token === undefined) {
+                throw new SyntaxError("At end of file. Missing closing ')' for CodeCave started at line: "+node.line+".");
+            }
         }
         current++;
         return node;
     }
 
+    // same story here. This time we call it a 'CodeDomain'.
+    if (token.type === 'curly' &&  token.value === '{' ) {
+        token = tokens[++current];
+        var node = { type: 'CodeDomain', params: [], line: tokens[current-1].line };
+        while (   (token.type !== 'curly')
+                || (token.type === 'curly' && token.value !== '}') ) {
+            node.params.push(walk());
+            token = tokens[current];
+            if (token === undefined) {
+                throw new SyntaxError("At end of file. Missing closing '}' for CodeDomain started at line: "+node.line+".");
+            }
+        }
+        current++;
+        return node;
+    }
+
+
     //if we don't recognize the token, we throw an error.
-    throw new TypeError(token.type)+" not allowed";
+    throw new TypeError("At line: "+token.line+". Unknow token found: '"+token.type+"'.");
   }
   
   function isBinaryOperator(position) {
@@ -268,19 +329,6 @@ function parser(tokens) {
     return false;      
   }
 
-  function getLastObject(ast) {
-    if (ast === undefined)
-        throw new TypeError("Invalid type to get last object type");
-    else
-        if (ast.length == 0)
-            return {};
-        else
-            if (ast[ast.length-1] === "CodeCave" || ast[ast.length-1] === "Arr")
-                return getLastObject(ast[ast.length-1].params);
-            else
-                return ast[ast.length-1];
-  }
-  
   // we declare this variable named AST, and start our walk() function to parse our tokens.
   let ast = [];
 
