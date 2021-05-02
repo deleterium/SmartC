@@ -1454,12 +1454,6 @@ function bigastCompile(bc_Big_ast){
         if (bc_auxVars.current_function >= 0){
             prefix = bc_Big_ast.functions[bc_auxVars.current_function].name+"_";
         }
-        if (bc_auxVars.current_function == -1){
-            for (var i=0; i< bc_config.maxAuxVars; i++){
-                writeAsmLine("^declare r"+i);
-            }
-        }
-
         if (Args.type !== "Variable") {
             throw new TypeError("At line: "+ Args.line + ". Wrong token type for declaration. Expected 'Variable', got: " + Args.type);
         }
@@ -1690,6 +1684,13 @@ function bigastCompile(bc_Big_ast){
     bc_Big_ast.Global.macros.forEach( processMacro );
     if (bc_config.version !== bc_config.compiler_version) {
         new TypeError("This compiler is version '"+bc_config.compiler_version+"'. File needs version '"+bc_config.version+"'.");
+    }
+
+    // add registers declaration
+    if ( bc_config.useVariableDeclaration) {
+        for (var i=0; i< bc_config.maxAuxVars; i++){
+            writeAsmLine("^declare r"+i);
+        }
     }
 
     // add variables declaration
