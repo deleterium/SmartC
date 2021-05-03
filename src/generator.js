@@ -724,6 +724,12 @@ function bigastCompile(bc_Big_ast){
         //   can not be reused as temporary var (register)
         function CanReuseAssignedVar(name, ast_code) {
 
+            if (bc_auxVars.current_function >=0 ) {
+                if (name.startsWith(bc_Big_ast.functions[bc_auxVars.current_function].name+"_")) {
+                    //local variable with prefix. Need to remove prefix to search AST.
+                    name = name.slice(bc_Big_ast.functions[bc_auxVars.current_function].name.length+1);
+                }
+            }
             if (ast_code.Operation === undefined) { //end object
                 if (ast_code.type === 'Variable')
                     if (ast_code.value === name)
@@ -1456,6 +1462,9 @@ function bigastCompile(bc_Big_ast){
         }
         if (Args.type !== "Variable") {
             throw new TypeError("At line: "+ Args.line + ". Wrong token type for declaration. Expected 'Variable', got: " + Args.type);
+        }
+        if (Args.declaration === "label") {
+            return; //do nothing
         }
         if (Args.mod_array === "no") {
             if (Args.size != 1) {

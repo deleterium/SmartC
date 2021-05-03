@@ -51,6 +51,13 @@
                                 i++;
                                 continue;
                             }
+                            if ( i+2 < tokens.length && tokens[i].type === "Keyword" && tokens[i+1].value === "*" && tokens[i+2].type === "Variable") {
+                                Node = tokens[i+2];
+                                Node.declaration=tokens[i].value;
+                                args.push(Node);
+                                i+=2;
+                                continue;
+                            }
                             if (tokens[i].type === "Delimiter")
                                 continue;
                             throw new SyntaxError("At line: " + tokens[i].line + ". Token not allowed: " + tokens[i].type );
@@ -265,6 +272,23 @@
         sntcs.forEach(function (phrs) {
             if (phrs.type !== "phrase")
                 return;
+            if (phrs.code[0].type === "Keyword" && phrs.code[0].value === "label" ) {
+                //transform this label in a fake variable
+                Token={ type: "Variable",
+                        value: phrs.code[0].id,
+                        asmName: phrs.code[0].id,
+                        dec_as_array: "no",
+                        dec_in_generator: "yes", //do not verify declaration before use
+                        declaration: "label",
+                        mod_array: "no",
+                        pointer: "no",
+                        precedence: 0,
+                        size: 0,
+                };
+                table.push(Token);
+                return;
+            }
+
             if (phrs.code.length<2)
                 return;
             if (phrs.code[0].type === "Keyword") {
