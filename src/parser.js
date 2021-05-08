@@ -17,6 +17,125 @@ function parser(tokens) {
   var current = 0;
   var maxlen=tokens.length;
 
+
+    // Input: javascript string (utf-16)
+    // Output: string representing same string in hexadecimal utf-8
+    function str2long(in_str)
+    {
+        if ( !(typeof in_str === 'string' || in_str instanceof String) )
+            return undefined;
+
+        var byarr = [];
+        var ret = "";
+        var c,c1, i, j;
+
+        for (i=0; i<in_str.length; i++) {
+            c = in_str.charCodeAt(i);
+
+            if (c < 128)
+                byarr.push(c);
+            else {
+                if (c < 2048) {
+                    byarr.push(c>>6 | 0xc0);    //ok
+                    byarr.push((c & 63) | 128); //ok
+                } else {
+                    if (c < 55296 || c > 57343) {
+                        byarr.push(((c >> 12 ) & 63) | 0xe0); //ok
+                        byarr.push(((c >> 6 ) & 63) | 128); //ok
+                        byarr.push((c & 63) | 128); //ok
+                    } else {
+                        i++;
+                        c1 = in_str.charCodeAt(i);
+                        if ((c & 0xFC00) == 0xd800 && (c1 & 0xFC00) == 0xDC00) {
+                            c = ((c & 0x3FF) << 10) + (c1 & 0x3FF) + 0x10000;
+                            byarr.push(((c >> 18 ) & 63) | 0xf0); //ok
+                            byarr.push(((c >> 12 ) & 63) | 128); //ok
+                            byarr.push(((c >> 6 ) & 63) | 128); //ok
+                            byarr.push((c & 63) | 128); //ok
+                        }
+                    }
+                }
+            }
+        }
+        for (j=0; j < (Math.floor((byarr.length-1)/8)+1)*8; j++){
+            if (j >= byarr.length)
+                ret="00"+ret;
+            else
+                ret=byarr[j].toString(16).padStart(2, '0')+ret;
+        }
+        return(ret);
+    }
+
+    //Decode REED-SALOMON burst address from string to long value
+    //Adapted from https://github.com/burst-apps-team/burstkit4j
+    function rsDecode(cypher_string) {
+
+        var gexp = [ 1, 2, 4, 8, 16, 5, 10, 20, 13, 26, 17, 7, 14, 28, 29, 31, 27, 19, 3, 6, 12, 24, 21, 15, 30, 25, 23, 11, 22, 9, 18, 1 ];
+        var glog = [ 0, 0, 1, 18, 2, 5, 19, 11, 3, 29, 6, 27, 20, 8, 12, 23, 4, 10, 30, 17, 7, 22, 28, 26, 21, 25, 9, 16, 13, 14, 24, 15 ];
+        var alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+        var codeword_map = [ 3, 2, 1, 0, 7, 6, 5, 4, 13, 14, 15, 16, 12, 8, 9, 10, 11 ];
+
+        function gmult(a, b) {
+            if (a == 0 || b == 0) {
+                return 0;
+            }
+            var idx = (glog[a] + glog[b]) % 31;
+            return gexp[idx];
+        }
+
+        function is_codeword_valid(codeword) {
+            var sum = 0;
+            var i, j, t, pos;
+
+            for ( i = 1; i < 5; i++) {
+                t = 0;
+                for ( j = 0; j < 31; j++) {
+                    if (j > 12 && j < 27) {
+                        continue;
+                    }
+                    pos = j;
+                    if (j > 26) {
+                        pos -= 14;
+                    }
+                    t ^= gmult(codeword[pos], gexp[(i * j) % 31]);
+                }
+                sum |= t;
+            }
+
+            return sum == 0;
+        }
+
+        var codeword_length = 0;
+        var codeword = [];
+        var i;
+        var codework_index;
+
+        for (i=0; i < cypher_string.length; i++ ) {
+            var position_in_alphabet = alphabet.indexOf(cypher_string.charAt(i));
+            if (position_in_alphabet <= -1) {
+                continue;
+            }
+            codework_index = codeword_map[codeword_length];
+            codeword[codework_index] = position_in_alphabet;
+            codeword_length++;
+        }
+        if (codeword_length != 17 || !is_codeword_valid(codeword)) {
+            throw new TypeError("Error decoding BURST address: BURST-"+cypher_string);
+        }
+
+        //base32 to base10 conversion
+        var length = 13;
+        var big_val=0n;
+        var big_mul=1n;
+        for (i = 0; i < length; i++) {
+            big_val += big_mul * BigInt(codeword[i]);
+            big_mul *= 32n;
+        }
+
+        return big_val.toString(16);
+    }
+
+
   // Inside it, we define another function called walk() which enables use to do some recursive acrobatics
   function walk() {
     var token = tokens[current];
@@ -254,15 +373,25 @@ function parser(tokens) {
     }
     if (token.type === 'numberDec') {
         current++;
-        return { type: 'Constant', precedence: 0, name: 'NumberDecimalStr', value: token.value, line: tokens[current-1].line };
+        let val = BigInt(token.value).toString(16);
+        val = val.padStart((Math.floor((val.length-1)/16)+1)*16, '0');
+        return { type: 'Constant', precedence: 0, value: val, line: tokens[current-1].line };
     }
     if (token.type === 'numberHex') {
         current++;
-        return { type: 'Constant', precedence: 0,name: 'NumberHexStr', value: token.value, line: tokens[current-1].line };
+        let val = token.value.replace("0x","").toLowerCase();
+        val = val.padStart((Math.floor((val.length-1)/16)+1)*16, '0');
+        return { type: 'Constant', precedence: 0, value: val, line: tokens[current-1].line };
     }
     if (token.type === 'string') {
         current++;
-        return { type: 'Constant', precedence: 0, name: 'String', value: token.value, line: tokens[current-1].line };
+        let val;
+        if ( token.value.startsWith("BURST-") ) {
+            val = rsDecode(token.value.slice(6)).padStart(16, '0');
+        } else {
+            val = str2long(token.value);
+        }
+        return { type: 'Constant', precedence: 0, value: val, line: tokens[current-1].line };
     }
 
     /* here we perform some recursive acrobatics. If we encounter an opening bracket, we create a

@@ -10,9 +10,21 @@
 
  function shapeProgram(sP_ast) {
 
-    var Big_ast = { Global: {}, functions: [] , memory: [], labels: [], typesDefinitions: []};
+    var Big_ast = { Global: {}, functions: [] , memory: [], labels: [], typesDefinitions: [], Config: {} };
     var curr=0;
     var latest_loop_id = [];
+
+    // configurations for compiler
+    Big_ast.Config = {
+        compiler_version: "0",   //sets this compiler version!!!
+        enableRandom:     false, //enable with #pragma enableRandom true
+        maxAuxVars:       5,     //change with #pragma max_auxVars N
+        reuseAssignedVar: true,  //disable with #pragma reuseAssignedVar false
+        useVariableDeclaration: true, //change with #pragma useVariableDeclaration false
+        version: "0",            //change with #pragma version 0
+        warningToError:   true,  //change with #pragma warningToError false
+        APIFunctions:     false, //enable with #include APIFunctions
+    };
 
     // Organize these variables in the Big_ast:
     //   functions[].ReturnType
@@ -289,12 +301,7 @@
             if (tkn.length !== 1 || tkn[0].type !== "Constant") {
                 throw new TypeError("At line: " + tkn.line + ". Wrong array declaration. Only constant size declarations allowed.");
             }
-            if ( tkn[0].name === 'NumberDecimalStr')
-                return parseInt(tkn[0].value,10);
-            else if (tkn[0].name === 'NumberHexStr')
-                return parseInt(tkn[0].value.replace("0x",""),16);
-            else
-                throw new TypeError("At line: " + phrs.code[2].line + ". Wrong array declaration.");
+            return parseInt(tkn[0].value,16);
         }
 
         function struct2typedefinition(stru_phrase){
@@ -551,12 +558,93 @@
         return ;
     }
 
+    // read macros values and put them into Big_ast.Config object
+    function processMacro( Token ) {
+
+        function get_val(val){
+            if (val === undefined) {
+                return true;
+            }
+            if (val === "true" || val === "1") {
+                return true;
+            }
+            if (val === "false" || val === "0") {
+                return false;
+            }
+            return undefined;
+        }
+
+        if (Token.type === "pragma") {
+            if (Token.property === "maxAuxVars") {
+                if (Token.value !== undefined) {
+                    var num = parseInt(Token.value);
+                    if (num < 1 || num > 10) {
+                        throw new RangeError("At line: "+Token.line+". Value out of permitted range 1..10.");
+                    }
+                    Big_ast.Config.maxAuxVars = num;
+                    return;
+                }
+            }
+            if (Token.property === "reuseAssignedVar") {
+                Big_ast.Config.reuseAssignedVar = get_val(Token.value);
+                if (Big_ast.Config.reuseAssignedVar !== undefined)
+                    return;
+            }
+            if (Token.property === "enableRandom") {
+                Big_ast.Config.enableRandom = get_val(Token.value);
+                if (Big_ast.Config.enableRandom !== undefined)
+                    return;
+            }
+            if (Token.property === "useVariableDeclaration") {
+                Big_ast.Config.useVariableDeclaration = get_val(Token.value);
+                if (Big_ast.Config.useVariableDeclaration !== undefined)
+                    return;
+            }
+            if (Token.property === "version") {
+                Big_ast.Config.version = Token.value;
+                if (Big_ast.Config.version !== undefined)
+                    return;
+            }
+            if (Token.property === "warningToError") {
+                Big_ast.Config.warningToError = get_val(Token.value);
+                if (Big_ast.Config.warningToError !== undefined)
+                    return;
+            }
+        }
+
+        if (Token.type === "include") {
+            if (Token.property === "APIFunctions") {
+                Big_ast.Config.APIFunctions = get_val(Token.value);
+                if (Big_ast.Config.APIFunctions !== undefined)
+                    return;
+            }
+        }
+
+        throw new TypeError("At line: "+Token.line+". Unknow macro property and/or value: #"+Token.type+" "+Token.property+" "+Token.value);
+    }
+
+    function addRegistersInMemory(){
+        if ( Big_ast.Config.useVariableDeclaration) {
+            let search = Big_ast.typesDefinitions.find(obj => obj.type === "register");
+            if (search === undefined){
+                new TypeError("Not found type 'register' at types definitions.");
+            }
+            for (var i=0; i< Big_ast.Config.maxAuxVars; i++){
+                let Memory_template = JSON.parse(JSON.stringify(search.Memory_template));
+                Memory_template.name = "r"+i;
+                Memory_template.asm_name = "r"+i;
+                Big_ast.memory.push(Memory_template);
+            }
+        }
+    }
+    
     function createDefaultTypesTable(){
         return [ {
             type: 'register',
             Memory_template: {
                 location: -1,
                 name: "",
+                asm_name: "",
                 type: "register",
                 type_name: null,
                 scope: "",
@@ -568,6 +656,7 @@
             Memory_template: {
                 location: -1,
                 name: "",
+                asm_name: "",
                 type: "long",
                 type_name: null,
                 scope: "",
@@ -1248,7 +1337,15 @@
         delete func.code;
     });
 
+    // Macro handler
+    Big_ast.Global.macros.forEach( processMacro );
+    if (Big_ast.Config.version !== Big_ast.Config.compiler_version) {
+        new TypeError("This compiler is version '"+Big_ast.Config.compiler_version+"'. File needs a compiler version '"+Big_ast.Config.version+"'.");
+    }
+
     Big_ast.typesDefinitions = createDefaultTypesTable();
+
+    addRegistersInMemory();
 
     createMemoryTable(Big_ast.Global.sentences, "");
 
@@ -1259,7 +1356,9 @@
     //TODO:
     //  Check for doubles definitions (variables and functions)
 
-    Big_ast.Global.APIFunctions = createAPItable();
+    if (Big_ast.Config.APIFunctions) {
+        Big_ast.Global.APIFunctions = createAPItable();
+    }
 
     return Big_ast;
 }
