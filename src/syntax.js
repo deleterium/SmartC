@@ -30,19 +30,29 @@ function createSyntacticTree(ast) {
     }
 
     if (end === false) {
-        // he have only precedente <= 1: variable, constants, codecave, array, codedomain)
+        // he have only precedente <= 1: variable, constant, codecave, array, codedomain, member)
 
         if (ast[0].type === "Variable"){
             if (ast.length == 1) {
                 return ast[0];
             }
-            if (ast.length == 2) {
-                if (ast[1].type === "Arr"){
-                    return { Left:      ast[0],
-                            Operation: {type: "Arr", line: ast[1].line},
-                            Right:     createSyntacticTree(ast[1].params) };
+            var Node = ast[0];
+            Node.param_type = [];
+            Node.params = [];
+            for (i=1; i< ast.length; i++){
+                if (ast[i].type === "Arr") {
+                    Node.param_type.push("Arr");
+                    Node.params.push(createSyntacticTree(ast[i].params));
+                } else if (ast[i].type === "Member") {
+                    Node.param_type.push("Member");
+                    i++;
+                    Node.params.push(createSyntacticTree(ast[i]));
+                }
+                else {
+                    throw new TypeError("At line: "+ast[i].line+". Invalid type of variable modifier: "+ast[i].type);
                 }
             }
+            return Node;
         }
 
         if ( ast[0].type === "Constant") {
@@ -65,6 +75,8 @@ function createSyntacticTree(ast) {
             if (ast.length == 1) {
                 return createSyntacticTree(ast[0].params);
             }
+            //if (ast.length > 1) {
+            throw new SyntaxError("At line: "+ast[0].line+". Modifiers for CodeCave not implemented");
         }
 
         if (ast[0].type === "CodeDomain"){

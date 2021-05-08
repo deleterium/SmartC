@@ -18,7 +18,7 @@ function verify(ast) {
     // ctf-> change to function
     // kc->  keyword check (depends on keyword)
     const language_rules = [
-        { Current: "Variable", Next: "Variable", Possible: "n"},
+        { Current: "Variable", Next: "Variable", Possible: "y"},
         { Current: "Variable", Next: "UnaryOperator", Possible: "n"},
         { Current: "Variable", Next: "SetUnaryOperator", Possible: "npo"},
         { Current: "Variable", Next: "SetOperator", Possible: "y"},
@@ -29,7 +29,7 @@ function verify(ast) {
         { Current: "Variable", Next: "Delimiter", Possible: "y"},
         { Current: "Variable", Next: "Constant", Possible: "n"},
         { Current: "Variable", Next: "Comparision", Possible: "y"},
-        { Current: "Variable", Next: "CodeDomain", Possible: "n"},
+        { Current: "Variable", Next: "CodeDomain", Possible: "y"},
         { Current: "Variable", Next: "CodeCave", Possible: "ctf"},
         { Current: "Variable", Next: "Assignment", Possible: "y"},
         { Current: "Variable", Next: "Arr", Possible: "npo"},
@@ -154,7 +154,7 @@ function verify(ast) {
         { Current: "Comparision", Next: "Assignment", Possible: "n"},
         { Current: "Comparision", Next: "Arr", Possible: "n"},
         { Current: "CodeDomain", Next: "Variable", Possible: "y"},
-        { Current: "CodeDomain", Next: "UnaryOperator", Possible: "n"},
+        { Current: "CodeDomain", Next: "UnaryOperator", Possible: "y"},
         { Current: "CodeDomain", Next: "SetUnaryOperator", Possible: "n"},
         { Current: "CodeDomain", Next: "SetOperator", Possible: "n"},
         { Current: "CodeDomain", Next: "Operator", Possible: "n"},
@@ -276,6 +276,41 @@ function verify(ast) {
         { Current: "Assignment", Next: "Macro", Possible: "y"},
         { Current: "Arr", Next: "Macro", Possible: "y"},
         //endmacro
+        //member
+        { Current: "Member", Next: "Variable", Possible: "y"},
+        { Current: "Member", Next: "UnaryOperator", Possible: "n"},
+        { Current: "Member", Next: "SetUnaryOperator", Possible: "n"},
+        { Current: "Member", Next: "SetOperator", Possible: "n"},
+        { Current: "Member", Next: "Operator", Possible: "n"},
+        { Current: "Member", Next: "Terminator", Possible: "n"},
+        { Current: "Member", Next: "end", Possible: "n"},
+        { Current: "Member", Next: "Keyword", Possible: "n"},
+        { Current: "Member", Next: "Delimiter", Possible: "n"},
+        { Current: "Member", Next: "Constant", Possible: "n"},
+        { Current: "Member", Next: "Comparision", Possible: "n"},
+        { Current: "Member", Next: "CodeDomain", Possible: "n"},
+        { Current: "Member", Next: "CodeCave", Possible: "n"},
+        { Current: "Member", Next: "Assignment", Possible: "n"},
+        { Current: "Member", Next: "Arr", Possible: "n"},
+        { Current: "Member", Next: "Macro", Possible: "n"},
+        { Current: "Member", Next: "Member", Possible: "n"},
+        { Current: "Variable", Next: "Member", Possible: "y"},
+        { Current: "UnaryOperator", Next: "Member", Possible: "n"},
+        { Current: "SetUnaryOperator", Next: "Member", Possible: "n"},
+        { Current: "SetOperator", Next: "Member", Possible: "n"},
+        { Current: "Operator", Next: "Member", Possible: "n"},
+        { Current: "Terminator", Next: "Member", Possible: "n"},
+        { Current: "begin", Next: "Member", Possible: "n"},
+        { Current: "Keyword", Next: "Member", Possible: "n"},
+        { Current: "Delimiter", Next: "Member", Possible: "n"},
+        { Current: "Constant", Next: "Member", Possible: "n"},
+        { Current: "Comparision", Next: "Member", Possible: "n"},
+        { Current: "CodeDomain", Next: "Member", Possible: "n"},
+        { Current: "CodeCave", Next: "Member", Possible: "y"},
+        { Current: "Assignment", Next: "Member", Possible: "n"},
+        { Current: "Arr", Next: "Member", Possible: "y"},
+        { Current: "Macro", Next: "Member", Possible: "n"},
+        //endmember
     ];
 
     function checkRules(value, index, array) {

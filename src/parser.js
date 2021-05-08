@@ -94,6 +94,9 @@ function parser(tokens) {
             } else if (tokens[current].type === 'equal') {
                 current++;
                 return { type: 'SetOperator', precedence: 9, value: "-=", line: tokens[current-1].line };
+            } else if (tokens[current].type === 'greater') {
+                current++;
+                return { type: 'Member', precedence: 0, value: "->", line: tokens[current-1].line };
             }
         }
         if (isBinaryOperator(current))
@@ -142,6 +145,14 @@ function parser(tokens) {
           type: 'Colon',
           value: token.value
         };
+    }
+    if (token.type === 'dot') {
+        current++;
+        return {
+          type: 'Member',
+          value: token.value,
+          precedence: 0,
+          line: token.line };
     }
     if (token.type === 'macro') {
         current++;

@@ -10,7 +10,7 @@
 
  function shapeProgram(sP_ast) {
 
-    var Big_ast = { Global: {}, functions: [] };
+    var Big_ast = { Global: {}, functions: [] , memory: [], labels: [], typesDefinitions: []};
     var curr=0;
     var latest_loop_id = [];
 
@@ -237,6 +237,31 @@
                 if (codetrain[curr].value === "else") {
                     throw new SyntaxError("At line: " + codetrain[curr].line + ". 'else' not associated with an 'if(){}else{}' sentence");
                 }
+
+                if (codetrain[curr].value === "struct") {
+                    if (curr + 2 >= codetrain.length)
+                        throw new SyntaxError("At line: " + codetrain[curr].line + ". Missing arguments for 'struct' sentence.");
+                    if (codetrain[curr+1].type !== "Variable")
+                        throw new SyntaxError("At line: " + codetrain[curr].line + ". Missing 'name' for  'struct' sentence ");
+                    if (codetrain[curr+2].type === "CodeDomain") {
+                        curr+=2;
+                        Node = { type: "struct",
+                            line: codetrain[curr-2].line,
+                            name: codetrain[curr-1].value,
+                            members: code2sentence(codetrain),
+                            phrase: {type: "phrase", code: [] } };
+                        Node.phrase.code.push(codetrain[curr-2], codetrain[curr-1]);
+                        curr++;
+                        while (curr < codetrain.length) {
+                            if (codetrain[curr].type === "Terminator") {
+                                return [ Node ];
+                            }
+                            Node.phrase.code.push(codetrain[curr]);
+                            curr++;
+                        }
+                        throw new SyntaxError("At end of file. Wrong 'struct' declaration. Missing ';'");
+                    }
+                }
             }
 
             phrase.push(codetrain[curr]);
@@ -253,9 +278,12 @@
 
     // Not recursive. Only top level declarations allowed.
     // This creates only global variables or function scope variables.
-    function createVariablesTable(sntcs) {
+    function createMemoryTable(sntcs, scope_name) {
         var table=[];
-        var Token;
+        var prefix = "";
+        if (scope_name.length > 0) {
+            prefix=scope_name+"_";
+        }
 
         function get_array_size(tkn) {
             if (tkn.length !== 1 || tkn[0].type !== "Constant") {
@@ -269,23 +297,48 @@
                 throw new TypeError("At line: " + phrs.code[2].line + ". Wrong array declaration.");
         }
 
-        sntcs.forEach(function (phrs) {
-            if (phrs.type !== "phrase")
-                return;
+        function struct2typedefinition(stru_phrase){
+
+            //create struct type definition
+            let StructTypeD = { type_name: prefix+stru_phrase.name,
+                type: "struct",
+                struct_members: [] };
+
+            let old_prefix = prefix;
+            prefix = "";
+            stru_phrase.members.forEach ( function (struphrs) {
+                StructTypeD.struct_members = StructTypeD.struct_members.concat(phrase2memoryObject(struphrs));
+            });
+
+            StructTypeD.Memory_template = {
+                location: -1,
+                name: "",
+                type: "struct",
+                type_name: StructTypeD.type_name,
+                scope: old_prefix,
+                size: StructTypeD.struct_members.length+1,
+                dec_in_generator: false,
+                dec_as_pointer: false,
+            };
+            prefix = old_prefix;
+            Big_ast.typesDefinitions.push(StructTypeD);
+        }
+
+        // takes a phrase and returns an array of Memory {}
+        //   fills types definitions of necessary
+        function phrase2memoryObject(phrs){
+
+            let Token;
+            let Memory_template;
+            let ret = [];
+            let ispointer = false;
+
             if (phrs.code[0].type === "Keyword" && phrs.code[0].value === "label" ) {
                 //transform this label in a fake variable
-                Token={ type: "Variable",
-                        value: phrs.code[0].id,
-                        asmName: phrs.code[0].id,
-                        dec_as_array: "no",
-                        dec_in_generator: "yes", //do not verify declaration before use
-                        declaration: "label",
-                        mod_array: "no",
-                        pointer: "no",
-                        precedence: 0,
-                        size: 0,
-                };
-                table.push(Token);
+                Big_ast.labels.push({
+                    name: phrs.code[0].id,
+                    type: phrs.code[0].value,
+                    scope: scope_name  });
                 return;
             }
 
@@ -297,44 +350,234 @@
                     || phrs.code[0].value === "goto")
                     return;
 
-                let idx = 1;
-                let valid=true;
-                while (idx < phrs.code.length) {
-                    if ( phrs.code[idx].type === "Delimiter") {
-                        idx++;
-                        valid=true;
-                        continue;
+                if (   phrs.code[0].value === "struct"){
+                    if (phrs.code.length<3){
+                        throw "erro no struct!"
                     }
-
-                    if ( valid === true && phrs.code[idx].value === "*" && idx+1 < phrs.code.length && phrs.code[idx+1].type === "Variable" ) {
-                        idx++;
+                    let search = Big_ast.typesDefinitions.find(obj => obj.type_name == phrs.code[1].value && obj.type === phrs.code[0].value );
+                    if (search === undefined && prefix.length > 0 ) {
+                        search = Big_ast.typesDefinitions.find(obj => obj.type_name == prefix+phrs.code[1].value && obj.type === phrs.code[0].value );
                     }
+                    if (search === undefined) {
+                        throw "não achei type definition";
+                    }
+                    let dimensions = [];
 
-                    if (valid === true) {
-                        Token = phrs.code[idx];
-                        Token.declaration = phrs.code[0].value;
-                        Token.dec_in_generator = "no";
-                        Token.size = 1;
-                        Token.dec_as_array="no";
+                    Memory_template = JSON.parse(JSON.stringify(search.Memory_template));
+                    Memory_template.scope = prefix;
+                    Memory_template.name = phrs.code[2].value
 
-                        if (idx+1<phrs.code.length) {
-                            if (phrs.code[idx+1].type === "Arr") { //Array declaration
-                                idx++;
-                                Token.size = 1+get_array_size(phrs.code[idx].params);
-                                Token.dec_as_array="yes";
-                            }
+                    let idx = 2;
+                    while (idx < phrs.code.length) {
+                        if ( phrs.code[idx].type === "Delimiter") {
+                            idx++;
+                            continue;
+                        }
+                        if ( phrs.code[idx].value === "*" && idx+1 < phrs.code.length && phrs.code[idx+1].type === "Variable" ) {
+                            ispointer = true;
+                            Memory_template.dec_as_pointer=true;
+                            idx++;
                         }
 
-                        table.push(Token);
-                        valid = false;
+                        if ( phrs.code[idx].type === "Variable") {
+                            while (idx+1<phrs.code.length) {
+                                if (phrs.code[idx+1].type === "Arr") { //Array declaration
+                                    idx++;
+                                    dimensions.push(get_array_size(phrs.code[idx].params));
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            if (dimensions.length>0){ //is array of structs
+                                Memory_template.type="array";
+                                Memory_template.size = 1+ dimensions.reduce(function (total, num) {
+                                    return total * num; }, search.Memory_template.size);
+
+                                ret.push(Memory_template);
+                                for (let x=0, i=0 ; x < dimensions.length ; x++) {
+                                    for (let y=0; y<dimensions[x]; y++) {
+                                        ret=ret.concat(assignStructVariable(phrs.code[1].value,phrs.code[idx-dimensions.length].value+"_"+i, ispointer));
+                                        i++;
+                                    }
+                                }
+
+                                // create array type definition
+                                if (dimensions.length > 0) {
+                                    let TypeD = { type_name: prefix+phrs.code[idx-dimensions.length].value,
+                                        type: "array",
+                                        arr_dimensions: dimensions,
+                                        arr_multiplier_dim: [] };
+                                    let j = dimensions.length-1;
+                                    let acc=search.Memory_template.size;
+                                    do {
+                                        TypeD.arr_multiplier_dim.unshift(acc);
+                                        acc*=dimensions[j];
+                                        j--;
+                                    } while (j>=0);
+                                    Big_ast.typesDefinitions.push(TypeD);
+                                }
+
+                            } else { //is not array of structs
+                                ret=ret.concat(assignStructVariable(phrs.code[1].value,phrs.code[idx].value, ispointer));
+                            }
+                            idx++;
+                            continue;
+                        }
+                        if ( phrs.code[idx].type === "Terminator") {
+                            break;
+                        }
+
                     }
-                    idx++;
+                    return ret;
+                }
+
+                if ( phrs.code[0].value === "long" ){
+                    let idx = 1;
+                    let valid=true;
+                    while (idx < phrs.code.length) {
+                        if ( phrs.code[idx].type === "Delimiter") {
+                            idx++;
+                            valid=true;
+                            continue;
+                        }
+
+                        if ( valid === true && phrs.code[idx].value === "*" && idx+1 < phrs.code.length && phrs.code[idx+1].type === "Variable" ) {
+                            ispointer = true;
+                            idx++;
+                        }
+
+                        if (valid === true) {
+                            let dimensions = [];
+
+                            let search = Big_ast.typesDefinitions.find(obj => obj.type === phrs.code[0].value );
+                            if (search === undefined) {
+                                throw "não achei type definition";
+                            }
+                            Memory_template = JSON.parse(JSON.stringify(search.Memory_template));
+                            Memory_template.name = phrs.code[idx].value;
+                            Memory_template.asm_name = prefix+phrs.code[idx].value;
+                            Memory_template.scope = scope_name;
+                            Memory_template.dec_as_pointer = ispointer;
+
+                            while (idx+1<phrs.code.length) {
+                                if (phrs.code[idx+1].type === "Arr") { //Array declaration
+                                    idx++;
+                                    dimensions.push(get_array_size(phrs.code[idx].params));
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            // fill more information if it is an array
+                            if (dimensions.length>0){
+                                Memory_template.type="array";
+                                Memory_template.type_name= Memory_template.asm_name;
+                                Memory_template.size = 1+ dimensions.reduce(function (total, num) {
+                                    return total * num; }, 1);
+                            }
+
+                            //Create item in memory_template
+                            ret.push(Memory_template);
+                            //Create array items in memory_template
+                            for (let i=1; i< Memory_template.size; i++) {
+                                let Mem2 = JSON.parse(JSON.stringify(search.Memory_template));
+                                Mem2.name = Memory_template.name+"_"+(i-1),
+                                Mem2.asm_name = Memory_template.asm_name+"_"+(i-1),
+                                Mem2.scope = scope_name;
+                                Mem2.dec_as_pointer = ispointer;
+                                ret.push(Mem2);
+                            }
+
+                            // create array type definition
+                            if (Memory_template.size > 1) {
+                                let TypeD = { type_name: Memory_template.asm_name,
+                                    type: "array",
+                                    arr_dimensions: dimensions,
+                                    arr_multiplier_dim: [] };
+                                let j = dimensions.length-1;
+                                let acc=1;
+                                do {
+                                    TypeD.arr_multiplier_dim.unshift(acc);
+                                    acc*=dimensions[j];
+                                    j--;
+                                } while (j>=0);
+                                Big_ast.typesDefinitions.push(TypeD);
+                            }
+                            valid = false;
+                        }
+                        idx++;
+                    }
                 }
             }
-        });
+            return ret;
+        }
 
-        return table;
+        function assignStructVariable(struc_name, variable_name, ispointer) {
+            let search = Big_ast.typesDefinitions.find(obj => obj.type === "struct" && obj.type_name === struc_name);
+            if (search === undefined) {
+                throw "não ahcei";
+            }
+            let newmemory = [ JSON.parse(JSON.stringify(search.Memory_template)) ];
+            if (!ispointer) {
+                newmemory= newmemory.concat( JSON.parse(JSON.stringify(search.struct_members)) );
+            }
+            newmemory.forEach( function (Mem){
+                if (Mem.name === "") {
+                    Mem.name = variable_name;
+                } else {
+                    Mem.name = variable_name+"_"+Mem.name;
+                }
+                Mem.asm_name = prefix+Mem.name;
+            });
+            return newmemory;
+        }
+
+        // createMemoryTable() code
+        sntcs.forEach( function (phrs) {
+            let memory_template = [];
+            if (phrs.type === "struct") {
+                struct2typedefinition(phrs);
+                memory_template = memory_template.concat(phrase2memoryObject(phrs.phrase));
+            } else if (phrs.type === "phrase") {
+                memory_template = memory_template.concat(phrase2memoryObject(phrs));
+            }
+
+            if (memory_template.length > 0) {
+                Big_ast.memory = Big_ast.memory.concat(memory_template);
+            }
+
+        });
+        return ;
     }
+
+    function createDefaultTypesTable(){
+        return [ {
+            type: 'register',
+            Memory_template: {
+                location: -1,
+                name: "",
+                type: "register",
+                type_name: null,
+                scope: "",
+                size: 1,
+                dec_in_generator: true,
+            }
+        }, {
+            type: 'long',
+            Memory_template: {
+                location: -1,
+                name: "",
+                type: "long",
+                type_name: null,
+                scope: "",
+                size: 1,
+                ispointer: false,
+                dec_in_generator: false,
+            }
+        } ];
+    }
+
 
     //Create table, it will be used for any real program
     function createAPItable(){
@@ -1005,11 +1248,13 @@
         delete func.code;
     });
 
-    Big_ast.Global.declared_vars = createVariablesTable(Big_ast.Global.sentences);
+    Big_ast.typesDefinitions = createDefaultTypesTable();
 
-    Big_ast.functions.forEach(function (func) {
-        func.declared_vars= createVariablesTable(func.sentences);
-    });
+    createMemoryTable(Big_ast.Global.sentences, "");
+
+    for (let i=0; i< Big_ast.functions.length; i++) {
+        createMemoryTable(Big_ast.functions[i], Big_ast.functions[i].name);
+    };
 
     //TODO:
     //  Check for doubles definitions (variables and functions)

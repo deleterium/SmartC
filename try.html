@@ -27,7 +27,7 @@ function compileCode(){
         //document.getElementById("machine-code").innerHTML = asmCode+"\n\n"+asmCode.replace(/\n/g,"\\n")+"\n\n"+JSON.stringify(big_ast_opTree, null, '    ');
         document.getElementById("machine-code").innerHTML = asmCode+"\n\n"+JSON.stringify(big_ast_opTree, null, '    ');
     }catch (e) {
-        document.getElementById("machine-code").innerHTML = e.message+"\n"+e.stack+JSON.stringify(big_ast_opTree, null, '    ');;
+        document.getElementById("machine-code").innerHTML = e.message+"\n"+e.stack+JSON.stringify(big_ast, null, '    ');;
     }
 }
 
