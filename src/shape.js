@@ -26,6 +26,49 @@
         APIFunctions:     false, //enable with #include APIFunctions
     };
 
+    //main function for shapeProgram method, only run once.
+    function shapeProgram_main() {
+
+        prepareBigAst();
+
+        curr=0;
+        Big_ast.Global.sentences = code2sentenceS(Big_ast.Global.code)
+        delete Big_ast.Global.code;
+
+        Big_ast.functions.forEach(function (func) {
+            curr=0;
+            func.sentences= code2sentenceS(func.code);
+            delete func.code;
+        });
+
+        // Macro handler
+        Big_ast.Global.macros.forEach( processMacro );
+        if (Big_ast.Config.version !== Big_ast.Config.compiler_version) {
+            new TypeError("This compiler is version '"+Big_ast.Config.compiler_version+"'. File needs a compiler version '"+Big_ast.Config.version+"'.");
+        }
+
+        Big_ast.typesDefinitions = createDefaultTypesTable();
+
+        addRegistersInMemory();
+
+        createMemoryTable(Big_ast.Global.sentences, "", false);
+
+        for (let i=0; i< Big_ast.functions.length; i++) {
+            createMemoryTable(Big_ast.functions[i].arguments, Big_ast.functions[i].name, true);
+            createMemoryTable(Big_ast.functions[i].sentences, Big_ast.functions[i].name, false);
+        };
+
+        //TODO:
+        //  Check for doubles definitions (variables and functions)
+
+        if (Big_ast.Config.APIFunctions) {
+            Big_ast.Global.APIFunctions = createAPItable();
+        }
+
+        return Big_ast;
+    }
+
+
     // Organize these variables in the Big_ast:
     //   functions[].ReturnType
     //   functions[].ReturnPointer
@@ -57,22 +100,24 @@
                             if (i+1 >= tokens.length)
                                 throw new SyntaxError("At line: " + tokens[i].line + ". Wrong function definition.");
                             if (tokens[i].type === "Keyword" && tokens[i+1].type === "Variable") {
-                                Node = tokens[i+1];
-                                Node.declaration=tokens[i].value;
-                                args.push(Node);
+                                let curr_prev=curr;
+                                curr=0;
+                                args=args.concat( code2sentence( [ tokens[i], tokens[i+1] ], { type: 'Terminator', value: ';' } ) );
+                                curr=curr_prev;
                                 i++;
                                 continue;
                             }
                             if ( i+2 < tokens.length && tokens[i].type === "Keyword" && tokens[i+1].value === "*" && tokens[i+2].type === "Variable") {
-                                Node = tokens[i+2];
-                                Node.declaration=tokens[i].value;
-                                args.push(Node);
+                                let curr_prev=curr;
+                                curr=0;
+                                args=args.concat( code2sentence( [ tokens[i], tokens[i+1], tokens[i+2], { type: 'Terminator', value: ';' } ] ) );
+                                curr=curr_prev;
                                 i+=2;
                                 continue;
                             }
                             if (tokens[i].type === "Delimiter")
                                 continue;
-                            throw new SyntaxError("At line: " + tokens[i].line + ". Token not allowed: " + tokens[i].type );
+                            throw new SyntaxError("At line: " + tokens[i].line + ". Token '"+tokens[i].type+ "' not allowed in function declaration");
                         }
                         Big_ast.Global.code.pop();
                         Big_ast.functions.push(
@@ -290,7 +335,7 @@
 
     // Not recursive. Only top level declarations allowed.
     // This creates only global variables or function scope variables.
-    function createMemoryTable(sntcs, scope_name) {
+    function createMemoryTable(sntcs, scope_name, set_dec_in_generator) {
         var table=[];
         var prefix = "";
         if (scope_name.length > 0) {
@@ -324,7 +369,7 @@
                 type_name: StructTypeD.type_name,
                 scope: old_prefix,
                 size: StructTypeD.struct_members.length+1,
-                dec_in_generator: false,
+                dec_in_generator: set_dec_in_generator,
                 dec_as_pointer: false,
             };
             prefix = old_prefix;
@@ -372,7 +417,8 @@
 
                     Memory_template = JSON.parse(JSON.stringify(search.Memory_template));
                     Memory_template.scope = prefix;
-                    Memory_template.name = phrs.code[2].value
+                    Memory_template.name = phrs.code[2].value;
+                    Memory_template.dec_in_generator=set_dec_in_generator;
 
                     let idx = 2;
                     while (idx < phrs.code.length) {
@@ -466,6 +512,7 @@
                             Memory_template.asm_name = prefix+phrs.code[idx].value;
                             Memory_template.scope = scope_name;
                             Memory_template.dec_as_pointer = ispointer;
+                            Memory_template.dec_in_generator=set_dec_in_generator;
 
                             while (idx+1<phrs.code.length) {
                                 if (phrs.code[idx+1].type === "Arr") { //Array declaration
@@ -661,7 +708,7 @@
                 type_name: null,
                 scope: "",
                 size: 1,
-                ispointer: false,
+                dec_as_pointer: false,
                 dec_in_generator: false,
             }
         } ];
@@ -1325,42 +1372,7 @@
         ];
     }
 
-    prepareBigAst();
-
-    curr=0;
-    Big_ast.Global.sentences = code2sentenceS(Big_ast.Global.code)
-    delete Big_ast.Global.code;
-
-    Big_ast.functions.forEach(function (func) {
-        curr=0;
-        func.sentences= code2sentenceS(func.code);
-        delete func.code;
-    });
-
-    // Macro handler
-    Big_ast.Global.macros.forEach( processMacro );
-    if (Big_ast.Config.version !== Big_ast.Config.compiler_version) {
-        new TypeError("This compiler is version '"+Big_ast.Config.compiler_version+"'. File needs a compiler version '"+Big_ast.Config.version+"'.");
-    }
-
-    Big_ast.typesDefinitions = createDefaultTypesTable();
-
-    addRegistersInMemory();
-
-    createMemoryTable(Big_ast.Global.sentences, "");
-
-    for (let i=0; i< Big_ast.functions.length; i++) {
-        createMemoryTable(Big_ast.functions[i], Big_ast.functions[i].name);
-    };
-
-    //TODO:
-    //  Check for doubles definitions (variables and functions)
-
-    if (Big_ast.Config.APIFunctions) {
-        Big_ast.Global.APIFunctions = createAPItable();
-    }
-
-    return Big_ast;
+    return shapeProgram_main();
 }
 
 
