@@ -32,7 +32,7 @@ function verify(ast) {
         { Current: "Variable", Next: "CodeDomain", Possible: "y"},
         { Current: "Variable", Next: "CodeCave", Possible: "ctf"},
         { Current: "Variable", Next: "Assignment", Possible: "y"},
-        { Current: "Variable", Next: "Arr", Possible: "npo"},
+        { Current: "Variable", Next: "Arr", Possible: "y"},
         { Current: "UnaryOperator", Next: "Variable", Possible: "y"},
         { Current: "UnaryOperator", Next: "UnaryOperator", Possible: "y"},
         { Current: "UnaryOperator", Next: "SetUnaryOperator", Possible: "y"},

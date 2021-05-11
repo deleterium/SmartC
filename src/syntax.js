@@ -46,9 +46,12 @@ function createSyntacticTree(ast) {
                 } else if (ast[i].type === "Member") {
                     Node.param_type.push("Member");
                     i++;
-                    Node.params.push(createSyntacticTree(ast[i]));
-                }
-                else {
+                    //Node.params.push(createSyntacticTree(ast[i]));
+                    Node.params.push(ast[i]);
+                } else if (ast[i].type === "Variable") {
+                    Node.param_type.push("Variable");
+                    Node.params.push(ast[i]);
+                } else {
                     throw new TypeError("At line: "+ast[i].line+". Invalid type of variable modifier: "+ast[i].type);
                 }
             }
@@ -184,6 +187,9 @@ function bigastProcessSyntax(baps_Big_ast) {
 
             } else if (prop === "three_sentences") {
                 ps_Sntc.three_sentences.forEach(stnc => processSentence(stnc));
+
+            } else if (prop === "Phrase") { //matches 'struct'
+                processSentence(ps_Sntc.Phrase);
             }
         }
     }

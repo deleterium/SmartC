@@ -60,6 +60,7 @@
 
         //TODO:
         //  Check for doubles definitions (variables and functions)
+        consolidateMemory();
 
         if (Big_ast.Config.APIFunctions) {
             Big_ast.Global.APIFunctions = createAPItable();
@@ -91,6 +92,7 @@
                     if (sP_ast[curr-1].type == "Keyword" && sP_ast[curr+1].type == "CodeCave" && sP_ast[curr+2].type == "CodeDomain") {
                         args=[];
                         tokens = sP_ast[curr+1].params;
+                        // alteration here, do also in generator.js code 3Ewuinl
                         for (var i=0; i< tokens.length; i++) {
                             if (tokens[i].type === "Keyword" && tokens[i].value === "void" ) {
                                 if ( i!=0 || tokens.length > 1 )
@@ -99,10 +101,10 @@
                             }
                             if (i+1 >= tokens.length)
                                 throw new SyntaxError("At line: " + tokens[i].line + ". Wrong function definition.");
-                            if (tokens[i].type === "Keyword" && tokens[i+1].type === "Variable") {
+                            if (tokens[i].type === "Keyword" && tokens[i].value !== "struct" && tokens[i+1].type === "Variable") {
                                 let curr_prev=curr;
                                 curr=0;
-                                args=args.concat( code2sentence( [ tokens[i], tokens[i+1] ], { type: 'Terminator', value: ';' } ) );
+                                args=args.concat( code2sentence( [ tokens[i], tokens[i+1] , { type: 'Terminator', value: ';' } ] ) );
                                 curr=curr_prev;
                                 i++;
                                 continue;
@@ -115,7 +117,15 @@
                                 i+=2;
                                 continue;
                             }
-                            if (tokens[i].type === "Delimiter")
+                            if ( i+3 < tokens.length && tokens[i].type === "Keyword" && tokens[i].value === "struct" && tokens[i+1].type === "Variable" && tokens[i+2].value === "*" && tokens[i+3].type === "Variable") {
+                                let curr_prev=curr;
+                                curr=0;
+                                args=args.concat( code2sentence( [ tokens[i], tokens[i+1], tokens[i+2], tokens[i+3], { type: 'Terminator', value: ';' } ] ) );
+                                curr=curr_prev;
+                                i+=3;
+                                continue;
+                            }
+                                if (tokens[i].type === "Delimiter")
                                 continue;
                             throw new SyntaxError("At line: " + tokens[i].line + ". Token '"+tokens[i].type+ "' not allowed in function declaration");
                         }
@@ -306,14 +316,14 @@
                             line: codetrain[curr-2].line,
                             name: codetrain[curr-1].value,
                             members: code2sentence(codetrain),
-                            phrase: {type: "phrase", code: [] } };
-                        Node.phrase.code.push(codetrain[curr-2], codetrain[curr-1]);
+                            Phrase: {type: "phrase", code: [] } };
+                        Node.Phrase.code.push(codetrain[curr-2], codetrain[curr-1]);
                         curr++;
                         while (curr < codetrain.length) {
                             if (codetrain[curr].type === "Terminator") {
                                 return [ Node ];
                             }
-                            Node.phrase.code.push(codetrain[curr]);
+                            Node.Phrase.code.push(codetrain[curr]);
                             curr++;
                         }
                         throw new SyntaxError("At end of file. Wrong 'struct' declaration. Missing ';'");
@@ -354,12 +364,13 @@
             //create struct type definition
             let StructTypeD = { type_name: prefix+stru_phrase.name,
                 type: "struct",
-                struct_members: [] };
+                struct_members: [],
+                struct_size_acc: [] };
 
             let old_prefix = prefix;
             prefix = "";
             stru_phrase.members.forEach ( function (struphrs) {
-                StructTypeD.struct_members = StructTypeD.struct_members.concat(phrase2memoryObject(struphrs));
+                StructTypeD.struct_members = StructTypeD.struct_members.concat(phrase2memoryObject(struphrs,stru_phrase.name));
             });
 
             StructTypeD.Memory_template = {
@@ -367,23 +378,32 @@
                 name: "",
                 type: "struct",
                 type_name: StructTypeD.type_name,
-                scope: old_prefix,
-                size: StructTypeD.struct_members.length+1,
+                scope: scope_name,
+                size: StructTypeD.struct_members.length,
                 dec_in_generator: set_dec_in_generator,
                 dec_as_pointer: false,
             };
+
+            let size_acc=0;
+            StructTypeD.struct_members.forEach ( function (memb){
+                StructTypeD.struct_size_acc.push([ memb.name, size_acc ]);
+                if (memb.type!=="struct" || memb.dec_as_pointer!==false) //Remeber to change here code yolj1A
+                    size_acc++;
+            });
             prefix = old_prefix;
             Big_ast.typesDefinitions.push(StructTypeD);
         }
 
         // takes a phrase and returns an array of Memory {}
         //   fills types definitions of necessary
-        function phrase2memoryObject(phrs){
+        function phrase2memoryObject(phrs, structName){
 
             let Token;
             let Memory_template;
             let ret = [];
             let ispointer = false;
+            if (structName === undefined) structName="";
+            else structName+="_";
 
             if (phrs.code[0].type === "Keyword" && phrs.code[0].value === "label" ) {
                 //transform this label in a fake variable
@@ -404,24 +424,21 @@
 
                 if (   phrs.code[0].value === "struct"){
                     if (phrs.code.length<3){
-                        throw "erro no struct!"
+                        return;
                     }
                     let search = Big_ast.typesDefinitions.find(obj => obj.type_name == phrs.code[1].value && obj.type === phrs.code[0].value );
                     if (search === undefined && prefix.length > 0 ) {
                         search = Big_ast.typesDefinitions.find(obj => obj.type_name == prefix+phrs.code[1].value && obj.type === phrs.code[0].value );
                     }
                     if (search === undefined) {
-                        throw "não achei type definition";
+                        throw new TypeError("At line: "+phrs.code[1].line+". Could not find type definition for 'struct' '"+phrs.code[1].value);
                     }
-                    let dimensions = [];
-
-                    Memory_template = JSON.parse(JSON.stringify(search.Memory_template));
-                    Memory_template.scope = prefix;
-                    Memory_template.name = phrs.code[2].value;
-                    Memory_template.dec_in_generator=set_dec_in_generator;
 
                     let idx = 2;
                     while (idx < phrs.code.length) {
+                        let dimensions = [];
+                        Memory_template = JSON.parse(JSON.stringify(search.Memory_template));
+
                         if ( phrs.code[idx].type === "Delimiter") {
                             idx++;
                             continue;
@@ -431,6 +448,9 @@
                             Memory_template.dec_as_pointer=true;
                             idx++;
                         }
+                        Memory_template.name = phrs.code[idx].value;
+                        Memory_template.scope = scope_name;
+                        Memory_template.dec_in_generator=set_dec_in_generator;
 
                         if ( phrs.code[idx].type === "Variable") {
                             while (idx+1<phrs.code.length) {
@@ -472,7 +492,11 @@
                                 }
 
                             } else { //is not array of structs
-                                ret=ret.concat(assignStructVariable(phrs.code[1].value,phrs.code[idx].value, ispointer));
+                                if (ispointer) {
+                                    ret=ret.concat(Memory_template);
+                                } else {
+                                    ret=ret.concat(assignStructVariable(phrs.code[1].value,phrs.code[idx].value, ispointer));
+                                }
                             }
                             idx++;
                             continue;
@@ -480,7 +504,7 @@
                         if ( phrs.code[idx].type === "Terminator") {
                             break;
                         }
-
+                        throw new TypeError("At line: "+phrs.code[idx].line+". Invalid element (type: '"+phrs.code[idx].type+"' value: '"+phrs.code[idx].value+"') found in struct definition!");
                     }
                     return ret;
                 }
@@ -545,7 +569,7 @@
 
                             // create array type definition
                             if (Memory_template.size > 1) {
-                                let TypeD = { type_name: Memory_template.asm_name,
+                                let TypeD = { type_name: structName+Memory_template.asm_name,
                                     type: "array",
                                     arr_dimensions: dimensions,
                                     arr_multiplier_dim: [] };
@@ -568,10 +592,15 @@
         }
 
         function assignStructVariable(struc_name, variable_name, ispointer) {
+
             let search = Big_ast.typesDefinitions.find(obj => obj.type === "struct" && obj.type_name === struc_name);
-            if (search === undefined) {
-                throw "não ahcei";
+            if (search === undefined && prefix.length > 0 ) {
+                search = Big_ast.typesDefinitions.find(obj => obj.type === "struct" && obj.type_name === prefix+struc_name );
             }
+            if (search === undefined) {
+                throw new TypeError("Could not find type definition for 'struct' '"+struc_name);
+            }
+
             let newmemory = [ JSON.parse(JSON.stringify(search.Memory_template)) ];
             if (!ispointer) {
                 newmemory= newmemory.concat( JSON.parse(JSON.stringify(search.struct_members)) );
@@ -589,15 +618,15 @@
 
         // createMemoryTable() code
         sntcs.forEach( function (phrs) {
-            let memory_template = [];
+            let memory_template;
             if (phrs.type === "struct") {
                 struct2typedefinition(phrs);
-                memory_template = memory_template.concat(phrase2memoryObject(phrs.phrase));
+                memory_template = phrase2memoryObject(phrs.Phrase);
             } else if (phrs.type === "phrase") {
-                memory_template = memory_template.concat(phrase2memoryObject(phrs));
+                memory_template = phrase2memoryObject(phrs);
             }
 
-            if (memory_template.length > 0) {
+            if (memory_template !== undefined && memory_template.length > 0) {
                 Big_ast.memory = Big_ast.memory.concat(memory_template);
             }
 
@@ -685,6 +714,18 @@
         }
     }
     
+    function consolidateMemory(){
+        var var_counter=0;
+        Big_ast.memory.forEach( function (thisvar){
+            if (thisvar.type === "struct" && thisvar.dec_as_pointer===false) {//Remeber to change here code yolj1A
+                thisvar.value=var_counter.toString(16).padStart(16,"0");
+            } else {
+                thisvar.location=var_counter;
+                var_counter++;
+            }
+        });
+    }
+
     function createDefaultTypesTable(){
         return [ {
             type: 'register',

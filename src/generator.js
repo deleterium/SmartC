@@ -7,18 +7,6 @@
 
 function bigastCompile(bc_Big_ast){
 
-    // configurations for compiler
-    const bc_config = {
-        compiler_version: "0",   //sets this compiler version!!!
-        enableRandom:     false, //enable with #pragma enableRandom true
-        maxAuxVars:       5,     //change with #pragma max_auxVars N
-        reuseAssignedVar: true,  //disable with #pragma reuseAssignedVar false
-        useVariableDeclaration: true, //change with #pragma useVariableDeclaration false
-        version: "0",            //change with #pragma version 0
-        warningToError:   true,  //change with #pragma warningToError false
-        APIFunctions:     false, //enable with #include APIFunctions
-    };
-
     // holds variables needed during compilation
     const bc_auxVars = {
         latest_loop_id: [],
@@ -27,7 +15,7 @@ function bigastCompile(bc_Big_ast){
         current_function: -1,
 
         getNewJumpID: function () {
-            if (bc_config.enableRandom === true)
+            if (bc_Big_ast.Config.enableRandom === true)
                 return Math.random().toString(36).substr(2,5);
 
             this.jump_id++;
@@ -40,6 +28,48 @@ function bigastCompile(bc_Big_ast){
         }
     };
 
+    //main function for bigastCompile method, only run once.
+    function bigastCompile_main(){
+
+
+        // add variables declaration
+        if ( bc_Big_ast.Config.useVariableDeclaration) {
+            bc_Big_ast.memory.forEach( assemblerDeclarationGenerator );
+        }
+
+        // Add code for global sentences
+        bc_auxVars.current_function = -1;
+        bc_Big_ast.Global.sentences.forEach( compileSentence );
+
+        // For every function:
+        bc_auxVars.current_function = 0;
+        while (bc_auxVars.current_function < bc_Big_ast.functions.length) {
+
+            writeAsmLine(""); //blank line to be nice to debugger!
+            // add variables declararion
+            if ( bc_Big_ast.Config.useVariableDeclaration) {
+                bc_Big_ast.functions[bc_auxVars.current_function].arguments.forEach( declareFunctionArguments );
+            }
+
+            functionHeaderGenerator();
+
+            // add code for functions sentences.
+            bc_Big_ast.functions[bc_auxVars.current_function].sentences.forEach( compileSentence );
+
+            functionTailGenerator();
+
+            bc_auxVars.current_function++;
+        }
+
+        //always end with FIN!
+        if (bc_auxVars.assemblyCode.lastIndexOf("FIN")+4 != bc_auxVars.assemblyCode.length) {
+            writeAsmLine("FIN");
+        }
+
+        //TODO Optimize code;
+
+        return bc_auxVars.assemblyCode;
+    }
 
 
     // Traverse the AST created by syntaxer and creates a stream of assembly
@@ -91,7 +121,7 @@ function bigastCompile(bc_Big_ast){
             },
 
             createTmpVarsTable: function () {
-                for (let i=0; i<bc_config.maxAuxVars; i++){
+                for (let i=0; i<bc_Big_ast.Config.maxAuxVars; i++){
                     this.tmpvars.push("r"+i);
                     this.status.push(false);
                 }
@@ -105,6 +135,49 @@ function bigastCompile(bc_Big_ast){
         };
 
 
+        // main function for codeGenerator method. Runs only once.
+        function codeGenerator_main(){
+            auxVars.createTmpVarsTable();
+
+            var code, jmpTrueTarget;
+
+            if (cg_jumpTarget === undefined) {
+                code=genCode(cg_ast, false, false, cg_jumpTarget, jmpTrueTarget);
+                if (auxVars.isTemp(code.varname)) {
+                    var line;
+                    if (cg_ast.line !== undefined) {
+                        line = cg_ast.line;
+                    } else if (cg_ast.Operation.line !== undefined) {
+                        line = cg_ast.Operation.line;
+                    }
+                    if (bc_Big_ast.Config.warningToError) {
+                        throw new TypeError("At line: "+line+". Warning: sentence returned a value that is not being used.");
+                    }
+                }
+            } else {
+                jmpTrueTarget= cg_jumpTarget.slice(0,cg_jumpTarget.lastIndexOf("_"))+"_start";
+                code=genCode(cg_ast,  true, false, cg_jumpTarget, jmpTrueTarget);
+            }
+
+            code.instructionset+=auxVars.postOperations;
+            if (cg_jumpTarget !== undefined)
+                code.instructionset+=createInstruction({type: "Label"},jmpTrueTarget);
+
+            //optimizations for jumps and labels
+            if (code.instructionset.indexOf(":") >=0) {
+                if (cg_ast.type !== undefined) {
+                    if (cg_ast.type === "Keyword" && cg_ast.value === "label") {
+                        return code.instructionset; //do not optimize!!!
+                    }
+                }
+                //code.instructionset+="\n\n"+optimizeJumps(code.instructionset);
+                code.instructionset=optimizeJumps(code.instructionset);
+            }
+
+            return code.instructionset;
+        }
+
+        // here the hardwork to compile expressions
         function genCode(objTree, logicalOp, gc_revLogic, gc_jumpFalse, gc_jumpTrue) {
 
             if (objTree.Operation === undefined) { //end object
@@ -137,6 +210,52 @@ function bigastCompile(bc_Big_ast){
                         return { varname: asmVarName, instructionset: "" } ;
                     }
 
+/*
+                        let instructionstrain="";
+                        let Obj;
+                        Obj = { mem_addr: getVarMemAddr(objTree),
+                            offset_var: -1,
+                            offset_const: "",
+                            var_declaration: objTree.declaration,
+                            var_size: 1,
+                            hex_content: "" };
+ 
+                        if (objTree.params !== undefined){
+
+                            Obj = processArrVar(objTree);
+                            let Offset;
+                            let arrCode = genCode(objTree.params[0], false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                            retinstr+=arrCode.instructionset;
+                            Offset = arrCode.VarObj;
+
+                            for (let i=1; i< objTree.params.length; i++) {
+                                //TODO
+                                if (i != objTree.params.length - 1 ) { //not last
+                                    let multiplier=1;
+                                    for (let j=i; j<objTree.params.length; j++){
+                                        multiplier*= variable_array_definition_size;
+                                    }
+                                    if (auxVars.isConst(Offset)){
+                                        Offset.hex_content = (Offset.hex_content.parseInt(16) * multiplier ).toString(16).padStart(16,"0");
+                                    } else {
+                                        retinstr+=createInstruction(MULTIPLY, Offset, multiplier);
+                                    }
+                                }
+                                let arrCode = genCode(objTree.params[i], false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                                retinstr+=arrCode.instructionset;
+                                if (!auxVars.isTemp(arrCode.VarObj)) {
+                                    tempvar = auxVars.getNewTemp();
+                                } else {
+                                    tempvar = arrCode.VarObj;
+                                }
+                            }
+                            retinstr+=createInstruction(ADD, tempvar, multiplier)
+                        }
+
+                        return { VarObj: Obj, instructionset: "" } ;
+
+                   // }
+*/
                     if (objTree.type === 'Keyword'){
 
                         if (objTree.value === 'break' || objTree.value === 'continue'
@@ -167,24 +286,17 @@ function bigastCompile(bc_Big_ast){
                     }
 
                     if (objTree.type === 'Constant') {
-                        let val;
-                        if (objTree.name === 'NumberDecimalStr')
-                            val = BigInt(objTree.value).toString(16).padStart(16,'0');
-                        else if (objTree.name === 'NumberHexStr')
-                            val = objTree.value.replace("0x","").padStart(16,'0');
-                        else if (objTree.name === 'String') {
-                            if ( objTree.value.startsWith("BURST-") ) {
-                                val = rsDecode(objTree.value.slice(6)).padStart(16,'0');
-                            } else {
-                                val = str2long(objTree.value);
-                            }
+                        let Obj= { mem_addr: -1,
+                            offset_var: -1,
+                            offset_const: "",
+                            var_declaration: undefined,
+                            var_size: val.length/16,
+                            hex_content: objTree.value };
 
-                        } else
-                            throw new RangeError("At line:"+objTree.line+". Values this type not implemented: "+objTree.Name);
-
-                        return { varname: "#"+val, instructionset: "" } ;
+                        return { VarObj: Obj, instructionset: "" } ;
                     }
-                    return { instructionset: "" };
+                    throw new TypeError("At line:"+objTree.line+". End object not implemented: "+objTree.type+" "+objTree.name);
+                    //return { instructionset: "" };
                 }
 
             } else { //operation object
@@ -195,15 +307,15 @@ function bigastCompile(bc_Big_ast){
                 let instructionstrain="";
 
                 if (objTree.Operation.type === 'Arr') {
-                    let asmVarName = getVarAsmName(objTree.Left);
+                    //left=genCode(objTree.Left, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
 
                     if (auxVars.declaring.length != 0) {
                         // do not do any other operation when declaring an array.
                         return { instructionset: "" };
                     }
 
-                    if (objTree.Right.type === 'Constant' && objTree.Right.value == '0') {//special case
-                        return { varname: asmVarName+"$", instructionset: "" } ;
+                    if (objTree.Right.type === 'Constant' && objTree.Right.name === 'NumberDecimalStr') {//special case, no need array notation
+                        return { varname: asmVarName+"_"+objTree.Right.value, instructionset: "" } ;
                     }
 
                     right=genCode(objTree.Right, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
@@ -232,7 +344,7 @@ function bigastCompile(bc_Big_ast){
 
                     let search = bc_Big_ast.functions.find(val => val.name === objTree.Left.value );
                     if (search === undefined) {
-                        if (bc_config.APIFunctions){
+                        if (bc_Big_ast.Config.APIFunctions){
                             search = bc_Big_ast.Global.APIFunctions.find(val => val.name === objTree.Left.value );
                             if (search === undefined) {
                                 throw new TypeError("At line: "+objTree.Left.line+". Function '"+objTree.Left.value+"' not declared.");
@@ -621,9 +733,11 @@ function bigastCompile(bc_Big_ast){
                     left=genCode(objTree.Left, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
                     instructionstrain+=left.instructionset;
 
-                    if (left.varname === undefined)
+                    if (left.VarObj === undefined)
                         throw new SyntaxError("At line: "+objTree.Operation.line+". Trying to assign undefined variable");
-                    if (auxVars.isTemp(left.varname))
+                    if (left.VarObj.mem_addr == -1 )
+                        throw new TypeError("At line: "+objTree.Operation.line+". Invalid left value for "+objTree.Operation.type);
+                    if (left.VarObj.mem_addr < bc_Big_ast.Config.maxAuxVars && bc_Big_ast.Config.useVariableDeclaration == 1 )
                         throw new TypeError("At line: "+objTree.Operation.line+". Invalid left value for "+objTree.Operation.type);
 
                     let temp_declare="";
@@ -634,10 +748,11 @@ function bigastCompile(bc_Big_ast){
                     //check if we can reuse variables used on assignment
                     //then add it to auxVars.tmpvars
                     if ( objTree.Operation.type === "Assignment"
-                        && bc_config.reuseAssignedVar === true
-                        && left.varname.indexOf("$") == -1
-                        && CanReuseAssignedVar(left.varname, objTree.Right) ){
-                        auxVars.tmpvars.unshift(left.varname);
+                        && bc_Big_ast.Config.reuseAssignedVar === true
+                        && left.VarObj.offset_var == -1
+                        && left.VarObj.offset_const == -1
+                        && CanReuseAssignedVar(bc_Big_ast.mem_table[left.VarObj.mem_addr], objTree.Right) ){
+                        auxVars.tmpvars.unshift(bc_Big_ast.mem_table[left.VarObj.mem_addr+ left.VarObj.mem_offset]);
                         auxVars.status.unshift(false);
                         right=genCode(objTree.Right, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
                         auxVars.tmpvars.shift();
@@ -649,14 +764,18 @@ function bigastCompile(bc_Big_ast){
                         auxVars.declaring=temp_declare;
                     }
 
-                    if (right.varname === undefined) {
+                    if (right.VarObj === undefined) {
                         throw new TypeError("At line: "+objTree.Operation.line+". Invalid right value for "+objTree.Operation.type+". Possible void value.");
                     }
-                    instructionstrain+=createInstruction(objTree.Operation, left.varname, right.varname);
+                    if (left.VarObj.size != right.VarObj.size){
+                        throw new TypeError("At line: "+objTree.Operation.line+". Size of left and right values does not match.");
+                    }
 
-                    auxVars.freeVar(left.varname);
-                    auxVars.freeVar(right.varname);
-                    return { varname: left.varname, instructionset: instructionstrain } ;
+                    instructionstrain+=createInstruction(objTree.Operation, left.VarObj, right.VarObj);
+
+                    //auxVars.freeVar(left.varname);
+                    //auxVars.freeVar(right.varname);
+                    return { VarObj: left.VarObj, instructionset: instructionstrain } ;
                 }
 
                 if (objTree.Operation.type === "Keyword" ) {
@@ -821,21 +940,34 @@ function bigastCompile(bc_Big_ast){
 
             if (objoperator.type === 'Assignment') {
 
-                if (param1.indexOf("#") >= 0)
-                    throw new SyntaxError("Can not assign a value to a constant");
+                if (param1.mem_addr == -1)
+                    throw new TypeError("Invalid left side for assigment.");
 
-                else if (param1.indexOf("$") == -1) { //param 1 is NOT an Array!
+                let idx_1, idx_2;
+                if (param1.offset_const != "") idx_1=parseInt(param1.offset_const,16);
+                else idx_1=0;
+                if (param2.offset_const != "") idx_2=parseInt(param2.offset_const,16);
+                else idx_2=0;
 
-                    if (param2.indexOf("#") >= 0 ) {
-                        if (param2 === "#0000000000000000")
-                            return "CLR @"+param1+"\n";
-                        else {
-                            if (param2.length > 17) {
+                if (param1.offset_var == -1 ) { //param 1 can be direct assigned
+
+                    if (param2.mem_addr == -1 ) { // Can use SET_VAL or CLR_DAT
+                        let val=parseInt(param2.hex_content,16);
+                        if (val == 0) {
+                            return "CLR @"+bc_Big_ast.mem_table[param1.mem_addr+idx_1]+"\n";
+                        } else {
+                            if (param2.hex_content.length > 17) {
                                 throw new RangeError("Overflow on long value assignment (value bigger than 64 bits)");
                             }
-                            return "SET @"+param1+" "+param2.toLowerCase()+"\n";
+                            return "SET @"+bc_Big_ast.mem_table[param1.mem_addr+idx_1]+" #"+param2.hex_content+"\n";
                         }
                     }
+                    if (param2.offset_var == -1 ) { // Can use SET_DAT
+                        if (param1.mem_addr+idx_1 == param2.mem_addr+idx_2) return "";
+                        else return "SET @"+bc_Big_ast.mem_table[param1.mem_addr+idx_1]+" $"+bc_Big_ast.mem_table[param2.mem_addr+idx_2]+"\n";
+                    }
+                    //need to use SET_IDX
+                    return "SET @"+bc_Big_ast.mem_table[param1.mem_addr+idx_1]+" $("+bc_Big_ast.mem_table[param2.mem_addr+idx_2]+" + "+bc_Big_ast.mem_table[param2.offset_var]+")\n";
 
                     if (param2.indexOf("$") >= 0 ) {
                         let idx= param2.split("$");
@@ -1112,122 +1244,6 @@ function bigastCompile(bc_Big_ast){
         }
 
 
-        // Input: javascript string (utf-16)
-        // Output: string representing same string in hexadecimal utf-8
-        function str2long(in_str)
-        {
-            if ( !(typeof in_str === 'string' || in_str instanceof String) )
-                return undefined;
-
-            var byarr = [];
-            var ret = "";
-            var c,c1, i, j;
-
-            for (i=0; i<in_str.length; i++) {
-                c = in_str.charCodeAt(i);
-
-                if (c < 128)
-                    byarr.push(c);
-                else {
-                    if (c < 2048) {
-                        byarr.push(c>>6 | 0xc0);    //ok
-                        byarr.push((c & 63) | 128); //ok
-                    } else {
-                        if (c < 55296 || c > 57343) {
-                            byarr.push(((c >> 12 ) & 63) | 0xe0); //ok
-                            byarr.push(((c >> 6 ) & 63) | 128); //ok
-                            byarr.push((c & 63) | 128); //ok
-                        } else {
-                            i++;
-                            c1 = in_str.charCodeAt(i);
-                            if ((c & 0xFC00) == 0xd800 && (c1 & 0xFC00) == 0xDC00) {
-                                c = ((c & 0x3FF) << 10) + (c1 & 0x3FF) + 0x10000;
-                                byarr.push(((c >> 18 ) & 63) | 0xf0); //ok
-                                byarr.push(((c >> 12 ) & 63) | 128); //ok
-                                byarr.push(((c >> 6 ) & 63) | 128); //ok
-                                byarr.push((c & 63) | 128); //ok
-                            }
-                        }
-                    }
-                }
-            }
-            if (byarr.length > 8)
-                throw new RangeError("String bigger than 8 bytes: "+in_str);
-            for (j=0; j<8; j++){
-                if (j >= byarr.length)
-                    ret="00"+ret;
-                else
-                    ret=byarr[j].toString(16).padStart(2, '0')+ret;
-            }
-            return(ret);
-        }
-
-        function rsDecode(cypher_string) {
-
-            var gexp = [ 1, 2, 4, 8, 16, 5, 10, 20, 13, 26, 17, 7, 14, 28, 29, 31, 27, 19, 3, 6, 12, 24, 21, 15, 30, 25, 23, 11, 22, 9, 18, 1 ];
-            var glog = [ 0, 0, 1, 18, 2, 5, 19, 11, 3, 29, 6, 27, 20, 8, 12, 23, 4, 10, 30, 17, 7, 22, 28, 26, 21, 25, 9, 16, 13, 14, 24, 15 ];
-            var alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-            var codeword_map = [ 3, 2, 1, 0, 7, 6, 5, 4, 13, 14, 15, 16, 12, 8, 9, 10, 11 ];
-
-            function gmult(a, b) {
-                if (a == 0 || b == 0) {
-                  return 0;
-                }
-                var idx = (glog[a] + glog[b]) % 31;
-                return gexp[idx];
-            }
-
-            function is_codeword_valid(codeword) {
-                var sum = 0;
-                var i, j, t, pos;
-
-                for ( i = 1; i < 5; i++) {
-                    t = 0;
-                    for ( j = 0; j < 31; j++) {
-                        if (j > 12 && j < 27) {
-                            continue;
-                        }
-                        pos = j;
-                        if (j > 26) {
-                            pos -= 14;
-                        }
-                        t ^= gmult(codeword[pos], gexp[(i * j) % 31]);
-                    }
-                  sum |= t;
-                }
-
-                return sum == 0;
-            }
-
-            var codeword_length = 0;
-            var codeword = [];
-            var i;
-            var codework_index;
-
-            for (i=0; i < cypher_string.length; i++ ) {
-                var position_in_alphabet = alphabet.indexOf(cypher_string.charAt(i));
-                if (position_in_alphabet <= -1) {
-                    continue;
-                }
-                codework_index = codeword_map[codeword_length];
-                codeword[codework_index] = position_in_alphabet;
-                codeword_length++;
-            }
-            if (codeword_length != 17 || !is_codeword_valid(codeword)) {
-                throw new TypeError("Error decoding BURST address: BURST-"+cypher_string);
-            }
-
-            //base32 to base10 conversion
-            var length = 13;
-            var big_val=0n;
-            var big_mul=1n;
-            for (i = 0; i < length; i++) {
-                big_val += big_mul * BigInt(codeword[i]);
-                big_mul *= 32n;
-            }
-
-            return big_val.toString(16);
-        }
 
         // Input: Assembler code from genCode()
         // Output: Optimized assembler
@@ -1335,19 +1351,28 @@ function bigastCompile(bc_Big_ast){
             return ret;
         }
 
+        return codeGenerator_main();
+    }
 
-        //get variable name and checks its declaration
-        function getVarAsmName(obj_variable) {
-            let search;
+/*
+    //get variable name and checks its declaration
+    function getVarMemAddr(obj_variable) {
+        let search;
 
-            if (bc_config.useVariableDeclaration === false) {
-                return obj_variable.value;
+        if (bc_Big_ast.Config.useVariableDeclaration === false) {
+            let idx = bc_Big_ast.mem_table.findIndex(val => val == obj_variable.value);
+            if (idx == -1) {
+                bc_Big_ast.mem_table.push(obj_variable.value);
+                idx = bc_Big_ast.mem_table.length-1;
             }
+            return idx;
+        }
 
-            search = bc_Big_ast.Global.declared_vars.find(val => val.value === obj_variable.value );
+        search = bc_Big_ast.Global.declared_vars.find(val => val.value === obj_variable.value );
 
-            //variable declaration in global section
-            if (bc_auxVars.current_function == -1 && auxVars.declaring.length != 0 ) {
+        //variable declaration treated here
+        if (auxVars.declaring.length != 0) {
+            if (bc_auxVars.current_function == -1) {
                 if (search === undefined) {
                     throw new SyntaxError("At line: "+line+". Variable '"+obj_variable.value+"' not declared. BUGREPORT PLEASE");
                 }
@@ -1355,12 +1380,11 @@ function bigastCompile(bc_Big_ast){
                     throw new SyntaxError("At line: "+obj_variable.line+". Variable '"+obj_variable.value+"' already declared at line: "+search.line);
                 }
                 search.dec_in_generator = "yes";
-                search.asmName = obj_variable.value;
-                return search.asmName;
+                return bc_Big_ast.mem_table.findIndex(val => val == obj_variable.value);
             }
 
             // we are in declaration sentence inside a function
-            if (bc_auxVars.current_function != -1 && auxVars.declaring.length != 0 ) { 
+            if (bc_auxVars.current_function != -1 ) { 
                 if (search !== undefined) {
                     throw new SyntaxError("At line: "+obj_variable.line+". Variable '"+obj_variable.value+"' declared but there is a global variable with same name.");
                 }
@@ -1372,71 +1396,39 @@ function bigastCompile(bc_Big_ast){
                     throw new SyntaxError("At line: "+obj_variable.line+". Variable '"+obj_variable.value+"' already declared at line: "+search.line);
                 }
                 search.dec_in_generator = "yes";
-                search.asmName = bc_Big_ast.functions[bc_auxVars.current_function].name+"_"+obj_variable.value;
-                return search.asmName;
+                return bc_Big_ast.mem_table.findIndex(val => val == bc_Big_ast.functions[bc_auxVars.current_function].name+"_"+obj_variable.value);
             }
+        }
 
-            // function section
-            if (bc_auxVars.current_function != -1) {
-                if (search !== undefined) { //global variable found
-                    if (search.dec_in_generator === "no") {
-                        throw new SyntaxError("At line: "+obj_variable.line+". Using Variable '"+obj_variable.value+"' before declaration. It is declared at line: "+search.line+".");
-                    }
-                    return search.asmName; //found global variable
+        // not declaration, inside a function
+        if (bc_auxVars.current_function != -1) {
+            if (search !== undefined) { //global variable found
+                if (search.dec_in_generator === "no") {
+                    throw new SyntaxError("At line: "+obj_variable.line+". Using Variable '"+obj_variable.value+"' before declaration. It is declared at line: "+search.line+".");
                 }
-                search = bc_Big_ast.functions[bc_auxVars.current_function].declared_vars.find(val => val.value === obj_variable.value );
+                return bc_Big_ast.mem_table.findIndex(val => val == obj_variable.value);
             }
-
-            // search variable is ok to be returned, do checks!
+            search = bc_Big_ast.functions[bc_auxVars.current_function].declared_vars.find(val => val.value === obj_variable.value );
             if (search === undefined) {
                 throw new SyntaxError("At line: "+obj_variable.line+". Variable '"+obj_variable.value+"' not declared.");
             }
             if (search.dec_in_generator === "no") {
                 throw new SyntaxError("At line: "+obj_variable.line+". Using Variable '"+obj_variable.value+"' before declaration.");
             }
-
-            return search.asmName;
+            return bc_Big_ast.mem_table.findIndex(val => val == bc_Big_ast.functions[bc_auxVars.current_function].name+"_"+obj_variable.value);
         }
 
-        auxVars.createTmpVarsTable();
-
-        var code, jmpTrueTarget;
-
-        if (cg_jumpTarget === undefined) {
-            code=genCode(cg_ast, false, false, cg_jumpTarget, jmpTrueTarget);
-            if (auxVars.isTemp(code.varname)) {
-                var line;
-                if (cg_ast.line !== undefined) {
-                    line = cg_ast.line;
-                } else if (cg_ast.Operation.line !== undefined) {
-                    line = cg_ast.Operation.line;
-                }
-                if (bc_config.warningToError) {
-                    throw new TypeError("At line: "+line+". Warning: sentence returned a value that is not being used.");
-                }
-            }
-        } else {
-            jmpTrueTarget= cg_jumpTarget.slice(0,cg_jumpTarget.lastIndexOf("_"))+"_start";
-            code=genCode(cg_ast,  true, false, cg_jumpTarget, jmpTrueTarget);
+        // not declaration, Global section
+        if (search === undefined) {
+            throw new SyntaxError("At line: "+obj_variable.line+". Variable '"+obj_variable.value+"' not declared.");
+        }
+        if (search.dec_in_generator === "no") {
+            throw new SyntaxError("At line: "+obj_variable.line+". Using Variable '"+obj_variable.value+"' before declaration.");
         }
 
-        code.instructionset+=auxVars.postOperations;
-        if (cg_jumpTarget !== undefined)
-            code.instructionset+=createInstruction({type: "Label"},jmpTrueTarget);
-
-        //optimizations for jumps and labels
-        if (code.instructionset.indexOf(":") >=0) {
-            if (cg_ast.type !== undefined) {
-                if (cg_ast.type === "Keyword" && cg_ast.value === "label") {
-                    return code.instructionset; //do not optimize!!!
-                }
-            }
-            //code.instructionset+="\n\n"+optimizeJumps(code.instructionset);
-            code.instructionset=optimizeJumps(code.instructionset);
-        }
-
-        return code.instructionset;
+        return bc_Big_ast.mem_table.findIndex(val => val == obj_variable.value);
     }
+*/
 
     function isEmpty(obj) {
         for(var prop in obj) {
@@ -1447,60 +1439,103 @@ function bigastCompile(bc_Big_ast){
     }
 
     function writeAsmLine(line){
-        bc_auxVars.assemblyCode+=line+"\n";
+        if (line.length != 0){
+            bc_auxVars.assemblyCode+=line+"\n";
+        }
     }
     function writeAsmCode(lines){
         bc_auxVars.assemblyCode+=lines;
     }
 
+    //Não verififcado!
+    function declareFunctionArguments (phrase) {
+        if (phrase.type !== "phrase"){
+            throw new TypeError("Unexpected sentence in function arguments");
+        }
+        // alteration here, do also in shape.js code 3Ewuinl
+        for (var i=0; i< phrase.code.length; i++) {
+            let MemObj;
+            if (i+1 < tokens.length && phrase.code[i].type === "Keyword" && phrase.code[i].value !== "struct" && phrase.code[i+1].type === "Variable") {
+                MemObj=getMemoryObjectName(phrase.code[i+1].name);
+            } else if ( i+2 < phrase.code.length && phrase.code[i].type === "Keyword" && phrase.code[i+1].value === "*" && phrase.code[i+2].type === "Variable") {
+                MemObj=getMemoryObjectName(phrase.code[i+2].name);
+            } else if ( i+3 < phrase.code.length && phrase.code[i].type === "Keyword" && phrase.code[i].value === "struct" && phrase.code[i+1].type === "Variable" && phrase.code[i+2].value === "*" && phrase.code[i+3].type === "Variable") {
+                MemObj=getMemoryObjectName(phrase.code[i+3].name);
+            } else {
+                throw new SyntaxError("Unexpected sentence in function arguments");
+            }
+
+            if (MemObj === undefined){
+                throw new SyntaxError("At line: "+phrase.code[i+1].line+". Could not find memory object for '"+phrase.code[i+1].name+"'.");
+            } else {
+                //TODO true for all struc elements also code bbdD))k
+                MemObj.dec_in_generator=true;
+            }
+
+        }
+    }
+
+
     // handles variables declarations to assembly code.
-    function declarationGenerator (Args) {
-
-        var prefix="";
-        if (bc_auxVars.current_function >= 0){
-            prefix = bc_Big_ast.functions[bc_auxVars.current_function].name+"_";
-        }
-        if (Args.type !== "Variable") {
-            throw new TypeError("At line: "+ Args.line + ". Wrong token type for declaration. Expected 'Variable', got: " + Args.type);
-        }
-        if (Args.declaration === "label") {
-            return; //do nothing
-        }
-        if (Args.mod_array === "no") {
-            if (Args.size != 1) {
-                throw new TypeError("At line: "+ Args.line + ". Wrong size for variable declaration. Expected '1', got: " + Args.size);
-            }
-            if (Args.declaration === "long") {
-                if (bc_auxVars.current_function == -1){
-                    writeAsmLine("^declare "+Args.value);
-                } else {
-                    writeAsmLine("^declare "+prefix+Args.value);
-                }
-            }
-        } else { //mod_array === yes
-            if (Args.declaration === "long") {
-                if (Args.size == 1) {
-                    writeAsmLine("^declare "+prefix+Args.value);
-                } else {
-                    writeAsmLine("^allocate "+prefix+Args.value+" "+(Args.size-1));
-                }
-            }
+    function assemblerDeclarationGenerator (MemObj) {
+        if (MemObj.location != -1){
+            writeAsmLine("^declare "+MemObj.asm_name);
         }
     }
 
-    //function to add variables that were declared inside function declaration.
-    //   This case was not handled in createVariablesTable() at shape.js
-    function addArgsToDeclaredVars (){
-        var Node;
-        for (var i=bc_Big_ast.functions[bc_auxVars.current_function].arguments.length-1; i>=0; i--) {
-            Node = bc_Big_ast.functions[bc_auxVars.current_function].arguments[i];
-            Node.dec_in_generator = "yes";
-            Node.size = 1;
-            Node.asmName = bc_Big_ast.functions[bc_auxVars.current_function].name+"_"+Node.value;
-            bc_Big_ast.functions[bc_auxVars.current_function].declared_vars.push(Node);
+
+    // Search and return a memory object with name varname
+    // Object can be global or local function scope.
+    // if not found, throws exception.
+    function getMemoryObjectName(var_name, line) {
+        let search;
+
+        if (bc_auxVars.current_function != -1) { //find function scope variable
+            search = bc_Big_ast.memory.find(obj => obj.name == var_name && obj.scope === bc_Big_ast.functions[bc_auxVars.current_function].name );
+        }
+        if (search !== undefined){
+            return search;
+        }
+        // do a global scope search
+        search = bc_Big_ast.memory.find(obj => obj.name == var_name && obj.scope === "" );
+
+        if (bc_Big_ast.Config.useVariableDeclaration === false) {
+            if (search === undefined) {
+                let fakevar = {
+                    "location": bc_Big_ast.memory.length,
+                    "name": var_name,
+                    "asm_name": var_name,
+                    "type": "long",
+                    "type_name": null,
+                    "scope": "",
+                    "size": 1,
+                    "dec_as_pointer": false,
+                    "dec_in_generator": true };
+                bc_Big_ast.memory.push(fakevar);
+                return fakevar;
+            }
+            return search;
         }
 
+        // Checks to allow use:
+        if (auxVars.declaring.length != 0) { //we are in declarations sentence
+            if (search === undefined) {
+                throw new SyntaxError("At line: "+line+". Variable '"+var_name+"' not declared. BugReport Please");
+            }
+            search.dec_in_generator=true;
+            // TODO If array or struct, need to set all elements to TRUE!!!
+            //TODO true for all struc elements also code bbdD))k
+            return search;
+        }
+        //else, not in declaration:
+        if (search === undefined) {
+            throw new SyntaxError("At line: "+line+". Using Variable '"+var_name+"' before declaration.");
+        }
+
+        return search;
     }
+
+
 
     //Handle function initialization
     function functionHeaderGenerator () {
@@ -1616,126 +1651,13 @@ function bigastCompile(bc_Big_ast){
             writeAsmLine( "JMP :" + sent_id + "_condition" );
             writeAsmLine( sent_id + "_break:" );
 
+        } else if (Sentence.type === "struct") {
+            writeAsmCode( codeGenerator( Sentence.Phrase.OpTree ) );
+
         } else {
             throw new TypeError("At line: " + Sentence.line + ". Unknow Sentence type: " + Sentence.type);
         }
     }
 
-
-    // read macros values and put them into bc_config variable
-    function processMacro( Token ) {
-
-        function get_val(val){
-            if (val === undefined) {
-                return true;
-            }
-            if (val === "true" || val === "1") {
-                return true;
-            }
-            if (val === "false" || val === "0") {
-                return false;
-            }
-            return undefined;
-        }
-
-        if (Token.type === "pragma") {
-            if (Token.property === "maxAuxVars") {
-                if (Token.value !== undefined) {
-                    var num = parseInt(Token.value);
-                    if (num < 1 || num > 10) {
-                        throw new RangeError("At line: "+Token.line+". Value out of permitted range 1..10.");
-                    }
-                    bc_config.maxAuxVars = num;
-                    return;
-                }
-            }
-            if (Token.property === "reuseAssignedVar") {
-                bc_config.reuseAssignedVar = get_val(Token.value);
-                if (bc_config.reuseAssignedVar !== undefined)
-                    return;
-            }
-            if (Token.property === "enableRandom") {
-                bc_config.enableRandom = get_val(Token.value);
-                if (bc_config.enableRandom !== undefined)
-                    return;
-            }
-            if (Token.property === "useVariableDeclaration") {
-                bc_config.useVariableDeclaration = get_val(Token.value);
-                if (bc_config.useVariableDeclaration !== undefined)
-                    return;
-            }
-            if (Token.property === "version") {
-                bc_config.version = Token.value;
-                if (bc_config.version !== undefined)
-                    return;
-            }
-            if (Token.property === "warningToError") {
-                bc_config.warningToError = get_val(Token.value);
-                if (bc_config.warningToError !== undefined)
-                    return;
-            }
-        }
-
-        if (Token.type === "include") {
-            if (Token.property === "APIFunctions") {
-                bc_config.APIFunctions = get_val(Token.value);
-                if (bc_config.APIFunctions !== undefined)
-                    return;
-            }
-        }
-
-        throw new TypeError("At line: "+Token.line+". Unknow macro property and/or value: #"+Token.type+" "+Token.property+" "+Token.value);
-    }
-
-    // last, but not least: bigastCompile core lines!
-
-    // Macro handler
-    bc_Big_ast.Global.macros.forEach( processMacro );
-    if (bc_config.version !== bc_config.compiler_version) {
-        new TypeError("This compiler is version '"+bc_config.compiler_version+"'. File needs version '"+bc_config.version+"'.");
-    }
-
-    // add registers declaration
-    if ( bc_config.useVariableDeclaration) {
-        for (var i=0; i< bc_config.maxAuxVars; i++){
-            writeAsmLine("^declare r"+i);
-        }
-    }
-
-    // add variables declaration
-    if ( bc_config.useVariableDeclaration) {
-        bc_Big_ast.Global.declared_vars.forEach( declarationGenerator );
-    }
-
-    // Add code for global sentences
-    bc_auxVars.current_function = -1;
-    bc_Big_ast.Global.sentences.forEach( compileSentence );
-
-    // For every function:
-    bc_auxVars.current_function = 0;
-    while (bc_auxVars.current_function < bc_Big_ast.functions.length) {
-
-        writeAsmLine(""); //blank line to be nice to debugger!
-        // add variables declararion
-        if ( bc_config.useVariableDeclaration) {
-            bc_Big_ast.functions[bc_auxVars.current_function].arguments.forEach( addArgsToDeclaredVars );
-            bc_Big_ast.functions[bc_auxVars.current_function].declared_vars.forEach( declarationGenerator );
-        }
-
-        functionHeaderGenerator();
-
-        // add code for functions sentences.
-        bc_Big_ast.functions[bc_auxVars.current_function].sentences.forEach( compileSentence );
-
-        functionTailGenerator();
-
-        bc_auxVars.current_function++;
-    }
-
-    //always end with FIN!
-    if (bc_auxVars.assemblyCode.lastIndexOf("FIN")+4 != bc_auxVars.assemblyCode.length) {
-        writeAsmLine("FIN");
-    }
-
-    return bc_auxVars.assemblyCode;
+    return bigastCompile_main();
 }
