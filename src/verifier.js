@@ -242,7 +242,7 @@ function verify(ast) {
         { Current: "Arr", Next: "CodeDomain", Possible: "n"},
         { Current: "Arr", Next: "CodeCave", Possible: "n"},
         { Current: "Arr", Next: "Assignment", Possible: "y"},
-        { Current: "Arr", Next: "Arr", Possible: "n"},
+        { Current: "Arr", Next: "Arr", Possible: "y"},
         //macro -> just skip rules checks
         { Current: "Macro", Next: "Variable", Possible: "y"},
         { Current: "Macro", Next: "UnaryOperator", Possible: "y"},

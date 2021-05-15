@@ -718,7 +718,11 @@
         var var_counter=0;
         Big_ast.memory.forEach( function (thisvar){
             if (thisvar.type === "struct" && thisvar.dec_as_pointer===false) {//Remeber to change here code yolj1A
-                thisvar.value=var_counter.toString(16).padStart(16,"0");
+                thisvar.hex_content=var_counter.toString(16).padStart(16,"0");
+            } if (thisvar.type === "array") {
+                thisvar.location=var_counter;
+                var_counter++;
+                thisvar.hex_content=var_counter.toString(16).padStart(16,"0");
             } else {
                 thisvar.location=var_counter;
                 var_counter++;

@@ -90,34 +90,33 @@ function bigastCompile(bc_Big_ast){
             declaring: "",
             pointer_operatrion: false,
 
-            isTemp: function(name) {
-                var idx = this.tmpvars.findIndex(xyz => xyz === name)
-                if (idx>=0)
-                    if (this.status[idx]===true)
+            isTemp: function(loc) {
+                let MemObj=getMemoryObjectByLocation(loc);
+                var id=this.tmpvars.indexOf(MemObj.asm_name);
+                if (id >=0 ) {
+                    if (this.status[id]===true) {
                         return true;
+                    }
+                }
                 return false;
             },
 
-            getNewTemp: function() {
+            getNewRegister: function() {
                 var id=this.status.indexOf(false);
                 if (id==-1)
-                    throw new RangeError("No more auxVars. Try to reduce nested operations or increase 'max_auxVars'");
+                    throw new RangeError("No more registers available. Try to reduce nested operations or increase 'max_auxVars'");
                 this.status[id]=true;
-                return this.tmpvars[id];
+                return getMemoryObjectByName(this.tmpvars[id]);
             },
 
-            freeVar: function(name) {
-                if (name !== undefined) {
-                    if (name.indexOf("$")>=0) {
-                        let vars=name.split("$");
-                        this.freeVar(vars[1]);
-                    } else {
-                        var id=this.tmpvars.indexOf(name);
-                        if (id==-1)
-                            return;
-                        this.status[id]=false;
-                    }
+            freeRegister: function(loc) {
+                if (loc === -1) {
+                    return;
                 }
+                let MemObj=getMemoryObjectByLocation(loc);
+                var id=this.tmpvars.indexOf(MemObj.asm_name);
+                if (id==-1) return;
+                this.status[id]=false;
             },
 
             createTmpVarsTable: function () {
@@ -143,7 +142,7 @@ function bigastCompile(bc_Big_ast){
 
             if (cg_jumpTarget === undefined) {
                 code=genCode(cg_ast, false, false, cg_jumpTarget, jmpTrueTarget);
-                if (auxVars.isTemp(code.varname)) {
+                if (code.MemObj.type==="register") {
                     var line;
                     if (cg_ast.line !== undefined) {
                         line = cg_ast.line;
@@ -177,8 +176,83 @@ function bigastCompile(bc_Big_ast){
             return code.instructionset;
         }
 
+        function mulHexContents(param1, param2){
+            let n1, n2;
+            if (typeof (param1) === "number") {
+                n1 = BigInt(param1);
+            } else if (typeof (param1) === 'string') {
+                n1 = BigInt("0x"+param1);
+            } else throw new TypeError("wrong type in mulHexContents");
+
+            if (typeof (param2) === "number") {
+                n2 = BigInt(param2);
+            } else if (typeof (param1) === 'string') {
+                n2 = BigInt("0x"+param2);
+            } else throw new TypeError("wrong type in mulHexContents");
+
+            return (n1*n2).toString(16).padStart(16,"0").slice(-16);
+        }
+        function addHexContents(param1, param2){
+            let n1, n2;
+            if (typeof (param1) === "number") {
+                n1 = BigInt(param1);
+            } else if (typeof (param1) === 'string') {
+                n1 = BigInt("0x"+param1);
+            } else throw new TypeError("wrong type in addHexContents");
+
+            if (typeof (param2) === "number") {
+                n2 = BigInt(param2);
+            } else if (typeof (param1) === 'string') {
+                n2 = BigInt("0x"+param2);
+            } else throw new TypeError("wrong type in addHexContents");
+
+            return (n1+n2).toString(16).padStart(16,"0").slice(-16);
+        }
+        function createConstantMemObj(value){
+            let param;
+            if (typeof (value) === "number") {
+                param = value.toString(16).padStart(16,"0").slice(-16);
+            } else if (typeof (value) === 'string') {
+                param = value.padStart(16,"0").slice(-16);
+            } else if (typeof (value) === 'undefined') {
+                param = "";
+            } else throw new TypeError("wrong type in createConstantMemObj");
+
+            return {
+                location: -1,
+                name: "",
+                asm_name: "",
+                type: "constant",
+                type_name: null,
+                scope: "",
+                size: 1,
+                dec_as_pointer: false,
+                dec_in_generator: true,
+                hex_content: param };
+        }
+        function genMulToken(line){
+            if (line===undefined) line=-1;
+            return { "type": "Operator", "precedence": 3, "value": "*", "line": line };
+        }
+        function genAddToken(line){
+            if (line===undefined) line=-1;
+            return { "type": "Operator", "precedence": 4, "value": "+", "line": line };
+        }
+        function genAssignmentToken(){
+            return { "type": "Assignment", "precedence": 9, "name": "Set", "value": "=", "line": -1 };
+        }
+        function genIncToken(){
+            return { "type": "SetUnaryOperator", "precedence": 2, "value": "++", "line": -1 };
+        }
+        function genDecToken(){
+            return { "type": "SetUnaryOperator", "precedence": 2, "value": "--", "line": -1 };
+        }
         // here the hardwork to compile expressions
         function genCode(objTree, logicalOp, gc_revLogic, gc_jumpFalse, gc_jumpTrue) {
+
+            let LGenObj, RGenObj, CGenObj;
+            let M_Obj;
+            let instructionstrain="";
 
             if (objTree.Operation === undefined) { //end object
 
@@ -206,8 +280,145 @@ function bigastCompile(bc_Big_ast){
                 } else {
 
                     if (objTree.type === 'Variable') {
-                        let asmVarName = getVarAsmName(objTree);
-                        return { varname: asmVarName, instructionset: "" } ;
+                        M_Obj = getMemoryObjectByName(objTree.value, objTree.line, auxVars.declaring);
+
+                        if (objTree.params !== undefined) {
+                            for (let idx=0; idx < objTree.params.length; idx++){
+                                if (objTree.param_type === "Member") {
+                                    throw new RangeError("Não implementado")
+                                }
+                                if (objTree.param_type[idx] === "Arr") {
+                                    let TmpMemObj;
+                                    let TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.type_name===objTree.value );
+                                    if (TypeD === undefined) {
+                                        throw new TypeError("At line: "+objTree.line+". Array type definition not found...");
+                                    }
+                                    if (M_Obj.type !== "array" && M_Obj.dec_as_pointer !== true){
+                                        throw new TypeError("At line: "+objTree.line+". Can not use array notation on regular variables.");
+                                    }
+                                    let Param_Obj = genCode(objTree.params[idx], false, false); // gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                                    instructionstrain+=Param_Obj.instructionset;
+
+                                    //big decision tree depending on M_Obj.offset_value and Param_Obj.location
+                                    let mobj_offvalue = M_Obj.offset_value; // undefined if does not exist, -1 if it is constant, other value represents a variable that can be temp or not (will be checked!)
+                                    if (typeof(M_Obj.offset_value) === "string") {
+                                        mobj_offvalue = -1;
+                                    }
+                                    let param_loc = Param_Obj.MemObj.location; //-1 if it is constant, other value represents a variable that can be temp or not (will be checked!)
+
+                                    if (mobj_offvalue === undefined) {
+                                        if (param_loc == -1 ) {
+                                            M_Obj.offset_type = "constant";
+                                            M_Obj.offset_value = mulHexContents(Param_Obj.MemObj.hex_content, TypeD.arr_multiplier_dim[idx]);
+
+                                        } else if (auxVars.isTemp(param_loc)) {
+                                            instructionstrain += createInstruction(genMulToken(objTree.line), Param_Obj, createConstantMemObj(TypeD.arr_multiplier_dim[idx]));
+                                            M_Obj.offset_type = "variable";
+                                            M_Obj.offset_value = Param_Obj.MemObj.location;
+
+                                        } else /* if ( param_loc is variable ) */ {
+                                            M_Obj.offset_type = "variable";
+                                            if (TypeD.arr_multiplier_dim[idx] == 1) {
+                                                M_Obj.offset_value = Param_Obj.MemObj.location;
+                                            } else {
+                                                TmpMemObj = auxVars.getNewRegister();
+                                                instructionstrain += createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
+                                                M_Obj.offset_value = TmpMemObj.location;
+                                                instructionstrain += createInstruction(genMulToken(objTree.line), TmpMemObj, createConstantMemObj(TypeD.arr_multiplier_dim[idx]));
+                                            }
+                                        }
+
+                                    } else if (mobj_offvalue === -1 ) {
+                                        if (param_loc == -1) {
+                                            M_Obj.offset_value = addHexContents(M_Obj.offset_value, mulHexContents(Param_Obj.MemObj.hex_content, TypeD.arr_multiplier_dim[idx]));
+
+                                        } else if (auxVars.isTemp(param_loc)) {
+                                            instructionstrain += createInstruction(genMulToken(objTree.line), Param_Obj.MemObj, createConstantMemObj(TypeD.arr_multiplier_dim[idx]));
+                                            instructionstrain += createInstruction(genAddToken(objTree.line), Param_Obj.MemObj, createConstantMemObj(M_Obj.offset_value));
+                                            M_Obj.offset_type = "variable";
+                                            M_Obj.offset_value = Param_Obj.MemObj.location;
+
+                                        } else /* if ( param_loc is variable  ) */ {
+                                            if (TypeD.arr_multiplier_dim[idx] == 1 && M_Obj.offset_value === "0000000000000000") {
+                                                M_Obj.offset_type = "variable";
+                                                M_Obj.offset_value = Param_Obj.MemObj.location;
+                                            } else {
+                                                TmpMemObj = auxVars.getNewRegister();
+                                                instructionstrain += createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
+                                                instructionstrain += createInstruction(genMulToken(objTree.line), TmpMemObj, createConstantMemObj(TypeD.arr_multiplier_dim[idx]));
+                                                instructionstrain += createInstruction(genAddToken(objTree.line), TmpMemObj, createConstantMemObj(M_Obj.offset_value));
+                                                M_Obj.offset_type = "variable";
+                                                M_Obj.offset_value = TmpMemObj.location;
+                                            }
+                                        }
+
+                                    } else if (auxVars.isTemp(mobj_offvalue)) {
+                                        if (param_loc == -1 ) {
+                                            let adder = mulHexContents(Param_Obj.MemObj.hex_content, TypeD.arr_multiplier_dim[idx]);
+                                            instructionstrain += createInstruction(genAddToken(objTree.line), getMemoryObjectByLocation(M_Obj.offset_value, objTree.line), createConstantMemObj(  adder  ));
+
+                                        } else if (auxVars.isTemp(param_loc)) {
+                                            instructionstrain+=createInstruction(genMulToken(objTree.line), Param_Obj.MemObj, createConstantMemObj(TypeD.arr_multiplier_dim[idx]));
+                                            instructionstrain+=createInstruction(genAddToken(objTree.line), getMemoryObjectByLocation(M_Obj.offset_value, objTree.line), Param_Obj.MemObj);
+                                            auxVars.freeRegister(Param_Obj.MemObj.location);
+
+                                        } else /* if (param_loc is variable ) */ {
+                                            if (TypeD.arr_multiplier_dim[idx] == 1) {
+                                                instructionstrain+=createInstruction(genAddToken(objTree.line), getMemoryObjectByLocation(M_Obj.offset_value, objTree.line), Param_Obj.MemObj);
+                                            } else {
+                                                TmpMemObj = auxVars.getNewRegister();
+                                                instructionstrain+=createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
+                                                instructionstrain+=createInstruction(genMulToken(objTree.line), TmpMemObj, createConstantMemObj(TypeD.arr_multiplier_dim[idx]));
+                                                instructionstrain+=createInstruction(genAddToken(objTree.line), getMemoryObjectByLocation(M_Obj.offset_value, objTree.line), TmpMemObj);
+                                                auxVars.freeRegister(TmpMemObj.location);
+                                            }
+                                        }
+
+                                    } else /* if ( mobj_offvalue is variable ) */ {
+                                        if (param_loc == -1 ) {
+                                            if (Param_Obj.MemObj.hex_content !== "0000000000000000") {
+                                                TmpMemObj = auxVars.getNewRegister();
+                                                instructionstrain+=createInstruction(genAssignmentToken(), TmpMemObj,  createConstantMemObj(Param_Obj.MemObj.hex_content));
+                                                instructionstrain+=createInstruction(genMulToken(objTree.line), TmpMemObj, createConstantMemObj(TypeD.arr_multiplier_dim[idx]));
+                                                instructionstrain+=createInstruction(genAddToken(objTree.line), TmpMemObj, getMemoryObjectByLocation(M_Obj.offset_value, objTree.line));
+                                                M_Obj.offset_value= TmpMemObj.location;
+                                            }
+
+                                        } else if (auxVars.isTemp(param_loc)) {
+                                            instructionstrain+=createInstruction(genMulToken(objTree.line), Param_Obj.MemObj, createConstantMemObj(TypeD.arr_multiplier_dim[idx]));
+                                            instructionstrain+=createInstruction(genAddToken(objTree.line), Param_Obj.MemObj, getMemoryObjectByLocation(M_Obj.offset_value, objTree.line));
+                                            M_Obj.offset_value = Param_Obj.MemObj.location;
+
+                                        } else /* if (param_loc is variable )) */ {
+                                            TmpMemObj = auxVars.getNewRegister();
+                                            instructionstrain+=createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
+                                            instructionstrain+=createInstruction(genMulToken(objTree.line), TmpMemObj, createConstantMemObj(TypeD.arr_multiplier_dim[idx]));
+                                            instructionstrain+=createInstruction(genAddToken(objTree.line), TmpMemObj, getMemoryObjectByLocation(M_Obj.offset_value, objTree.line));
+                                            M_Obj.offset_value = TmpMemObj.location;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        return {MemObj: M_Obj, instructionset: instructionstrain }
+                        /*
+pego memory pai.
+Se tiver param_types
+  Pra cada params
+    se param_type for Member
+        pego typestructure do struct
+        Adiciono offset_const (de valor igual ao params) no valor da variável pai.
+        OK
+    se param_type for array
+        pego typestructure do array
+        gencode do params
+        se OBJ for const
+            Adiciono offset_type="constant" e offset_value (de valor igual ao params) no valor da variável pai.
+        senão
+            Adiciono a a localização da OBJ na memória, que foi retornado, à variaável pai (offset_type="variable" e offset_value)
+*/
+                        return retObj ;
                     }
 
 /*
@@ -285,15 +496,11 @@ function bigastCompile(bc_Big_ast){
                         throw new TypeError("At line: "+objTree.line+". Keywords '"+objTree.value+"' not implemented.");
                     }
 
-                    if (objTree.type === 'Constant') {
-                        let Obj= { mem_addr: -1,
-                            offset_var: -1,
-                            offset_const: "",
-                            var_declaration: undefined,
-                            var_size: val.length/16,
-                            hex_content: objTree.value };
-
-                        return { VarObj: Obj, instructionset: "" } ;
+                    if (objTree.type === 'Constant') { //ok
+                        M_Obj = createConstantMemObj();
+                        M_Obj.size = objTree.value.length/16;
+                        M_Obj.hex_content = objTree.value;
+                        return { MemObj: M_Obj, instructionset: "" } ;
                     }
                     throw new TypeError("At line:"+objTree.line+". End object not implemented: "+objTree.type+" "+objTree.name);
                     //return { instructionset: "" };
@@ -301,11 +508,8 @@ function bigastCompile(bc_Big_ast){
 
             } else { //operation object
 
-                let left, right, center;
                 let tempvar, makeJump;
                 let isAPI=false;
-                let instructionstrain="";
-
                 if (objTree.Operation.type === 'Arr') {
                     //left=genCode(objTree.Left, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
 
@@ -720,24 +924,15 @@ function bigastCompile(bc_Big_ast){
 
                     if (gc_jumpFalse !== undefined)
                         throw new SyntaxError("At line: "+objTree.Operation.line+". Can not use assignment during logical operations with branches");
-                    if (objTree.Left.type === "Variable"){
-                        let search = bc_Big_ast.Global.declared_vars.find(val => val.value === objTree.Left.value );
-                        if (search === undefined && bc_auxVars.current_function != -1) {
-                            search = bc_Big_ast.functions[bc_auxVars.current_function].declared_vars.find(val => val.value === objTree.Left.value );
-                        }
-                        if (search !== undefined && search.mod_array === "yes"){
-                            throw new SyntaxError("At line: "+objTree.Operation.line+". Trying to assign an array type variable");
-                        }
-                    }
 
-                    left=genCode(objTree.Left, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
-                    instructionstrain+=left.instructionset;
+                    LGenObj=genCode(objTree.Left, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                    instructionstrain+=LGenObj.instructionset;
 
-                    if (left.VarObj === undefined)
+                    if (LGenObj.MemObj === undefined)
                         throw new SyntaxError("At line: "+objTree.Operation.line+". Trying to assign undefined variable");
-                    if (left.VarObj.mem_addr == -1 )
+                    if (LGenObj.MemObj.location == -1 )
                         throw new TypeError("At line: "+objTree.Operation.line+". Invalid left value for "+objTree.Operation.type);
-                    if (left.VarObj.mem_addr < bc_Big_ast.Config.maxAuxVars && bc_Big_ast.Config.useVariableDeclaration == 1 )
+                    if (LGenObj.MemObj.type === "register" &&  LGenObj.MemObj.dec_as_pointer=== false)
                         throw new TypeError("At line: "+objTree.Operation.line+". Invalid left value for "+objTree.Operation.type);
 
                     let temp_declare="";
@@ -747,7 +942,7 @@ function bigastCompile(bc_Big_ast){
                     }
                     //check if we can reuse variables used on assignment
                     //then add it to auxVars.tmpvars
-                    if ( objTree.Operation.type === "Assignment"
+ /*                   if ( objTree.Operation.type === "Assignment"
                         && bc_Big_ast.Config.reuseAssignedVar === true
                         && left.VarObj.offset_var == -1
                         && left.VarObj.offset_const == -1
@@ -758,24 +953,25 @@ function bigastCompile(bc_Big_ast){
                         auxVars.tmpvars.shift();
                         auxVars.status.shift();
                     } else
-                        right=genCode(objTree.Right, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
-                    instructionstrain+=right.instructionset;
+   */                     RGenObj=genCode(objTree.Right, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                    instructionstrain+=RGenObj.instructionset;
                     if ( temp_declare.length != 0 ){
                         auxVars.declaring=temp_declare;
                     }
 
-                    if (right.VarObj === undefined) {
+                    if (RGenObj.MemObj === undefined) {
                         throw new TypeError("At line: "+objTree.Operation.line+". Invalid right value for "+objTree.Operation.type+". Possible void value.");
                     }
-                    if (left.VarObj.size != right.VarObj.size){
-                        throw new TypeError("At line: "+objTree.Operation.line+". Size of left and right values does not match.");
-                    }
+                    //if (LGenObj.MemObj.size != RGenObj.MemObj.size){
+                    //    throw new TypeError("At line: "+objTree.Operation.line+". Size of left and right values does not match.");
+                    //}
 
-                    instructionstrain+=createInstruction(objTree.Operation, left.VarObj, right.VarObj);
+                    instructionstrain+=createInstruction(objTree.Operation, LGenObj.MemObj, RGenObj.MemObj);
 
-                    //auxVars.freeVar(left.varname);
-                    //auxVars.freeVar(right.varname);
-                    return { VarObj: left.VarObj, instructionset: instructionstrain } ;
+                    //TODO check if there is offset!!!
+                    auxVars.freeVar(RGenObj.MemObj.location);
+                    auxVars.freeVar(RGenObj.MemObj.location);
+                    return { MemObj: LGenObj.MemObj, instructionset: instructionstrain } ;
                 }
 
                 if (objTree.Operation.type === "Keyword" ) {
@@ -937,95 +1133,142 @@ function bigastCompile(bc_Big_ast){
 
         // Translate one single instruction from ast to assembly code
         function createInstruction(objoperator, param1, param2, ci_revLogic, ci_jumpFalse, ci_jumpTrue) {
+            let retinstr="";
 
             if (objoperator.type === 'Assignment') {
 
-                if (param1.mem_addr == -1)
+                if (param1.location == -1)
                     throw new TypeError("Invalid left side for assigment.");
 
-                let idx_1, idx_2;
-                if (param1.offset_const != "") idx_1=parseInt(param1.offset_const,16);
-                else idx_1=0;
-                if (param2.offset_const != "") idx_2=parseInt(param2.offset_const,16);
-                else idx_2=0;
+                if (param1.type === "register" || (param1.dec_as_pointer === false && param1.type !== "array")) { //param 1 can be direct assigned
 
-                if (param1.offset_var == -1 ) { //param 1 can be direct assigned
-
-                    if (param2.mem_addr == -1 ) { // Can use SET_VAL or CLR_DAT
-                        let val=parseInt(param2.hex_content,16);
-                        if (val == 0) {
-                            return "CLR @"+bc_Big_ast.mem_table[param1.mem_addr+idx_1]+"\n";
+                    if (param2.location === -1 ) { // Can use SET_VAL or CLR_DAT
+                        if (param2.hex_content === "0000000000000000") {
+                            return "CLR @"+param1.asm_name+"\n";
                         } else {
                             if (param2.hex_content.length > 17) {
                                 throw new RangeError("Overflow on long value assignment (value bigger than 64 bits)");
                             }
-                            return "SET @"+bc_Big_ast.mem_table[param1.mem_addr+idx_1]+" #"+param2.hex_content+"\n";
+                            return "SET @"+param1.asm_name+" #"+param2.hex_content+"\n";
                         }
                     }
-                    if (param2.offset_var == -1 ) { // Can use SET_DAT
-                        if (param1.mem_addr+idx_1 == param2.mem_addr+idx_2) return "";
-                        else return "SET @"+bc_Big_ast.mem_table[param1.mem_addr+idx_1]+" $"+bc_Big_ast.mem_table[param2.mem_addr+idx_2]+"\n";
+                    if (param2.dec_as_pointer === false && param2.type !== "array") { // Can use SET_DAT
+                        if (param1.location == param2.location) return "";
+                        else return "SET @"+param1.asm_name+" $"+param2.asm_name+"\n";
                     }
-                    //need to use SET_IDX
-                    return "SET @"+bc_Big_ast.mem_table[param1.mem_addr+idx_1]+" $("+bc_Big_ast.mem_table[param2.mem_addr+idx_2]+" + "+bc_Big_ast.mem_table[param2.offset_var]+")\n";
-
-                    if (param2.indexOf("$") >= 0 ) {
-                        let idx= param2.split("$");
-                        if (idx[1].length==0)
-                            return "SET @"+param1+" $($"+idx[0]+")\n";
-                        else
-                            return "SET @"+param1+" $($"+idx[0]+" + $"+idx[1]+")\n";
+                    // so we have dec_as_pointer=true or an array:
+                    if (param2.offset_type === "constant") {
+                        return createInstruction(objoperator, param1, getMemoryObjectByLocation(addHexContents(param2.hex_content, param2.offset_value), objoperator.line))
                     }
-
-                    if (param1 === param2)
-                        return "";
-
-                    return "SET @"+param1+" $"+param2+"\n";
+                    // offset is a variable. need to use SET_IDX
+                    if (param2.offset_value === undefined) {
+                        return "SET @"+param1.asm_name+" $($"+param2.asm_name+")\n";
+                    }
+                    return "SET @"+param1.asm_name+" $($"+param2.asm_name+" + $"+getMemoryObjectByLocation(param2.offset_value,objoperator.line).asm_name+")\n";
 
                 } else {  //param 1 is an Array!
-                    let tempvar;
-                    let retinstr="";
+                    if (param1.offset_type === "constant") { //Looks like an array but can be converted to regular variable
+                        return createInstruction(objoperator, getMemoryObjectByLocation( addHexContents(param1.hex_content, param1.offset_value), objoperator.line), param2)
+                    }
+                    //ok. Its an array and with an variable index... check param2
+                    let TmpMemObj;
 
-                    if (param2.indexOf("#") >= 0 || param2.indexOf("$") >= 0) {
-                        tempvar=auxVars.getNewTemp();
-                        retinstr+=createInstruction({type: "Assignment"}, tempvar, param2);
+                    if (param2.location === -1 ) {
+                        TmpMemObj=auxVars.getNewRegister();
+                        retinstr+=createInstruction(genAssignmentToken(), TmpMemObj, param2);
                     } else {
-                        tempvar=param2;
+                        if (param2.dec_as_pointer === true || param2.type === "array") {
+                            if (param2.offset_type === "constant") {
+                                TmpMemObj = getMemoryObjectByLocation(addHexContents(param2.hex_content, param2.offset_value), objoperator.line);
+                            } else {
+                                TmpMemObj=auxVars.getNewRegister();
+                                retinstr+=createInstruction(genAssignmentToken(), TmpMemObj, param2);
+                            }
+                        } else {
+                            TmpMemObj = param2;
+                        }
                     }
 
-                    let idx= param1.split("$");
-                    if (idx[1].length==0)
-                        retinstr+= "SET @($"+idx[0]+") $"+tempvar+"\n";
-                    else
-                        retinstr+= "SET @($"+idx[0]+" + $"+idx[1]+") $"+tempvar+"\n";
+                    retinstr+= "SET @($"+param1.asm_name+" + $"+getMemoryObjectByLocation(param1.offset_value,objoperator.line).asm_name+") $"+TmpMemObj.asm_name+"\n";
 
-                    auxVars.freeVar(tempvar);
+                    auxVars.freeRegister(TmpMemObj.location);
                     return retinstr;
                 }
             }
 
             if (objoperator.type === 'Operator' || objoperator.type === 'SetOperator') {
 
-                let tempparam1="";
-                let tempparam2="";
-                let freeParam1=false;
-                let retinstr="";
+                let TmpMemObj1, TmpMemObj2 ;
+                let free_param1=false;
+                let allow_optimization = false;
+                let has_optimization = false;
 
-                if  (param2.indexOf("#") >= 0 || param2.indexOf("$") >= 0) {
-                        tempparam2=auxVars.getNewTemp();
-                        retinstr+=createInstruction({type: "Assignment"}, tempparam2, param2);
+
+                if (param1.type === "register" || (param1.dec_as_pointer === false && param1.type !== "array" && param1.location != -1)) { //param 1 can be direct assigned
+                    allow_optimization = true;
+                    TmpMemObj1 = param1;
                 } else {
-                    tempparam2 = param2;
+                    if (param1.offset_type === "constant") { //Looks like an array but can be converted to regular variable
+                        TmpMemObj1 = getMemoryObjectByLocation( addHexContents(param1.hex_content, param1.offset_value), objoperator.line);
+                    } else {
+                        TmpMemObj1=auxVars.getNewRegister();
+                        retinstr+=createInstruction(genAssignmentToken(), TmpMemObj1, param1);
+                        free_param1=true;
+                    }
+                }
+                if (param2.type === "register" || (param2.dec_as_pointer === false && param2.type !== "array" && param2.location != -1)) { //param 2 can be direct assigned
+                    TmpMemObj2 = param2;
+                } else {
+                    if (param2.offset_type !== undefined && param2.offset_type === "constant") { //Looks like an array but can be converted to regular variable
+                        TmpMemObj2 = getMemoryObjectByLocation( addHexContents(param2.hex_content, param2.offset_value), objoperator.line);
+                    } else {
+                        if (param2.location == -1 ) allow_optimization = true;
+                        else  allow_optimization = false;
+                        TmpMemObj2=auxVars.getNewRegister();
+                        retinstr+=createInstruction(genAssignmentToken(), TmpMemObj2, param2);
+                    }
                 }
 
-                if  (param1.indexOf("$") >= 0) {
-                        tempparam1=auxVars.getNewTemp();
-                        freeParam1=true;
-                        retinstr+=createInstruction({type: "Assignment"}, tempparam1, param1);
-                } else {
-                    tempparam1 = param1;
+                if (allow_optimization) {
+                    if (       objoperator.value === '+' || objoperator.value === '+=') {
+                        if (param2.hex_content === "0000000000000000") {
+                            auxVars.freeRegister(TmpMemObj2.location);
+                            return "";
+                        }
+                        if (param2.hex_content === "0000000000000001") {
+                            auxVars.freeRegister(TmpMemObj2.location);
+                            return createInstruction(genIncToken(objoperator.line), param1);
+                        }
+                        if (param2.hex_content === "0000000000000002") {
+                            auxVars.freeRegister(TmpMemObj2.location);
+                            let instr = createInstruction(genIncToken(objoperator.line), param1)
+                            return (instr + instr);
+                        }
+                    } else if (       objoperator.value === '-' || objoperator.value === '-=') {
+                        if (param2.hex_content === "0000000000000000") {
+                            auxVars.freeRegister(TmpMemObj2.location);
+                            return "";
+                        }
+                        if (param2.hex_content === "0000000000000001") {
+                            auxVars.freeRegister(TmpMemObj2.location);
+                            return createInstruction(genDecToken(objoperator.line), param1);
+                        }
+                    } else if (       objoperator.value === '*' || objoperator.value === '*=') {
+                        if (param2.hex_content === "0000000000000000") {
+                            auxVars.freeRegister(TmpMemObj2.location);
+                            return createInstruction(genAssignmentToken(), param1, param2);
+                        }
+                        if (param2.hex_content === "0000000000000001") {
+                            auxVars.freeRegister(TmpMemObj2.location);
+                            return "";
+                        }
+                    } else if (       objoperator.value === '/' || objoperator.value === '/=') {
+                        if (param2.hex_content === "0000000000000001") {
+                            auxVars.freeRegister(TmpMemObj2.location);
+                            return "";
+                        }
+                    }
                 }
-
                 if (       objoperator.value === '+' || objoperator.value === '+=') {
                     retinstr+= "ADD";
                 } else if (objoperator.value === '-' || objoperator.value === '-=') {
@@ -1049,12 +1292,12 @@ function bigastCompile(bc_Big_ast){
                 } else
                     throw new TypeError("Operator not supported "+objoperator.value);
 
-                retinstr +=" @"+tempparam1+" $"+tempparam2+"\n";
+                retinstr +=" @"+TmpMemObj1.asm_name+" $"+TmpMemObj2.asm_name+"\n";
 
-                auxVars.freeVar(tempparam2);
-                if (freeParam1 === true) {
-                    retinstr+=createInstruction({type: "Assignment"}, param1, tempparam1);
-                    auxVars.freeVar(tempparam1);
+                auxVars.freeRegister(TmpMemObj2.location);
+                if (free_param1 === true) {
+                    retinstr+=createInstruction(genAssignmentToken, param1, TmpMemObj1);
+                    auxVars.freeRegister(TmpMemObj1.location);
                 }
 
                 return retinstr;
@@ -1063,13 +1306,13 @@ function bigastCompile(bc_Big_ast){
             if (objoperator.type === 'UnaryOperator' || objoperator.type === 'SetUnaryOperator') {
 
                 if (objoperator.value === '++') {
-                    return "INC @"+param1+"\n";
+                    return "INC @"+param1.asm_name+"\n";
                 }
                 if (objoperator.value === '--') {
-                    return "DEC @"+param1+"\n";
+                    return "DEC @"+param1.asm_name+"\n";
                 }
                 if (objoperator.value === '~') {
-                    return "NOT @"+param1+"\n";
+                    return "NOT @"+param1.asm_name+"\n";
                 }
                 if (objoperator.value === '+') {
                     return;
@@ -1456,11 +1699,11 @@ function bigastCompile(bc_Big_ast){
         for (var i=0; i< phrase.code.length; i++) {
             let MemObj;
             if (i+1 < tokens.length && phrase.code[i].type === "Keyword" && phrase.code[i].value !== "struct" && phrase.code[i+1].type === "Variable") {
-                MemObj=getMemoryObjectName(phrase.code[i+1].name);
+                MemObj=getMemoryObjectByName(phrase.code[i+1].name);
             } else if ( i+2 < phrase.code.length && phrase.code[i].type === "Keyword" && phrase.code[i+1].value === "*" && phrase.code[i+2].type === "Variable") {
-                MemObj=getMemoryObjectName(phrase.code[i+2].name);
+                MemObj=getMemoryObjectByName(phrase.code[i+2].name);
             } else if ( i+3 < phrase.code.length && phrase.code[i].type === "Keyword" && phrase.code[i].value === "struct" && phrase.code[i+1].type === "Variable" && phrase.code[i+2].value === "*" && phrase.code[i+3].type === "Variable") {
-                MemObj=getMemoryObjectName(phrase.code[i+3].name);
+                MemObj=getMemoryObjectByName(phrase.code[i+3].name);
             } else {
                 throw new SyntaxError("Unexpected sentence in function arguments");
             }
@@ -1487,14 +1730,16 @@ function bigastCompile(bc_Big_ast){
     // Search and return a memory object with name varname
     // Object can be global or local function scope.
     // if not found, throws exception.
-    function getMemoryObjectName(var_name, line) {
+    function getMemoryObjectByName(var_name, line, declaration) {
         let search;
-
+        if (declaration === undefined) {
+            declaration = "";
+        }
         if (bc_auxVars.current_function != -1) { //find function scope variable
             search = bc_Big_ast.memory.find(obj => obj.name == var_name && obj.scope === bc_Big_ast.functions[bc_auxVars.current_function].name );
         }
         if (search !== undefined){
-            return search;
+            return JSON.parse(JSON.stringify(search));
         }
         // do a global scope search
         search = bc_Big_ast.memory.find(obj => obj.name == var_name && obj.scope === "" );
@@ -1514,27 +1759,44 @@ function bigastCompile(bc_Big_ast){
                 bc_Big_ast.memory.push(fakevar);
                 return fakevar;
             }
-            return search;
+            return JSON.parse(JSON.stringify(search));
         }
 
         // Checks to allow use:
-        if (auxVars.declaring.length != 0) { //we are in declarations sentence
+        if (declaration.length != 0) { //we are in declarations sentence
             if (search === undefined) {
                 throw new SyntaxError("At line: "+line+". Variable '"+var_name+"' not declared. BugReport Please");
             }
             search.dec_in_generator=true;
             // TODO If array or struct, need to set all elements to TRUE!!!
             //TODO true for all struc elements also code bbdD))k
-            return search;
+            return JSON.parse(JSON.stringify(search));
         }
         //else, not in declaration:
         if (search === undefined) {
             throw new SyntaxError("At line: "+line+". Using Variable '"+var_name+"' before declaration.");
         }
 
-        return search;
+        return JSON.parse(JSON.stringify(search));
     }
 
+    function getMemoryObjectByLocation(loc, line) {
+        let search, addr;
+
+        if ( typeof(loc) === "number") {
+            addr = loc;
+        } else if (typeof (loc) === 'string') {
+            addr = parseInt(loc, 16);
+        } else throw new TypeError("wrong type in getMemoryObjectByLocation");
+
+        search = bc_Big_ast.memory.find(obj => obj.location == addr );
+
+        if (search === undefined) {
+            throw new SyntaxError("At line: "+line+". No variable found at address '0x"+addr+"'.");
+        }
+
+        return JSON.parse(JSON.stringify(search));
+    }
 
 
     //Handle function initialization

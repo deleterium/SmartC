@@ -1,5 +1,23 @@
 "use strict";
 
+/*
+
+teste de função com parametros struct e ponteiro.
+
+struct Zombi {
+ long ab;
+ long bc;
+};
+
+struct Zombi *ptr;
+
+long teste(long b, struct Zombi * ppt, long * c) { long a=4; return a; }
+
+*/
+
+
+
+
 // Author: Rui Deleterium
 // Project: https://github.com/deleterium/BurstAT-Compiler
 // License: BSD 3-Clause License
@@ -188,56 +206,6 @@ function runTestCases() {
     [ "a=b,,c=d;",    true,  undefined, true, "" ],
 
     [ "a=,b;",  true,  undefined, true, "" ],
-
-// Array
-   // Arr+ Assignment, Arr+ SetOperator, 
-    [ "Array;", "div" ],
-    [ "a[b]=c;",    false,  undefined, true, "SET @($a + $b) $c\nFIN\n" ],
-    [ "a[0]=b;",    false,  undefined, true, "SET @($a) $b\nFIN\n" ],
-    [ "a[2]=b;",    false,  undefined, true, "SET @r0 #0000000000000002\nSET @($a + $r0) $b\nFIN\n" ],
-    [ "a=b[c];",    false,  undefined, true, "SET @a $($b + $c)\nFIN\n" ],
-    [ "a=b[0];",    false,  undefined, true, "SET @a $($b)\nFIN\n" ],
-    [ "a=b[3];",    false,  undefined, true, "SET @a #0000000000000003\nSET @a $($b + $a)\nFIN\n" ],
-    [ "a[b]=c[d];",  false,  undefined, true, "SET @r0 $($c + $d)\nSET @($a + $b) $r0\nFIN\n" ],
-    [ "a[b]+=c;",    false,  undefined, true, "SET @r0 $($a + $b)\nADD @r0 $c\nSET @($a + $b) $r0\nFIN\n" ],
-    [ "a[0]-=b;",    false,  undefined, true, "SET @r0 $($a)\nSUB @r0 $b\nSET @($a) $r0\nFIN\n" ],
-    [ "a[2]*=b;",    false,  undefined, true, "SET @r0 #0000000000000002\nSET @r1 $($a + $r0)\nMUL @r1 $b\nSET @($a + $r0) $r1\nFIN\n" ],
-    [ "a/=b[c];",    false,  undefined, true, "SET @r0 $($b + $c)\nDIV @a $r0\nFIN\n" ],
-    [ "a&=b[0];",    false,  undefined, true, "SET @r0 $($b)\nAND @a $r0\nFIN\n" ],
-    [ "a^=b[3];",    false,  undefined, true, "SET @r0 #0000000000000003\nSET @r1 $($b + $r0)\nXOR @a $r1\nFIN\n" ],
-    [ "a[b]+=c[d];", false,  undefined, true, "SET @r0 $($c + $d)\nSET @r1 $($a + $b)\nADD @r1 $r0\nSET @($a + $b) $r1\nFIN\n" ],
-   // Arr+ Constant, Arr+ Operator
-    [ "a[b]=2;",     false,  undefined, true, "SET @r0 #0000000000000002\nSET @($a + $b) $r0\nFIN\n" ],
-    [ "a[0]=0xFF;",   false,  undefined, true, "SET @r0 #00000000000000ff\nSET @($a) $r0\nFIN\n" ],
-    [ "a[2]=\"Ho ho\";", false,  undefined, true, "SET @r0 #0000000000000002\nSET @r1 #0000006f68206f48\nSET @($a + $r0) $r1\nFIN\n" ],
-    [ "a=b[c]/b[d];", false,  undefined, true, "SET @a $($b + $c)\nSET @r0 $($b + $d)\nDIV @a $r0\nFIN\n" ],
-    [ "a=b[c]<<b[2];",false,  undefined, true, "SET @a #0000000000000002\nSET @r0 $($b + $c)\nSET @r1 $($b + $a)\nSHL @r0 $r1\nSET @a $r0\nFIN\n" ],
-   // Arr+ UnaryOperator, Arr+ SetUnaryOperator
-    [ "a=b[~c];",    false,  undefined, true, "SET @a $c\nNOT @a\nSET @a $($b + $a)\nFIN\n" ],
-    [ "a=~b[c];",    false,  undefined, true, "SET @a $($b + $c)\nNOT @a\nFIN\n" ],
-    [ "a=b[c]++;",  true,  undefined, true, "" ],
-    [ "a=b++[c];",  true,  undefined, true, "" ],
-    [ "a=--b[c];",  true,  undefined, true, "" ],
-   // Arr+ CheckOperator(Unary), Arr+ CheckOperator(Binary)
-    [ "a=-b[c];",    false,  undefined, true, "CLR @a\nSET @r0 $($b + $c)\nSUB @a $r0\nFIN\n" ],
-    [ "a=+b[c];",    false,  undefined, true, "SET @a $($b + $c)\nFIN\n" ],
-    [ "a=b[-c];",    false,  undefined, true, "CLR @a\nSUB @a $c\nSET @a $($b + $a)\nFIN\n" ],
-    [ "a=b[+c];",    false,  undefined, true, "SET @a $($b + $c)\nFIN\n" ],
-    [ "a=b[*c];",    false,  undefined, true, "SET @a $($c)\nSET @a $($b + $a)\nFIN\n" ],
-    [ "a=b[c]-d[e];", false,  undefined, true, "SET @a $($b + $c)\nSET @r0 $($d + $e)\nSUB @a $r0\nFIN\n" ],
-    [ "a=b[c]+d[e];", false,  undefined, true, "SET @a $($d + $e)\nSET @r0 $($b + $c)\nADD @a $r0\nFIN\n" ],
-    [ "a=b[c]*d[e];", false,  undefined, true, "SET @a $($d + $e)\nSET @r0 $($b + $c)\nMUL @a $r0\nFIN\n" ],
-    [ "a=b[c]&d[e];", false,  undefined, true, "SET @a $($d + $e)\nSET @r0 $($b + $c)\nAND @a $r0\nFIN\n" ],
-    [ "a=b[c-d];",    false,  undefined, true, "SET @a $c\nSUB @a $d\nSET @a $($b + $a)\nFIN\n" ],
-    [ "a=b[c+d];",    false,  undefined, true, "SET @a $d\nADD @a $c\nSET @a $($b + $a)\nFIN\n" ],
-    [ "a=b[c*d];",    false,  undefined, true, "SET @a $d\nMUL @a $c\nSET @a $($b + $a)\nFIN\n" ],
-    [ "a=b[c&d];",    false,  undefined, true, "SET @a $d\nAND @a $c\nSET @a $($b + $a)\nFIN\n" ],
-    [ "a=*b[c];",  true,  undefined, true, "" ],
-    [ "a=&b[c];",  true,  undefined, true, "" ],
-    [ "a=b[&c];",  true,  undefined, true, "" ],
-   // Arr+ NewCodeLine
-    [ "a[2]=b,c[2]*=d,e[2]+=f;",    false,  undefined, true, "SET @r0 #0000000000000002\nSET @($a + $r0) $b\nSET @r0 #0000000000000002\nSET @r1 $($c + $r0)\nMUL @r1 $d\nSET @($c + $r0) $r1\nSET @r0 #0000000000000002\nSET @r1 $($e + $r0)\nADD @r1 $f\nSET @($e + $r0) $r1\nFIN\n" ],
-    [ "a=b[c],d[0]=e;",    false,  undefined, true, "SET @a $($b + $c)\nSET @($d) $e\nFIN\n" ],
 
 // CodeCave
     [ "CodeCave;", "div" ],
@@ -526,13 +494,87 @@ var keywords_tests = [
 
 var full_tests = [
 
+// Array
+   // Memtable: Arr+ Assignment, Arr+ SetOperator, 
+    [ "Array;", "div" ],
+    [ "long a[4]; long b; long c; a[b]=c;",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\nSET @($a + $b) $c\nFIN\n" ],
+    [ "long a[4]; long b; long c; a[0]=b;",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\nSET @a_0 $b\nFIN\n" ],
+    [ "long a[4]; long b; long c; a[2]=b;",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\nSET @a_2 $b\nFIN\n" ],
+    [ "long a[4]; long b; long c; c=a[b];",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\nSET @c $($a + $b)\nFIN\n" ],
+    [ "long a[4]; long b; long c; c=a[0];",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\nSET @c $a_0\nFIN\n" ],
+    [ "long a[4]; long b; long c; c=a[3];",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\nSET @c $a_3\nFIN\n" ],
+    [ "long a[4]; long b; long c; a[b]+=c;",    false,"" ],
+    [ "long a[4]; long b; long c; a[0]-=b;",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\nSUB @a_0 $b\nFIN\n" ],
+    [ "long a[4]; long b; long c; a[2]*=b;",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\nMUL @a_2 $b\nFIN\n" ],
+    [ "long a[4]; long b; long c; c/=a[b];",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\nSET @r0 $($a + $b)\nDIV @c $r0\nFIN\n" ],
+    [ "long a[4]; long b; long c; c&=a[0];",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\nAND @c $a_0\nFIN\n" ],
+    [ "long a[4]; long b; long c; c^=a[3];",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\nXOR @c $a_3\nFIN\n" ],
+    [ "long a[4]; long b; long c[4]; long d; a[b]=c[d];",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\n^declare c_0\n^declare c_1\n^declare c_2\n^declare c_3\n^declare d\nSET @r0 $($c + $d)\nSET @($a + $b) $r0\nFIN\n" ],
+    [ "long a[4]; long b; long c[4]; long d; a[b]+=c[d];", false,"" ],
+   // Arr+ Constant, Arr+ Operator
+    [ "long a[4]; long b; a[b]=2;",     false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\nSET @r0 #0000000000000002\nSET @($a + $b) $r0\nFIN\n" ],
+    [ "long a[4]; a[0]=0xFF;",   false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\nSET @a_0 #00000000000000ff\nFIN\n" ],
+    [ "long a[4]; a[2]=\"Ho ho\";", false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\nSET @a_2 #0000006f68206f48\nFIN\n" ],
+    [ "a=b[c]/b[d];", false,"SET @a $($b + $c)\nSET @r0 $($b + $d)\nDIV @a $r0\nFIN\n" ],
+    [ "a=b[c]<<b[2];",false,"SET @a #0000000000000002\nSET @r0 $($b + $c)\nSET @r1 $($b + $a)\nSHL @r0 $r1\nSET @a $r0\nFIN\n" ],
+   // Arr+ UnaryOperator, Arr+ SetUnaryOperator
+    [ "a=b[~c];",    false,"SET @a $c\nNOT @a\nSET @a $($b + $a)\nFIN\n" ],
+    [ "a=~b[c];",    false,"SET @a $($b + $c)\nNOT @a\nFIN\n" ],
+    [ "a=b[c]++;",  true,"" ],
+    [ "a=b++[c];",  true,"" ],
+    [ "a=--b[c];",  true,"" ],
+   // Arr+ CheckOperator(Unary), Arr+ CheckOperator(Binary)
+    [ "a=-b[c];",    false,"CLR @a\nSET @r0 $($b + $c)\nSUB @a $r0\nFIN\n" ],
+    [ "a=+b[c];",    false,"SET @a $($b + $c)\nFIN\n" ],
+    [ "a=b[-c];",    false,"CLR @a\nSUB @a $c\nSET @a $($b + $a)\nFIN\n" ],
+    [ "a=b[+c];",    false,"SET @a $($b + $c)\nFIN\n" ],
+    [ "a=b[*c];",    false,"SET @a $($c)\nSET @a $($b + $a)\nFIN\n" ],
+    [ "a=b[c]-d[e];", false,"SET @a $($b + $c)\nSET @r0 $($d + $e)\nSUB @a $r0\nFIN\n" ],
+    [ "a=b[c]+d[e];", false,"SET @a $($d + $e)\nSET @r0 $($b + $c)\nADD @a $r0\nFIN\n" ],
+    [ "a=b[c]*d[e];", false,"SET @a $($d + $e)\nSET @r0 $($b + $c)\nMUL @a $r0\nFIN\n" ],
+    [ "a=b[c]&d[e];", false,"SET @a $($d + $e)\nSET @r0 $($b + $c)\nAND @a $r0\nFIN\n" ],
+    [ "a=b[c-d];",    false,"SET @a $c\nSUB @a $d\nSET @a $($b + $a)\nFIN\n" ],
+    [ "a=b[c+d];",    false,"SET @a $d\nADD @a $c\nSET @a $($b + $a)\nFIN\n" ],
+    [ "a=b[c*d];",    false,"SET @a $d\nMUL @a $c\nSET @a $($b + $a)\nFIN\n" ],
+    [ "a=b[c&d];",    false,"SET @a $d\nAND @a $c\nSET @a $($b + $a)\nFIN\n" ],
+    [ "a=*b[c];",  true,"" ],
+    [ "a=&b[c];",  true,"" ],
+    [ "a=b[&c];",  true,"" ],
+   // Arr+ NewCodeLine
+    [ "a[2]=b,c[2]*=d,e[2]+=f;",    false,"SET @r0 #0000000000000002\nSET @($a + $r0) $b\nSET @r0 #0000000000000002\nSET @r1 $($c + $r0)\nMUL @r1 $d\nSET @($c + $r0) $r1\nSET @r0 #0000000000000002\nSET @r1 $($e + $r0)\nADD @r1 $f\nSET @($e + $r0) $r1\nFIN\n" ],
+    [ "a=b[c],d[0]=e;",    false,"SET @a $($b + $c)\nSET @($d) $e\nFIN\n" ],
+
+ // Memtable: multi Arr, 
+    [ "Multidimennsional Array;", "div" ],
+    [ "long a[4][2]; a[2][1]=0;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\nCLR @a_5\nFIN\n" ],
+    [ "long a[4][2]; long b; a[b][1]=0;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\nSET @r0 $b\nSET @r1 #0000000000000002\nMUL @r0 $r1\nINC @r0\nCLR @r1\nSET @($a + $r0) $r1\nFIN\n" ],
+    [ "long a[4][2]; long b; a[b][0]=0;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\nSET @r0 $b\nSET @r1 #0000000000000002\nMUL @r0 $r1\nCLR @r1\nSET @($a + $r0) $r1\nFIN\n" ],
+    [ "long a[4][2]; long b; a[0][b]=0;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\nCLR @r0\nSET @($a + $b) $r0\nFIN\n" ],
+    [ "long a[4][2]; long b; a[1][b]=0;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\nSET @r0 $b\nINC @r0\nINC @r0\nCLR @r1\nSET @($a + $r0) $r1\nFIN\n" ],
+    [ "long a[4][2]; long b; a[1][b]=a[b][1];",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\nSET @r0 $b\nINC @r0\nINC @r0\nSET @r1 $b\nSET @r2 #0000000000000002\nMUL @r1 $r2\nINC @r1\nSET @r2 $($a + $r1)\nSET @($a + $r0) $r2\nFIN\n" ],
+    [ "long a[3][3][3]; long b; long c; a[1][2][2]=0;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare a_8\n^declare a_9\n^declare a_10\n^declare a_11\n^declare a_12\n^declare a_13\n^declare a_14\n^declare a_15\n^declare a_16\n^declare a_17\n^declare a_18\n^declare a_19\n^declare a_20\n^declare a_21\n^declare a_22\n^declare a_23\n^declare a_24\n^declare a_25\n^declare a_26\n^declare b\n^declare c\nCLR @a_17\nFIN\n" ],
+    [ "long a[3][3][3]; long b; long c; a[1][2][b]=0;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare a_8\n^declare a_9\n^declare a_10\n^declare a_11\n^declare a_12\n^declare a_13\n^declare a_14\n^declare a_15\n^declare a_16\n^declare a_17\n^declare a_18\n^declare a_19\n^declare a_20\n^declare a_21\n^declare a_22\n^declare a_23\n^declare a_24\n^declare a_25\n^declare a_26\n^declare b\n^declare c\nSET @r0 $b\nSET @r1 #000000000000000f\nADD @r0 $r1\nCLR @r1\nSET @($a + $r0) $r1\nFIN\n" ],
+    [ "long a[3][3][3]; long b; long c; a[1][b][2]=0;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare a_8\n^declare a_9\n^declare a_10\n^declare a_11\n^declare a_12\n^declare a_13\n^declare a_14\n^declare a_15\n^declare a_16\n^declare a_17\n^declare a_18\n^declare a_19\n^declare a_20\n^declare a_21\n^declare a_22\n^declare a_23\n^declare a_24\n^declare a_25\n^declare a_26\n^declare b\n^declare c\nSET @r0 $b\nSET @r1 #0000000000000003\nMUL @r0 $r1\nSET @r1 #0000000000000009\nADD @r0 $r1\nINC @r0\nINC @r0\nCLR @r1\nSET @($a + $r0) $r1\nFIN\n" ],
+    [ "long a[3][3][3]; long b; long c; a[b][2][2]=0;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare a_8\n^declare a_9\n^declare a_10\n^declare a_11\n^declare a_12\n^declare a_13\n^declare a_14\n^declare a_15\n^declare a_16\n^declare a_17\n^declare a_18\n^declare a_19\n^declare a_20\n^declare a_21\n^declare a_22\n^declare a_23\n^declare a_24\n^declare a_25\n^declare a_26\n^declare b\n^declare c\nSET @r0 $b\nSET @r1 #0000000000000009\nMUL @r0 $r1\nSET @r1 #0000000000000006\nADD @r0 $r1\nINC @r0\nINC @r0\nCLR @r1\nSET @($a + $r0) $r1\nFIN\n" ],
+    [ "long a[3][3][3]; long b; long c; a[b][b][b]=0;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare a_8\n^declare a_9\n^declare a_10\n^declare a_11\n^declare a_12\n^declare a_13\n^declare a_14\n^declare a_15\n^declare a_16\n^declare a_17\n^declare a_18\n^declare a_19\n^declare a_20\n^declare a_21\n^declare a_22\n^declare a_23\n^declare a_24\n^declare a_25\n^declare a_26\n^declare b\n^declare c\nSET @r0 $b\nSET @r1 #0000000000000009\nMUL @r0 $r1\nSET @r1 $b\nSET @r2 #0000000000000003\nMUL @r1 $r2\nADD @r0 $r1\nADD @r0 $b\nCLR @r1\nSET @($a + $r0) $r1\nFIN\n" ],
+    [ "",  false,"" ],
+    [ "",  false,"" ],
+    [ "",  false,"" ],
+    [ "",  false,"" ],
+    [ "",  false,"" ],
+    [ "",  false,"" ],
+    [ "",  false,"" ],
+    [ "",  false,"" ],
+
+    // MemTable: general
+    [ "General;", "div" ],
     [ "long a;",   false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nFIN\n" ],
     [ "long a=3;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000003\nFIN\n" ],
     [ "long a,b;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\nFIN\n" ],
     [ "long a,b=3;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\nSET @b #0000000000000003\nFIN\n" ],
     [ "long * a;",  false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nFIN\n" ],
-    [ "long a[3];", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^allocate a 3\nFIN\n" ],
-    [ "long a[3]; a[0]=9;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^allocate a 3\nSET @r0 #0000000000000009\nSET @($a) $r0\nFIN\n" ],
+    [ "long a[3];", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\nFIN\n" ],
+    [ "long a[3]; a[0]=9;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare a_0\n^declare a_1\n^declare a_2\nSET @a_0 #0000000000000009\nFIN\n" ],
     [ "long a[3]; a=9;", true, "" ],
     [ "long a; void main(void) { a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\n__fn_main:\nPCS\nINC @a\nFIN\n" ],
     [ "long a; void main(void) { a++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\n__fn_main:\nPCS\nINC @a\nFIN\n" ],
