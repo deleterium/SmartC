@@ -8,6 +8,7 @@ To create a high level programming language, similar to C, for Burstcoin Automat
 - [x] Compile line based arithmetics expressions 
 - [x] Support for logical operations
 - [X] Support keywords and integration with loops and conditionals (Currently present at SimpleIDE)
+- [ ] Increase compiler memory management. Increase support for arrays and add struct keyword (WIP branch memorytable)
 - [ ] Add global code optimization: 1) jump to jump -> jump to right location 2) remove unreacheable codes (between JMP's and labels OR FIN and labels)
 - [ ] Add syntax highlighting and save projects in brownser LocalStorage.
 - [ ] Option to export machine code in hexadecimal stream, enabling import into Burstcoin wallet (BRS)
