@@ -969,8 +969,8 @@ Se tiver param_types
                     instructionstrain+=createInstruction(objTree.Operation, LGenObj.MemObj, RGenObj.MemObj);
 
                     //TODO check if there is offset!!!
-                    auxVars.freeVar(RGenObj.MemObj.location);
-                    auxVars.freeVar(RGenObj.MemObj.location);
+                    auxVars.freeRegister(RGenObj.MemObj.location);
+                    auxVars.freeRegister(RGenObj.MemObj.location);
                     return { MemObj: LGenObj.MemObj, instructionset: instructionstrain } ;
                 }
 
