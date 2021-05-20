@@ -381,13 +381,13 @@
                 scope: scope_name,
                 size: StructTypeD.struct_members.length,
                 dec_in_generator: set_dec_in_generator,
-                dec_as_pointer: false,
+                declaration: "struct",
             };
 
             let size_acc=0;
             StructTypeD.struct_members.forEach ( function (memb){
                 StructTypeD.struct_size_acc.push([ memb.name, size_acc ]);
-                if (memb.type!=="struct" || memb.dec_as_pointer!==false) //Remeber to change here code yolj1A
+                if (memb.type!=="struct" || memb.declaration.indexOf("_ptr") !=-1) //Remeber to change here code yolj1A
                     size_acc++;
             });
             prefix = old_prefix;
@@ -404,6 +404,13 @@
             let ispointer = false;
             if (structName === undefined) structName="";
             else structName+="_";
+
+            if (phrs.type === undefined) {
+                throw new TypeError("Unknow object type arrived at phrase2memoryObject.");
+            }
+            if (phrs.code.length == 0) { //empty statement
+                return;
+            }
 
             if (phrs.code[0].type === "Keyword" && phrs.code[0].value === "label" ) {
                 //transform this label in a fake variable
@@ -445,10 +452,11 @@
                         }
                         if ( phrs.code[idx].value === "*" && idx+1 < phrs.code.length && phrs.code[idx+1].type === "Variable" ) {
                             ispointer = true;
-                            Memory_template.dec_as_pointer=true;
+                            Memory_template.declaration+="_ptr";
                             idx++;
                         }
                         Memory_template.name = phrs.code[idx].value;
+                        Memory_template.asm_name = prefix+phrs.code[idx].value;
                         Memory_template.scope = scope_name;
                         Memory_template.dec_in_generator=set_dec_in_generator;
 
@@ -464,7 +472,12 @@
 
                             if (dimensions.length>0){ //is array of structs
                                 Memory_template.type="array";
-                                Memory_template.size = 1+ dimensions.reduce(function (total, num) {
+                                Memory_template.type_name= Memory_template.asm_name;
+                                Memory_template.asm_name = prefix+Memory_template.name;
+                                Memory_template.arr_item_type=search.type;
+                                Memory_template.arr_item_type_name=search.type_name;
+                                Memory_template.declaration += "_ptr";
+                                Memory_template.arr_total_size = 1+ dimensions.reduce(function (total, num) {
                                     return total * num; }, search.Memory_template.size);
 
                                 ret.push(Memory_template);
@@ -535,7 +548,9 @@
                             Memory_template.name = phrs.code[idx].value;
                             Memory_template.asm_name = prefix+phrs.code[idx].value;
                             Memory_template.scope = scope_name;
-                            Memory_template.dec_as_pointer = ispointer;
+                            if (ispointer) {
+                                Memory_template.declaration += "_ptr";
+                            }
                             Memory_template.dec_in_generator=set_dec_in_generator;
 
                             while (idx+1<phrs.code.length) {
@@ -551,38 +566,43 @@
                             if (dimensions.length>0){
                                 Memory_template.type="array";
                                 Memory_template.type_name= Memory_template.asm_name;
-                                Memory_template.size = 1+ dimensions.reduce(function (total, num) {
+                                Memory_template.arr_item_type=search.type;
+                                Memory_template.declaration += "_ptr";
+                                Memory_template.arr_total_size = 1+ dimensions.reduce(function (total, num) {
                                     return total * num; }, 1);
                             }
 
                             //Create item in memory_template
                             ret.push(Memory_template);
-                            //Create array items in memory_template
-                            for (let i=1; i< Memory_template.size; i++) {
-                                let Mem2 = JSON.parse(JSON.stringify(search.Memory_template));
-                                Mem2.name = Memory_template.name+"_"+(i-1),
-                                Mem2.asm_name = Memory_template.asm_name+"_"+(i-1),
-                                Mem2.scope = scope_name;
-                                Mem2.dec_as_pointer = ispointer;
-                                ret.push(Mem2);
-                            }
 
-                            // create array type definition
-                            if (Memory_template.size > 1) {
-                                let TypeD = { type_name: structName+Memory_template.asm_name,
-                                    type: "array",
-                                    arr_dimensions: dimensions,
-                                    arr_multiplier_dim: [] };
-                                let j = dimensions.length-1;
-                                let acc=1;
-                                do {
-                                    TypeD.arr_multiplier_dim.unshift(acc);
-                                    acc*=dimensions[j];
-                                    j--;
-                                } while (j>=0);
-                                Big_ast.typesDefinitions.push(TypeD);
+                            if (Memory_template.type==="array"){
+                                //Create array items in memory_template
+                                for (let i=1; i< Memory_template.arr_total_size; i++) {
+                                    let Mem2 = JSON.parse(JSON.stringify(search.Memory_template));
+                                    Mem2.name = Memory_template.name+"_"+(i-1),
+                                    Mem2.asm_name = Memory_template.asm_name+"_"+(i-1),
+                                    Mem2.scope = scope_name;
+                                    ret.push(Mem2);
+                                }
+
+                                // create array type definition
+                                if (Memory_template.arr_total_size > 1) {
+                                    let TypeD = { type_name: structName+Memory_template.asm_name,
+                                        type: "array",
+                                        arr_dimensions: dimensions,
+                                        arr_multiplier_dim: [] };
+                                    let j = dimensions.length-1;
+                                    let acc=1;
+                                    do {
+                                        TypeD.arr_multiplier_dim.unshift(acc);
+                                        acc*=dimensions[j];
+                                        j--;
+                                    } while (j>=0);
+                                    Big_ast.typesDefinitions.push(TypeD);
+                                }
                             }
                             valid = false;
+                            ispointer = false;
                         }
                         idx++;
                     }
@@ -717,9 +737,9 @@
     function consolidateMemory(){
         var var_counter=0;
         Big_ast.memory.forEach( function (thisvar){
-            if (thisvar.type === "struct" && thisvar.dec_as_pointer===false) {//Remeber to change here code yolj1A
+            if (thisvar.type === "struct" && thisvar.declaration.indexOf("_ptr") == -1) {//Remeber to change here code yolj1A
                 thisvar.hex_content=var_counter.toString(16).padStart(16,"0");
-            } if (thisvar.type === "array") {
+            } else if (thisvar.type === "array") {
                 thisvar.location=var_counter;
                 var_counter++;
                 thisvar.hex_content=var_counter.toString(16).padStart(16,"0");
@@ -740,6 +760,7 @@
                 type: "register",
                 type_name: null,
                 scope: "",
+                declaration: "long",
                 size: 1,
                 dec_in_generator: true,
             }
@@ -752,8 +773,8 @@
                 type: "long",
                 type_name: null,
                 scope: "",
+                declaration: "long",
                 size: 1,
-                dec_as_pointer: false,
                 dec_in_generator: false,
             }
         } ];

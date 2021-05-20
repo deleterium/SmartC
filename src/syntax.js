@@ -44,7 +44,7 @@ function createSyntacticTree(ast) {
                     Node.param_type.push("Arr");
                     Node.params.push(createSyntacticTree(ast[i].params));
                 } else if (ast[i].type === "Member") {
-                    Node.param_type.push("Member");
+                    Node.param_type.push("Member"+ast[i].value);
                     i++;
                     //Node.params.push(createSyntacticTree(ast[i]));
                     Node.params.push(ast[i]);
@@ -139,18 +139,22 @@ function createSyntacticTree(ast) {
         return { Center:    createSyntacticTree(ast.slice(i+1)),
                 Operation: ast[i] };
 
-    } else if (ast[0].type == "SetUnaryOperator" && ast.length == 2 && ast[1].type == "Variable") {
-
+    } else if (ast[0].type == "SetUnaryOperator" && ast[1].type == "Variable") {
+        if ( ast.length > 2) {
+            throw new SyntaxError("At line: "+ast[0].line+". Invalid use of 'SetUnaryOperator' with value  '"+ast[0].value+"'.");
+        }
         return { Left:      ast[1],
                 Operation: ast[0] };
 
-    } else if (ast[0].type == "Variable" && ast.length == 2 && ast[1].type == "SetUnaryOperator"){
-
+    } else if (ast[0].type == "Variable" && ast[1].type == "SetUnaryOperator"){
+        if ( ast.length > 2) {
+            throw new SyntaxError("At line: "+ast[1].line+". Invalid use of 'SetUnaryOperator' with value  '"+ast[1].value+"'.");
+        }
         return { Right:     ast[0],
                 Operation: ast[1] };
     }
 
-    throw new SyntaxError("At line: "+ast[0].line+". Unknown token found:"+ast[0].type+" with value:"+ast[0].value);
+    throw new SyntaxError("At line: "+ast[0].line+". Token '"+ast[0].type+"' with value '"+ast[0].value+"' does not match any syntax rules.");
 }
 
 
