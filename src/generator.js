@@ -35,6 +35,7 @@ function bigastCompile(bc_Big_ast){
         // add variables declaration
         if ( bc_Big_ast.Config.useVariableDeclaration) {
             bc_Big_ast.memory.forEach( assemblerDeclarationGenerator );
+            writeAsmLine(""); //blank line to be nice to debugger!
         }
 
         // Add code for global sentences
@@ -249,6 +250,9 @@ function bigastCompile(bc_Big_ast){
         function genDecToken(){
             return { "type": "SetUnaryOperator", "precedence": 2, "value": "--", "line": -1 };
         }
+        function genNotEqualToken(){
+            return { "type": "Comparision", "precedence": 6, "value": "!="};
+        }
         // here the hardwork to compile expressions
         function genCode(objTree, logicalOp, gc_revLogic, gc_jumpFalse, gc_jumpTrue) {
 
@@ -263,20 +267,24 @@ function bigastCompile(bc_Big_ast){
                 }
 
                 if (logicalOp === true) {
-                    if (objTree.type === "Constant" && objTree.name === "NumberDecimalStr") {
+                    if (objTree.type === "Constant") {
                         if (gc_revLogic === false)
-                            if (objTree.value === "0")
+                            if (objTree.value === "0000000000000000")
                                 return { instructionset: createInstruction({type: "Jump"}, gc_jumpFalse)};
                             else
                                 return { instructionset: "" };
                         else
-                            if (objTree.value !== "0")
+                            if (objTree.value !== "0000000000000000")
                                 return { instructionset: createInstruction({type: "Jump"}, gc_jumpTrue)};
                             else
                                 return { instructionset: "" };
                     }
                     if (objTree.type === "Variable") {
-                        return genCode(truthVerObj(objTree.value), false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                        LGenObj=genCode(objTree, false, gc_revLogic);
+                        instructionstrain+=LGenObj.instructionset;
+                        instructionstrain+=createInstruction(genNotEqualToken() ,LGenObj.MemObj, createConstantMemObj(0), gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                        auxVars.freeRegister(LGenObj.MemObj.location);
+                        return { instructionset: instructionstrain } ;
                     }
                     throw new TypeError("At line: "+objTree.line+". Object type '"+objTree.type+" at logical operation... Do not know what to do.");
                 } else {
@@ -397,6 +405,9 @@ function bigastCompile(bc_Big_ast){
                                 }
 
                                 if (objTree.param_type[idx] === "Arr") {
+                                    if (bc_Big_ast.Config.useVariableDeclaration === false){
+                                        throw new TypeError ("At line: "+objTree.line+". Can not use arrays if 'useVariableDefinition' is 'false'");
+                                    }
                                     array_idx++;
                                     let TmpMemObj;
                                     let TypeD; // = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.type_name===objTree.value );
@@ -416,18 +427,19 @@ function bigastCompile(bc_Big_ast){
                                     let Param_Obj = genCode(objTree.params[idx], false, false); // gc_revLogic, gc_jumpFalse, gc_jumpTrue);
                                     instructionstrain+=Param_Obj.instructionset;
 
+                                    if (M_Obj.declaration.indexOf("_ptr") > 0) {
+                                        M_Obj.declaration = M_Obj.declaration.slice(0,-4);
+                                    }
+
+                                    if (Param_Obj.MemObj === undefined) { //special case for text assignment
+                                        return {MemObj: M_Obj, instructionset: instructionstrain }
+                                    }
                                     //big decision tree depending on M_Obj.offset_value and Param_Obj.location
                                     let mobj_offvalue = M_Obj.offset_value; // undefined if does not exist, "constant", or variable location that can be temp or not (will be checked!)
                                     if (typeof(M_Obj.offset_value) === "string") {
                                         mobj_offvalue = -1; //only if offset_type is constant 
                                     }
                                     let param_loc = Param_Obj.MemObj.location; //-1 if it is constant, other value represents a variable that can be temp or not (will be checked!)
-
-                                    if (bc_Big_ast.Config.useVariableDeclaration) { //used checking types for operations/assignment
-                                        if (M_Obj.declaration.indexOf("_ptr") > 0) {
-                                            M_Obj.declaration = M_Obj.declaration.slice(0,-4);
-                                        }
-                                    }
 
                                     if (mobj_offvalue === undefined) {
                                         if (param_loc == -1 ) {
@@ -572,7 +584,6 @@ function bigastCompile(bc_Big_ast){
             } else { //operation object
 
                 let TmpMemObj;
-                let tempvar, makeJump;
                 let isAPI=false;
 
                 if (objTree.Operation.type === 'FunctionCall') {
@@ -599,9 +610,9 @@ function bigastCompile(bc_Big_ast){
 
                     if (isAPI){
                         if (search.return_type === "void") {
-                            tempvar = "";
+                            TmpMemObj = undefined;
                         } else {
-                            tempvar=auxVars.getNewTemp(); //reserve tempvar for return type
+                            TmpMemObj=auxVars.getNewRegister(); //reserve tempvar for return type
                         }
                     }
 
@@ -614,16 +625,16 @@ function bigastCompile(bc_Big_ast){
 
                         if (isAPI){
                             sub_sentences.forEach( function (stnc) {
-                                right=genCode(stnc, false, false );
-                                instructionstrain+=right.instructionset;
-                                APIargs.push( right.varname );
+                                RGenObj=genCode(stnc, false, false );
+                                instructionstrain+=RGenObj.instructionset;
+                                APIargs.push( RGenObj.MemObj );
                             });
                         } else {
                             sub_sentences.forEach( function (stnc) {
-                                right=genCode(stnc, false, false );
-                                instructionstrain+=right.instructionset;
-                                instructionstrain+=createInstruction( {type: "Push"} , right.varname );
-                                auxVars.freeVar(right.varname);
+                                RGenObj=genCode(stnc, false, false );
+                                instructionstrain+=RGenObj.instructionset;
+                                instructionstrain+=createInstruction( {type: "Push"} , RGenObj.MemObj );
+                                auxVars.freeRegister(RGenObj.MemObj.location);
                             });
                         }
                     } else {
@@ -634,8 +645,8 @@ function bigastCompile(bc_Big_ast){
                     }
 
                     if (isAPI){
-                        instructionstrain+=createInstruction( {type: "APICall", value: search.asmName}, tempvar, APIargs);
-                        APIargs.forEach(varnm => auxVars.freeVar(varnm));
+                        instructionstrain+=createInstruction( {type: "APICall", value: search.asmName}, TmpMemObj, APIargs);
+                        APIargs.forEach(varnm => auxVars.freeRegister(varnm.location));
                     } else {
                         instructionstrain+=createInstruction( objTree.Operation, objTree.Left.value );
                     }
@@ -645,18 +656,17 @@ function bigastCompile(bc_Big_ast){
                     }
 
                     if ( ! isAPI ) {
-                        tempvar=auxVars.getNewTemp();
-                        instructionstrain+=createInstruction( { type: "Pop"}, tempvar );
+                        TmpMemObj=auxVars.getNewRegister();
+                        instructionstrain+=createInstruction( { type: "Pop"}, TmpMemObj );
                     }
 
-                    if (logicalOp === true) { //maybe logical operation was requested
-                        makeJump=genCode(truthVerObj(tempvar), true, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
-                        instructionstrain+=makeJump.instructionset;
-                        auxVars.freeVar(tempvar);
+                    if (TmpMemObj.MemObj !== undefined && logicalOp === true) { //maybe logical operation was requested
+                        instructionstrain+=createInstruction(genNotEqualToken() ,TmpMemObj.MemObj, createConstantMemObj(0), gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                        auxVars.freeRegister(CGenOTmpMemObjbj.MemObj.location);
                         return { instructionset: instructionstrain };
                     }
 
-                    return { varname: tempvar, instructionset: instructionstrain } ;
+                    return { MemObj: TmpMemObj, instructionset: instructionstrain } ;
                 }
 
                 if (objTree.Operation.type === 'UnaryOperator') {
@@ -676,24 +686,25 @@ function bigastCompile(bc_Big_ast){
                             IDNotST = "__NOT_"+rnd+"_sT";//set true
                             IDEnd   = "__NOT_"+rnd+"_end";
 
-                            center=genCode(objTree.Center, true, !gc_revLogic, IDNotST, IDNotSF);
-                            instructionstrain+=center.instructionset;
+                            CGenObj=genCode(objTree.Center, true, !gc_revLogic, IDNotST, IDNotSF);
+                            instructionstrain+=CGenObj.instructionset;
 
-                            if (auxVars.isTemp(center.varname)) { //maybe it was an arithmetic operation
-                                makeJump=genCode(truthVerObj(center.varname), false, !gc_revLogic, IDNotST, IDNotSF);
-                                instructionstrain+=makeJump.instructionset;
+                            if (CGenObj.MemObj !== undefined && auxVars.isTemp(CGenObj.MemObj.location)) { //maybe it was an arithmetic operation
+                                instructionstrain+=createInstruction(genNotEqualToken() ,CGenObj.MemObj, createConstantMemObj(0), !gc_revLogic, gc_jumpFalse, gc_jumpTrue);
                             }
 
-                            tempvar=auxVars.getNewTemp();
+                            TmpMemObj=auxVars.getNewRegister();
                             instructionstrain += createInstruction({type: "Label"},IDNotST);
-                            instructionstrain += createInstruction({type: "Assignment"},tempvar,"#0000000000000001");
+                            instructionstrain += createInstruction(genAssignmentToken(),TmpMemObj,createConstantMemObj(1));
                             instructionstrain += createInstruction({type: "Jump"}, IDEnd);
                             instructionstrain += createInstruction({type: "Label"},IDNotSF);
-                            instructionstrain += createInstruction({type: "Assignment"},tempvar,"#0000000000000000");
+                            instructionstrain += createInstruction(genAssignmentToken(),TmpMemObj,createConstantMemObj(0));
                             instructionstrain += createInstruction({type: "Label"}, IDEnd);
 
-                            auxVars.freeVar(center.varname);
-                            return { varname: tempvar, instructionset: instructionstrain };
+                            if (CGenObj.MemObj !== undefined) {
+                                auxVars.freeRegister(CGenObj.MemObj.location);
+                            }
+                            return { MemObj: TmpMemObj, instructionset: instructionstrain };
                         }
                     }
 
@@ -713,11 +724,10 @@ function bigastCompile(bc_Big_ast){
                         CGenObj=genCode(objTree.Center, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
                         instructionstrain+=CGenObj.instructionset;
         
-                        /* TODO */
-                        if (logicalOp === true) { //maybe logical operation was requested
-                            makeJump=genCode(truthVerObj(center.varname+"$"), true, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
-                            instructionstrain+=makeJump.instructionset;
-                            auxVars.freeVar(center.varname);
+                        if (logicalOp === true) {
+                            CGenObj.MemObj.type  += "_ptr";
+                            instructionstrain+=createInstruction(genNotEqualToken() ,CGenObj.MemObj, createConstantMemObj(0), gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                            auxVars.freeRegister(CGenObj.MemObj.location);
                             return { instructionset: instructionstrain };
                         }
 
@@ -753,11 +763,9 @@ function bigastCompile(bc_Big_ast){
                         instructionstrain+=createInstruction(genSubToken(objTree.line), TmpMemObj, CGenObj.MemObj);
                         auxVars.freeRegister(CGenObj.MemObj.location)
 
-                        // TODO
                         if (logicalOp === true) {
-                            makeJump=genCode(truthVerObj(tempvar), true, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
-                            instructionstrain+=makeJump.instructionset;
-                            auxVars.freeVar(tempvar);
+                            instructionstrain+=createInstruction(genNotEqualToken() ,TmpMemObj, createConstantMemObj(0), gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                            auxVars.freeRegister(TmpMemObj.location);
                             return { instructionset: instructionstrain };
                         }
 
@@ -776,12 +784,10 @@ function bigastCompile(bc_Big_ast){
                         }
                         instructionstrain+= createInstruction(objTree.Operation, TmpMemObj);
 
-                        //TODO
                         if (logicalOp === true) {
-                            makeJump=genCode(truthVerObj(tempvar), true, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
-                            instructionstrain+=makeJump.instructionset;
-                            auxVars.freeVar(center.varname);
-                            auxVars.freeVar(tempvar);
+                            instructionstrain+=createInstruction(genNotEqualToken() ,TmpMemObj, createConstantMemObj(0), gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                            auxVars.freeRegister(CGenObj.MemObj.location);
+                            auxVars.freeRegister(TmpMemObj.location);
                             return { instructionset: instructionstrain };
                         }
 
@@ -793,6 +799,10 @@ function bigastCompile(bc_Big_ast){
                     }
 
                     if (objTree.Operation.value === "&") {
+                        if (cg_jumpTarget !== undefined)
+                            throw new SyntaxError("At line: "+objTree.Operation.line+". Can not use UnaryOperator '&' during logical operations with branches");
+                        if (gc_jumpFalse !== undefined)
+                            throw new SyntaxError("At line: "+objTree.Operation.line+". Can not use UnaryOperator '&' during logical operations with branches");
                         if (CGenObj.MemObj === undefined) {
                             throw new TypeError("At line: "+objTree.Operation.line+". Trying to get address of void value");
                         }
@@ -804,13 +814,19 @@ function bigastCompile(bc_Big_ast){
                         if (CGenObj.MemObj.type === "constant") {
                             throw new TypeError("At line: "+objTree.Operation.line+". Trying to get address of a constant value");
                         }
+
                         let TmpMemObj;
                         if (CGenObj.MemObj.type === "array") {
                             if (CGenObj.MemObj.offset_type !== undefined ) {
                                 if (CGenObj.MemObj.offset_type === "constant") {
                                     TmpMemObj = createConstantMemObj( addHexContents(CGenObj.MemObj.hex_content, CGenObj.MemObj.offset_value) );
                                 } else {
-                                    throw new TypeError("At line: "+objTree.Operation.line+". Compiler can not resolve address of an variable location.");
+                                    let Copyvar = JSON.parse(JSON.stringify(CGenObj.MemObj));
+                                    delete Copyvar.offset_type;
+                                    delete Copyvar.offset_value;
+                                    TmpMemObj=auxVars.getNewRegister();
+                                    instructionstrain+=createInstruction(genAssignmentToken(), TmpMemObj, Copyvar);
+                                    instructionstrain+=createInstruction(genAddToken(), TmpMemObj, getMemoryObjectByLocation(CGenObj.MemObj.offset_value));
                                 }
                             } else {
                                 TmpMemObj = createConstantMemObj(CGenObj.MemObj.location);
@@ -849,7 +865,6 @@ function bigastCompile(bc_Big_ast){
 
                 if (objTree.Operation.type === "Comparision") {
 
-
                     if (logicalOp === false && gc_jumpFalse === undefined) {// need to transform arithmetic to logical
 
                         let IDCompSF, IDCompST, IDEnd, rnd, ret;
@@ -863,28 +878,28 @@ function bigastCompile(bc_Big_ast){
                         if (objTree.Operation.value === "||") { // Code optimization
                             ret=genCode(objTree, true, true, IDCompSF, IDCompST); //do it again, now with jump defined
                             instructionstrain+=ret.instructionset;
-                            tempvar=auxVars.getNewTemp();
+                            TmpMemObj=auxVars.getNewRegister();
                             instructionstrain += createInstruction({type: "Label"},IDCompSF);
-                            instructionstrain += createInstruction({type: "Assignment"},tempvar,"#0000000000000000");
+                            instructionstrain += createInstruction(genAssignmentToken(),TmpMemObj,createConstantMemObj(0));
                             instructionstrain += createInstruction({type: "Jump"}, IDEnd);
                             instructionstrain += createInstruction({type: "Label"},IDCompST);
-                            instructionstrain += createInstruction({type: "Assignment"},tempvar,"#0000000000000001");
+                            instructionstrain += createInstruction(genAssignmentToken(),TmpMemObj,createConstantMemObj(1));
                             instructionstrain += createInstruction({type: "Label"}, IDEnd);
                         } else {
                             gc_jumpTrue=IDCompST;
                             ret=genCode(objTree, true ,false, IDCompSF, IDCompST); //do it again, now with jump defined
                             instructionstrain+=ret.instructionset;
-                            tempvar=auxVars.getNewTemp();
+                            TmpMemObj=auxVars.getNewRegister();
                             instructionstrain += createInstruction({type: "Label"},IDCompST);
-                            instructionstrain += createInstruction({type: "Assignment"},tempvar,"#0000000000000001");
+                            instructionstrain += createInstruction(genAssignmentToken(),TmpMemObj,createConstantMemObj(1));
                             instructionstrain += createInstruction({type: "Jump"}, IDEnd);
                             instructionstrain += createInstruction({type: "Label"},IDCompSF);
-                            instructionstrain += createInstruction({type: "Assignment"},tempvar,"#0000000000000000");
+                            instructionstrain += createInstruction(genAssignmentToken(),TmpMemObj,createConstantMemObj(0));
                             instructionstrain += createInstruction({type: "Label"}, IDEnd);
                         }
 
-                        auxVars.freeVar(ret.varname);
-                        return { varname: tempvar, instructionset: instructionstrain };
+                        auxVars.freeRegister(ret.location);
+                        return { MemObj: TmpMemObj, instructionset: instructionstrain };
                     }
 
                     if (objTree.Operation.value === "||") {
@@ -895,20 +910,18 @@ function bigastCompile(bc_Big_ast){
 
                         IDNextStmt = "__OR_"+rnd+"_next";
 
-                        left=genCode(objTree.Left, true, true, IDNextStmt, gc_jumpTrue);
-                        instructionstrain+=left.instructionset;
-                        if (auxVars.isTemp(left.varname)) { //maybe it was an arithmetic operation
-                            makeJump=genCode(truthVerObj(left.varname), true, true, gc_jumpFalse, gc_jumpTrue);
-                            instructionstrain+=makeJump.instructionset;
+                        LGenObj=genCode(objTree.Left, true, true, IDNextStmt, gc_jumpTrue);
+                        instructionstrain+=LGenObj.instructionset;
+                        if ( LGenObj.MemObj !== undefined && auxVars.isTemp(LGenObj.MemObj.location)) { //maybe it was an arithmetic operation
+                            instructionstrain+=createInstruction(genNotEqualToken() ,LGenObj.MemObj, createConstantMemObj(0), true, gc_jumpFalse, gc_jumpTrue);
                         }
 
                         instructionstrain+=createInstruction({type: "Label"},IDNextStmt);
 
-                        right=genCode(objTree.Right, true, true, gc_jumpFalse, gc_jumpTrue);
-                        instructionstrain+=right.instructionset;
-                        if (auxVars.isTemp(right.varname)) { //maybe it was an arithmetic operation
-                            makeJump=genCode(truthVerObj(right.varname), true, true, gc_jumpFalse, gc_jumpTrue);
-                            instructionstrain+=makeJump.instructionset;
+                        RGenObj=genCode(objTree.Right, true, true, gc_jumpFalse, gc_jumpTrue);
+                        instructionstrain+=RGenObj.instructionset;
+                        if (RGenObj.MemObj !== undefined && auxVars.isTemp(RGenObj.MemObj.location)) { //maybe it was an arithmetic operation
+                            instructionstrain+=createInstruction(genNotEqualToken() ,RGenObj.MemObj, createConstantMemObj(0), true, gc_jumpFalse, gc_jumpTrue);
                         }
 
                         instructionstrain+=createInstruction({type: "Jump"}, gc_jumpFalse);
@@ -924,20 +937,18 @@ function bigastCompile(bc_Big_ast){
 
                         IDNextStmt = "__AND_"+rnd+"_next";
 
-                        left=genCode(objTree.Left, true, false, gc_jumpFalse, IDNextStmt);
-                        instructionstrain+=left.instructionset;
-                        if (auxVars.isTemp(left.varname)) { //maybe it was an arithmetic operation
-                            makeJump=genCode(truthVerObj(left.varname), true, false, gc_jumpFalse, gc_jumpTrue);
-                            instructionstrain+=makeJump.instructionset;
+                        LGenObj=genCode(objTree.Left, true, false, gc_jumpFalse, IDNextStmt);
+                        instructionstrain+=LGenObj.instructionset;
+                        if (LGenObj.MemObj !== undefined && auxVars.isTemp(LGenObj.MemObj.location)) { //maybe it was an arithmetic operation
+                            instructionstrain+=createInstruction(genNotEqualToken() ,LGenObj.MemObj, createConstantMemObj(0), false, gc_jumpFalse, gc_jumpTrue);
                         }
 
                         instructionstrain+=createInstruction({type: "Label"},IDNextStmt);
 
-                        right=genCode(objTree.Right, true, false, gc_jumpFalse, gc_jumpTrue);
-                        instructionstrain+=right.instructionset;
-                        if (auxVars.isTemp(right.varname)) { //maybe it was an arithmetic operation
-                            makeJump=genCode(truthVerObj(right.varname), true, false, gc_jumpFalse, gc_jumpTrue);
-                            instructionstrain+=makeJump.instructionset;
+                        RGenObj=genCode(objTree.Right, true, false, gc_jumpFalse, gc_jumpTrue);
+                        instructionstrain+=RGenObj.instructionset;
+                        if (RGenObj.MemObj !== undefined && auxVars.isTemp(RGenObj.MemObj.location)) { //maybe it was an arithmetic operation
+                            instructionstrain+=createInstruction(genNotEqualToken() ,RGenObj.MemObj, createConstantMemObj(0), false, gc_jumpFalse, gc_jumpTrue);
                         }
 
                         instructionstrain+=createInstruction({type: "Jump"}, gc_jumpTrue);
@@ -947,16 +958,16 @@ function bigastCompile(bc_Big_ast){
 
                     // other comparisions operators: ==, !=, <, >, <=, >=
 
-                    left=genCode(objTree.Left, false, gc_revLogic); //, gc_jumpFalse, gc_jumpTrue); must be undefined to evaluate expressions
-                    instructionstrain+=left.instructionset;
+                    LGenObj=genCode(objTree.Left, false, gc_revLogic); //, gc_jumpFalse, gc_jumpTrue); must be undefined to evaluate expressions
+                    instructionstrain+=LGenObj.instructionset;
 
-                    right=genCode(objTree.Right, false, gc_revLogic); //, gc_jumpFalse, gc_jumpTrue); must be undefined to evaluate expressions
-                    instructionstrain+=right.instructionset;
+                    RGenObj=genCode(objTree.Right, false, gc_revLogic); //, gc_jumpFalse, gc_jumpTrue); must be undefined to evaluate expressions
+                    instructionstrain+=RGenObj.instructionset;
 
-                    instructionstrain+=createInstruction(objTree.Operation, left.varname, right.varname, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                    instructionstrain+=createInstruction(objTree.Operation, LGenObj.MemObj, RGenObj.MemObj, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
 
-                    auxVars.freeVar(left.varname);
-                    auxVars.freeVar(right.varname);
+                    auxVars.freeRegister(LGenObj.MemObj.location);
+                    auxVars.freeRegister(RGenObj.MemObj.location);
                     return { instructionset: instructionstrain } ;
                 }
 
@@ -1002,9 +1013,9 @@ function bigastCompile(bc_Big_ast){
                             return { MemObj: TmpMemObj, instructionset: instructionstrain };
                         }
                     }
-                    //optimization if one parameter is constant and operation is commutative
+                    //if optimization is possible, change operators order (only commutativa operations!)
                     if (LGenObj.MemObj.type === "constant"){
-                        if (objTree.Operation.value === "+" || objTree.Operation.value === "*" || objTree.Operation.value === "&" || objTree.Operation.value === "^" || objTree.Operation.value === "|" ) {
+                        if (checkOperatorOptimization(objTree.Operation.value, LGenObj.MemObj)) {
                             let temp=RGenObj;
                             RGenObj=LGenObj;
                             LGenObj=temp;
@@ -1021,12 +1032,10 @@ function bigastCompile(bc_Big_ast){
 
                     instructionstrain+=createInstruction(objTree.Operation, TmpMemObj, RGenObj.MemObj);
 
-                    //TODO 
                     if (logicalOp === true) {
-                        makeJump=genCode(truthVerObj(tempvar), true, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
-                        instructionstrain+=makeJump.instructionset;
-                        auxVars.freeVar(right.varname);
-                        auxVars.freeVar(tempvar);
+                        instructionstrain+=createInstruction(genNotEqualToken() ,TmpMemObj, createConstantMemObj(0), gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                        auxVars.freeRegister(RGenObj.MemObj.location);
+                        auxVars.freeRegister(TmpMemObj.location);
                         return { instructionset: instructionstrain };
                     }
 
@@ -1051,9 +1060,6 @@ function bigastCompile(bc_Big_ast){
                     if (auxVars.isTemp(LGenObj.MemObj.location) && LGenObj.MemObj.type.lastIndexOf("_ptr") !== LGenObj.MemObj.type.length-4){
                         throw new TypeError("At line: "+objTree.Operation.line+". Invalid left value for "+objTree.Operation.type);
                     }
-                    if ( LGenObj.MemObj.type === "array" &&  LGenObj.MemObj.offset_type === undefined ) {
-                        throw new TypeError("At line: "+objTree.Operation.line+". Invalid left value for "+objTree.Operation.type);
-                    }
 
                     let temp_declare="";
                     if (auxVars.declaring.length != 0) {
@@ -1062,12 +1068,11 @@ function bigastCompile(bc_Big_ast){
                     }
                     //check if we can reuse variables used on assignment
                     //then add it to auxVars.tmpvars
-                    //TODO Do it better!!!
                     if ( objTree.Operation.type === "Assignment"
                         && bc_Big_ast.Config.reuseAssignedVar === true
                         && LGenObj.MemObj.type === "long"
                         && CanReuseAssignedVar(LGenObj.MemObj.location, objTree.Right) ){
-                        auxVars.tmpvars.unshift(LGenObj.MemObj.asm_name);
+                        auxVars.tmpvars.unshift(LGenObj.MemObj.name);
                         auxVars.status.unshift(false);
                         RGenObj=genCode(objTree.Right, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
                         auxVars.tmpvars.shift();
@@ -1091,7 +1096,6 @@ function bigastCompile(bc_Big_ast){
                     }   }   }   }   }
                     instructionstrain+=createInstruction(objTree.Operation, LGenObj.MemObj, RGenObj.MemObj);
 
-                    //TODO check if there is offset!!!
                     auxVars.freeRegister(RGenObj.MemObj.location);
                     auxVars.freeRegister(RGenObj.MemObj.location);
                     return { MemObj: LGenObj.MemObj, instructionset: instructionstrain } ;
@@ -1132,7 +1136,6 @@ function bigastCompile(bc_Big_ast){
                         instructionstrain+=RGenObj.instructionset;
                         instructionstrain+=auxVars.getPostOperations();
 
-                        //TODO: goto: check if label exists
                         instructionstrain+=createInstruction(objTree.Left, RGenObj.MemObj);
 
                         auxVars.freeRegister(RGenObj.MemObj.location);
@@ -1149,16 +1152,23 @@ function bigastCompile(bc_Big_ast){
             }
         }
 
-
-        // Returns an object that can be used to create a instruction to
-        //   verify if it is true. True if var != 0, false if var == 0
-        function truthVerObj(variable_to_test) {
-
-            return { Left:      { "type": "Variable",   "precedence": 0, "value": variable_to_test },
-                    Operation: { "type": "Comparision","precedence": 6, "value": "!=" },
-                    Right:     { "type": "Constant",   "precedence": 0, "name": "NumberDecimalStr", "value": "0" } };
+        //all cases here must be implemented in createInstruction code oKSx4ab
+        // place here only commutative operations!!!
+        function checkOperatorOptimization(operator, ConstantObj) {
+            if (        operator === '+' || operator === '+=') {
+                if (   ConstantObj.hex_content === "0000000000000000"
+                    || ConstantObj.hex_content === "0000000000000001"
+                    || ConstantObj.hex_content === "0000000000000002") {
+                    return true;
+                }
+            } else if ( operator === '*' || operator === '*=') {
+                if (   ConstantObj.hex_content === "0000000000000000"
+                    || ConstantObj.hex_content === "0000000000000001") {
+                    return true;
+                }
+            }
+            return false;
         }
-
 
         // Traverse an AST searching a variable name. In this case is the
         //   right side of an assignment. If variable 'name' is found, it
@@ -1166,7 +1176,7 @@ function bigastCompile(bc_Big_ast){
         function CanReuseAssignedVar(loc, ast_code) {
 
             let SeekObj = getMemoryObjectByLocation(loc);
-            let vname = SeekObj.asm_name;
+            let vname = SeekObj.name;
 
             if (ast_code.Operation === undefined) { //end object
                 if (ast_code.type === 'Variable'){
@@ -1268,6 +1278,59 @@ function bigastCompile(bc_Big_ast){
         function createInstruction(objoperator, param1, param2, ci_revLogic, ci_jumpFalse, ci_jumpTrue) {
             let retinstr="";
 
+            // From Param_Obj create an memory object suitable for assembly operations, except assignment.
+            // Returns also instructions maybe needed for conversion and an boolean to indicate if it is
+            // a new object (that must be free later on)
+            function mold_param(Param_Obj, line) {
+                let Ret_Obj;
+                let ret_instructions="";
+                let ret_is_new = false;
+
+                if (Param_Obj.type === "constant" ) {
+                    Ret_Obj=auxVars.getNewRegister();
+                    ret_instructions+=createInstruction(genAssignmentToken(), Ret_Obj, Param_Obj);
+                    ret_is_new=true;
+
+                } else if (Param_Obj.type === "register" || Param_Obj.type === "long") {
+                    Ret_Obj = Param_Obj;
+
+                } else if (Param_Obj.type === "register_ptr" || Param_Obj.type === "long_ptr") {
+                    Ret_Obj=auxVars.getNewRegister();
+                    ret_instructions+=createInstruction(genAssignmentToken(), Ret_Obj, Param_Obj);
+                    ret_is_new=true;
+
+                } else if (Param_Obj.type === "array") {
+                    if (Param_Obj.offset_type === "constant") { //Looks like an array but can be converted to regular variable
+                        Ret_Obj = getMemoryObjectByLocation( addHexContents(Param_Obj.hex_content, Param_Obj.offset_value), line);
+                    } else {
+                        Ret_Obj=auxVars.getNewRegister();
+                        ret_instructions+=createInstruction(genAssignmentToken(), Ret_Obj, Param_Obj);
+                        ret_is_new=true;
+                    }
+
+                } else if (Param_Obj.type === "struct") {
+                    if ( bc_Big_ast.Config.useVariableDeclaration === false) {
+                        throw new TypeError("At line: "+line+". Can not use struct if 'useVariableDeclaration' is false.");
+                    }
+                    if (Param_Obj.offset_type === undefined) {
+                        Ret_Obj = Param_Obj;
+                    } else if (Param_Obj.offset_type === "constant") {
+                        Ret_Obj=auxVars.getNewRegister();
+                        ret_instructions+=createInstruction(genAssignmentToken(), Ret_Obj, createConstantMemObj(Param_Obj.offset_value));
+                        ret_is_new=true;
+                    } else {
+                        Ret_Obj=auxVars.getNewRegister();
+                        ret_instructions+=createInstruction(genAssignmentToken(), Ret_Obj, Param_Obj);
+                        ret_is_new=true;
+                    }
+
+                } else {
+                    throw new TypeError("At line: "+line+". Not implemented type in mold_param(): Param_Obj.type = '"+Param_Obj.type+"'.");
+                }
+
+                return { MoldedObj: Ret_Obj, instructionset: ret_instructions, is_new: ret_is_new };
+            }
+
             if (objoperator.type === 'Assignment') {
 
                 if (param1.type === "constant" || param1.type === "constant_ptr") {
@@ -1293,7 +1356,7 @@ function bigastCompile(bc_Big_ast){
                         return "SET @"+param1.asm_name+" $($"+param2.asm_name+")\n";
 
                     } else if (param2.type === "constant_ptr") {
-                        return "SET @"+param1.asm_name+" $($"+getMemoryObjectByLocation(param2.hex_content,objoperator.line).asm_nam+")\n";
+                        return "SET @"+param1.asm_name+" $($"+getMemoryObjectByLocation(param2.hex_content,objoperator.line).asm_name+")\n";
 
                     } else if (param2.type === "array" || param2.type === "struct") {
                         if (param2.offset_type === undefined) {
@@ -1346,8 +1409,22 @@ function bigastCompile(bc_Big_ast){
                         return createInstruction(objoperator,getMemoryObjectByLocation(addHexContents(param1.hex_content, param1.offset_value), objoperator.line), param2);
                     }
                     if (param2.type === "constant" ) {
-                        if (param2.hex_content.length > 17) {
-                            throw new RangeError("Overflow on long value assignment (value bigger than 64 bits)");
+                        if (param1.offset_type === undefined ) { //special case for multi-long text assignment
+                            let array_size=param1.arr_total_size -1;
+                            if (param2.size > array_size) {
+                                throw new RangeError("At line: "+objoperator.line+". Overflow on array value assignment (value bigger than array size).");
+                            }
+                            let padded_long = param2.hex_content.padStart( array_size * 16, "0");
+                            for (let i=0; i< array_size; i++) {
+                                retinstr += createInstruction(
+                                    genAssignmentToken(),
+                                    getMemoryObjectByLocation(addHexContents(param1.hex_content, i),objoperator.line),
+                                    createConstantMemObj( padded_long.slice(16*(array_size-i-1),16*(array_size-i)) ));
+                            }
+                            return retinstr;
+                        }
+                        if (param2.hex_content.length > 16) {
+                            throw new RangeError("At line: "+objoperator.line+". Overflow on long value assignment (value bigger than 64 bits)");
                         }
                         let TmpMemObj=auxVars.getNewRegister();
                         retinstr+=createInstruction(genAssignmentToken(), TmpMemObj, param2);
@@ -1380,6 +1457,9 @@ function bigastCompile(bc_Big_ast){
                         if (param2.type === "constant" ) {
                             return "SET @"+param1.asm_name+" #"+param2.hex_content+"\n";
                         }
+                        if (param2.type === "register" ) {
+                            return "SET @"+param1.asm_name+" $"+param2.asm_name+"\n";
+                        }
                     } else if (param1.offset_type === "constant" ) {
                         //not possible;
                     } else /* if (param1.offset_type === "variable" ) */ {
@@ -1401,82 +1481,21 @@ function bigastCompile(bc_Big_ast){
             if (objoperator.type === 'Operator' || objoperator.type === 'SetOperator') {
 
                 let TmpMemObj1, TmpMemObj2 ;
-                let free_param1=false;
                 let allow_optimization = false;
                 let optimized = false;
 
 
                 if (param1.type === "constant" ) {
                     throw new TypeError("At line: "+objoperator.line+". Can not createInstruction with param1 type '"+param1.type+"'.");
-                } else if (param1.type === "register" || param1.type === "long") {
-                    TmpMemObj1 = param1;
-                } else if (param1.type === "register_ptr" || param1.type === "long_ptr") {
-                    TmpMemObj1=auxVars.getNewRegister();
-                    retinstr+=createInstruction(genAssignmentToken(), TmpMemObj1, param1);
-                    free_param1=true;
-                } else if (param1.type === "array") {
-                    if (param1.offset_type === "constant") { //Looks like an array but can be converted to regular variable
-                        TmpMemObj1 = getMemoryObjectByLocation( addHexContents(param1.hex_content, param1.offset_value), objoperator.line);
-                    } else {
-                        TmpMemObj1=auxVars.getNewRegister();
-                        retinstr+=createInstruction(genAssignmentToken(), TmpMemObj1, param1);
-                        free_param1=true;
-                    }
-                } else if (param1.type === "struct") {
-                    if ( bc_Big_ast.Config.useVariableDeclaration === false) {
-                        throw new TypeError("At line: "+objoperator.line+". Can not use struct if 'useVariableDeclaration' is false.");
-                    }
-                    if (param1.declaration !== "struct_ptr") {
-                        throw new TypeError("At line: "+objoperator.line+". Can not make operations in struct.");
-                    }
-                    if (param1.offset_type === undefined) {
-                        TmpMemObj1 = param1;
-                    } else if (param1.offset_type === "constant") {
-                        TmpMemObj1=auxVars.getNewRegister();
-                        retinstr+=createInstruction(genAssignmentToken(), TmpMemObj1, createConstantMemObj(param1.offset_value));
-                        free_param1=true;
-                    } else {
-                        TmpMemObj1 = getMemoryObjectByLocation( param1.offset_value, objoperator.line);
-                    }
-
-                } else {
-                    throw new TypeError("At line: "+objoperator.line+". Not implemented type in createInstruction for Operator: param1 type '"+param1.type+"'.");
                 }
+                TmpMemObj1 = mold_param(param1, objoperator.line);
+                retinstr += TmpMemObj1.instructionset;
 
                 if (param2.type === "constant" ) {
-                    TmpMemObj2=auxVars.getNewRegister();
-                    retinstr+=createInstruction(genAssignmentToken(), TmpMemObj2, param2);
                     allow_optimization=true;
-                } else if (param2.type === "register" || param2.type === "long") {
-                    TmpMemObj2 = param2;
-                } else if (param2.type === "register_ptr" || param2.type === "long_ptr") {
-                    TmpMemObj2=auxVars.getNewRegister();
-                    retinstr+=createInstruction(genAssignmentToken(), TmpMemObj2, param2);
-                } else if (param2.type === "array") {
-                    if (param2.offset_type === "constant") { //Looks like an array but can be converted to regular variable
-                        TmpMemObj2 = getMemoryObjectByLocation( addHexContents(param2.hex_content, param2.offset_value), objoperator.line);
-                    } else {
-                        TmpMemObj2=auxVars.getNewRegister();
-                        retinstr+=createInstruction(genAssignmentToken(), TmpMemObj2, param2);
-                    }
-                } else if (param2.type === "struct") {
-                    if ( bc_Big_ast.Config.useVariableDeclaration === false) {
-                        throw new TypeError("At line: "+objoperator.line+". Can not use struct if 'useVariableDeclaration' is false.");
-                    }
-                    if (param2.declaration !== "struct_ptr") {
-                        throw new TypeError("At line: "+objoperator.line+". Can not make operations in struct.");
-                    }
-                    if (param2.offset_type === undefined) {
-                        TmpMemObj2 = param2;
-                    } else if (param2.offset_type === "constant") {
-                        TmpMemObj2=auxVars.getNewRegister();
-                        retinstr+=createInstruction(genAssignmentToken(), TmpMemObj2, createConstantMemObj(param2.offset_value));
-                    } else {
-                        TmpMemObj2 = getMemoryObjectByLocation( param2.offset_value, objoperator.line);
-                    }
-                } else {
-                    throw new TypeError("At line: "+objoperator.line+". Not implemented type in createInstruction for Operator: param2 type '"+param2.type+"'.");
-                }
+                } 
+                TmpMemObj2 = mold_param(param2, objoperator.line);
+                retinstr += TmpMemObj2.instructionset;
 
                 if (allow_optimization === true) {
                     function removeLastButOne() {
@@ -1487,49 +1506,51 @@ function bigastCompile(bc_Big_ast){
                             retinstr=codes.join("\n");
                         }
                     }
+                    //if add new condition here, add also in checkOperatorOptimization code oKSx4ab
+                    // here we can have optimizations for all operations.
                     if (       objoperator.value === '+' || objoperator.value === '+=') {
                         if (param2.hex_content === "0000000000000000") {
-                            auxVars.freeRegister(TmpMemObj2.location);
+                            auxVars.freeRegister(TmpMemObj2.MoldedObj.location);
                             return "";
                         }
                         if (param2.hex_content === "0000000000000001") {
-                            auxVars.freeRegister(TmpMemObj2.location);
+                            auxVars.freeRegister(TmpMemObj2.MoldedObj.location);
                             removeLastButOne();
-                            retinstr+=createInstruction(genIncToken(objoperator.line), TmpMemObj1);
+                            retinstr+=createInstruction(genIncToken(objoperator.line), TmpMemObj1.MoldedObj);
                             optimized=true;
                         }
                         if (param2.hex_content === "0000000000000002") {
-                            auxVars.freeRegister(TmpMemObj2.location);
+                            auxVars.freeRegister(TmpMemObj2.MoldedObj.location);
                             removeLastButOne();
-                            retinstr += createInstruction(genIncToken(objoperator.line), TmpMemObj1)
-                            retinstr += createInstruction(genIncToken(objoperator.line), TmpMemObj1)
+                            retinstr += createInstruction(genIncToken(objoperator.line), TmpMemObj1.MoldedObj)
+                            retinstr += createInstruction(genIncToken(objoperator.line), TmpMemObj1.MoldedObj)
                             optimized =true;
                         }
                     } else if ( objoperator.value === '-' || objoperator.value === '-=') {
                         if (param2.hex_content === "0000000000000000") {
-                            auxVars.freeRegister(TmpMemObj2.location);
+                            auxVars.freeRegister(TmpMemObj2.MoldedObj.location);
                             return "";
                         }
                         if (param2.hex_content === "0000000000000001") {
-                            auxVars.freeRegister(TmpMemObj2.location);
+                            auxVars.freeRegister(TmpMemObj2.MoldedObj.location);
                             removeLastButOne();
-                            retinstr+=createInstruction(genDecToken(objoperator.line), TmpMemObj1);
+                            retinstr+=createInstruction(genDecToken(objoperator.line), TmpMemObj1.MoldedObj);
                             optimized=true;
                         }
                     } else if ( objoperator.value === '*' || objoperator.value === '*=') {
                         if (param2.hex_content === "0000000000000000") {
-                            auxVars.freeRegister(TmpMemObj2.location);
+                            auxVars.freeRegister(TmpMemObj2.MoldedObj.location);
                             removeLastButOne();
-                            retinstr += createInstruction(genAssignmentToken(), TmpMemObj1, param2);
+                            retinstr += createInstruction(genAssignmentToken(), TmpMemObj1.MoldedObj, param2);
                             optimized=true;
                         }
                         if (param2.hex_content === "0000000000000001") {
-                            auxVars.freeRegister(TmpMemObj2.location);
+                            auxVars.freeRegister(TmpMemObj2.MoldedObj.location);
                             return "";
                         }
                     } else if ( objoperator.value === '/' || objoperator.value === '/=') {
                         if (param2.hex_content === "0000000000000001") {
-                            auxVars.freeRegister(TmpMemObj2.location);
+                            auxVars.freeRegister(TmpMemObj2.MoldedObj.location);
                             return "";
                         }
                     }
@@ -1559,14 +1580,14 @@ function bigastCompile(bc_Big_ast){
                     } else
                         throw new TypeError("Operator not supported "+objoperator.value);
 
-                    retinstr +=" @"+TmpMemObj1.asm_name+" $"+TmpMemObj2.asm_name+"\n";
+                    retinstr +=" @"+TmpMemObj1.MoldedObj.asm_name+" $"+TmpMemObj2.MoldedObj.asm_name+"\n";
 
-                    auxVars.freeRegister(TmpMemObj2.location);
+                    auxVars.freeRegister(TmpMemObj2.MoldedObj.location);
                 }
 
-                if (free_param1 === true) {
-                    retinstr+=createInstruction(genAssignmentToken(), param1, TmpMemObj1);
-                    auxVars.freeRegister(TmpMemObj1.location);
+                if (TmpMemObj1.is_new === true) {
+                    retinstr+=createInstruction(genAssignmentToken(), param1, TmpMemObj1.MoldedObj);
+                    auxVars.freeRegister(TmpMemObj1.MoldedObj.location);
                 }
 
                 return retinstr;
@@ -1606,36 +1627,23 @@ function bigastCompile(bc_Big_ast){
                 if (ci_jumpFalse === undefined || ci_jumpTrue === undefined)
                     throw new TypeError("Missing label to ci_jumpFalse / ci_jumpTrue.");
 
-                let id;
-                let retstr = "";
-                let tempparam1="";
-                let tempparam2="";
-                let freeParam1=false;
-                let freeParam2=false;
+                let TmpMemObj1;
+                let TmpMemObj2;
                 let useBranchZero=false;
                 let jump;
 
-                if  (param1.indexOf("#") >= 0 || param1.indexOf("$") >= 0) {
-                    tempparam1=auxVars.getNewTemp();
-                    freeParam1=true;
-                    retstr+=createInstruction({type: "Assignment"}, tempparam1, param1);
+
+                TmpMemObj1 = mold_param(param1, objoperator.line);
+                retinstr += TmpMemObj1.instructionset;
+
+                if (param2.type === "constant" && param2.hex_content==="0000000000000000" && (objoperator.value === '!=' || objoperator.value === '==')) {
+                    useBranchZero=true;
                 } else {
-                    tempparam1 = param1;
+                    TmpMemObj2 = mold_param(param2, objoperator.line);
+                    retinstr += TmpMemObj2.instructionset;
                 }
 
-                if  (param2.indexOf("#") >= 0 || param2.indexOf("$") >= 0) {
-                    if (param2==="#0000000000000000" && (objoperator.value === '!=' || objoperator.value === '==')) {
-                        useBranchZero=true;
-                    } else {
-                        tempparam2=auxVars.getNewTemp();
-                        freeParam2=true;
-                        retstr+=createInstruction({type: "Assignment"}, tempparam2, param2);
-                    }
-                } else {
-                    tempparam2 = param2;
-                }
-
-                retstr += chooseBranch(objoperator.value, useBranchZero, ci_revLogic);
+                retinstr += chooseBranch(objoperator.value, useBranchZero, ci_revLogic);
 
                 if (ci_revLogic)
                     jump = ci_jumpTrue;
@@ -1643,15 +1651,16 @@ function bigastCompile(bc_Big_ast){
                     jump = ci_jumpFalse;
 
                 if (useBranchZero)
-                    retstr +=" $"+tempparam1+" :"+jump+"\n";
+                    retinstr +=" $"+TmpMemObj1.MoldedObj.asm_name+" :"+jump+"\n";
                 else
-                    retstr +=" $"+tempparam1+" $"+tempparam2+" :"+jump+"\n";
+                    retinstr +=" $"+TmpMemObj1.MoldedObj.asm_name+" $"+TmpMemObj2.MoldedObj.asm_name+" :"+jump+"\n";
 
-                if (freeParam1===true)
-                    auxVars.freeVar(tempparam1);
-                if (freeParam2===true)
-                    auxVars.freeVar(tempparam2);
-                return retstr;
+                if (TmpMemObj1.is_new===true)
+                    auxVars.freeRegister(TmpMemObj1.MoldedObj.location);
+                if (TmpMemObj2 !== undefined && TmpMemObj2.is_new===true)
+                    auxVars.freeRegister(TmpMemObj2.MoldedObj.location);
+
+                return retinstr;
             }
 
             if (objoperator.type === 'FunctionCall') {
@@ -1662,45 +1671,40 @@ function bigastCompile(bc_Big_ast){
                 let retinstr="";
                 let tempvar=[];
 
-                param2.forEach(function (varnm) {
-                    if (varnm.indexOf("#") >= 0 || varnm.indexOf("$") >= 0) {
-                        tempvar.push(auxVars.getNewTemp());
-                        retinstr+=createInstruction({type: "Assignment"}, tempvar[tempvar.length-1], varnm);
-                    } else {
-                        tempvar.push(varnm);
-                    }
-                })
+                param2.forEach(function (varObj) {
+                    let Temp = mold_param(varObj, -1);
+                    retinstr += Temp.instructionset;
+                    tempvar.push(Temp);
+                });
 
                 retinstr+= "FUN";
-                if (param1.length != 0) {
-                    retinstr+=" @"+param1;
+                if (param1 !== undefined) {
+                    retinstr+=" @"+param1.asm_name;
                 }
                 retinstr+=" "+objoperator.value;
-                tempvar.forEach(arg => retinstr+=" $"+arg);
+                tempvar.forEach(arg => retinstr+=" $"+arg.MoldedObj.asm_name);
                 retinstr+="\n";
 
-                tempvar.forEach(arg => auxVars.freeVar(arg));
+                tempvar.forEach(arg => auxVars.freeRegister(arg.MoldedObj.location));
                 return retinstr;
             }
 
             if (objoperator.type === 'Pop') {
-                return "POP @"+param1+"\n";
+                return "POP @"+param1.asm_name+"\n";
             }
 
             if (objoperator.type === 'Push') {
 
                 let retinstr="";
-                let tempvar;
+                let TmpMemObj;
 
-                if (param1.indexOf("#") >= 0 || param1.indexOf("$") >= 0) {
-                    tempvar=auxVars.getNewTemp();
-                    retinstr+=createInstruction({type: "Assignment"}, tempvar, param1);
-                } else {
-                    tempvar=param1;
-                }
+                TmpMemObj=mold_param(param1);
+                retinstr += TmpMemObj.instructionset;
 
-                retinstr+= "PSH $"+tempvar+"\n";
-                auxVars.freeVar(tempvar);
+                retinstr+= "PSH $"+TmpMemObj.MoldedObj.asm_name+"\n";
+
+                if (TmpMemObj.is_new===true)
+                    auxVars.freeRegister(TmpMemObj.MoldedObj.location);
                 return retinstr;
             }
 
@@ -1898,34 +1902,6 @@ function bigastCompile(bc_Big_ast){
         bc_auxVars.assemblyCode+=lines;
     }
 
-    //Não verififcado!
-    function declareFunctionArguments (phrase) {
-        if (phrase.type !== "phrase"){
-            throw new TypeError("Unexpected sentence in function arguments");
-        }
-        // alteration here, do also in shape.js code 3Ewuinl
-        for (var i=0; i< phrase.code.length; i++) {
-            let MemObj;
-            if (i+1 < tokens.length && phrase.code[i].type === "Keyword" && phrase.code[i].value !== "struct" && phrase.code[i+1].type === "Variable") {
-                MemObj=getMemoryObjectByName(phrase.code[i+1].name);
-            } else if ( i+2 < phrase.code.length && phrase.code[i].type === "Keyword" && phrase.code[i+1].value === "*" && phrase.code[i+2].type === "Variable") {
-                MemObj=getMemoryObjectByName(phrase.code[i+2].name);
-            } else if ( i+3 < phrase.code.length && phrase.code[i].type === "Keyword" && phrase.code[i].value === "struct" && phrase.code[i+1].type === "Variable" && phrase.code[i+2].value === "*" && phrase.code[i+3].type === "Variable") {
-                MemObj=getMemoryObjectByName(phrase.code[i+3].name);
-            } else {
-                throw new SyntaxError("Unexpected sentence in function arguments");
-            }
-
-            if (MemObj === undefined){
-                throw new SyntaxError("At line: "+phrase.code[i+1].line+". Could not find memory object for '"+phrase.code[i+1].name+"'.");
-            } else {
-                //TODO true for all struc elements also code bbdD))k
-                MemObj.dec_in_generator=true;
-            }
-
-        }
-    }
-
 
     // handles variables declarations to assembly code.
     function assemblerDeclarationGenerator (MemObj) {
@@ -1949,11 +1925,10 @@ function bigastCompile(bc_Big_ast){
         if (bc_auxVars.current_function != -1) { //find function scope variable
             search = bc_Big_ast.memory.find(obj => obj.name == var_name && obj.scope === bc_Big_ast.functions[bc_auxVars.current_function].name );
         }
-        if (search !== undefined){
-            return JSON.parse(JSON.stringify(search));
+        if (search === undefined){
+            // do a global scope search
+            search = bc_Big_ast.memory.find(obj => obj.name == var_name && obj.scope === "" );
         }
-        // do a global scope search
-        search = bc_Big_ast.memory.find(obj => obj.name == var_name && obj.scope === "" );
 
         if (bc_Big_ast.Config.useVariableDeclaration === false) {
             if (search === undefined) {
@@ -1965,7 +1940,6 @@ function bigastCompile(bc_Big_ast){
                     "type_name": null,
                     "scope": "",
                     "size": 1,
-                    "dec_as_pointer": false,
                     "dec_in_generator": true };
                 bc_Big_ast.memory.push(fakevar);
                 return JSON.parse(JSON.stringify(fakevar));
@@ -1979,19 +1953,12 @@ function bigastCompile(bc_Big_ast){
                 throw new SyntaxError("At line: "+line+". Variable '"+var_name+"' not declared. BugReport Please");
             }
             search.dec_in_generator=true;
-            // TODO If array or struct, need to set all elements to TRUE!!!
-            //TODO true for all struc elements also code bbdD))k
             return JSON.parse(JSON.stringify(search));
         }
         //else, not in declaration:
         if (search === undefined) {
-            //maybe this is a label. Check!
-            if (bc_auxVars.current_function != -1) {
-                search = bc_Big_ast.labels.find(obj => obj.name == var_name && obj.scope === bc_Big_ast.functions[bc_auxVars.current_function].name );
-            }
-            if (search === undefined) { //global search label
-                search = bc_Big_ast.labels.find(obj => obj.name == var_name && obj.scope === "" );
-            }
+            //maybe this is a label. Check! Labels always global
+            search = bc_Big_ast.labels.find(obj => obj.name == var_name );
             if (search === undefined) {
                 throw new SyntaxError("At line: "+line+". Using Variable '"+var_name+"' before declaration.");
             }
@@ -2023,7 +1990,43 @@ function bigastCompile(bc_Big_ast){
     //Handle function initialization
     function functionHeaderGenerator () {
 
-        var Node;
+        function phrase2asm_name(phrs){
+
+            if (phrs.type === undefined) {
+                throw new TypeError("Unknow object type arrived at phrase2asm_name.");
+            }
+            if (phrs.code.length == 0) { //empty statement (void declaration)
+                return;
+            }
+            if (phrs.code.length<2){
+                throw new TypeError("At line: "+phrs.code[0].line+". Invalid statement in function declaration. Only 'struct' and 'long' allowed.");;
+            }
+
+            if (phrs.code[0].type === "Keyword") {
+
+                if (   phrs.code[0].value === "struct"){
+                    if (phrs.code.length == 4 ){
+                        if ( phrs.code[2].value === "*" && phrs.code[3].type === "Variable" ) {
+                            return getMemoryObjectByName(phrs.code[3].value).asm_name;
+                        }
+                        throw new TypeError("At line: "+phrs.code[0].line+". Only 'struct TYPE * name' allowed on function declaration.");
+                    }
+                    throw new TypeError("At line: "+phrs.code[0].line+". Only struct pointers allowed on function declaration");
+
+                } else if ( phrs.code[0].value === "long" ){
+                    if (phrs.code.length == 2 ){
+                        return getMemoryObjectByName(phrs.code[1].value).asm_name;
+                    } else if (phrs.code.length == 3 && phrs.code[1].value === "*"){
+                        return getMemoryObjectByName(phrs.code[2].value).asm_name;
+                    } else {
+                        throw new TypeError("At line: "+phrs.code[0].line+". Only 'long name' or 'long * name' allowed on function declaration.");
+                    }
+                }
+                throw new TypeError("At line: "+phrs.code[0].line+". Invalid keyword in function declaration. Only 'struct' and 'long' allowed.");
+            }
+            throw new TypeError("At line: "+phrs.code[0].line+". Invalid statement in function declaration. Only 'struct' and 'long' allowed.");
+        }
+
         var fname= bc_Big_ast.functions[bc_auxVars.current_function].name;
 
         if (fname === "main") {
@@ -2034,10 +2037,12 @@ function bigastCompile(bc_Big_ast){
 
         writeAsmLine("JMP :"+"__fn_"+fname+"_end");
         writeAsmLine("__fn_"+fname+":");
-        for (var i=bc_Big_ast.functions[bc_auxVars.current_function].arguments.length-1; i>=0; i--) {
-            Node = bc_Big_ast.functions[bc_auxVars.current_function].arguments[i];
-            writeAsmLine("POP @"+Node.asmName);
-        }
+        bc_Big_ast.functions[bc_auxVars.current_function].arguments.forEach(function (phrase) {
+            let varname=phrase2asm_name(phrase);
+            if (varname !== undefined){
+                writeAsmLine("POP @"+varname);
+            }
+        });
     }
 
     //Handle function end
@@ -2136,7 +2141,6 @@ function bigastCompile(bc_Big_ast){
 
         } else if (Sentence.type === "struct") {
             return;
-            //writeAsmCode( codeGenerator( Sentence.Phrase.OpTree ) );
 
         } else {
             throw new TypeError("At line: " + Sentence.line + ". Unknow Sentence type: " + Sentence.type);
