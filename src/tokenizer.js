@@ -28,6 +28,7 @@ function tokenizer(input) {
   var keywords_bd = [
    "asm", "break", "continue", "do", "else", "for", "goto", "if",
    "long", "return", "void", "while", "sleep", "exit", "halt"
+   , "struct"
   ];
 
   var keywords_bd_forbidden = [
@@ -36,7 +37,7 @@ function tokenizer(input) {
 
   var keywords_bd_not_implemented = [
     "case", "char", "const", "default", "enum", "extern",
-    "int", "short", "sizeof", "signed", "static", "struct",
+    "int", "short", "sizeof", "signed", "static",
     "switch", "typedef", "union", "unsigned"
   ];
 
@@ -148,6 +149,16 @@ function tokenizer(input) {
       tokens.push({
         type: 'backslash',
         value: '\\',
+        line: curr_line
+      });
+      current++;
+      continue;
+    }
+
+    if (char === '.') {
+      tokens.push({
+        type: 'dot',
+        value: '.',
         line: curr_line
       });
       current++;
