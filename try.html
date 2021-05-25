@@ -24,8 +24,9 @@ function compileCode(){
         var big_ast_opTree = bigastProcessSyntax(big_ast);
         var asmCode = bigastCompile(big_ast_opTree);
 
-        document.getElementById("machine-code").innerHTML = asmCode+"\n\n"+asmCode.replace(/\n/g,"\\n")+"\n\n"+JSON.stringify(big_ast_opTree, null, '    ');
+        //document.getElementById("machine-code").innerHTML = asmCode+"\n\n"+asmCode.replace(/\n/g,"\\n")+"\n\n"+JSON.stringify(big_ast_opTree, null, '    ');
         //document.getElementById("machine-code").innerHTML = asmCode+"\n\n"+JSON.stringify(big_ast_opTree, null, '    ');
+        document.getElementById("machine-code").innerHTML = asmCode;
     }catch (e) {
         document.getElementById("machine-code").innerHTML = e.message+"\n"+e.stack+JSON.stringify(big_ast_opTree, null, '    ');;
     }
@@ -40,14 +41,15 @@ function testCode() {
 </head>
 
 <body>
-    <h1>Burstcoin AT Javascript Compiler</h1>      
-    <textarea id="source-code" placeholder="Write here your arithmetic expression..." spellcheck="false">long teste(void) { a=4 }</textarea>
+    <h1>BurstAT-CC - Burstcoin AT C Compiler</h1>      
+    <textarea id="source-code" placeholder="Write here your program." spellcheck="false"></textarea>
     
     <div>
         <button id="compile" onClick="javascript: compileCode();">Compile it!</button>
         <button id="test" onClick="javascript: testCode();">Run test cases</button>
     </div>
-    
+    <p>More information about this project, documentation or examples, visit <a href="https://deleterium.github.io/BurstAT-CC/">https://deleterium.github.io/BurstAT-CC/</a> or
+    <a href="https://github.com/deleterium/BurstAT-CC">https://github.com/deleterium/BurstAT-CC</a></p>
     <pre id="machine-code" height="400" contenteditable="true" spellcheck="false"></pre>
 </body>
 </html>

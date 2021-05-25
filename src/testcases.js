@@ -510,7 +510,7 @@ pa = pb; pa = &pb; pa = &vb; *pa= vb;\
     [ "long *pa, *pb, va, vb; *va=vb;",    true,"" ],
     [ "#pragma useVariableDeclaration false\npa=*vb; *pa=*vb; va=*vb; *va=pb; *va=vb; *va=*pb; *va=*vb; *va=&pb; *va=&Vb;",    false,"SET @pa $($vb)\nSET @r0 $($vb)\nSET @($pa) $r0\nSET @va $($vb)\nSET @($va) $pb\nSET @($va) $vb\nSET @r0 $($pb)\nSET @($va) $r0\nSET @r0 $($vb)\nSET @($va) $r0\nSET @r0 #0000000000000004\nSET @($va) $r0\nSET @r0 #0000000000000005\nSET @($va) $r0\nFIN\n" ],
     [ "Pointer/Array Assignment;", "div" ],
-    [ "long a[4], *b, c; *b=a[0]; a[0]=*b; b=a; *b=a[c]; a[c]=*b;",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\n\nSET @($b) $a_0\nSET @r0 $($b)\nSET @a_0 $r0\nSET @b $a\nSET @r0 $($a + $c)\nSET @($b) $r0\nSET @r0 $($b)\nSET @($a + $c) $r0\nFIN\n" ],
+    [ "long a[4], *b, c; *b=a[0]; a[0]=*b; b=a; *b=a[c]; a[c]=*b;",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\n\nSET @($b) $a_0\nSET @a_0 $($b)\nSET @b $a\nSET @r0 $($a + $c)\nSET @($b) $r0\nSET @r0 $($b)\nSET @($a + $c) $r0\nFIN\n" ],
     [ "long a[4], *b, c; a=b;",    true,"" ],
     [ "long a[4], *b, c; b=&a; b=&a[0]; b=&c;",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\n\nSET @b #0000000000000005\nSET @b #0000000000000006\nSET @b #000000000000000b\nFIN\n" ],
     [ "long a[4], *b, c; c=&a; c=&a[0]; c=&c;",    true,"" ],
@@ -715,11 +715,13 @@ if (a<=pcar->collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2
     [ "long a; void test2(long b) { b++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\n\nJMP :__fn_test2_end\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nRET\n__fn_test2_end:\nFIN\n" ],
     [ "long a; long test2(long b) { b++; return b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\n\nJMP :__fn_test2_end\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n__fn_test2_end:\nFIN\n" ],
     [ "long a=0; a=test2(a); long test2(long b) { b++; return b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\nSET @a $r0\n\nJMP :__fn_test2_end\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n__fn_test2_end:\nFIN\n" ],
-    [ "long a=0; test2(a); long test2(long b) { b++; return b; }", true, "" ],
     [ "#pragma warningToError false\nlong a=0; test2(a); long test2(long b) { b++; return b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\n\nJMP :__fn_test2_end\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n__fn_test2_end:\nFIN\n" ],
     [ "long a=0; void main(void){ a++; test2(a); exit; } void test2(long b) { b++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\nCLR @a\n\n__fn_main:\nPCS\nINC @a\nPSH $a\nJSR :__fn_test2\nFIN\n\nJMP :__fn_test2_end\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nRET\n__fn_test2_end:\nFIN\n" ],
     [ "#include APIFunctions\nlong a;Set_A1(a);", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nFUN set_A1 $a\nFIN\n" ],
     [ "#include APIFunctions\nSet_A1();", true, "" ],
+    [ "long ,b;", true, "" ],
+//bugfixes
+    [ "Bug fixes", "div" ],
     //bug 1, goto failed with undeclared variable
     [ "void  teste(long ret) { long temp = 2; goto newlabel; ret = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_ret\n^declare teste_temp\n\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @teste_ret $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n__fn_teste_end:\nFIN\n" ],
     //bug 2, failed when declaring pointer on function declaration
@@ -727,7 +729,26 @@ if (a<=pcar->collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2
     [ "void  teste(long * ret) { long temp = 2; goto newlabel; *(ret+temp) = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_ret\n^declare teste_temp\n\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @r0 $teste_temp\nADD @r0 $teste_ret\nSET @($r0) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n__fn_teste_end:\nFIN\n" ],
     //bug 3, ReuseAssignedVar not working inside a function.
     [ "#pragma maxAuxVars 2\nlong itoa(long val) {\n    long ret, temp;\n    if (val >= 0 && val <= 99999999) { ret = (ret << 8) + temp; return ret; }\n    return '#error';\n}", false, "^declare r0\n^declare r1\n^declare itoa_val\n^declare itoa_ret\n^declare itoa_temp\n\n\nJMP :__fn_itoa_end\n__fn_itoa:\nPOP @itoa_val\nCLR @r0\nBLT $itoa_val $r0 :__if1_endif\nSET @r0 #0000000005f5e0ff\nBGT $itoa_val $r0 :__if1_endif\nSET @r0 $itoa_ret\nSET @r1 #0000000000000008\nSHL @r0 $r1\nSET @r1 $itoa_temp\nADD @r1 $r0\nSET @itoa_ret $r1\nPSH $itoa_ret\nRET\n__if1_endif:\nSET @r0 #0000726f72726523\nPSH $r0\nRET\n__fn_itoa_end:\nFIN\n" ],
-    [ "long ,b;", true, "" ],
+    //bug 4, Double declaration causing array pointer to point wrong location.
+    [ "long a=0; long b; a++; long a=3;", true, "" ],
+    [ "long a=0; long b; a++; void test(void) { a++; } long tt(void) { a++;} long test(void) {a++; return a; }", true, "" ],
+    [ "long a=0; long b; a++; void test(void) { a++; } long tt(void) { a++;} long test(void) {a++; return a; }", true, "" ],
+    [ "long a=0; void Get_B1(void) { a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nCLR @a\n\nJMP :__fn_Get_B1_end\n__fn_Get_B1:\nINC @a\nRET\n__fn_Get_B1_end:\nFIN\n" ],
+    [ "#include APIFunctions\nlong a=0; void Get_B1(void) { a++; }", true, "" ],
+    [ "long a=0; mylabel: a++; void temp(void) { a++; mylabel: a++; }", true, "" ],
+    //bug 5, reuseAssignedVar not working inside functions.
+    [ "void test(void) { long t, a; t = a+1; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare test_t\n^declare test_a\n\n\nJMP :__fn_test_end\n__fn_test:\nSET @test_t $test_a\nINC @test_t\nRET\n__fn_test_end:\nFIN\n" ],
+    //bug 6, removed warning when function returning long had no assignment. (removed failed case from other testcase
+    //bug 7, array type definition not found when declaring array inside functions.
+    [ "void test(void) { long t[2], a; t[a] = 1; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare test_t\nSET @test_t #0000000000000006\n^declare test_t_0\n^declare test_t_1\n^declare test_a\n\n\nJMP :__fn_test_end\n__fn_test:\nSET @r0 #0000000000000001\nSET @($test_t + $test_a) $r0\nRET\n__fn_test_end:\nFIN\n" ],
+    //bug 8, wrong order of stack for function call
+    [ "long ga, gb, gc; test(ga, gb, gc); void test(long a, long b, long c) { a+=b+c; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare ga\n^declare gb\n^declare gc\n^declare test_a\n^declare test_b\n^declare test_c\n\nPSH $gc\nPSH $gb\nPSH $ga\nJSR :__fn_test\n\nJMP :__fn_test_end\n__fn_test:\nPOP @test_a\nPOP @test_b\nPOP @test_c\nSET @r0 $test_c\nADD @r0 $test_b\nADD @test_a $r0\nRET\n__fn_test_end:\nFIN\n" ],
+    // optimization: array with constant index now used for reuseAssignedVar
+    [ "long a[2], b; a[1]=b+1;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare b\n\nSET @a_1 $b\nINC @a_1\nFIN\n" ],
+    
+    [ "long a=0; mylabel: a++; void temp(void) { a++; mylabel: a++; }", true, "" ],
+//    [ "", false, "" ],
+    
 
 
 ];

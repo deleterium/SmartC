@@ -58,13 +58,13 @@
             createMemoryTable(Big_ast.functions[i].sentences, Big_ast.functions[i].name, false);
         };
 
-        //TODO:
-        //  Check for doubles definitions (variables and functions)
-        consolidateMemory();
-
         if (Big_ast.Config.APIFunctions) {
             Big_ast.Global.APIFunctions = createAPItable();
         }
+
+        checkDoublesDefinitions();
+
+        consolidateMemory();
 
         return Big_ast;
     }
@@ -272,7 +272,7 @@
 
                     curr++;
                     if (curr +2 >= codetrain.length)
-                        throw new SyntaxError("At line: " + codetrain[curr].line + ". Incomplete do{}while(); sentence ");
+                        throw new SyntaxError("At line: " + codetrain[curr-1].line + ". Incomplete do{}while(); sentence ");
                     if (codetrain[curr].type !== "Keyword")
                         throw new SyntaxError("At line: " + codetrain[curr].line + ". Wrong do{}while(); sentence ");
                     if (codetrain[curr].value !== "while")
@@ -723,7 +723,7 @@
         if ( Big_ast.Config.useVariableDeclaration) {
             let search = Big_ast.typesDefinitions.find(obj => obj.type === "register");
             if (search === undefined){
-                new TypeError("Not found type 'register' at types definitions.");
+                throw new TypeError("Not found type 'register' at types definitions.");
             }
             for (var i=0; i< Big_ast.Config.maxAuxVars; i++){
                 let Memory_template = JSON.parse(JSON.stringify(search.Memory_template));
@@ -734,6 +734,42 @@
         }
     }
     
+    function checkDoublesDefinitions() {
+        var i,j;
+        if (Big_ast.Config.useVariableDeclaration === false) {
+            return;
+        }
+        for ( i=0; i< Big_ast.memory.length -1 ; i++) {
+            for (j=i+1; j< Big_ast.memory.length; j++) {
+                if (Big_ast.memory[i].asm_name === Big_ast.memory[j].asm_name) {
+                    throw new TypeError("Error: Variable '"+Big_ast.memory[i].name+"' was declared more than one time.");
+                }
+            }
+        }
+        for ( i=0; i< Big_ast.functions.length ; i++) {
+            for (j=i+1; j< Big_ast.functions.length; j++) {
+                if (Big_ast.functions[i].name == Big_ast.functions[j].name) {
+                    throw new TypeError("Error: Function '"+Big_ast.functions[i].name+"' was declared more than one time.");
+                }
+            }
+            if (Big_ast.Config.APIFunctions === true) {
+                for (j=0; j< Big_ast.Global.APIFunctions.length; j++) {
+                    if (   Big_ast.functions[i].name === Big_ast.Global.APIFunctions[j].name
+                        || Big_ast.functions[i].name === Big_ast.Global.APIFunctions[j].asmName) {
+                        throw new TypeError("Error: Function '"+Big_ast.functions[i].name+"' has same name of one API Functions.");
+                    }
+                }
+            }
+        }
+        for ( i=0; i< Big_ast.labels.length -1 ; i++) {
+            for (j=i+1; j< Big_ast.labels.length; j++) {
+                if (Big_ast.labels[i].asm_name === Big_ast.labels[j].asm_name) {
+                    throw new TypeError("Error: Label '"+Big_ast.labels[i].name+"' was declared more than one time.");
+                }
+            }
+        }
+    }
+
     function consolidateMemory(){
         var var_counter=0;
         Big_ast.memory.forEach( function (thisvar){

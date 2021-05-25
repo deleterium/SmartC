@@ -64,6 +64,10 @@ function bigastCompile(bc_Big_ast){
         }
 
         //TODO Optimize code;
+        //  jump to jump -> do only one jump
+        //  Remove unreachable code
+        //  SET register VAR; SET VAR2 register -> set VAR2 VAR
+        //  Consolidate many operations on same var in only one operation
 
         return bc_auxVars.assemblyCode;
     }
@@ -91,7 +95,7 @@ function bigastCompile(bc_Big_ast){
             isTemp: function(loc) {
                 if (loc == -1) return false;
                 let MemObj=getMemoryObjectByLocation(loc);
-                var id=this.tmpvars.indexOf(MemObj.asm_name);
+                var id=this.tmpvars.indexOf(MemObj.name);
                 if (id >=0 ) {
                     if (this.status[id]===true) {
                         return true;
@@ -113,7 +117,7 @@ function bigastCompile(bc_Big_ast){
                     return;
                 }
                 let MemObj=getMemoryObjectByLocation(loc);
-                var id=this.tmpvars.indexOf(MemObj.asm_name);
+                var id=this.tmpvars.indexOf(MemObj.name);
                 if (id==-1) return;
                 this.status[id]=false;
             },
@@ -142,14 +146,16 @@ function bigastCompile(bc_Big_ast){
             if (cg_jumpTarget === undefined) {
                 code=genCode(cg_ast, false, false, cg_jumpTarget, jmpTrueTarget);
                 if (code.MemObj !== undefined && auxVars.isTemp(code.MemObj.location) && code.MemObj.type.indexOf("_ptr") == -1 ) {
-                    var line;
-                    if (cg_ast.line !== undefined) {
-                        line = cg_ast.line;
-                    } else if (cg_ast.Operation.line !== undefined) {
-                        line = cg_ast.Operation.line;
-                    }
-                    if (bc_Big_ast.Config.warningToError) {
-                        throw new TypeError("At line: "+line+". Warning: sentence returned a value that is not being used.");
+                    if ( cg_ast.Operation === undefined || cg_ast.Operation.type !== "FunctionCall") {
+                        var line;
+                        if (cg_ast.line !== undefined) {
+                            line = cg_ast.line;
+                        } else if (cg_ast.Operation.line !== undefined) {
+                            line = cg_ast.Operation.line;
+                        }
+                        if (bc_Big_ast.Config.warningToError) {
+                            throw new TypeError("At line: "+line+". Warning: sentence returned a value that is not being used.");
+                        }
                     }
                 }
             } else {
@@ -345,10 +351,10 @@ function bigastCompile(bc_Big_ast){
                                         M_Obj.offset_value = TmpMemObj.location;
 
                                     } else if (M_Obj.offset_type === "constant") {
-                                        throw new TypeError("Inspection needed.");
+                                        throw new TypeError("At line: "+objTree.line+". Inspection needed.");
 
                                     } else /* if (M_Obj.offset_type === "variable")*/ {
-                                        throw new TypeError("Inspection needed.");
+                                        throw new TypeError("At line: "+objTree.line+". Inspection needed.");
                                     }
                                 }
 
@@ -413,7 +419,7 @@ function bigastCompile(bc_Big_ast){
                                     let TypeD; // = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.type_name===objTree.value );
                                     if (M_Obj.type_name === undefined) {//array of structs
                                         TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.type_name===M_Obj.name );
-                                    } else if (objTree.value === M_Obj.type_name) { //array simple
+                                    } else if (objTree.value === M_Obj.name) { //array simple
                                         TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.type_name===M_Obj.type_name );
                                     } else { // array inside struct
                                         TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.type_name.indexOf("_"+M_Obj.type_name) > 0 );
@@ -630,7 +636,7 @@ function bigastCompile(bc_Big_ast){
                                 APIargs.push( RGenObj.MemObj );
                             });
                         } else {
-                            sub_sentences.forEach( function (stnc) {
+                            sub_sentences.reverse().forEach( function (stnc) {
                                 RGenObj=genCode(stnc, false, false );
                                 instructionstrain+=RGenObj.instructionset;
                                 instructionstrain+=createInstruction( {type: "Push"} , RGenObj.MemObj );
@@ -1066,6 +1072,10 @@ function bigastCompile(bc_Big_ast){
                         temp_declare = auxVars.declaring;
                         auxVars.declaring="";
                     }
+
+                    if (LGenObj.MemObj.type === "array" && LGenObj.MemObj.offset_type === "constant") { //if it is an array item we know, change to the item (and do optimizations)
+                        LGenObj.MemObj = getMemoryObjectByLocation(addHexContents(LGenObj.MemObj.hex_content, LGenObj.MemObj.offset_value));
+                    }
                     //check if we can reuse variables used on assignment
                     //then add it to auxVars.tmpvars
                     if ( objTree.Operation.type === "Assignment"
@@ -1334,7 +1344,7 @@ function bigastCompile(bc_Big_ast){
             if (objoperator.type === 'Assignment') {
 
                 if (param1.type === "constant" || param1.type === "constant_ptr") {
-                    throw new TypeError("Invalid left side for assigment.");
+                    throw new TypeError("At line: "+objoperator.line+".Invalid left side for assigment.");
                 }
                 if (param1.type === "register" || param1.type === "long") { //param 1 can be direct assigned
 
@@ -1343,7 +1353,7 @@ function bigastCompile(bc_Big_ast){
                             return "CLR @"+param1.asm_name+"\n";
                         } else {
                             if (param2.hex_content.length > 17) {
-                                throw new RangeError("Overflow on long value assignment (value bigger than 64 bits)");
+                                throw new RangeError("At line: "+objoperator.line+".Overflow on long value assignment (value bigger than 64 bits)");
                             }
                             return "SET @"+param1.asm_name+" #"+param2.hex_content+"\n";
                         }
@@ -1373,7 +1383,7 @@ function bigastCompile(bc_Big_ast){
                 } else if (param1.type === "register_ptr" || param1.type === "long_ptr") {
                     if (param2.type === "constant" ) { // Can use SET_VAL or CLR_DAT
                         if (param2.hex_content.length > 17) {
-                            throw new RangeError("Overflow on long value assignment (value bigger than 64 bits)");
+                            throw new RangeError("At line: "+objoperator.line+".Overflow on long value assignment (value bigger than 64 bits)");
                         }
                         let TmpMemObj=auxVars.getNewRegister();
                         retinstr+=createInstruction(genAssignmentToken(), TmpMemObj, param2);
@@ -1578,7 +1588,7 @@ function bigastCompile(bc_Big_ast){
                     } else if (objoperator.value === '>>' || objoperator.value === '>>=') {
                         retinstr+= "SHR";
                     } else
-                        throw new TypeError("Operator not supported "+objoperator.value);
+                        throw new TypeError("At line: "+objoperator.line+".Operator not supported "+objoperator.value);
 
                     retinstr +=" @"+TmpMemObj1.MoldedObj.asm_name+" $"+TmpMemObj2.MoldedObj.asm_name+"\n";
 
@@ -1607,7 +1617,7 @@ function bigastCompile(bc_Big_ast){
                 if (objoperator.value === '+') {
                     return;
                 }
-                throw new TypeError("Unary operator not supported: "+objoperator.value);
+                throw new TypeError("At line: "+objoperator.line+". Unary operator not supported: "+objoperator.value);
             }
 
             if (objoperator.type === 'Delimiter') {
@@ -1625,7 +1635,7 @@ function bigastCompile(bc_Big_ast){
             if (objoperator.type === 'Comparision') {
 
                 if (ci_jumpFalse === undefined || ci_jumpTrue === undefined)
-                    throw new TypeError("Missing label to ci_jumpFalse / ci_jumpTrue.");
+                    throw new TypeError("At line: "+objoperator.line+". Missing label to ci_jumpFalse / ci_jumpTrue.");
 
                 let TmpMemObj1;
                 let TmpMemObj2;
@@ -1770,7 +1780,7 @@ function bigastCompile(bc_Big_ast){
                     return lines.join("\n").trim()+"\n";
                 }
             }
-            throw new TypeError(objoperator.type+" not supported");
+            throw new TypeError("At line: "+objoperator.line+". "+objoperator.type+" not supported");
         }
 
 
@@ -1975,7 +1985,7 @@ function bigastCompile(bc_Big_ast){
             addr = loc;
         } else if (typeof (loc) === 'string') {
             addr = parseInt(loc, 16);
-        } else throw new TypeError("wrong type in getMemoryObjectByLocation");
+        } else throw new TypeError("At line: "+line+". Wrong type in getMemoryObjectByLocation.");
 
         search = bc_Big_ast.memory.find(obj => obj.location == addr );
 

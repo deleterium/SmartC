@@ -31,5 +31,8 @@ button {
 div {	display: flex;
 	justify-content: center; }
 
+p {
+	padding: 1vw; }
+	
 pre {
 	padding: 1vw; }

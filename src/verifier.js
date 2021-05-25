@@ -125,7 +125,7 @@ function verify(ast) {
         { Current: "Constant", Next: "Arr", Possible: "n"},
         { Current: "Keyword", Next: "Variable", Possible: "kc"},
         { Current: "Keyword", Next: "UnaryOperator", Possible: "kc"},
-        { Current: "Keyword", Next: "SetUnaryOperator", Possible: "n"},
+        { Current: "Keyword", Next: "SetUnaryOperator", Possible: "y"},
         { Current: "Keyword", Next: "SetOperator", Possible: "n"},
         { Current: "Keyword", Next: "Operator", Possible: "n"},
         { Current: "Keyword", Next: "Terminator", Possible: "kc"},
