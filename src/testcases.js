@@ -1,23 +1,5 @@
 "use strict";
 
-/*
-
-teste de função com parametros struct e ponteiro.
-
-struct Zombi {
- long ab;
- long bc;
-};
-
-struct Zombi *ptr;
-
-long teste(long b, struct Zombi * ppt, long * c) { long a=4; return a; }
-
-*/
-
-
-
-
 // Author: Rui Deleterium
 // Project: https://github.com/deleterium/BurstAT-Compiler
 // License: BSD 3-Clause License
@@ -725,7 +707,7 @@ if (a<=pcar->collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2
     //bug 1, goto failed with undeclared variable
     [ "void  teste(long ret) { long temp = 2; goto newlabel; ret = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_ret\n^declare teste_temp\n\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @teste_ret $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n__fn_teste_end:\nFIN\n" ],
     //bug 2, failed when declaring pointer on function declaration
-    [ "void  teste(long * ret) { long temp = 2; goto newlabel; ret[temp] = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n\n^declare teste_temp\n^declare teste_ret\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @($teste_ret + $teste_temp) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n__fn_teste_end:\nFIN\n" ],
+    [ "void  teste(long * ret) { long temp = 2; goto newlabel; ret[temp] = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_ret\n^declare teste_temp\n\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @($teste_ret + $teste_temp) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n__fn_teste_end:\nFIN\n" ],
     [ "void  teste(long * ret) { long temp = 2; goto newlabel; *(ret+temp) = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_ret\n^declare teste_temp\n\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @r0 $teste_temp\nADD @r0 $teste_ret\nSET @($r0) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n__fn_teste_end:\nFIN\n" ],
     //bug 3, ReuseAssignedVar not working inside a function.
     [ "#pragma maxAuxVars 2\nlong itoa(long val) {\n    long ret, temp;\n    if (val >= 0 && val <= 99999999) { ret = (ret << 8) + temp; return ret; }\n    return '#error';\n}", false, "^declare r0\n^declare r1\n^declare itoa_val\n^declare itoa_ret\n^declare itoa_temp\n\n\nJMP :__fn_itoa_end\n__fn_itoa:\nPOP @itoa_val\nCLR @r0\nBLT $itoa_val $r0 :__if1_endif\nSET @r0 #0000000005f5e0ff\nBGT $itoa_val $r0 :__if1_endif\nSET @r0 $itoa_ret\nSET @r1 #0000000000000008\nSHL @r0 $r1\nSET @r1 $itoa_temp\nADD @r1 $r0\nSET @itoa_ret $r1\nPSH $itoa_ret\nRET\n__if1_endif:\nSET @r0 #0000726f72726523\nPSH $r0\nRET\n__fn_itoa_end:\nFIN\n" ],
@@ -745,8 +727,28 @@ if (a<=pcar->collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2
     [ "long ga, gb, gc; test(ga, gb, gc); void test(long a, long b, long c) { a+=b+c; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare ga\n^declare gb\n^declare gc\n^declare test_a\n^declare test_b\n^declare test_c\n\nPSH $gc\nPSH $gb\nPSH $ga\nJSR :__fn_test\n\nJMP :__fn_test_end\n__fn_test:\nPOP @test_a\nPOP @test_b\nPOP @test_c\nSET @r0 $test_c\nADD @r0 $test_b\nADD @test_a $r0\nRET\n__fn_test_end:\nFIN\n" ],
     // optimization: array with constant index now used for reuseAssignedVar
     [ "long a[2], b; a[1]=b+1;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare b\n\nSET @a_1 $b\nINC @a_1\nFIN\n" ],
-    
-    [ "long a=0; mylabel: a++; void temp(void) { a++; mylabel: a++; }", true, "" ],
+    // Support for array notation on pointer variable.
+    [ "long b; void teste(long * poper) { poper[3]=0; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare b\n^declare teste_poper\n\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_poper\nSET @r0 #0000000000000003\nCLR @r1\nSET @($teste_poper + $r0) $r1\nRET\n__fn_teste_end:\nFIN\n" ],
+    // Support for check variable types on function calls
+    [ "long a, b; teste(a, b); \
+void teste(long *fa, long fb) { fb++; }", true, "" ],
+    [ "long * a, b; teste(a, b); \
+void teste(long *fa, long fb) { fb++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare teste_fa\n^declare teste_fb\n\nPSH $b\nPSH $a\nJSR :__fn_teste\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_fa\nPOP @teste_fb\nINC @teste_fb\nRET\n__fn_teste_end:\nFIN\n" ],
+    [ "long * a, b; teste(a, *a); \
+void teste(long *fa, long fb) { fb++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare teste_fa\n^declare teste_fb\n\nSET @r0 $($a)\nPSH $r0\nPSH $a\nJSR :__fn_teste\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_fa\nPOP @teste_fb\nINC @teste_fb\nRET\n__fn_teste_end:\nFIN\n" ],
+    [ "long * a, b; teste(&b, b); \
+void teste(long *fa, long fb) { fb++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare teste_fa\n^declare teste_fb\n\nPSH $b\nSET @r0 #0000000000000006\nPSH $r0\nJSR :__fn_teste\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_fa\nPOP @teste_fb\nINC @teste_fb\nRET\n__fn_teste_end:\nFIN\n" ],
+    [ "struct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b;pcar=&car;\n\
+teste(car);\n\
+void teste(struct KOMBI * value) { value->driver = 'Zé'; }", true, "" ],
+    [ "struct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b;pcar=&car;\n\
+teste(pcar);\n\
+void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare teste_value\n\nSET @pcar #0000000000000005\nPSH $pcar\nJSR :__fn_teste\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_value\nCLR @r0\nSET @r1 #0000000000a9c35a\nSET @($teste_value + $r0) $r1\nRET\n__fn_teste_end:\nFIN\n" ],
+    [ "struct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b;pcar=&car;\n\
+teste(pcar);\n\
+void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare teste_value\n\nSET @pcar #0000000000000005\nPSH $pcar\nJSR :__fn_teste\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_value\nCLR @r0\nSET @r1 #0000000000a9c35a\nSET @($teste_value + $r0) $r1\nRET\n__fn_teste_end:\nFIN\n" ],
+    // Support for check variable types on API Function calls
+    [ "#include APIFunctions\nlong * a;Set_A1(a);", true, "" ],
 //    [ "", false, "" ],
     
 

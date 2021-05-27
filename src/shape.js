@@ -66,6 +66,8 @@
 
         consolidateMemory();
 
+        shapeFunctionArgs();
+
         return Big_ast;
     }
 
@@ -769,6 +771,66 @@
             }
         }
     }
+
+    //process function arguments and arrange them in form or MemObj.
+    //This will make easier to check declaration types during function calls
+    //  to avoid wrong types to be passed to function (causing their DEATH)
+    //Shall be consistent with phrase2memoryObject() function
+    function shapeFunctionArgs() {
+        var fn;
+
+        function getMemObj(var_name) {
+            return Big_ast.memory.find(obj => obj.name == var_name && obj.scope === Big_ast.functions[fn].name );
+        }
+
+        function phrase2MemObj(phrs){
+
+            if (phrs.type === undefined) {
+                throw new TypeError("Unknow object type arrived at phrase2MemObj.");
+            }
+            if (phrs.code.length == 0) { //empty statement (void declaration)
+                return;
+            }
+            if (phrs.code.length<2){
+                throw new TypeError("At line: "+phrs.code[0].line+". Invalid statement in function declaration. Only 'struct' and 'long' allowed.");;
+            }
+
+            if (phrs.code[0].type === "Keyword") {
+
+                if (   phrs.code[0].value === "struct"){
+                    if (phrs.code.length == 4 ){
+                        if ( phrs.code[2].value === "*" && phrs.code[3].type === "Variable" ) {
+                            return getMemObj(phrs.code[3].value);
+                        }
+                        throw new TypeError("At line: "+phrs.code[0].line+". Only 'struct TYPE * name' allowed on function declaration.");
+                    }
+                    throw new TypeError("At line: "+phrs.code[0].line+". Only struct pointers allowed on function declaration");
+
+                } else if ( phrs.code[0].value === "long" ){
+                    if (phrs.code.length == 2 ){
+                        return getMemObj(phrs.code[1].value);
+                    } else if (phrs.code.length == 3 && phrs.code[1].value === "*"){
+                        return getMemObj(phrs.code[2].value);
+                    } else {
+                        throw new TypeError("At line: "+phrs.code[0].line+". Only 'long name' or 'long * name' allowed on function declaration.");
+                    }
+                }
+                throw new TypeError("At line: "+phrs.code[0].line+". Invalid keyword in function declaration. Only 'struct' and 'long' allowed.");
+            }
+            throw new TypeError("At line: "+phrs.code[0].line+". Invalid statement in function declaration. Only 'struct' and 'long' allowed.");
+        }
+
+        for (fn=0; fn< Big_ast.functions.length; fn++) {
+            let ret = [];
+            Big_ast.functions[fn].arguments.forEach(function (Phrase) {
+                ret.push(phrase2MemObj(Phrase))
+            });
+            Big_ast.functions[fn].argsMemObj = ret;
+            delete Big_ast.functions[fn].arguments;
+        }
+    }
+
+
 
     function consolidateMemory(){
         var var_counter=0;
