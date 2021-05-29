@@ -182,7 +182,7 @@ function runTestCases() {
     [ "a=b,c=d,e=f;",    false,  undefined, true, "SET @a $b\nSET @c $d\nSET @e $f\nFIN\n" ],
     [ "a=b++,c=b;",    false,  undefined, true, "SET @a $b\nINC @b\nSET @c $b\nFIN\n" ],
     [ "a=b++,c=b++,d=b;",    false,  undefined, true, "SET @a $b\nINC @b\nSET @c $b\nINC @b\nSET @d $b\nFIN\n" ],
-    [ "a+=1/2,a+=1/2,a+=1/2,a+=1/2;",    false,  undefined, true, "SET @r0 #0000000000000001\nSET @r1 #0000000000000002\nDIV @r0 $r1\nADD @a $r0\nSET @r0 #0000000000000001\nSET @r1 #0000000000000002\nDIV @r0 $r1\nADD @a $r0\nSET @r0 #0000000000000001\nSET @r1 #0000000000000002\nDIV @r0 $r1\nADD @a $r0\nSET @r0 #0000000000000001\nSET @r1 #0000000000000002\nDIV @r0 $r1\nADD @a $r0\nFIN\n" ],
+    [ "a+=1/2,a=2/2,a+=3/2,a=4/2;",    false,  undefined, true, "SET @a #0000000000000001\nINC @a\nSET @a #0000000000000002\nFIN\n" ],
     [ ",;",    true,  undefined, true, "" ],
     [ ",,,,;",    true,  undefined, true, "" ],
     [ "a=b,,c=d;",    true,  undefined, true, "" ],
@@ -749,6 +749,9 @@ teste(pcar);\n\
 void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare teste_value\n\nSET @pcar #0000000000000005\nPSH $pcar\nJSR :__fn_teste\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_value\nCLR @r0\nSET @r1 #0000000000a9c35a\nSET @($teste_value + $r0) $r1\nRET\n__fn_teste_end:\nFIN\n" ],
     // Support for check variable types on API Function calls
     [ "#include APIFunctions\nlong * a;Set_A1(a);", true, "" ],
+    // Support SetUnaryOperator in struct members, but not if it is an array
+    [ "struct KOMBI { long driver; long collector; long passenger[4]; } car; long a, b; ++car.driver; a=car.collector++;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\nSET @car_passenger #0000000000000008\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare a\n^declare b\n\nINC @car_driver\nSET @a $car_collector\nINC @car_collector\nFIN\n" ],
+    [ "struct KOMBI { long driver; long collector; long passenger[4]; } car; long a, b; ++car.passenger[a]; ", true, "" ],
 //    [ "", false, "" ],
     
 

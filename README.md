@@ -16,8 +16,11 @@ To create a high level programming language, similar to C, for Burstcoin Automat
 ## Usage
 Download project to your computer and open file `try.html` in your browser. Optionally [run it on gitpages!](https://deleterium.github.io/BurstAT-CC/try.html). After compiling, a text in assembly will be presented and this code must be transformed in bytecode using [Smart Contractor](https://deleterium.github.io/BurstAT/SmartContractor/) AT Tools. Inspect assembly code to check if it is OK, this compiler still is under ALPHA development.
 
+## Learning
+Visit page [classroom](https://deleterium.github.io/BurstAT-CC/classroom/) to see contracts examples and how they works. There is also some handyfull functions to help you to improve yor contracts.
+
 ## Language rules
-Expressions are C-like and evaluated from left to right. Rules are simpler than in C, so complexes expressions can have different evaluations from C, but simple expressions shall have same outcome given special caracteristcs in Burstcoin assembly language.
+Expressions are C-like and evaluated from left to right. Rules are simpler than in C, so complexes expressions may have different evaluations from C, but simple expressions shall have same outcome given special caracteristcs in Burstcoin assembly language.
 
 ### Comments
 As C, can be one line `//` or multi-line `/* .... */`;
