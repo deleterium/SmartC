@@ -11,10 +11,10 @@ To create a high level programming language, similar to C, for Burstcoin Automat
 - [X] Increase compiler memory management. Increase support for arrays and add struct keyword (branch memorytable)
 - [ ] Add global code optimization: 1) jump to jump -> jump to right location 2) remove unreacheable codes (between JMP's and labels OR FIN and labels)
 - [ ] Add syntax highlighting and save projects in brownser LocalStorage.
-- [ ] Option to export machine code in hexadecimal stream, enabling import into Burstcoin wallet (BRS)
+- [X] Option to export machine code in hexadecimal stream, enabling import into Burstcoin wallet (BRS)
 
 ## Usage
-Download project to your computer and open file `try.html` in your browser. Optionally [run it on gitpages!](https://deleterium.github.io/BurstAT-CC/try.html). After compiling, a text in assembly will be presented and this code must be transformed in bytecode using [Smart Contractor](https://deleterium.github.io/BurstAT/SmartContractor/) AT Tools. Inspect assembly code to check if it is OK, this compiler still is under ALPHA development.
+Download project to your computer and open file `try.html` in your browser. Optionally [run it on gitpages!](https://deleterium.github.io/BurstAT-CC/try.html). After compiling, information to create the AT is presented.
 
 ## Learning
 Visit page [classroom](https://deleterium.github.io/BurstAT-CC/classroom/) to see contracts examples and how they works. There is also some handyfull functions to help you to improve yor contracts.
@@ -30,7 +30,7 @@ Some keywords have the same meaning and use in C: `asm`, `break`, `continue`, `d
 Additional keywords:
 * `sleep N`: Puts the contract in 'sleep' mode during N blocks. Argument N must be specified and can be an expression. `sleep 1;` makes your contract to stop being processed at current block and resumes it at next one.
 * `exit`: Puts the contract in 'finished' mode. It will be inactive until a new transaction is received. Once a tx is received, it will start execution at `void main(void)` function. Takes no argument.
-* `halt`: Puts the contract in 'frozen' mode. It will be inactive until a new transaction is received, then resume execution at next instruction. Takes no argument.
+* `halt`: Puts the contract in 'frozen' mode. It will be inactive until a new transaction is received, then resume execution at next instruction. Takes no argument. If contract activation fee is zero, contract will resume execution on next block.
 
 Others keyword have no meaning in BurstAT or have no assembly support. They are disabled: `auto`, `double`, `float`, `register`, `volatile`.
 For future implementation these keywords can be added: `case`, `char`, `const`, `default`, `enum`, `extern`, `int`, `short`, `sizeof`, `signed`, `static`, `switch`, `typedef`, `union`, `unsigned`.

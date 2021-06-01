@@ -10,6 +10,7 @@
 <script src="src/syntax.js"></script>
 <script src="src/generator.js"></script>
 <script src="src/testcases.js"></script>
+<script src="src/bytecode.js"></script>
 
 <script>
 
@@ -23,15 +24,29 @@ function compileCode(){
         var big_ast = shapeProgram(ver_output);
         var big_ast_opTree = bigastProcessSyntax(big_ast);
         var asmCode = bigastCompile(big_ast_opTree);
+        //var bcode = bytecode(codeString);
+        var bcode = bytecode(asmCode);
 
         //document.getElementById("machine-code").innerHTML = asmCode+"\n\n"+asmCode.replace(/\n/g,"\\n")+"\n\n"+JSON.stringify(big_ast_opTree, null, '    ');
         //document.getElementById("machine-code").innerHTML = asmCode+"\n\n"+JSON.stringify(big_ast_opTree, null, '    ');
-        document.getElementById("machine-code").innerHTML = asmCode;
+        //document.getElementById("machine-code").innerHTML = asmCode;
+        //document.getElementById("machine-code").innerHTML = JSON.stringify(bcode, stringifyReplacer , '    ');
+        document.getElementById("machine-code").innerHTML = JSON.stringify(bcode, null , '    ');
     }catch (e) {
-        document.getElementById("machine-code").innerHTML = e.message+"\n"+e.stack+JSON.stringify(big_ast_opTree, null, '    ');;
+        //document.getElementById("machine-code").innerHTML = e.message+"\n"+e.stack+JSON.stringify(big_ast_opTree, null, '    ');;
+        document.getElementById("machine-code").innerHTML = e.message+"\n"+e.stack;
     }
 }
 
+function stringifyReplacer(key, value) {
+    if (typeof value === 'bigint') {
+        return value.toString(16) + 'n';
+    } else if (typeof value === 'number'){
+        return value.toString(16);
+    } else {
+        return value;
+    }
+}
 
 function testCode() {
     document.getElementById("machine-code").innerHTML = runTestCases();    
