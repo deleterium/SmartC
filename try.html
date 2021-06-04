@@ -12,6 +12,8 @@
 <script src="src/testcases.js"></script>
 <script src="src/bytecode.js"></script>
 
+<script src="src/asm_highlight.js"></script>
+
 <script>
 
 function compileCode(){
@@ -24,18 +26,35 @@ function compileCode(){
         var big_ast = shapeProgram(ver_output);
         var big_ast_opTree = bigastProcessSyntax(big_ast);
         var asmCode = bigastCompile(big_ast_opTree);
-        //var bcode = bytecode(codeString);
+
+        document.getElementById("assembly_output").innerHTML = asm_highlight(asmCode);
+
         var bcode = bytecode(asmCode);
 
         //document.getElementById("machine-code").innerHTML = asmCode+"\n\n"+asmCode.replace(/\n/g,"\\n")+"\n\n"+JSON.stringify(big_ast_opTree, null, '    ');
         //document.getElementById("machine-code").innerHTML = asmCode+"\n\n"+JSON.stringify(big_ast_opTree, null, '    ');
         //document.getElementById("machine-code").innerHTML = asmCode;
         //document.getElementById("machine-code").innerHTML = JSON.stringify(bcode, stringifyReplacer , '    ');
-        document.getElementById("machine-code").innerHTML = JSON.stringify(bcode, null , '    ');
+        //document.getElementById("c_output").innerHTML = JSON.stringify(bcode, null , '    ');
+        document.getElementById("c_output").innerHTML = "Compile sucessfull!!!";
+
+        fill_form(bcode);
+
     }catch (e) {
         //document.getElementById("machine-code").innerHTML = e.message+"\n"+e.stack+JSON.stringify(big_ast_opTree, null, '    ');;
-        document.getElementById("machine-code").innerHTML = e.message+"\n"+e.stack;
+        document.getElementById("assembly_output").innerHTML = "";
+        clear_form();
+        document.getElementById("c_output").innerHTML = e.message+"\n"+e.stack;
     }
+}
+
+function textKeyUp () {
+    var elem = document.getElementById("source-code");
+    var text = elem.value;
+
+    // grows text area
+    elem.rows =  (text.match(/\n/g) || '').length + 2;
+
 }
 
 function stringifyReplacer(key, value) {
@@ -48,23 +67,111 @@ function stringifyReplacer(key, value) {
     }
 }
 
+function fill_form(AT_Info) {
+
+    var my_dom;
+    my_dom = document.getElementsByName("code");
+    my_dom[0].value=AT_Info.ByteCode;
+    my_dom = document.getElementsByName("dpages");
+    my_dom[0].value=AT_Info.DataPages;
+    my_dom = document.getElementsByName("cspages");
+    my_dom[0].value=AT_Info.CodeStackPages;
+    my_dom = document.getElementsByName("uspages");
+    my_dom[0].value=AT_Info.UserStackPages;
+    my_dom = document.getElementsByName("feeNQT");
+    my_dom[0].value=AT_Info.MinimumFeeNQT;
+}
+
+function clear_form(){
+    var my_dom;
+    my_dom = document.getElementsByName("code");
+    my_dom[0].value="";
+    my_dom = document.getElementsByName("dpages");
+    my_dom[0].value="0";
+    my_dom = document.getElementsByName("cspages");
+    my_dom[0].value="0";
+    my_dom = document.getElementsByName("uspages");
+    my_dom[0].value="0";
+    my_dom = document.getElementsByName("feeNQT");
+    my_dom[0].value="0";
+}
+
 function testCode() {
-    document.getElementById("machine-code").innerHTML = runTestCases();    
+    document.getElementById("c_output").innerHTML = runTestCases();
+}
+
+function handleClick(deploy_port) {
+    var form_dom = document.getElementById("deploy_form");
+    form_dom.action = "http://localhost:"+deploy_port.value+"/burst";
+    var i=24;
 }
 
 </script>
 </head>
 
-<body>
-    <h1>BurstAT-CC - Burstcoin AT C Compiler</h1>      
-    <textarea id="source-code" placeholder="Write here your program." spellcheck="false"></textarea>
+<body onload='javascript:textKeyUp()'>
+    <h1>BurstAT-CC - Burstcoin AT C Compiler</h1>
+    <p>More information about this project, documentation or examples, visit <a href="https://deleterium.github.io/BurstAT-CC/">https://deleterium.github.io/BurstAT-CC/</a> or
+        <a href="https://github.com/deleterium/BurstAT-CC">https://github.com/deleterium/BurstAT-CC</a></p>
+
+    <textarea id="source-code" placeholder="Write here your program." class="inc_height" spellcheck="false" wrap="off" onkeyup='javascript:textKeyUp();''></textarea>
     
-    <div>
+    <div class="div_options">
         <button id="compile" onClick="javascript: compileCode();">Compile it!</button>
         <button id="test" onClick="javascript: testCode();">Run test cases</button>
     </div>
-    <p>More information about this project, documentation or examples, visit <a href="https://deleterium.github.io/BurstAT-CC/">https://deleterium.github.io/BurstAT-CC/</a> or
-    <a href="https://github.com/deleterium/BurstAT-CC">https://github.com/deleterium/BurstAT-CC</a></p>
-    <pre id="machine-code" height="400" contenteditable="true" spellcheck="false"></pre>
+    <div class="div_c_output">
+    <h3>Compile output:</h3>
+    <pre id="c_output" height="150"></pre>
+    </div>
+    <div class="left">
+
+    <h3>Localhost node deployment form for smart contract:</h3>
+    <table class="table">
+        <tbody>
+            <tr><td>Deployment:</td><td>
+                <label title="localhost:6876"><input type="radio" onclick="handleClick(this);" value="6876" name="deploy" checked="true"> Testnet </label>&nbsp;&nbsp;
+                <label title="localhost:8125"><input type="radio" onclick="handleClick(this);" value="8125" name="deploy"> Main </label></td></tr>
+        <form action="http://localhost:6876/burst" method="POST" target="formresponse" id="deploy_form" >
+        <input type="hidden" name="requestType" value="createATProgram">
+            <tr><td>Contract Name:</td><td><input type="text" name="name" style="width:100%;min-width:200px;" pattern="[a-zA-Z0-9]{1,10}" title="Only letters (a to Z) and numbers"></td></tr>
+            <tr><td>Description:</td><td><textarea name="description" rows="5" style="width:100%;min-width:200px;"></textarea></td></tr>
+            <!-- <tr><td>creationBytes:</td><td><input type="text" name="creationBytes" style="width:100%;min-width:200px;"></td></tr> -->
+            <tr><td>Bytecode:</td><td><input type="text" name="code" style="width:100%;min-width:200px;" pattern="[a-fA-F0-9]{1,}"></td></tr>
+            <!-- <tr><td>data:</td><td><input type="text" name="data" style="width:100%;min-width:200px;"></td></tr> -->
+            <tr><td>Data Pages:</td><td><input type="number" name="dpages" value="1" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>Code Stack Pages:</td><td><input type="number" name="cspages" value="0" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>User Stack Pages:</td><td><input type="number" name="uspages" value="0" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>Min. Activation Amount NQT:</td><td><input type="text" name="minActivationAmountNQT" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>Secret Phrase:</td><td><input type="password" name="secretPhrase" style="width:100%;min-width:200px;"></td></tr>
+            <!-- <tr><td>publicKey:</td><td><input type="text" name="publicKey" style="width:100%;min-width:200px;"></td></tr> -->
+            <tr><td>Fee (NQT):</td><td><input type="text" name="feeNQT" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>Tx Deadline (minutes):</td><td><input type="text" name="deadline" style="width:100%;min-width:200px;" value="24"></td></tr>
+            <!-- <tr><td>referencedTransactionFullHash:</td><td><input type="text" name="referencedTransactionFullHash" style="width:100%;min-width:200px;"></td></tr> -->
+            <tr><td>Broadcast Tx?</td><td><input type="text" name="broadcast" style="width:100%;min-width:200px;" placeholder="true"></td></tr>
+            <!--
+            <tr><td>message:</td><td><input type="text" name="message" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>messageIsText:</td><td><input type="text" name="messageIsText" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>messageToEncrypt:</td><td><input type="text" name="messageToEncrypt" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>messageToEncryptIsText:</td><td><input type="text" name="messageToEncryptIsText" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>encryptedMessageData:</td><td><input type="text" name="encryptedMessageData" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>encryptedMessageNonce:</td><td><input type="text" name="encryptedMessageNonce" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>messageToEncryptToSelf:</td><td><input type="text" name="messageToEncryptToSelf" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>messageToEncryptToSelfIsText:</td><td><input type="text" name="messageToEncryptToSelfIsText" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>encryptToSelfMessageData:</td><td><input type="text" name="encryptToSelfMessageData" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>encryptToSelfMessageNonce:</td><td><input type="text" name="encryptToSelfMessageNonce" style="width:100%;min-width:200px;"></td></tr>
+            <tr><td>recipientPublicKey:</td><td><input type="text" name="recipientPublicKey" style="width:100%;min-width:200px;"></td></tr>
+            -->
+            <tr><td colspan="2"><input type="submit" class="btn btn-default" value="submit"></td></tr>
+        </form>
+        </tbody>
+    </table>
+    <h5>Response</h5>
+    <iframe src="about:blank" name='formresponse' width='100%' height='300'></iframe>
+    </div>
+    <div class="right">
+        <h3>Assembly output:</h3>
+        <div id="assembly_output" class="code"></div>
+    </div>
 </body>
 </html>
