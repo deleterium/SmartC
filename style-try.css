@@ -1,52 +1,108 @@
-body { 	margin: 0;
+/* GENERAL config */
+body {
+	margin: 0;
 	padding: 0;
-	background: #ddd; }
+	font-family: sans-serif;
+	background: #ddd;
+}
 
-h1{	padding: 1vh;
+h1 {
+	padding: 1vh;
 	background: #da7;
+	color: #114;
 	margin: 0 0 3vh 0;
 	text-align: center;
-	border-bottom: 1vh double #444; }
+	border-bottom: 0.5vh double #114;
+}
+
+fieldset {
+	border: solid 0.5vh #ccc;
+}
+
+legend, .tooltip {
+	background-color: #da7;
+	color: #114;
+	padding: 3px 6px;
+	border: 0.2vh solid #114;
+
+}
+
+iframe {
+	border: 1px solid #114;
+}
+
+p {
+	padding: 1vw;
+}
+	
+pre {
+	padding: 1vw;
+	min-height: 50px;
+	font-family: "Lucida Console", "Courier New", 'monospace';
+}
+
+/* Buttons */
+.btn_class {
+	padding: 1vh;
+	font-size: 3vh;
+	background: #fff;
+	transition: all ease 0.3s;
+	border: solid 0.5vh #ccc; }
+
+#source_is_c:checked ~ #bt1      { background: #ccf; }
+#debug:checked ~ #bt2            { background: #ccf; }
+label:hover                      { background: #ddf; }
+#debug:hover, #source_is_c:hover { background: #fcc; }
+#compile { margin-left: 2vh; margin-right: 2vh; }
+#bt2     { margin-left: 2vh; }
+#test:hover    { background: #fdd; }
+#compile:hover { background: #dfd; }
+
+/* CLASSES and IDs configs */
+.tooltip {
+	position: fixed;
+	white-space: nowrap;
+	display: block;
+	bottom: 1vh;
+	right:  1vh;
+}
 
 #source-code {
 	resize: none;
-	color: #fff;
-	width: 92vw;
-	margin: 2vw;
+	overflow-y: hidden;
+	overflow-x: auto;
+	color: #114;
+	width: calc(100% - 3vw);
+	margin: 0vw;
 	padding: 1vw;
-	background: #335;
-	border: solid 0.5vh #ccc; }
-	
-button { 
-	padding: 1vh;
-	font-size: 4vh;
-	background: #fff;
-	border-radius: 5%/10%;
-	border: solid 0.5vh #ccc; }
+	background: #fafbfc;
+	border: solid 0.5vh #ccc;
+	font-family: "Lucida Console", "Courier New", 'monospace'; }
 
-#test { margin-left: 2vh; }
-#test:hover { background: #fdd; }
-#compile:hover { background: #dfd; }
+::selection {
+	color: #114;
+	background: rgb(202, 202, 238);
+}
 
-p {
-	padding: 1vw; }
-	
-pre {
-	padding: 1vw; }
+.msg_failure {
+	font-weight: bold;
+	color: red;
+}
+.msg_success {
+	font-weight: bold;
+	color: green;
+}
 
-.code {
-	padding: 2vh;
-	white-space: pre;
-	word-wrap: break-word;
-	font-family: "Lucida Console", "Courier New", monospace; }
-
+/* general lay-out */
+.table {
+	width: 100%;
+}
 .div_options {
 	display: flex;
 	justify-content: center; }
-.div_c_output {
-	padding: 0.5vh;
-}
+.div_full {
+	padding: 2vh 0.5vw 2vh 0.5vw;}
 .left {	float: left; }
 .right { float: right; }
-.right, .left {	width: 48vw; padding: 0.5vh;}
+.right, .left {	width: 48vw; padding: 0.5vw;}
 .inc_height { min-height: 150px; }

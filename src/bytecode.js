@@ -357,7 +357,9 @@ function bytecode(assembly_source) {
             MinimumFeeNQT: minimumfee,
             MinimumFeeBurst: minimumfee / 100000000,
             ByteCode: AsmObj.bytecode,
-            //DevInfo: AsmObj
+            Memory: AsmObj.memory,
+            Labels: AsmObj.labels,
+            //DevInfo: AsmObj.code
         };
     }
 
