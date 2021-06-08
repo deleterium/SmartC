@@ -252,8 +252,6 @@ function runTestCases() {
 
 // Optimizations
     [ "Optimizations;", "div" ],
-    [ "a=a+\"0\";",    false,  undefined, true, "SET @r0 #0000000000000030\nADD @a $r0\nFIN\n" ],
-    [ "a=\"0\"+a;",    false,  undefined, true, "SET @r0 $a\nSET @r1 #0000000000000030\nADD @r0 $r1\nSET @a $r0\nFIN\n" ],
     [ "a=b/a;",    false,  undefined, true, "SET @r0 $b\nDIV @r0 $a\nSET @a $r0\nFIN\n" ],
     [ "a=1+(b/(c/a));",    false,  undefined, true, "SET @r0 $c\nDIV @r0 $a\nSET @r1 $b\nDIV @r1 $r0\nINC @r1\nSET @a $r1\nFIN\n" ],
 
@@ -687,66 +685,83 @@ if (a<=pcar->collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2
     [ "long a[3];", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n\nFIN\n" ],
     [ "long a[3]; a[0]=9;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n\nSET @a_0 #0000000000000009\nFIN\n" ],
     [ "long a[3]; a=9;", true, "" ],
-    [ "long a; void main(void) { a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\n\n__fn_main:\nPCS\nINC @a\nFIN\n" ],
-    [ "long a; void main(void) { a++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\n\n__fn_main:\nPCS\nINC @a\nFIN\n" ],
-    [ "long a; void main(void) { a++; return; a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\n\n__fn_main:\nPCS\nINC @a\nFIN\nINC @a\nFIN\n" ],
-    [ "long a; void test(void) { a++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\n\nJMP :__fn_test_end\n__fn_test:\nINC @a\nRET\n__fn_test_end:\nFIN\n" ],
-    [ "long a; void test(void) { a++; return; a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\n\nJMP :__fn_test_end\n__fn_test:\nINC @a\nRET\nINC @a\nRET\n__fn_test_end:\nFIN\n" ],
-    [ "long a; test(); void test(void) { a++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nJSR :__fn_test\n\nJMP :__fn_test_end\n__fn_test:\nINC @a\nRET\n__fn_test_end:\nFIN\n" ],
+    [ "long a; void main(void) { a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\n" ],
+    [ "long a; void main(void) { a++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\n" ],
+    [ "long a; void main(void) { a++; return; a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\nINC @a\nFIN\n" ],
+    [ "long a; void test(void) { a++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nFIN\n\n__fn_test:\nINC @a\nRET\n" ],
+    [ "long a; void test(void) { a++; return; a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nFIN\n\n__fn_test:\nINC @a\nRET\nINC @a\nRET\n" ],
+    [ "long a; test(); void test(void) { a++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nINC @a\nRET\n" ],
     [ "long a; a=test(); void test(void) { a++; return; }", true, "" ],
-    [ "long a; void test2(long b) { b++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\n\nJMP :__fn_test2_end\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nRET\n__fn_test2_end:\nFIN\n" ],
-    [ "long a; long test2(long b) { b++; return b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\n\nJMP :__fn_test2_end\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n__fn_test2_end:\nFIN\n" ],
-    [ "long a=0; a=test2(a); long test2(long b) { b++; return b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\nSET @a $r0\n\nJMP :__fn_test2_end\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n__fn_test2_end:\nFIN\n" ],
-    [ "#pragma warningToError false\nlong a=0; test2(a); long test2(long b) { b++; return b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\n\nJMP :__fn_test2_end\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n__fn_test2_end:\nFIN\n" ],
-    [ "long a=0; void main(void){ a++; test2(a); exit; } void test2(long b) { b++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\nCLR @a\n\n__fn_main:\nPCS\nINC @a\nPSH $a\nJSR :__fn_test2\nFIN\n\nJMP :__fn_test2_end\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nRET\n__fn_test2_end:\nFIN\n" ],
+    [ "long a; void test2(long b) { b++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nRET\n" ],
+    [ "long a; long test2(long b) { b++; return b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n" ],
+    [ "long a=0; a=test2(a); long test2(long b) { b++; return b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\nSET @a $r0\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n" ],
+    [ "#pragma warningToError false\nlong a=0; test2(a); long test2(long b) { b++; return b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n" ],
+    [ "long a=0; void main(void){ a++; test2(a); exit; } void test2(long b) { b++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\nCLR @a\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nPSH $a\nJSR :__fn_test2\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nRET\n" ],
     [ "#include APIFunctions\nlong a;Set_A1(a);", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nFUN set_A1 $a\nFIN\n" ],
     [ "#include APIFunctions\nSet_A1();", true, "" ],
     [ "long ,b;", true, "" ],
+
+//globalOptimization
+    [ "globalOptimization", "div" ],
+    [ "#pragma globalOptimization\nlong a,b; for (a=0;a<10;a++) { b++; } b--;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nINC @b\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nDEC @b\nFIN\n" ],
+    [ "#pragma globalOptimization\nlong a,b; while (b) {a++; while (1) { if (a) break;  } } a++;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $b :__loop1_break\nINC @a\n__loop2_continue:\nBZR $a :__if3_endif\nJMP :__loop1_continue\n__if3_endif:\nJMP :__loop2_continue\n__loop1_break:\nINC @a\nFIN\n" ],
+    [ "#pragma globalOptimization\nlong a,b; if (!b) {a++; } b++;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nBNZ $b :__if1_endif\nINC @a\n__if1_endif:\nINC @b\nFIN\n" ],
+    [ "#pragma globalOptimization\nlong a,b; void main (void) { a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\n\nPCS\nINC @a\nFIN\n" ],
+    [ "#pragma globalOptimization\nlong a,b; if (!b) {a++; } else { b++;} ", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nBNZ $b :__if1_else\nINC @a\nFIN\n__if1_else:\nINC @b\nFIN\n" ],
+    [ "#pragma globalOptimization\nlong a,b; test(); void test (void) { if (a) a++; else b++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nBZR $a :__if1_else\nINC @a\nRET\n__if1_else:\nINC @b\nRET\n" ],
+    [ "#pragma globalOptimization\nlong a,b; test(); exit; a++; void test (void) { a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nINC @a\nRET\n" ],
+    [ "#pragma globalOptimization\nlong a,b; test(); void test (void) { return; a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nRET\n" ],
+    [ "#pragma globalOptimization\nlong a,b; test(); void test (void) { if (a) a++; else b++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nBZR $a :__if1_else\nINC @a\nRET\n__if1_else:\nINC @b\nRET\n" ],
+    [ "#pragma globalOptimization\nlong a, b, c, d; a=(b*c)*d;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @a $c\nMUL @a $b\nMUL @a $d\nFIN\n" ],
+    [ "#pragma globalOptimization\nlong a[4][2], *b, c,d; b=&a[c][d];", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\n^declare c\n^declare d\n\nSET @b $c\nSET @r0 #0000000000000002\nMUL @b $r0\nADD @b $d\nADD @b $a\nFIN\n" ],
+    [ "#pragma globalOptimization\nlong a[4][2], *b, c,d; b=&a[c][d];", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\n^declare c\n^declare d\n\nSET @b $c\nSET @r0 #0000000000000002\nMUL @b $r0\nADD @b $d\nADD @b $a\nFIN\n" ],
+    [ "#pragma globalOptimization\n#pragma useVariableDeclaration false\na=a+'0'; b++; a+='0';", false, "SET @r0 #0000000000000030\nADD @a $r0\nINC @b\nSET @r0 #0000000000000030\nADD @a $r0\nFIN\n" ],
+
 //bugfixes
     [ "Bug fixes", "div" ],
     //bug 1, goto failed with undeclared variable
-    [ "void  teste(long ret) { long temp = 2; goto newlabel; ret = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_ret\n^declare teste_temp\n\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @teste_ret $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n__fn_teste_end:\nFIN\n" ],
+    [ "void  teste(long ret) { long temp = 2; goto newlabel; ret = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @teste_ret $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n" ],
     //bug 2, failed when declaring pointer on function declaration
-    [ "void  teste(long * ret) { long temp = 2; goto newlabel; ret[temp] = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_ret\n^declare teste_temp\n\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @($teste_ret + $teste_temp) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n__fn_teste_end:\nFIN\n" ],
-    [ "void  teste(long * ret) { long temp = 2; goto newlabel; *(ret+temp) = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_ret\n^declare teste_temp\n\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @r0 $teste_temp\nADD @r0 $teste_ret\nSET @($r0) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n__fn_teste_end:\nFIN\n" ],
+    [ "void  teste(long * ret) { long temp = 2; goto newlabel; ret[temp] = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @($teste_ret + $teste_temp) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n" ],
+    [ "void  teste(long * ret) { long temp = 2; goto newlabel; *(ret+temp) = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @r0 $teste_temp\nADD @r0 $teste_ret\nSET @($r0) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n" ],
     //bug 3, ReuseAssignedVar not working inside a function.
-    [ "#pragma maxAuxVars 2\nlong itoa(long val) {\n    long ret, temp;\n    if (val >= 0 && val <= 99999999) { ret = (ret << 8) + temp; return ret; }\n    return '#error';\n}", false, "^declare r0\n^declare r1\n^declare itoa_val\n^declare itoa_ret\n^declare itoa_temp\n\n\nJMP :__fn_itoa_end\n__fn_itoa:\nPOP @itoa_val\nCLR @r0\nBLT $itoa_val $r0 :__if1_endif\nSET @r0 #0000000005f5e0ff\nBGT $itoa_val $r0 :__if1_endif\nSET @r0 $itoa_ret\nSET @r1 #0000000000000008\nSHL @r0 $r1\nSET @r1 $itoa_temp\nADD @r1 $r0\nSET @itoa_ret $r1\nPSH $itoa_ret\nRET\n__if1_endif:\nSET @r0 #0000726f72726523\nPSH $r0\nRET\n__fn_itoa_end:\nFIN\n" ],
+    [ "#pragma maxAuxVars 2\nlong itoa(long val) {\n    long ret, temp;\n    if (val >= 0 && val <= 99999999) { ret = (ret << 8) + temp; return ret; }\n    return '#error';\n}", false, "^declare r0\n^declare r1\n^declare itoa_val\n^declare itoa_ret\n^declare itoa_temp\n\nFIN\n\n__fn_itoa:\nPOP @itoa_val\nCLR @r0\nBLT $itoa_val $r0 :__if1_endif\nSET @r0 #0000000005f5e0ff\nBGT $itoa_val $r0 :__if1_endif\nSET @r0 $itoa_ret\nSET @r1 #0000000000000008\nSHL @r0 $r1\nSET @r1 $itoa_temp\nADD @r1 $r0\nSET @itoa_ret $r1\nPSH $itoa_ret\nRET\n__if1_endif:\nSET @r0 #0000726f72726523\nPSH $r0\nRET\n" ],
     //bug 4, Double declaration causing array pointer to point wrong location.
     [ "long a=0; long b; a++; long a=3;", true, "" ],
     [ "long a=0; long b; a++; void test(void) { a++; } long tt(void) { a++;} long test(void) {a++; return a; }", true, "" ],
     [ "long a=0; long b; a++; void test(void) { a++; } long tt(void) { a++;} long test(void) {a++; return a; }", true, "" ],
-    [ "long a=0; void Get_B1(void) { a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nCLR @a\n\nJMP :__fn_Get_B1_end\n__fn_Get_B1:\nINC @a\nRET\n__fn_Get_B1_end:\nFIN\n" ],
+    [ "long a=0; void Get_B1(void) { a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nCLR @a\nFIN\n\n__fn_Get_B1:\nINC @a\nRET\n" ],
     [ "#include APIFunctions\nlong a=0; void Get_B1(void) { a++; }", true, "" ],
     [ "long a=0; mylabel: a++; void temp(void) { a++; mylabel: a++; }", true, "" ],
     //bug 5, reuseAssignedVar not working inside functions.
-    [ "void test(void) { long t, a; t = a+1; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare test_t\n^declare test_a\n\n\nJMP :__fn_test_end\n__fn_test:\nSET @test_t $test_a\nINC @test_t\nRET\n__fn_test_end:\nFIN\n" ],
+    [ "void test(void) { long t, a; t = a+1; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare test_t\n^declare test_a\n\nFIN\n\n__fn_test:\nSET @test_t $test_a\nINC @test_t\nRET\n" ],
     //bug 6, removed warning when function returning long had no assignment. (removed failed case from other testcase
     //bug 7, array type definition not found when declaring array inside functions.
-    [ "void test(void) { long t[2], a; t[a] = 1; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare test_t\nSET @test_t #0000000000000006\n^declare test_t_0\n^declare test_t_1\n^declare test_a\n\n\nJMP :__fn_test_end\n__fn_test:\nSET @r0 #0000000000000001\nSET @($test_t + $test_a) $r0\nRET\n__fn_test_end:\nFIN\n" ],
+    [ "void test(void) { long t[2], a; t[a] = 1; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare test_t\nSET @test_t #0000000000000006\n^declare test_t_0\n^declare test_t_1\n^declare test_a\n\nFIN\n\n__fn_test:\nSET @r0 #0000000000000001\nSET @($test_t + $test_a) $r0\nRET\n" ],
     //bug 8, wrong order of stack for function call
-    [ "long ga, gb, gc; test(ga, gb, gc); void test(long a, long b, long c) { a+=b+c; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare ga\n^declare gb\n^declare gc\n^declare test_a\n^declare test_b\n^declare test_c\n\nPSH $gc\nPSH $gb\nPSH $ga\nJSR :__fn_test\n\nJMP :__fn_test_end\n__fn_test:\nPOP @test_a\nPOP @test_b\nPOP @test_c\nSET @r0 $test_c\nADD @r0 $test_b\nADD @test_a $r0\nRET\n__fn_test_end:\nFIN\n" ],
+    [ "long ga, gb, gc; test(ga, gb, gc); void test(long a, long b, long c) { a+=b+c; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare ga\n^declare gb\n^declare gc\n^declare test_a\n^declare test_b\n^declare test_c\n\nPSH $gc\nPSH $gb\nPSH $ga\nJSR :__fn_test\nFIN\n\n__fn_test:\nPOP @test_a\nPOP @test_b\nPOP @test_c\nSET @r0 $test_c\nADD @r0 $test_b\nADD @test_a $r0\nRET\n" ],
     // optimization: array with constant index now used for reuseAssignedVar
     [ "long a[2], b; a[1]=b+1;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare b\n\nSET @a_1 $b\nINC @a_1\nFIN\n" ],
     // Support for array notation on pointer variable.
-    [ "long b; void teste(long * poper) { poper[3]=0; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare b\n^declare teste_poper\n\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_poper\nSET @r0 #0000000000000003\nCLR @r1\nSET @($teste_poper + $r0) $r1\nRET\n__fn_teste_end:\nFIN\n" ],
+    [ "long b; void teste(long * poper) { poper[3]=0; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare b\n^declare teste_poper\n\nFIN\n\n__fn_teste:\nPOP @teste_poper\nSET @r0 #0000000000000003\nCLR @r1\nSET @($teste_poper + $r0) $r1\nRET\n" ],
     // Support for check variable types on function calls
     [ "long a, b; teste(a, b); \
 void teste(long *fa, long fb) { fb++; }", true, "" ],
     [ "long * a, b; teste(a, b); \
-void teste(long *fa, long fb) { fb++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare teste_fa\n^declare teste_fb\n\nPSH $b\nPSH $a\nJSR :__fn_teste\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_fa\nPOP @teste_fb\nINC @teste_fb\nRET\n__fn_teste_end:\nFIN\n" ],
+void teste(long *fa, long fb) { fb++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare teste_fa\n^declare teste_fb\n\nPSH $b\nPSH $a\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_fa\nPOP @teste_fb\nINC @teste_fb\nRET\n" ],
     [ "long * a, b; teste(a, *a); \
-void teste(long *fa, long fb) { fb++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare teste_fa\n^declare teste_fb\n\nSET @r0 $($a)\nPSH $r0\nPSH $a\nJSR :__fn_teste\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_fa\nPOP @teste_fb\nINC @teste_fb\nRET\n__fn_teste_end:\nFIN\n" ],
+void teste(long *fa, long fb) { fb++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare teste_fa\n^declare teste_fb\n\nSET @r0 $($a)\nPSH $r0\nPSH $a\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_fa\nPOP @teste_fb\nINC @teste_fb\nRET\n" ],
     [ "long * a, b; teste(&b, b); \
-void teste(long *fa, long fb) { fb++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare teste_fa\n^declare teste_fb\n\nPSH $b\nSET @r0 #0000000000000006\nPSH $r0\nJSR :__fn_teste\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_fa\nPOP @teste_fb\nINC @teste_fb\nRET\n__fn_teste_end:\nFIN\n" ],
+void teste(long *fa, long fb) { fb++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare teste_fa\n^declare teste_fb\n\nPSH $b\nSET @r0 #0000000000000006\nPSH $r0\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_fa\nPOP @teste_fb\nINC @teste_fb\nRET\n" ],
     [ "struct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b;pcar=&car;\n\
 teste(car);\n\
 void teste(struct KOMBI * value) { value->driver = 'Zé'; }", true, "" ],
     [ "struct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b;pcar=&car;\n\
 teste(pcar);\n\
-void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare teste_value\n\nSET @pcar #0000000000000005\nPSH $pcar\nJSR :__fn_teste\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_value\nCLR @r0\nSET @r1 #0000000000a9c35a\nSET @($teste_value + $r0) $r1\nRET\n__fn_teste_end:\nFIN\n" ],
+void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare teste_value\n\nSET @pcar #0000000000000005\nPSH $pcar\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_value\nCLR @r0\nSET @r1 #0000000000a9c35a\nSET @($teste_value + $r0) $r1\nRET\n" ],
     [ "struct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b;pcar=&car;\n\
 teste(pcar);\n\
-void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare teste_value\n\nSET @pcar #0000000000000005\nPSH $pcar\nJSR :__fn_teste\n\nJMP :__fn_teste_end\n__fn_teste:\nPOP @teste_value\nCLR @r0\nSET @r1 #0000000000a9c35a\nSET @($teste_value + $r0) $r1\nRET\n__fn_teste_end:\nFIN\n" ],
+void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare teste_value\n\nSET @pcar #0000000000000005\nPSH $pcar\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_value\nCLR @r0\nSET @r1 #0000000000a9c35a\nSET @($teste_value + $r0) $r1\nRET\n" ],
     // Support for check variable types on API Function calls
     [ "#include APIFunctions\nlong * a;Set_A1(a);", true, "" ],
     // Support SetUnaryOperator in struct members, but not if it is an array

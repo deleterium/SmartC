@@ -9,7 +9,7 @@ To create a high level programming language, similar to C, for Burstcoin Automat
 - [x] Support for logical operations
 - [X] Support keywords and integration with loops and conditionals (Currently present at SimpleIDE)
 - [X] Increase compiler memory management. Increase support for arrays and add struct keyword (branch memorytable)
-- [ ] Add global code optimization: 1) jump to jump -> jump to right location 2) remove unreacheable codes (between JMP's and labels OR FIN and labels)
+- [X] Add global code optimization. Read notes on **Macros** section.
 - [ ] Add syntax highlighting and save projects in brownser LocalStorage.
 - [X] Option to export machine code in hexadecimal stream, enabling import into Burstcoin wallet (BRS)
 
@@ -39,6 +39,7 @@ For future implementation these keywords can be added: `case`, `char`, `const`, 
 Some special features can be enabled/disable via preprocessor directives:
 * `#include APIFunctions [true/false/1/0/]`: Can make Burstcoin API functions available for use as functions. Default value is `false`. Can be enabled by declaring it with empty argument, `true` or `1`. Function names follow the [ciyam at documentation](https://ciyam.org/at/at_api.html).
 * `#pragma enableRandom [true/false/1/0/]`: Makes jumps and conditionals jumps receive a random value. Default value is `false`, so jumps id have an increasing number starting with 1.
+* `#pragma globalOptimization [true/false/1/0/]`: Adds a final step to the compiler where generated code will be optimized. Default value is `false` until more test are done. Makes generated assembly code even less readable, removing labels not referenced by jumps.
 * `#pragma max_auxVars N`: Used to tell compiler how many auxiliary variables will be available (they are used as registers). Default value is `5`, min value is `1` and max is `10`. If you are under memory pressure, try to reduce to minimal necessary for compiling. Simple contracts will use around 2 values, but this number depends on nested operations.
 * `#pragma reuseAssignedVar [true/false/1/0/]`: When set, compiler will try to use a variable on left sign of and `Assignment` as a register. If variable is also used on right side, the compiler will not reuse it. This can save one assembly instruction for every expression used! Default value is `true` and it is highly recomended to maintain it active.
 * `#pragma useVariableDeclaration [true/false/1/0/]`: Makes the compiler to check if all variables are declared before their use. Default value is `true`. When false, default assembler behaviour is create variables as they appears. Good to avoid typing errors. Must be on when using arrays and structs.

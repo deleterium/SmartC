@@ -42,6 +42,13 @@ function bigastCompile(bc_Big_ast){
         bc_auxVars.current_function = -1;
         bc_Big_ast.Global.sentences.forEach( compileSentence );
 
+        // jump to main function, or program ends.
+        if (bc_Big_ast.functions.find(obj => obj.name === "main") === undefined) {
+            writeAsmLine("FIN");
+        } else {
+            writeAsmLine("JMP :__fn_main");
+        }
+
         // For every function:
         bc_auxVars.current_function = 0;
         while (bc_auxVars.current_function < bc_Big_ast.functions.length) {
@@ -58,16 +65,10 @@ function bigastCompile(bc_Big_ast){
             bc_auxVars.current_function++;
         }
 
-        //always end with FIN!
-        if (bc_auxVars.assemblyCode.lastIndexOf("FIN")+4 != bc_auxVars.assemblyCode.length) {
-            writeAsmLine("FIN");
+        //Optimize code;
+        if ( bc_Big_ast.Config.globalOptimization) {
+            doGlobalOptimization();
         }
-
-        //TODO Optimize code;
-        //  jump to jump -> do only one jump
-        //  Remove unreachable code
-        //  SET register VAR; SET VAR2 register -> set VAR2 VAR
-        //  Consolidate many operations on same var in only one operation
 
         return bc_auxVars.assemblyCode;
     }
@@ -2093,11 +2094,196 @@ function bigastCompile(bc_Big_ast){
             return;
         }
 
-        writeAsmLine("JMP :"+"__fn_"+fname+"_end");
         writeAsmLine("__fn_"+fname+":");
         bc_Big_ast.functions[bc_auxVars.current_function].argsMemObj.forEach(function (MemObj) {
             writeAsmLine("POP @"+MemObj.asm_name);
         });
+    }
+
+    // Deeper assembly code optimization
+    function doGlobalOptimization(){
+        var tmplines =  bc_auxVars.assemblyCode.split("\n");
+
+        var jumpToLabels;
+        var jmpto, lbl, dest;
+        var setdat, opdat;
+        var optimized_lines;
+
+        do {
+            jumpToLabels=[];
+            optimized_lines = 0;
+
+            //Collect jumps information
+            tmplines.forEach( function (value) {
+                    jmpto = /.+\s:(\w+)$/.exec(value); //match JMP JSR ERR and all branches
+                    if (jmpto!== null) {
+                        jumpToLabels.push(jmpto[1]);
+                    }
+                });
+
+            //remove labels without reference
+            //remove lines marked as DELETE
+            tmplines = tmplines.filter( function (value){
+                    lbl = /^(\w+):$/.exec(value);
+                    if (lbl !== null) {
+                        if (jumpToLabels.indexOf(lbl[1]) != -1) {
+                            return true;
+                        } else {
+                            optimized_lines++;
+                            return false;
+                        }
+                    }
+                    if (value == "DELETE") {
+                        optimized_lines++;
+                        return false;
+                    }
+                    return true;
+                });
+
+            tmplines.forEach( function (value, index, array){
+                var i;
+
+                jmpto = /^\s*JMP\s+:(\w+)\s*$/.exec(value);
+                //optimize jumps
+                if (jmpto !== null) {
+                    //if instruction is jump, unreachable code until a label found
+                    i=index;
+                    while (++i<array.length-1) {
+                        lbl = /^\s*(\w+):\s*$/.exec(array[i]);
+                        if ( lbl === null) {
+                            if (array[i] === "" || array[i] === "DELETE") {
+                                continue;
+                            }
+                            array[i]="DELETE"
+                            optimized_lines++;
+                            continue;
+                        }
+                        break;
+                    }
+                    //if referenced label is next instruction, meaningless jump
+                    i=index;
+                    while (++i<array.length-1) {
+                        lbl = /^\s*(\w+):\s*$/.exec(array[i]);
+                        if ( lbl === null) {
+                            if (array[i] === "" || array[i] === "DELETE") {
+                                continue;
+                            }
+                            break;
+                        }
+                        if (jmpto[1] === lbl[1]) {
+                            array[index]="DELETE"
+                            optimized_lines++;
+                            return;
+                        }
+                    }
+                    //inspect jump location
+                    dest = getLabeldestination(jmpto[1]);
+                    if (/^\s*RET\s*$/.exec(dest) !== null ){
+                        array[index] = "RET"; //if jump to return, just return from here
+                        optimized_lines++;
+                        return;
+                    }
+                    if (/^\s*FIN\s*$/.exec(dest) !== null ){
+                        array[index] = "FIN"; //if jump to exit, just exit from here
+                        optimized_lines++;
+                        return;
+                    }
+                    lbl = /^\s*(\w+):\s*$/.exec(dest);
+                    if (lbl !== null) {
+                        array[index] = "JMP :"+lbl[1]; //if jump to other jump, just jump over there
+                        optimized_lines++;
+                        return;
+                    }
+                }
+
+                jmpto = /^\s*(RET|FIN)\s*$/.exec(value);
+                //Inspect RET and FIN
+                if (jmpto !== null) {
+                    //if instruction RET or FIN, unreachable code until a label found
+                    i=index;
+                    while (++i<array.length-1) {
+                        lbl = /^\s*(\w+):\s*$/.exec(array[i]);
+                        if ( lbl === null) {
+                            if (array[i] === "" || array[i] === "DELETE") {
+                                continue;
+                            }
+                            array[i]="DELETE"
+                            optimized_lines++;
+                            continue;
+                        }
+                        break;
+                    }
+                }
+
+                //ADD @r0 $b
+                //SET @b $r0
+                // turns ADD @b $r0
+                opdat=/^\s*(\w+)\s+@(\w+)\s+\$(\w+)\s*$/.exec(value);
+                if (opdat !== null) {
+                    setdat = /^\s*SET\s+@(\w+)\s+\$(\w+)\s*$/.exec(array[index+1]);
+                    if ( setdat !== null && opdat[2] == setdat[2] && opdat[3] == setdat[1]) {
+                        if (opdat[1] === "ADD" || opdat[1] === "MUL" || opdat[1] === "AND" || opdat[1] === "XOR" || opdat[1] === "BOR" ) {
+                            array[index]=opdat[1]+" @"+opdat[3]+" $"+opdat[2];
+                            array[index+1]="DELETE";
+                            optimized_lines++;
+                            return;
+                        }
+                    }
+                }
+
+                //SET @r0 $a
+                //ADD @b $r0
+                // turns ADD @b $a
+                setdat=/^\s*SET\s+@(\w+)\s+\$(\w+)\s*$/.exec(value);
+                if (setdat !== null) {
+                    opdat = /^\s*(\w+)\s+@(\w+)\s+\$(\w+)\s*$/.exec(array[index+1]);
+                    if ( opdat !== null && setdat[1] == opdat[3]) {
+                        if (opdat[1] === "ADD" || opdat[1] === "SUB" || opdat[1] === "MUL" || opdat[1] === "DIV" ||
+                            opdat[1] === "AND" || opdat[1] === "XOR" || opdat[1] === "BOR" ||
+                            opdat[1] === "MOD" || opdat[1] === "SHL" || opdat[1] === "SHR" ||
+                            opdat[1] === "SET" ) {
+                            array[index]=opdat[1]+" @"+opdat[2]+" $"+setdat[2];
+                            array[index+1]="DELETE";
+                            optimized_lines++;
+                            return;
+                        }
+                    }
+                }
+
+                //TODO:
+                //SET @r0 $a
+                //SET @r1 #0000000000000030
+                //ADD @r0 $r1
+                //SET @a $r0
+                // turns SET @r1 #0000000000000030
+                //       ADD @a $r1
+            });
+        } while (optimized_lines != 0);
+
+        bc_auxVars.assemblyCode = tmplines.join("\n");
+
+        function getLabeldestination(label) {
+            var lbl, jmpdest;
+            var idx = tmplines.findIndex( obj => obj.indexOf(label+":") != -1);
+            if (idx == -1 ) {
+                throw new TypeError("Could not find label '"+label+"' during optimizations.");
+            }
+            while (++idx<tmplines.length-1) {
+                lbl = /^\s*(\w+):\s*$/.exec(tmplines[idx]);
+                if ( lbl !== null) {
+                    continue;
+                }
+                if (tmplines[idx] === "" || tmplines[idx] === "DELETE") {
+                    continue;
+                }
+                jmpdest = /^\s*JMP\s+:(\w+)\s*$/.exec(tmplines[idx]);
+                if (jmpdest !== null) {
+                    return jmpdest[1]+":";
+                }
+                return tmplines[idx]
+            }
+            throw new TypeError("Strange error during optimizations.");
+        }
     }
 
     //Handle function end
@@ -2121,7 +2307,6 @@ function bigastCompile(bc_Big_ast){
                 writeAsmLine("RET");
             }
         }
-        writeAsmLine("__fn_"+fname+"_end:");
     }
 
     //Hot stuff!!! Assemble sentences!!

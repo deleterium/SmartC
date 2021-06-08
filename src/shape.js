@@ -18,6 +18,7 @@
     Big_ast.Config = {
         compiler_version: "0",   //sets this compiler version!!!
         enableRandom:     false, //enable with #pragma enableRandom true
+        globalOptimization: false, //enable with #pragma globalOptimization true
         maxAuxVars:       5,     //change with #pragma max_auxVars N
         reuseAssignedVar: true,  //disable with #pragma reuseAssignedVar false
         useVariableDeclaration: true, //change with #pragma useVariableDeclaration false
@@ -691,6 +692,11 @@
             if (Token.property === "enableRandom") {
                 Big_ast.Config.enableRandom = get_val(Token.value);
                 if (Big_ast.Config.enableRandom !== undefined)
+                    return;
+            }
+            if (Token.property === "globalOptimization") {
+                Big_ast.Config.globalOptimization = get_val(Token.value);
+                if (Big_ast.Config.globalOptimization !== undefined)
                     return;
             }
             if (Token.property === "useVariableDeclaration") {
