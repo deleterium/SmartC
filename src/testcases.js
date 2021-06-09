@@ -570,71 +570,174 @@ pa = pb; pa = &pb; pa = &vb; *pa= vb;\
 
  // Memtable: struct, 
     [ "Struct", "div" ],
+
     [ "struct KOMBI { long driver; long collector; long passenger; } car;\
-long a, b;\
+long a, b, *c, d[2];\n\
 car.passenger=\"Ze\";\
-a=car.driver;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare a\n^declare b\n\nSET @car_passenger #000000000000655a\nSET @a $car_driver\nFIN\n" ],
+car.passenger=a;\
+car.passenger=*c;\
+car.passenger=d[1];\
+car.passenger=d[a];\
+car.passenger=car.collector;\n\
+a=car.driver;\
+*c=car.driver;\
+d[1]=car.driver;\
+d[a]=car.driver;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #000000000000000c\n^declare d_0\n^declare d_1\n\nSET @car_passenger #000000000000655a\nSET @car_passenger $a\nSET @car_passenger $($c)\nSET @car_passenger $d_1\nSET @car_passenger $($d + $a)\nSET @car_passenger $car_collector\nSET @a $car_driver\nSET @($c) $car_driver\nSET @d_1 $car_driver\nSET @($d + $a) $car_driver\nFIN\n" ],
+
     [ "struct KOMBI { long driver; long collector; long passenger; } car[3];\
-long a, b;\
-car[1].passenger=\"Ze\";\
-a=car[0].driver;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare car_2_driver\n^declare car_2_collector\n^declare car_2_passenger\n^declare a\n^declare b\n\nSET @car_1_passenger #000000000000655a\nSET @a $car_0_driver\nFIN\n" ],
+long a, b, *c, d[2];\n\
+car[1].passenger='Ze';\
+car[1].passenger=a;\
+car[1].passenger=*c;\
+car[1].passenger=d[1];\
+car[1].passenger=d[a];\
+car[1].passenger=car[2].collector;\n\
+a=car[1].driver;\
+*c=car[1].driver;\
+d[1]=car[1].driver;\
+d[a]=car[1].driver;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare car_2_driver\n^declare car_2_collector\n^declare car_2_passenger\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #0000000000000013\n^declare d_0\n^declare d_1\n\nSET @car_1_passenger #000000000000655a\nSET @car_1_passenger $a\nSET @car_1_passenger $($c)\nSET @car_1_passenger $d_1\nSET @car_1_passenger $($d + $a)\nSET @car_1_passenger $car_2_collector\nSET @a $car_1_driver\nSET @($c) $car_1_driver\nSET @d_1 $car_1_driver\nSET @($d + $a) $car_1_driver\nFIN\n" ],
+
     [ "struct KOMBI { long driver; long collector; long passenger; } car[3];\
-long a, b;\
-car[a].passenger=\"Ze\";\
-a=car[b].driver;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare car_2_driver\n^declare car_2_collector\n^declare car_2_passenger\n^declare a\n^declare b\n\nSET @r0 $a\nSET @r1 #0000000000000003\nMUL @r0 $r1\nINC @r0\nINC @r0\nSET @r1 #000000000000655a\nSET @($car + $r0) $r1\nSET @a $b\nSET @r0 #0000000000000003\nMUL @a $r0\nSET @a $($car + $a)\nFIN\n" ],
+long a, b, *c, d[2];\n\
+car[a].passenger='Ze';\
+car[a].passenger=a;\
+car[a].passenger=*c;\
+car[a].passenger=d[1];\
+car[a].passenger=d[a];\
+car[a].passenger=car[2].collector;\
+car[a].passenger=car[b].collector;\
+",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare car_2_driver\n^declare car_2_collector\n^declare car_2_passenger\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #0000000000000013\n^declare d_0\n^declare d_1\n\nSET @r0 $a\nSET @r1 #0000000000000003\nMUL @r0 $r1\nINC @r0\nINC @r0\nSET @r1 #000000000000655a\nSET @($car + $r0) $r1\nSET @r0 $a\nSET @r1 #0000000000000003\nMUL @r0 $r1\nINC @r0\nINC @r0\nSET @($car + $r0) $a\nSET @r0 $a\nSET @r1 #0000000000000003\nMUL @r0 $r1\nINC @r0\nINC @r0\nSET @r1 $($c)\nSET @($car + $r0) $r1\nSET @r0 $a\nSET @r1 #0000000000000003\nMUL @r0 $r1\nINC @r0\nINC @r0\nSET @($car + $r0) $d_1\nSET @r0 $a\nSET @r1 #0000000000000003\nMUL @r0 $r1\nINC @r0\nINC @r0\nSET @r1 $($d + $a)\nSET @($car + $r0) $r1\nSET @r0 $a\nSET @r1 #0000000000000003\nMUL @r0 $r1\nINC @r0\nINC @r0\nSET @($car + $r0) $car_2_collector\nSET @r0 $a\nSET @r1 #0000000000000003\nMUL @r0 $r1\nINC @r0\nINC @r0\nSET @r1 $b\nSET @r2 #0000000000000003\nMUL @r1 $r2\nINC @r1\nSET @r2 $($car + $r1)\nSET @($car + $r0) $r2\nFIN\n" ],
+
+    [ "struct KOMBI { long driver; long collector; long passenger; } car[3];\
+long a, b, *c, d[2];\n\
+a=car[b].driver;\
+*c=car[b].driver;\
+d[1]=car[b].driver;\
+d[a]=car[b].driver;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare car_2_driver\n^declare car_2_collector\n^declare car_2_passenger\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #0000000000000013\n^declare d_0\n^declare d_1\n\nSET @a $b\nSET @r0 #0000000000000003\nMUL @a $r0\nSET @a $($car + $a)\nSET @r0 $b\nSET @r1 #0000000000000003\nMUL @r0 $r1\nSET @r1 $($car + $r0)\nSET @($c) $r1\nSET @d_1 $b\nSET @r0 #0000000000000003\nMUL @d_1 $r0\nSET @d_1 $($car + $d_1)\nSET @r0 $b\nSET @r1 #0000000000000003\nMUL @r0 $r1\nSET @r1 $($car + $r0)\nSET @($d + $a) $r1\nFIN\n" ],
+
     [ "struct KOMBI { long driver; long collector; long passenger[4]; } car;\
-long a, b;\
-car.passenger[1]=\"Ze\";\
-a=car.passenger[3];",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\nSET @car_passenger #0000000000000008\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare a\n^declare b\n\nSET @car_passenger_1 #000000000000655a\nSET @a $car_passenger_3\nFIN\n" ],
+long a, b, *c, d[2];\n\
+car.passenger[1]='Ze';\
+car.passenger[1]=a;\
+car.passenger[1]=*c;\
+car.passenger[1]=d[1];\
+car.passenger[1]=d[a];\
+car.passenger[1]=car.driver;\
+car.passenger[1]=car.passenger[2];\n\
+a=car.passenger[3];\
+*c=car.passenger[3];\
+d[1]=car.passenger[3];\
+d[a]=car.passenger[3];",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\nSET @car_passenger #0000000000000008\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #0000000000000010\n^declare d_0\n^declare d_1\n\nSET @car_passenger_1 #000000000000655a\nSET @car_passenger_1 $a\nSET @car_passenger_1 $($c)\nSET @car_passenger_1 $d_1\nSET @car_passenger_1 $($d + $a)\nSET @car_passenger_1 $car_driver\nSET @car_passenger_1 $car_passenger_2\nSET @a $car_passenger_3\nSET @($c) $car_passenger_3\nSET @d_1 $car_passenger_3\nSET @($d + $a) $car_passenger_3\nFIN\n" ],
+
     [ "struct KOMBI { long driver; long collector; long passenger[4]; } car;\
-long a, b;\
-car.passenger[a]=\"Ze\";\
-a=car.passenger[b];",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\nSET @car_passenger #0000000000000008\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nSET @($car_passenger + $a) $r0\nSET @a $($car_passenger + $b)\nFIN\n" ],
+long a, b, *c, d[2];\n\
+car.passenger[a]='Ze';\
+car.passenger[a]=a;\
+car.passenger[a]=*c;\
+car.passenger[a]=d[1];\
+car.passenger[a]=d[a];\
+car.passenger[a]=car.driver;\
+car.passenger[a]=car.passenger[b];\n\
+a=car.passenger[b];\
+*c=car.passenger[b];\
+d[1]=car.passenger[b];\
+d[a]=car.passenger[b];",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\nSET @car_passenger #0000000000000008\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #0000000000000010\n^declare d_0\n^declare d_1\n\nSET @r0 #000000000000655a\nSET @($car_passenger + $a) $r0\nSET @($car_passenger + $a) $a\nSET @r0 $($c)\nSET @($car_passenger + $a) $r0\nSET @($car_passenger + $a) $d_1\nSET @r0 $($d + $a)\nSET @($car_passenger + $a) $r0\nSET @($car_passenger + $a) $car_driver\nSET @r0 $($car_passenger + $b)\nSET @($car_passenger + $a) $r0\nSET @a $($car_passenger + $b)\nSET @r0 $($car_passenger + $b)\nSET @($c) $r0\nSET @d_1 $($car_passenger + $b)\nSET @r0 $($car_passenger + $b)\nSET @($d + $a) $r0\nFIN\n" ],
+
     [ "struct KOMBI { long driver; long collector; long passenger[4]; } car[2];\
-long a, b;\
-car[1].passenger[2]=\"Ze\";\
-a=car[0].passenger[0];",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\nSET @car_0_passenger #0000000000000009\n^declare car_0_passenger_0\n^declare car_0_passenger_1\n^declare car_0_passenger_2\n^declare car_0_passenger_3\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\nSET @car_1_passenger #0000000000000010\n^declare car_1_passenger_0\n^declare car_1_passenger_1\n^declare car_1_passenger_2\n^declare car_1_passenger_3\n^declare a\n^declare b\n\nSET @car_1_passenger_2 #000000000000655a\nSET @a $car_0_passenger_0\nFIN\n" ],
+long a, b, *c, d[2];\n\
+car[1].passenger[2]='Ze';\
+car[1].passenger[2]=a;\
+car[1].passenger[2]=*c;\
+car[1].passenger[2]=d[1];\
+car[1].passenger[2]=d[a];\
+car[1].passenger[2]=car[0].driver;\
+car[1].passenger[2]=car[0].passenger[3];\n\
+a=car[1].passenger[3];\
+*c=car[1].passenger[3];\
+d[1]=car[1].passenger[3];\
+d[a]=car[1].passenger[3];",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\nSET @car_0_passenger #0000000000000009\n^declare car_0_passenger_0\n^declare car_0_passenger_1\n^declare car_0_passenger_2\n^declare car_0_passenger_3\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\nSET @car_1_passenger #0000000000000010\n^declare car_1_passenger_0\n^declare car_1_passenger_1\n^declare car_1_passenger_2\n^declare car_1_passenger_3\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #0000000000000018\n^declare d_0\n^declare d_1\n\nSET @car_1_passenger_2 #000000000000655a\nSET @car_1_passenger_2 $a\nSET @car_1_passenger_2 $($c)\nSET @car_1_passenger_2 $d_1\nSET @car_1_passenger_2 $($d + $a)\nSET @car_1_passenger_2 $car_0_driver\nSET @car_1_passenger_2 $car_0_passenger_3\nSET @a $car_1_passenger_3\nSET @($c) $car_1_passenger_3\nSET @d_1 $car_1_passenger_3\nSET @($d + $a) $car_1_passenger_3\nFIN\n" ],
+
     [ "struct KOMBI { long driver; long collector; long passenger[4]; } car[2];\
-long a, b;\
-car[1].passenger[a]=\"Ze\";\
-a=car[0].passenger[b];",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\nSET @car_0_passenger #0000000000000009\n^declare car_0_passenger_0\n^declare car_0_passenger_1\n^declare car_0_passenger_2\n^declare car_0_passenger_3\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\nSET @car_1_passenger #0000000000000010\n^declare car_1_passenger_0\n^declare car_1_passenger_1\n^declare car_1_passenger_2\n^declare car_1_passenger_3\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nSET @($car_1_passenger + $a) $r0\nSET @a $($car_0_passenger + $b)\nFIN\n" ],
+long a, b, *c, d[2];\n\
+car[1].passenger[a]='Ze';\
+car[1].passenger[a]=a;\
+car[1].passenger[a]=*c;\
+car[1].passenger[a]=d[1];\
+car[1].passenger[a]=d[a];\
+car[1].passenger[a]=car[0].driver;\
+car[1].passenger[a]=car[0].passenger[b];\n\
+a=car[1].passenger[b];\
+*c=car[1].passenger[b];\
+d[1]=car[1].passenger[b];\
+d[a]=car[1].passenger[b];",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\nSET @car_0_passenger #0000000000000009\n^declare car_0_passenger_0\n^declare car_0_passenger_1\n^declare car_0_passenger_2\n^declare car_0_passenger_3\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\nSET @car_1_passenger #0000000000000010\n^declare car_1_passenger_0\n^declare car_1_passenger_1\n^declare car_1_passenger_2\n^declare car_1_passenger_3\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #0000000000000018\n^declare d_0\n^declare d_1\n\nSET @r0 #000000000000655a\nSET @($car_1_passenger + $a) $r0\nSET @($car_1_passenger + $a) $a\nSET @r0 $($c)\nSET @($car_1_passenger + $a) $r0\nSET @($car_1_passenger + $a) $d_1\nSET @r0 $($d + $a)\nSET @($car_1_passenger + $a) $r0\nSET @($car_1_passenger + $a) $car_0_driver\nSET @r0 $($car_0_passenger + $b)\nSET @($car_1_passenger + $a) $r0\nSET @a $($car_1_passenger + $b)\nSET @r0 $($car_1_passenger + $b)\nSET @($c) $r0\nSET @d_1 $($car_1_passenger + $b)\nSET @r0 $($car_1_passenger + $b)\nSET @($d + $a) $r0\nFIN\n" ],
+
     [ "struct KOMBI { long driver; long collector; long passenger[4]; } car[2];\
-long a, b;\
-car[a].passenger[b]=\"Ze\";\
-a=car[b].passenger[a];",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\nSET @car_0_passenger #0000000000000009\n^declare car_0_passenger_0\n^declare car_0_passenger_1\n^declare car_0_passenger_2\n^declare car_0_passenger_3\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\nSET @car_1_passenger #0000000000000010\n^declare car_1_passenger_0\n^declare car_1_passenger_1\n^declare car_1_passenger_2\n^declare car_1_passenger_3\n^declare a\n^declare b\n\nSET @r0 $a\nSET @r1 #0000000000000007\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $b\nSET @r1 #000000000000655a\nSET @($car + $r0) $r1\nSET @r0 $b\nSET @r1 #0000000000000007\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $a\nSET @a $($car + $r0)\nFIN\n" ],
+long a, b, *c, d[2];\n\
+car[b].passenger[a]='Ze';\
+car[b].passenger[a]=a;\
+car[b].passenger[a]=*c;\
+car[b].passenger[a]=d[1];\
+car[b].passenger[a]=d[a];\
+car[b].passenger[a]=car[b].driver;\
+car[b].passenger[a]=car[b].passenger[b];\n\
+a=car[a].passenger[b];\
+*c=car[a].passenger[b];\
+d[1]=car[a].passenger[b];\
+d[a]=car[a].passenger[b];",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\nSET @car_0_passenger #0000000000000009\n^declare car_0_passenger_0\n^declare car_0_passenger_1\n^declare car_0_passenger_2\n^declare car_0_passenger_3\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\nSET @car_1_passenger #0000000000000010\n^declare car_1_passenger_0\n^declare car_1_passenger_1\n^declare car_1_passenger_2\n^declare car_1_passenger_3\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #0000000000000018\n^declare d_0\n^declare d_1\n\nSET @r0 $b\nSET @r1 #0000000000000007\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $a\nSET @r1 #000000000000655a\nSET @($car + $r0) $r1\nSET @r0 $b\nSET @r1 #0000000000000007\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $a\nSET @($car + $r0) $a\nSET @r0 $b\nSET @r1 #0000000000000007\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $a\nSET @r1 $($c)\nSET @($car + $r0) $r1\nSET @r0 $b\nSET @r1 #0000000000000007\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $a\nSET @($car + $r0) $d_1\nSET @r0 $b\nSET @r1 #0000000000000007\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $a\nSET @r1 $($d + $a)\nSET @($car + $r0) $r1\nSET @r0 $b\nSET @r1 #0000000000000007\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $a\nSET @r1 $b\nSET @r2 #0000000000000007\nMUL @r1 $r2\nSET @r2 $($car + $r1)\nSET @($car + $r0) $r2\nSET @r0 $b\nSET @r1 #0000000000000007\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $a\nSET @r1 $b\nSET @r2 #0000000000000007\nMUL @r1 $r2\nSET @r2 #0000000000000003\nADD @r1 $r2\nADD @r1 $b\nSET @r2 $($car + $r1)\nSET @($car + $r0) $r2\nSET @r0 $a\nSET @r1 #0000000000000007\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $b\nSET @a $($car + $r0)\nSET @r0 $a\nSET @r1 #0000000000000007\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $b\nSET @r1 $($car + $r0)\nSET @($c) $r1\nSET @d_1 $a\nSET @r0 #0000000000000007\nMUL @d_1 $r0\nSET @r0 #0000000000000003\nADD @d_1 $r0\nADD @d_1 $b\nSET @d_1 $($car + $d_1)\nSET @r0 $a\nSET @r1 #0000000000000007\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $b\nSET @r1 $($car + $r0)\nSET @($d + $a) $r1\nFIN\n" ],
+
+//STRUCT POINTER
     [ "Struct (pointer)", "div" ],
     [ "struct KOMBI { long driver; long collector; long passenger; } ;\
 struct KOMBI car, *pcar;\
-long a, b;\
-pcar=&car;\
-pcar->driver='Ze';\
-a=pcar->collector;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n\nSET @pcar #0000000000000005\nCLR @r0\nSET @r1 #000000000000655a\nSET @($pcar + $r0) $r1\nSET @a #0000000000000001\nSET @a $($pcar + $a)\nFIN\n" ],
-    [ "struct KOMBI { long driver; long collector; long passenger; } ;\
-struct KOMBI car[2], *pcar;\
-long a, b;\
-pcar=&car[1];\
-pcar->driver='Ze';\
-a=pcar->collector;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare pcar\n^declare a\n^declare b\n\nSET @pcar #0000000000000009\nCLR @r0\nSET @r1 #000000000000655a\nSET @($pcar + $r0) $r1\nSET @a #0000000000000001\nSET @a $($pcar + $a)\nFIN\n" ],
+long a, b, *c, d[2];\
+pcar=&car;\n\
+pcar->passenger='Ze';\
+pcar->driver=a;\
+pcar->driver=*c;\
+pcar->driver=d[1];\
+pcar->driver=d[a];\
+pcar->driver=pcar->collector;\n\
+a=pcar->collector;\
+*c=pcar->collector;\
+d[1]=pcar->collector;\
+d[a]=pcar->collector;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #000000000000000d\n^declare d_0\n^declare d_1\n\nSET @pcar #0000000000000005\nSET @r0 #0000000000000002\nSET @r1 #000000000000655a\nSET @($pcar + $r0) $r1\nCLR @r0\nSET @($pcar + $r0) $a\nCLR @r0\nSET @r1 $($c)\nSET @($pcar + $r0) $r1\nCLR @r0\nSET @($pcar + $r0) $d_1\nCLR @r0\nSET @r1 $($d + $a)\nSET @($pcar + $r0) $r1\nCLR @r0\nSET @r1 #0000000000000001\nSET @r2 $($pcar + $r1)\nSET @($pcar + $r0) $r2\nSET @a #0000000000000001\nSET @a $($pcar + $a)\nSET @r0 #0000000000000001\nSET @r1 $($pcar + $r0)\nSET @($c) $r1\nSET @d_1 #0000000000000001\nSET @d_1 $($pcar + $d_1)\nSET @r0 #0000000000000001\nSET @r1 $($pcar + $r0)\nSET @($d + $a) $r1\nFIN\n" ],
+
     [ "struct KOMBI { long driver; long collector; long passenger[4]; } ;\
 struct KOMBI car, *pcar;\
-long a, b;\
-pcar=&car;\
+long a, b, *c, d[2];\
+pcar=&car;\n\
 pcar->passenger[2]='Ze';\
-a=pcar->passenger[0];\
-", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\nSET @car_passenger #0000000000000008\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare pcar\n^declare a\n^declare b\n\nSET @pcar #0000000000000005\nSET @r0 #0000000000000003\nINC @r0\nINC @r0\nSET @r1 #000000000000655a\nSET @($pcar + $r0) $r1\nSET @a #0000000000000003\nSET @a $($pcar + $a)\nFIN\n" ],
-    [ "struct KOMBI { long driver; long collector; long passenger; } ;\
+pcar->passenger[2]=a;\
+pcar->passenger[2]=*c;\
+pcar->passenger[2]=d[1];\
+pcar->passenger[2]=d[a];\
+pcar->passenger[2]=pcar->collector;\
+pcar->passenger[2]=pcar->passenger[1];\n\
+a=pcar->passenger[2];\
+*c=pcar->passenger[2];\
+d[1]=pcar->passenger[2];\
+d[a]=pcar->passenger[2];", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\nSET @car_passenger #0000000000000008\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #0000000000000011\n^declare d_0\n^declare d_1\n\nSET @pcar #0000000000000005\nSET @r0 #0000000000000005\nSET @r1 #000000000000655a\nSET @($pcar + $r0) $r1\nSET @r0 #0000000000000005\nSET @($pcar + $r0) $a\nSET @r0 #0000000000000005\nSET @r1 $($c)\nSET @($pcar + $r0) $r1\nSET @r0 #0000000000000005\nSET @($pcar + $r0) $d_1\nSET @r0 #0000000000000005\nSET @r1 $($d + $a)\nSET @($pcar + $r0) $r1\nSET @r0 #0000000000000005\nSET @r1 #0000000000000001\nSET @r2 $($pcar + $r1)\nSET @($pcar + $r0) $r2\nSET @r0 #0000000000000005\nSET @r1 #0000000000000004\nSET @r2 $($pcar + $r1)\nSET @($pcar + $r0) $r2\nSET @a #0000000000000005\nSET @a $($pcar + $a)\nSET @r0 #0000000000000005\nSET @r1 $($pcar + $r0)\nSET @($c) $r1\nSET @d_1 #0000000000000005\nSET @d_1 $($pcar + $d_1)\nSET @r0 #0000000000000005\nSET @r1 $($pcar + $r0)\nSET @($d + $a) $r1\nFIN\n" ],
+
+    [ "struct KOMBI { long driver; long collector; long passenger[4]; } ;\
 struct KOMBI car[2], *pcar;\
-long a, b;\
-pcar=&car[a];\
-pcar->driver='Ze';\
-a=pcar->collector;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare pcar\n^declare a\n^declare b\n\nSET @r0 $a\nSET @r1 #0000000000000003\nMUL @r0 $r1\nSET @r1 $car\nADD @r1 $r0\nSET @pcar $r1\nCLR @r0\nSET @r1 #000000000000655a\nSET @($pcar + $r0) $r1\nSET @a #0000000000000001\nSET @a $($pcar + $a)\nFIN\n" ],
+long a, b, *c, d[2];\
+pcar=&car[a];", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\nSET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\nSET @car_0_passenger #0000000000000009\n^declare car_0_passenger_0\n^declare car_0_passenger_1\n^declare car_0_passenger_2\n^declare car_0_passenger_3\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\nSET @car_1_passenger #0000000000000010\n^declare car_1_passenger_0\n^declare car_1_passenger_1\n^declare car_1_passenger_2\n^declare car_1_passenger_3\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #0000000000000019\n^declare d_0\n^declare d_1\n\nSET @r0 $a\nSET @r1 #0000000000000007\nMUL @r0 $r1\nSET @r1 $car\nADD @r1 $r0\nSET @pcar $r1\nFIN\n" ],
+
     [ "struct KOMBI { long driver; long collector; long passenger[4]; } ;\
 struct KOMBI car, *pcar;\
-long a, b;\
-pcar=&car;\
+long a, b, *c, d[2];\
+pcar=&car;\n\
 pcar->passenger[a]='Ze';\
+pcar->passenger[a]=a;\
+pcar->passenger[a]=*c;\
+pcar->passenger[a]=d[1];\
+pcar->passenger[a]=d[a];\
+pcar->passenger[a]=pcar->collector;\
+pcar->passenger[a]=pcar->passenger[b];\n\
 a=pcar->passenger[b];\
-", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\nSET @car_passenger #0000000000000008\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare pcar\n^declare a\n^declare b\n\nSET @pcar #0000000000000005\nSET @r0 #0000000000000003\nADD @r0 $a\nSET @r1 #000000000000655a\nSET @($pcar + $r0) $r1\nSET @a #0000000000000003\nADD @a $b\nSET @a $($pcar + $a)\nFIN\n" ],
+*c=pcar->passenger[b];\
+d[1]=pcar->passenger[b];\
+d[a]=pcar->passenger[b];", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\nSET @car_passenger #0000000000000008\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #0000000000000011\n^declare d_0\n^declare d_1\n\nSET @pcar #0000000000000005\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 #000000000000655a\nSET @($pcar + $r0) $r1\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @($pcar + $r0) $a\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $($c)\nSET @($pcar + $r0) $r1\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @($pcar + $r0) $d_1\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $($d + $a)\nSET @($pcar + $r0) $r1\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 #0000000000000001\nSET @r2 $($pcar + $r1)\nSET @($pcar + $r0) $r2\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $b\nSET @r2 #0000000000000003\nADD @r1 $r2\nSET @r2 $($pcar + $r1)\nSET @($pcar + $r0) $r2\nSET @a $b\nSET @r0 #0000000000000003\nADD @a $r0\nSET @a $($pcar + $a)\nSET @r0 $b\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $($pcar + $r0)\nSET @($c) $r1\nSET @d_1 $b\nSET @r0 #0000000000000003\nADD @d_1 $r0\nSET @d_1 $($pcar + $d_1)\nSET @r0 $b\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $($pcar + $r0)\nSET @($d + $a) $r1\nFIN\n" ],
 
     [ "Logical operations with arrays and structs",  "div" ],
     [ "long a[2], b; if (a[b]) { b++; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBZR $r0 :__if1_endif\nINC @b\n__if1_endif:\nFIN\n" ],

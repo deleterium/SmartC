@@ -368,15 +368,10 @@ function bigastCompile(bc_Big_ast){
 
                                     let TmpMemObj;
                                     if (M_Obj.offset_type === undefined) {
-                                        TmpMemObj = auxVars.getNewRegister();
-
                                         let adder=0;
                                         if (TypeD.struct_members[member_id].type === "array") {
                                             adder = 1;
                                         }
-                                        instructionstrain += createInstruction(genAssignmentToken(),
-                                                             getMemoryObjectByLocation(TmpMemObj.location, objTree.line),
-                                                             createConstantMemObj( addHexContents(adder, TypeD.struct_size_acc[member_id][1]) ));
                                         M_Obj.declaration=TypeD.struct_members[member_id].declaration;
                                         M_Obj.name=TypeD.struct_members[member_id].name;
                                         M_Obj.type_name=TypeD.struct_members[member_id].type_name;
@@ -384,8 +379,8 @@ function bigastCompile(bc_Big_ast){
                                             M_Obj.type=TypeD.struct_members[member_id].type;
                                         }
                                         array_idx=-1;
-                                        M_Obj.offset_type = "variable";
-                                        M_Obj.offset_value = TmpMemObj.location;
+                                        M_Obj.offset_type = "constant";
+                                        M_Obj.offset_value = addHexContents(adder, TypeD.struct_size_acc[member_id][1]);
 
                                     } else if (M_Obj.offset_type === "constant") {
                                         throw new TypeError("At line: "+objTree.line+". Inspection needed.");
@@ -600,6 +595,15 @@ function bigastCompile(bc_Big_ast){
                                         }
                                     }
                                 }
+                            }
+
+                            //Fix special case where struct pointer with array member with constant index has incomplete information.
+                            // This does not allow constants on struct: code Yyx_sSkA
+                            if (M_Obj.hex_content === undefined && M_Obj.offset_type === "constant") {
+                                let TmpMemObj = auxVars.getNewRegister();
+                                instructionstrain+=createInstruction(genAssignmentToken(), TmpMemObj, createConstantMemObj(M_Obj.offset_value));
+                                M_Obj.offset_type = "variable";
+                                M_Obj.offset_value = TmpMemObj.location;
                             }
                         }
 
@@ -1459,7 +1463,15 @@ function bigastCompile(bc_Big_ast){
                             return "SET @"+param1.asm_name+" $"+param2.asm_name+"\n";
                         }
                         if (param2.offset_type === "constant" ) {
-                            return "SET @"+param1.asm_name+" $"+getMemoryObjectByLocation(addHexContents(param2.hex_content, param2.offset_value), objoperator.line).asm_name+"\n";
+                            if (param2.type === "array") {
+                                return "SET @"+param1.asm_name+" $"+getMemoryObjectByLocation(addHexContents(param2.hex_content, param2.offset_value), objoperator.line).asm_name+"\n";
+                            } else { //param2.type === "struct"
+                                let TmpMemObj=auxVars.getNewRegister();
+                                retinstr+= createInstruction(genAssignmentToken(), TmpMemObj, createConstantMemObj( param2.offset_value ));
+                                retinstr+= "SET @"+param1.asm_name+" $($"+param2.asm_name+" + $"+TmpMemObj.asm_name+")\n";
+                                auxVars.freeRegister(TmpMemObj.location);
+                                return retinstr;
+                            }
                         } else {
                             return "SET @"+param1.asm_name+" $($"+param2.asm_name+" + $"+getMemoryObjectByLocation(param2.offset_value,objoperator.line).asm_name+")\n";
                         }
@@ -1487,9 +1499,18 @@ function bigastCompile(bc_Big_ast){
                     } else if (param2.type === "constant_ptr") {
                         return "SET @"+param1.asm_name+" #"+param2.hex_content+"\n";
 
-                    } else if (param2.type === "array") {
-                        if (param2.offset_type === "constant" ) {
-                            return "SET @($"+param1.asm_name+") $"+getMemoryObjectByLocation(addHexContents(param2.hex_content, param2.offset_value), objoperator.line).asm_name+"\n";
+                    } else if (param2.type === "array" || param2.type === "struct") {
+                        if (param2.offset_type === "constant") {
+                            if (param2.type === "array") {
+                                return "SET @($"+param1.asm_name+") $"+getMemoryObjectByLocation(addHexContents(param2.hex_content, param2.offset_value), objoperator.line).asm_name+"\n";
+                            } else { //param2.type === "struct"
+                                let TmpMemObj=auxVars.getNewRegister();
+                                retinstr+= createInstruction(genAssignmentToken(), TmpMemObj, createConstantMemObj( param2.offset_value ));
+                                retinstr+="SET @"+TmpMemObj.asm_name+" $($"+param2.asm_name+" + $"+TmpMemObj.asm_name+")\n";
+                                retinstr+="SET @($"+param1.asm_name+") $"+TmpMemObj.asm_name+"\n";
+                                auxVars.freeRegister(TmpMemObj.location);
+                                return retinstr;
+                            }
                         } else {
                             let TmpMemObj=auxVars.getNewRegister();
                             retinstr+=createInstruction(genAssignmentToken(), TmpMemObj, param2);
@@ -1535,9 +1556,18 @@ function bigastCompile(bc_Big_ast){
                         retinstr+= "SET @($"+param1.asm_name+" + $"+getMemoryObjectByLocation(param1.offset_value,objoperator.line).asm_name+") $"+TmpMemObj.asm_name+"\n";
                         auxVars.freeRegister(TmpMemObj.location);
                         return retinstr;
-                    } else if (param2.type === "array") {
-                        if (param2.offset_type === "constant" ) {
-                            return "SET @($"+param1.asm_name+" + $"+getMemoryObjectByLocation(param1.offset_value,objoperator.line).asm_name+") $"+getMemoryObjectByLocation(addHexContents(param2.hex_content, param2.offset_value), objoperator.line).asm_name+"\n";
+                    } else if (param2.type === "array" || param2.type === "struct") {
+                        if (param2.offset_type === "constant") {
+                            if (param2.type === "array") {
+                                return "SET @($"+param1.asm_name+" + $"+getMemoryObjectByLocation(param1.offset_value,objoperator.line).asm_name+") $"+getMemoryObjectByLocation(addHexContents(param2.hex_content, param2.offset_value), objoperator.line).asm_name+"\n";
+                            } else { //param2.type === "struct"
+                                let TmpMemObj=auxVars.getNewRegister();
+                                retinstr+= createInstruction(genAssignmentToken(), TmpMemObj, createConstantMemObj( param2.offset_value ));
+                                retinstr+="SET @"+TmpMemObj.asm_name+" $($"+param2.asm_name+" + $"+TmpMemObj.asm_name+")\n";
+                                retinstr+="SET @($"+param1.asm_name+" + $"+getMemoryObjectByLocation(param1.offset_value,objoperator.line).asm_name+") $"+TmpMemObj.asm_name+"\n";
+                                auxVars.freeRegister(TmpMemObj.location);
+                                return retinstr;
+                            }
                         } else {
                             let TmpMemObj=auxVars.getNewRegister();
                             retinstr+=createInstruction(genAssignmentToken(), TmpMemObj, param2);
@@ -1557,7 +1587,7 @@ function bigastCompile(bc_Big_ast){
                             return "SET @"+param1.asm_name+" $"+param2.asm_name+"\n";
                         }
                     } else if (param1.offset_type === "constant" ) {
-                        //not possible;
+                        /* Code not allowed by condition Yyx_sSkA */
                     } else /* if (param1.offset_type === "variable" ) */ {
                         if (param2.type === "constant" ) {
                             if (param2.hex_content.length > 17) {
@@ -1568,6 +1598,26 @@ function bigastCompile(bc_Big_ast){
                             retinstr+= "SET @($"+param1.asm_name+" + $"+getMemoryObjectByLocation(param1.offset_value,objoperator.line).asm_name+") $"+TmpMemObj.asm_name+"\n";
                             auxVars.freeRegister(TmpMemObj.location);
                             return retinstr;
+                        } else if (param2.type === "register" || param2.type === "long") {
+                            return "SET @($"+param1.asm_name+" + $"+getMemoryObjectByLocation(param1.offset_value,objoperator.line).asm_name+") $"+param2.asm_name+"\n";
+                        } else if (param2.type === "array" || param2.type === "struct") {
+                            if (param2.offset_type === "constant" ) {
+                                if (param2.type === "array") {
+                                    return "SET @($"+param1.asm_name+" + $"+getMemoryObjectByLocation(param1.offset_value,objoperator.line).asm_name+") $"+getMemoryObjectByLocation(addHexContents(param2.hex_content, param2.offset_value), objoperator.line).asm_name+"\n";
+                                } else { //param2.type === "struct"
+                                    let TmpMemObj=auxVars.getNewRegister();
+                                    retinstr+= createInstruction(genAssignmentToken(), TmpMemObj, createConstantMemObj( param2.offset_value ));
+                                    retinstr+= "SET @($"+param1.asm_name+" + $"+getMemoryObjectByLocation(param1.offset_value,objoperator.line).asm_name+") $"+TmpMemObj.asm_name+"\n";
+                                    auxVars.freeRegister(TmpMemObj.location);
+                                    return retinstr;
+                                }
+                            } else {
+                                let TmpMemObj=auxVars.getNewRegister();
+                                retinstr+=createInstruction(genAssignmentToken(), TmpMemObj, param2);
+                                retinstr+="SET @($"+param1.asm_name+" + $"+getMemoryObjectByLocation(param1.offset_value,objoperator.line).asm_name+") $"+TmpMemObj.asm_name+"\n";
+                                auxVars.freeRegister(TmpMemObj.location);
+                                return retinstr;
+                            }
                         }
                     }
                 }
@@ -2249,6 +2299,18 @@ function bigastCompile(bc_Big_ast){
                         }
                     }
                 }
+
+                //TODO:
+                //CLR @r0
+                //maybe instructions between
+                //SET @r0 $($pcar + $r0)
+                //turns SET @r0 $($pcar)
+
+                //TODO:
+                //CLR @r0
+                //maybe instructions between
+                //SET $($pcar + $r0) $a
+                //turns SET @($pcar) $a
 
                 //TODO:
                 //SET @r0 $a
