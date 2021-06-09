@@ -198,6 +198,9 @@
             if (codetrain[curr].type === "CodeCave") {
 
                 if (codetrain[curr-1].value === "if") {
+                    if (phrase.length > 1) {
+                        throw new SyntaxError("At line: " + phrase[0].line + ". Statement including 'if' in wrong way. Possible missing ';'.");
+                    }
                     phrase.pop();
                     Node = { type: "",
                             id: "__if"+codetrain[curr].line,
@@ -221,6 +224,9 @@
                 }
 
                 if (codetrain[curr-1].value === "while") {
+                    if (phrase.length > 1) {
+                        throw new SyntaxError("At line: " + phrase[0].line + ". Statement including 'while' in wrong way. Possible missing ';'.");
+                    }
                     phrase.pop();
                     Node = { type: "while",
                             id: "__loop"+codetrain[curr].line,
@@ -236,6 +242,9 @@
                 }
 
                 if (codetrain[curr-1].value === "for") {
+                    if (phrase.length > 1) {
+                        throw new SyntaxError("At line: " + phrase[0].line + ". Statement including 'for' in wrong way. Possible missing ';'.");
+                    }
                     phrase.pop();
                     Node = { type: "for",
                             id: "__loop"+codetrain[curr].line,

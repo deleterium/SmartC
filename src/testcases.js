@@ -870,6 +870,9 @@ void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r
     // Support SetUnaryOperator in struct members, but not if it is an array
     [ "struct KOMBI { long driver; long collector; long passenger[4]; } car; long a, b; ++car.driver; a=car.collector++;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\nSET @car_passenger #0000000000000008\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare a\n^declare b\n\nINC @car_driver\nSET @a $car_collector\nINC @car_collector\nFIN\n" ],
     [ "struct KOMBI { long driver; long collector; long passenger[4]; } car; long a, b; ++car.passenger[a]; ", true, "" ],
+    //bug 9, missing comma before if, while and for keywords lead to no error and statement being ignored.
+    [ "long a, b; test2() if (a) a++; long test2(void) { b++; return b; }", true, "" ],
+    [ "long a, b; test2(); if (a) a++; long test2(void) { b++; return b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nJSR :__fn_test2\nPOP @r0\nBZR $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n\n__fn_test2:\nINC @b\nPSH $b\nRET\n" ],
 //    [ "", false, "" ],
     
 
