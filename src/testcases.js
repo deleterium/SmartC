@@ -820,6 +820,20 @@ if (a<=pcar->collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2
     [ "#pragma globalOptimization\nlong a[4][2], *b, c,d; b=&a[c][d];", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\n^declare c\n^declare d\n\nSET @b $c\nSET @r0 #0000000000000002\nMUL @b $r0\nADD @b $d\nADD @b $a\nFIN\n" ],
     [ "#pragma globalOptimization\n#pragma useVariableDeclaration false\na=a+'0'; b++; a+='0';", false, "SET @r0 #0000000000000030\nADD @a $r0\nINC @b\nSET @r0 #0000000000000030\nADD @a $r0\nFIN\n" ],
 
+    [ "#pragma globalOptimization\n long a; a=0; void test(void){ a++; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nCLR @a\nFIN\n\n" ],
+    [ "#pragma globalOptimization\nstruct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b, *c, d[2],z;pcar=&car;\
+pcar->passenger='Ze';\
+pcar->driver=a;\
+b+=-a;\
+a=0;\
+d[a]=5;\
+for (a=0;a<10;a++) d[a]=1;\n\
+pcar->driver=*c;pcar->driver=d[1];pcar->driver=d[a];pcar->driver=pcar->collector;\
+a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #000000000000000d\n^declare d_0\n^declare d_1\n^declare z\n\nSET @pcar #0000000000000005\nSET @r0 #0000000000000002\nSET @r1 #000000000000655a\nSET @($pcar + $r0) $r1\nSET @($pcar) $a\nCLR @r0\nSUB @r0 $a\nADD @b $r0\nSET @r0 #0000000000000005\nSET @($d) $r0\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nSET @r0 #0000000000000001\nSET @($d + $a) $r0\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nSET @r1 $($c)\nSET @($pcar) $r1\nSET @($pcar) $d_1\nSET @r1 $($d + $a)\nSET @($pcar) $r1\nSET @r1 #0000000000000001\nSET @r2 $($pcar + $r1)\nSET @($pcar) $r2\nSET @a #0000000000000001\nSET @a $($pcar + $a)\nINC @z\nSET @r1 $($pcar)\nSET @($c) $r1\nSET @d_1 #0000000000000001\nSET @d_1 $($pcar + $d_1)\nSET @r0 #0000000000000001\nSET @r1 $($pcar + $r0)\nSET @($d + $a) $r1\nFIN\n" ],
+    [ "#pragma globalOptimization\n long d[2]; d[1]=d[1]+1;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare d\nSET @d #0000000000000006\n^declare d_0\n^declare d_1\n\nINC @d_1\nFIN\n" ],
+//    [ "",  false,"" ],
+
+
 //bugfixes
     [ "Bug fixes", "div" ],
     //bug 1, goto failed with undeclared variable
