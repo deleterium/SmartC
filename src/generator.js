@@ -14,12 +14,16 @@ function bigastCompile(bc_Big_ast){
         assemblyCode: "",
         current_function: -1,
 
-        getNewJumpID: function () {
+        getNewJumpID: function (line) {
+            var id="";
+            if (bc_Big_ast.Config.enableLineLabels) {
+                id+=line+"_";
+            }
             if (bc_Big_ast.Config.enableRandom === true)
-                return Math.random().toString(36).substr(2,5);
+                return id+Math.random().toString(36).substr(2,5);
 
             this.jump_id++;
-            return this.jump_id.toString(36);
+            return id+this.jump_id.toString(36);
         },
 
         getLatestLoopId: function () {
@@ -784,7 +788,7 @@ function bigastCompile(bc_Big_ast){
 
                             let IDNotSF, IDNotST, IDEnd, rnd;
 
-                            rnd=bc_auxVars.getNewJumpID();
+                            rnd=bc_auxVars.getNewJumpID(objTree.Operation.line);
 
                             IDNotSF = "__NOT_"+rnd+"_sF";//set false
                             IDNotST = "__NOT_"+rnd+"_sT";//set true
@@ -973,7 +977,7 @@ function bigastCompile(bc_Big_ast){
 
                         let IDCompSF, IDCompST, IDEnd, rnd, ret;
 
-                        rnd=bc_auxVars.getNewJumpID();
+                        rnd=bc_auxVars.getNewJumpID(objTree.Operation.line);
 
                         IDCompSF = "__CMP_"+rnd+"_sF";//set false
                         IDCompST = "__CMP_"+rnd+"_sT";//set true
@@ -1010,7 +1014,7 @@ function bigastCompile(bc_Big_ast){
 
                         let IDNextStmt, rnd;
 
-                        rnd=bc_auxVars.getNewJumpID();
+                        rnd=bc_auxVars.getNewJumpID(objTree.Operation.line);
 
                         IDNextStmt = "__OR_"+rnd+"_next";
 
@@ -1037,7 +1041,7 @@ function bigastCompile(bc_Big_ast){
 
                         let IDNextStmt, rnd;
 
-                        rnd=bc_auxVars.getNewJumpID();
+                        rnd=bc_auxVars.getNewJumpID(objTree.Operation.line);
 
                         IDNextStmt = "__AND_"+rnd+"_next";
 
@@ -2445,7 +2449,7 @@ function bigastCompile(bc_Big_ast){
             writeAsmCode( codeGenerator( Sentence.OpTree ) );
 
         } else if (Sentence.type === "if_endif") {
-            sent_id = "__if"+bc_auxVars.getNewJumpID();
+            sent_id = "__if"+bc_auxVars.getNewJumpID(Sentence.line);
             if (isEmpty(Sentence.ConditionOpTree)) {
                 throw new TypeError("At line: " + Sentence.line + ". Condition can not be empty.");
             }
@@ -2454,7 +2458,7 @@ function bigastCompile(bc_Big_ast){
             writeAsmLine( sent_id+"_endif:" );
 
         } else if (Sentence.type === "if_else") {
-            sent_id = "__if"+bc_auxVars.getNewJumpID();
+            sent_id = "__if"+bc_auxVars.getNewJumpID(Sentence.line);
             if (isEmpty(Sentence.ConditionOpTree)) {
                 throw new TypeError("At line: " + Sentence.line + ". Condition can not be empty.");
             }
@@ -2466,7 +2470,7 @@ function bigastCompile(bc_Big_ast){
             writeAsmLine( sent_id+"_endif:" );
 
         } else if (Sentence.type === "while") {
-            sent_id = "__loop"+bc_auxVars.getNewJumpID();
+            sent_id = "__loop"+bc_auxVars.getNewJumpID(Sentence.line);
             writeAsmLine( sent_id+"_continue:" );
             if (isEmpty(Sentence.ConditionOpTree)) {
                 throw new TypeError("At line: " + Sentence.line + ". Condition can not be empty.");
@@ -2479,7 +2483,7 @@ function bigastCompile(bc_Big_ast){
             writeAsmLine( sent_id+"_break:" );
 
         } else if (Sentence.type === "do") {
-            sent_id = "__loop"+bc_auxVars.getNewJumpID();
+            sent_id = "__loop"+bc_auxVars.getNewJumpID(Sentence.line);
             writeAsmLine( sent_id+"_continue:" );
             bc_auxVars.latest_loop_id.push(sent_id);
             Sentence.while_true.forEach( compileSentence );
@@ -2492,7 +2496,7 @@ function bigastCompile(bc_Big_ast){
             writeAsmLine( sent_id+"_break:" );
 
         } else if (Sentence.type === "for") {
-            sent_id = "__loop"+bc_auxVars.getNewJumpID();
+            sent_id = "__loop"+bc_auxVars.getNewJumpID(Sentence.line);
             writeAsmCode( codeGenerator(Sentence.three_sentences[0].OpTree) );
             writeAsmLine( sent_id+"_condition:" );
             if (isEmpty(Sentence.three_sentences[1].OpTree)) {

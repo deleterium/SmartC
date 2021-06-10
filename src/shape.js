@@ -1,4 +1,3 @@
- 
  "use strict";
 
 // Author: Rui Deleterium
@@ -18,6 +17,7 @@
     Big_ast.Config = {
         compiler_version: "0",   //sets this compiler version!!!
         enableRandom:     false, //enable with #pragma enableRandom true
+        enableLineLabels: false, //enable with #pragma enableLineLabels true
         globalOptimization: false, //enable with #pragma globalOptimization true
         maxAuxVars:       5,     //change with #pragma max_auxVars N
         reuseAssignedVar: true,  //disable with #pragma reuseAssignedVar false
@@ -701,6 +701,11 @@
             if (Token.property === "enableRandom") {
                 Big_ast.Config.enableRandom = get_val(Token.value);
                 if (Big_ast.Config.enableRandom !== undefined)
+                    return;
+            }
+            if (Token.property === "enableLineLabels") {
+                Big_ast.Config.enableLineLabels = get_val(Token.value);
+                if (Big_ast.Config.enableLineLabels !== undefined)
                     return;
             }
             if (Token.property === "globalOptimization") {
