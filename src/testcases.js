@@ -873,6 +873,10 @@ void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r
     //bug 9, missing comma before if, while and for keywords lead to no error and statement being ignored.
     [ "long a, b; test2() if (a) a++; long test2(void) { b++; return b; }", true, "" ],
     [ "long a, b; test2(); if (a) a++; long test2(void) { b++; return b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nJSR :__fn_test2\nPOP @r0\nBZR $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n\n__fn_test2:\nINC @b\nPSH $b\nRET\n" ],
+    //bug 10, functions calls destroying content of registers. Implemented saving them in user stack
+    [ "long a[5], b, c; b=atoi(c); a[b+1]=atoi('2'); a[b+1]=(b*2)/atoi('2'); long atoi(long val){return val+1;}", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare b\n^declare c\n^declare atoi_val\n\nPSH $c\nJSR :__fn_atoi\nPOP @b\nSET @r0 $b\nINC @r0\nPSH $r0\nSET @r1 #0000000000000032\nPSH $r1\nJSR :__fn_atoi\nPOP @r1\nPOP @r0\nSET @($a + $r0) $r1\nSET @r0 $b\nINC @r0\nSET @r1 #0000000000000002\nMUL @r1 $b\nPSH $r1\nPSH $r0\nSET @r2 #0000000000000032\nPSH $r2\nJSR :__fn_atoi\nPOP @r2\nPOP @r0\nPOP @r1\nDIV @r1 $r2\nSET @($a + $r0) $r1\nFIN\n\n__fn_atoi:\nPOP @atoi_val\nSET @r0 $atoi_val\nINC @r0\nPSH $r0\nRET\n" ],
+    //bug 11, function calls inside array brackets lead to error.
+    [ "long a[5], b, c; b=a[atoi(\"2\")+1]; long atoi(long val){ return val+1;}", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\nSET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare b\n^declare c\n^declare atoi_val\n\nSET @b #0000000000000032\nPSH $b\nJSR :__fn_atoi\nPOP @b\nINC @b\nSET @b $($a + $b)\nFIN\n\n__fn_atoi:\nPOP @atoi_val\nSET @r0 $atoi_val\nINC @r0\nPSH $r0\nRET\n" ],
 //    [ "", false, "" ],
     
 

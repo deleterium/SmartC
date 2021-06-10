@@ -358,6 +358,8 @@ function verify(ast) {
             value.mod_array="yes";
         }
         
+        if (value.type === "Arr")
+            verify(value.params);
         if (value.type === "CodeCave")
             verify(value.params);
         if (value.type === "CodeDomain")

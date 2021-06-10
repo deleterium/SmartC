@@ -717,6 +717,15 @@ function bigastCompile(bc_Big_ast){
                             throw new TypeError("At line: "+objTree.Left.line+". Recursive functions not allowed.");
                         }
 
+                        //Save registers currently in use in stack. Function execution will overwrite them
+                        let stack_registers=[];
+                        for (let i=auxVars.status.length-1; i>=0; i--) {
+                            if (auxVars.status[i] === true) {
+                                instructionstrain+=createInstruction({type: "Push"} , getMemoryObjectByName(auxVars.tmpvars[i], objTree.Operation.line) );
+                                stack_registers.push(i);
+                            }
+                        }
+
                         sub_sentences = splitSubSentences(objTree.Right);
                         if (sub_sentences.length != search.argsMemObj.length){
                             throw new TypeError("At line: "+objTree.Left.line+". Wrong number of arguments for function '"+search.name+"'. It must have '"+search.argsMemObj.length+"' args.");
@@ -740,12 +749,19 @@ function bigastCompile(bc_Big_ast){
 
                         instructionstrain+=createInstruction( objTree.Operation, objTree.Left.value );
 
+                        if (search.return_type !== "void") {
+                            TmpMemObj=auxVars.getNewRegister();
+                            instructionstrain+=createInstruction( { type: "Pop"}, TmpMemObj );
+                        }
+
+                        //Load registers again
+                        while (stack_registers.length > 0) {
+                            instructionstrain+=createInstruction({type: "Pop"} , getMemoryObjectByName(auxVars.tmpvars[stack_registers.pop()], objTree.Operation.line) );
+                        }
+
                         if (search.return_type === "void") {
                             return { instructionset: instructionstrain } ;
                         }
-
-                        TmpMemObj=auxVars.getNewRegister();
-                        instructionstrain+=createInstruction( { type: "Pop"}, TmpMemObj );
 
                         if (TmpMemObj.MemObj !== undefined && logicalOp === true) { //maybe logical operation was requested
                             instructionstrain+=createInstruction(genNotEqualToken() ,TmpMemObj.MemObj, createConstantMemObj(0), gc_revLogic, gc_jumpFalse, gc_jumpTrue);
@@ -2305,6 +2321,10 @@ function bigastCompile(bc_Big_ast){
                 //maybe instructions between
                 //SET @r0 $($pcar + $r0)
                 //turns SET @r0 $($pcar)
+
+                //TODO:
+                //SET @a_1 $a_1
+                //turns delete line
 
                 //TODO:
                 //CLR @r0
