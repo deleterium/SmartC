@@ -831,8 +831,17 @@ for (a=0;a<10;a++) d[a]=1;\n\
 pcar->driver=*c;pcar->driver=d[1];pcar->driver=d[a];pcar->driver=pcar->collector;\
 a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #000000000000000d\n^declare d_0\n^declare d_1\n^declare z\n\nSET @pcar #0000000000000005\nSET @r0 #0000000000000002\nSET @r1 #000000000000655a\nSET @($pcar + $r0) $r1\nSET @($pcar) $a\nCLR @r0\nSUB @r0 $a\nADD @b $r0\nSET @r0 #0000000000000005\nSET @($d) $r0\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nSET @r0 #0000000000000001\nSET @($d + $a) $r0\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nSET @r1 $($c)\nSET @($pcar) $r1\nSET @($pcar) $d_1\nSET @r1 $($d + $a)\nSET @($pcar) $r1\nSET @r1 #0000000000000001\nSET @r2 $($pcar + $r1)\nSET @($pcar) $r2\nSET @a #0000000000000001\nSET @a $($pcar + $a)\nINC @z\nSET @r1 $($pcar)\nSET @($c) $r1\nSET @d_1 #0000000000000001\nSET @d_1 $($pcar + $d_1)\nSET @r0 #0000000000000001\nSET @r1 $($pcar + $r0)\nSET @($d + $a) $r1\nFIN\n" ],
     [ "#pragma globalOptimization\n long d[2]; d[1]=d[1]+1;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare d\nSET @d #0000000000000006\n^declare d_0\n^declare d_1\n\nINC @d_1\nFIN\n" ],
-//    [ "",  false,"" ],
-
+    [ "#pragma globalOptimization\n#pragma maxConstVars 4\nstruct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b, *c, d[2],z;pcar=&car;\
+pcar->passenger='Ze';\
+pcar->driver=a;\
+b+=-a;\
+a=0;\
+d[a]=5;\
+for (a=0;a<10;a++) d[a]=1;\n\
+pcar->driver=*c;pcar->driver=d[1];pcar->driver=d[a];pcar->driver=pcar->collector;\
+a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare n1\nSET @n1 #0000000000000001\n^declare n2\nSET @n2 #0000000000000002\n^declare n3\nSET @n3 #0000000000000003\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\nSET @d #0000000000000010\n^declare d_0\n^declare d_1\n^declare z\n\nSET @pcar #0000000000000008\nSET @r1 #000000000000655a\nSET @($pcar + $n2) $r1\nSET @($pcar) $a\nCLR @r0\nSUB @r0 $a\nADD @b $r0\nSET @r0 #0000000000000005\nSET @($d) $r0\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nSET @($d + $a) $n1\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nSET @r1 $($c)\nSET @($pcar) $r1\nSET @($pcar) $d_1\nSET @r1 $($d + $a)\nSET @($pcar) $r1\nSET @r2 $($pcar + $n1)\nSET @($pcar) $r2\nSET @a $($pcar + $n1)\nINC @z\nSET @r1 $($pcar)\nSET @($c) $r1\nSET @d_1 $($pcar + $n1)\nSET @r1 $($pcar + $n1)\nSET @($d + $a) $r1\nFIN\n" ],
+    [ "#pragma globalOptimization\n#pragma maxConstVars 4\nlong a, b, c; teste(a, 2); void teste(long aa, long bb) { aa=bb;} ",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare n1\nSET @n1 #0000000000000001\n^declare n2\nSET @n2 #0000000000000002\n^declare n3\nSET @n3 #0000000000000003\n^declare a\n^declare b\n^declare c\n^declare teste_aa\n^declare teste_bb\n\nPSH $n2\nPSH $a\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_aa\nPOP @teste_bb\nSET @teste_aa $teste_bb\nRET\n" ],
+//    [ "", false, "" ],
 
 //bugfixes
     [ "Bug fixes", "div" ],

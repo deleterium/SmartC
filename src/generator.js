@@ -2177,6 +2177,7 @@ function bigastCompile(bc_Big_ast){
         var jumpToLabels;
         var jmpto, lbl, dest;
         var setdat, opdat, clrdat;
+        var pshdat;
         var optimized_lines;
 
         do {
@@ -2212,6 +2213,19 @@ function bigastCompile(bc_Big_ast){
 
             tmplines.forEach( function (value, index, array){
                 var i;
+
+                // change SET_VAL to SET_DAT for values defined in ConstVars
+                // This also enables more optimizations on pointers and PSH!
+                if (bc_Big_ast.Config.maxConstVars > 0) {
+                    setdat = /^\s*SET\s+@(\w+)\s+#([\da-f]{16})\b\s*$/.exec(value);
+                    if (setdat !== null) {
+                        let val=parseInt(setdat[2],16);
+                        if (val <= bc_Big_ast.Config.maxConstVars && setdat[1] !== "n"+val) {
+                            array[index]="SET @"+setdat[1]+" $n"+val;
+                            optimized_lines++;
+                        }
+                    }
+                }
 
                 jmpto = /^\s*JMP\s+:(\w+)\s*$/.exec(value);
                 //optimize jumps
@@ -2321,6 +2335,68 @@ function bigastCompile(bc_Big_ast){
                     if (setdat[1] == setdat[2]) { //SET @a_1 $a_1 turns delete
                         array[index]="DELETE";
                         optimized_lines++;
+                        return;
+                    }
+
+                    //SET @r0 $a
+                    //PSH $r0
+                    // turns PSH $a
+                    pshdat=/^\s*PSH\s+\$(\w+)\s*$/.exec(array[index+1]);
+                    if (pshdat !== null) {
+                        if (pshdat[1] == setdat[1]) {
+                            array[index]="DELETE";
+                            array[index+1]="PSH $"+setdat[2];
+                            optimized_lines++;
+                            return;
+                        }
+                    }
+
+                    i=index;
+                    while (++i<array.length-1) {
+                        lbl = /^\s*(\w+):\s*$/.exec(array[i]);
+                        if ( lbl !== null) {
+                            break;
+                        }
+                        jmpto = /.+\s:(\w+)$/.exec(array[i]); //match JMP JSR ERR and all branches
+                        if (jmpto !== null) {
+                            break;
+                        }
+                        jmpto = /^\s*(RET|FIN)\s*$/.exec(array[i]);
+                        if (jmpto !== null) {
+                            break;
+                        }
+                        if (array[i].indexOf(setdat[1]) >= 0) {
+                            //SET @r0 $a
+                            //SET @z $($val + $r0)
+                            // turns SET @z $($val + $a)
+                            let setdat2 = /^\s*SET\s+@(\w+)\s+\$\(\$(\w+)\s*\+\s*\$(\w+)\)\s*$/.exec(array[i]);
+                            if (setdat2 !== null && setdat[1] == setdat2[3]) {
+                                array[index]="DELETE";
+                                array[i]="SET @"+setdat2[1]+" $($"+setdat2[2]+" + $"+setdat[2]+")";
+                                optimized_lines++;
+                                continue;
+                            }
+                            //SET @r0 $a
+                            //SET @($val + $r0) $z
+                            // turns SET $($val + $a) $z
+                            setdat2 = /^\s*SET\s+@\(\$(\w+)\s*\+\s*\$(\w+)\)\s+\$(\w+)\s*$/.exec(array[i]);
+                            if (setdat2 !== null && setdat[1] == setdat2[2]) {
+                                array[index]="DELETE";
+                                array[i]="SET @($"+setdat2[1]+" + $"+setdat[2]+") $"+setdat2[3];
+                                optimized_lines++;
+                                continue;
+                            }
+                            //SET @r0 $a
+                            //SET @($val + $z) $r0
+                            // turns SET $($val + $z) $a
+                            if (setdat2 !== null && setdat[1] == setdat2[3]) {
+                                array[index]="DELETE";
+                                array[i]="SET @($"+setdat2[1]+" + $"+setdat2[2]+") $"+setdat[2];
+                                optimized_lines++;
+                                continue;
+                            }
+                            break;
+                        }
                     }
                 }
 
@@ -2328,9 +2404,6 @@ function bigastCompile(bc_Big_ast){
                 clrdat=/^\s*CLR\s+@(\w+)\s*$/.exec(value);
                 if (clrdat !== null) {
                     i=index;
-                    let last_opt=-1;
-                    let last_clr=-1;
-                    let dirty_exit=false;
                     while (++i<array.length-1) {
                         lbl = /^\s*(\w+):\s*$/.exec(array[i]);
                         if ( lbl !== null) {
@@ -2350,8 +2423,6 @@ function bigastCompile(bc_Big_ast){
                                 array[index]="DELETE";
                                 array[i]="SET @"+setdat[1]+" $($"+setdat[2]+")";
                                 optimized_lines++;
-                                last_clr=index;
-                                last_opt=i;
                                 continue;
                             }
                             setdat = /^\s*SET\s+@\(\$(\w+)\s*\+\s*\$(\w+)\)\s+\$(\w+)\s*$/.exec(array[i]);
@@ -2359,26 +2430,10 @@ function bigastCompile(bc_Big_ast){
                                 array[index]="DELETE";
                                 array[i]="SET @($"+setdat[1]+") $"+setdat[3];
                                 optimized_lines++;
-                                last_clr=index;
-                                last_opt=i;
                                 continue;
-                            }
-                            if (/^\s*CLR\s+@(\w+)\s*$/.exec(array[i]) !== null) {
-                                array[i]="DELETE";
-                                optimized_lines++;
-                                last_clr=i;
-                                continue;
-                            }
-                            setdat = /^\s*SET\s+@(\w+)\s+(.*)/.exec(array[i]); //matches SET @var *
-                            if (setdat !== null && clrdat[1] == setdat[1]) { //setting again the variable, gracefull exit
-                                last_opt=i;
-                                break;
                             }
                             break;
                         }
-                    }
-                    if ( last_opt < last_clr ) {
-                        array[last_clr]="CLR @"+clrdat[1];
                     }
                 }
 

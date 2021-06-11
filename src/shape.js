@@ -19,7 +19,8 @@
         enableRandom:     false, //enable with #pragma enableRandom true
         enableLineLabels: false, //enable with #pragma enableLineLabels true
         globalOptimization: false, //enable with #pragma globalOptimization true
-        maxAuxVars:       5,     //change with #pragma max_auxVars N
+        maxAuxVars:       5,     //change with #pragma maxAuxVars N
+        maxConstVars:     0,     //change with #pragma maxConstVars N
         reuseAssignedVar: true,  //disable with #pragma reuseAssignedVar false
         useVariableDeclaration: true, //change with #pragma useVariableDeclaration false
         version: "0",            //change with #pragma version 0
@@ -51,6 +52,8 @@
         Big_ast.typesDefinitions = createDefaultTypesTable();
 
         addRegistersInMemory();
+
+        addConstantsInMemory();
 
         createMemoryTable(Big_ast.Global.sentences, "", false);
 
@@ -693,6 +696,16 @@
                     return;
                 }
             }
+            if (Token.property === "maxConstVars") {
+                if (Token.value !== undefined) {
+                    var num = parseInt(Token.value);
+                    if (num < 0 || num > 10) {
+                        throw new RangeError("At line: "+Token.line+". Value out of permitted range 0..10.");
+                    }
+                    Big_ast.Config.maxConstVars = num;
+                    return;
+                }
+            }
             if (Token.property === "reuseAssignedVar") {
                 Big_ast.Config.reuseAssignedVar = get_val(Token.value);
                 if (Big_ast.Config.reuseAssignedVar !== undefined)
@@ -751,6 +764,22 @@
                 let Memory_template = JSON.parse(JSON.stringify(search.Memory_template));
                 Memory_template.name = "r"+i;
                 Memory_template.asm_name = "r"+i;
+                Big_ast.memory.push(Memory_template);
+            }
+        }
+    }
+
+    function addConstantsInMemory(){
+        if ( Big_ast.Config.useVariableDeclaration) {
+            let search = Big_ast.typesDefinitions.find(obj => obj.type === "register");
+            if (search === undefined){
+                throw new TypeError("Not found type 'register' at types definitions.");
+            }
+            for (var i=1; i<= Big_ast.Config.maxConstVars; i++){
+                let Memory_template = JSON.parse(JSON.stringify(search.Memory_template));
+                Memory_template.name = "n"+i;
+                Memory_template.asm_name = "n"+i;
+                Memory_template.hex_content = i.toString(16).padStart(16,"0");
                 Big_ast.memory.push(Memory_template);
             }
         }
