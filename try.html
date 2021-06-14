@@ -33,15 +33,15 @@ function compileCode(){
             big_ast_opTree = bigastProcessSyntax(big_ast);
             asmCode = bigastCompile(big_ast_opTree);
         } else {
-            asmCode = codeString
+            asmCode = codeString;
         }
 
         document.getElementById("assembly_output").innerHTML = asm_highlight(asmCode);
         var bcode = bytecode(asmCode);
 
-        //document.getElementById("machine-code").innerHTML = asmCode+"\n\n"+asmCode.replace(/\n/g,"\\n")+"\n\n"+JSON.stringify(big_ast_opTree, null, '    ');
-        //document.getElementById("machine-code").innerHTML = asmCode+"\n\n"+JSON.stringify(big_ast_opTree, null, '    ');
-        //document.getElementById("machine-code").innerHTML = JSON.stringify(bcode, stringifyReplacer , '    ');
+        //document.getElementById("c_output").innerHTML = asmCode+"\n\n"+asmCode.replace(/\n/g,"\\n")+"\n\n"+JSON.stringify(bcode, null , '    ');//+JSON.stringify(big_ast_opTree, null, '    ');
+        //document.getElementById("c_output").innerHTML = asmCode+"\n\n"+JSON.stringify(big_ast_opTree, null, '    ');
+        //document.getElementById("c_output").innerHTML = JSON.stringify(bcode, stringifyReplacer , '    ');
         //document.getElementById("c_output").innerHTML = JSON.stringify(bcode, null , '    ');
         var msg="<span class='msg_success'>Compile sucessfull!!!</span>";
         if (document.getElementById("debug").checked) {
@@ -128,6 +128,8 @@ function fill_form(AT_Info) {
     var my_dom;
     my_dom = document.getElementsByName("code");
     my_dom[0].value=AT_Info.ByteCode;
+    my_dom = document.getElementsByName("data");
+    my_dom[0].value=AT_Info.ByteData;
     my_dom = document.getElementsByName("dpages");
     my_dom[0].value=AT_Info.DataPages;
     my_dom = document.getElementsByName("cspages");
@@ -141,6 +143,8 @@ function fill_form(AT_Info) {
 function clear_form(){
     var my_dom;
     my_dom = document.getElementsByName("code");
+    my_dom[0].value="";
+    my_dom = document.getElementsByName("data");
     my_dom[0].value="";
     my_dom = document.getElementsByName("dpages");
     my_dom[0].value="0";
@@ -213,7 +217,7 @@ function deployClick(deploy_port) {
             <tr><td>Description:</td><td><textarea name="description" rows="5" style="width:100%;min-width:200px;"></textarea></td></tr>
             <!-- <tr><td>creationBytes:</td><td><input type="text" name="creationBytes" style="width:100%;min-width:200px;"></td></tr> -->
             <tr><td>Bytecode:</td><td><input type="text" name="code" style="width:100%;min-width:200px;" pattern="[a-fA-F0-9]{1,}"></td></tr>
-            <!-- <tr><td>data:</td><td><input type="text" name="data" style="width:100%;min-width:200px;"></td></tr> -->
+            <tr><td>Bytedata:</td><td><input type="text" name="data" style="width:100%;min-width:200px;"></td></tr>
             <tr><td>Data Pages:</td><td><input type="number" name="dpages" value="1" style="width:100%;min-width:200px;"></td></tr>
             <tr><td>Code Stack Pages:</td><td><input type="number" name="cspages" value="0" style="width:100%;min-width:200px;"></td></tr>
             <tr><td>User Stack Pages:</td><td><input type="number" name="uspages" value="0" style="width:100%;min-width:200px;"></td></tr>

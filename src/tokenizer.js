@@ -26,7 +26,7 @@ function tokenizer(input) {
   var WHITESPACE = /\s/;
 
   var keywords_bd = [
-   "asm", "break", "continue", "do", "else", "for", "goto", "if",
+   "asm", "break", "const", "continue", "do", "else", "for", "goto", "if",
    "long", "return", "void", "while", "sleep", "exit", "halt"
    , "struct"
   ];
@@ -36,7 +36,7 @@ function tokenizer(input) {
   ];
 
   var keywords_bd_not_implemented = [
-    "case", "char", "const", "default", "enum", "extern",
+    "case", "char", "default", "enum", "extern",
     "int", "short", "sizeof", "signed", "static",
     "switch", "typedef", "union", "unsigned"
   ];

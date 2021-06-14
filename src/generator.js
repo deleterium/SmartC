@@ -96,6 +96,7 @@ function bigastCompile(bc_Big_ast){
             declaring: "",
             pointer_codecave: false,
             left_side_of_assignment: false,
+            const_sentence: false,
 
             isTemp: function(loc) {
                 if (loc == -1) return false;
@@ -640,6 +641,11 @@ function bigastCompile(bc_Big_ast){
                         if (objTree.value === 'sleep' || objTree.value === 'goto') {
                             throw new TypeError("At line: "+objTree.line+". Missing argument for keyword '"+objTree.value+"'.");
                         }
+
+                        if (objTree.value === 'const') {
+                            throw new TypeError("At line: "+objTree.line+". Missing statement for keyword '"+objTree.value+"'.");
+                        }
+
                         throw new TypeError("At line: "+objTree.line+". Keywords '"+objTree.value+"' not implemented.");
                     }
 
@@ -1214,6 +1220,15 @@ function bigastCompile(bc_Big_ast){
                     }   }   }   }   }
                     instructionstrain+=createInstruction(objTree.Operation, LGenObj.MemObj, RGenObj.MemObj);
 
+                    if (auxVars.const_sentence===true) {
+                        if (RGenObj.MemObj.location != -1 || RGenObj.MemObj.type !== "constant" || RGenObj.MemObj.hex_content === undefined ) {
+                            throw new TypeError("At line: "+objTree.Operation.line+". Right side of an assigment with 'const' keyword must be a constant.");
+                        }
+                        // Inspect ASM code and change accordingly
+                        instructionstrain = setConstAsmCode(instructionstrain, objTree.Operation.line);
+                        return { MemObj: LGenObj.MemObj, instructionset: instructionstrain } ;
+                    }
+
                     auxVars.freeRegister(RGenObj.MemObj.location);
                     auxVars.freeRegister(RGenObj.MemObj.location);
                     return { MemObj: LGenObj.MemObj, instructionset: instructionstrain } ;
@@ -1223,6 +1238,12 @@ function bigastCompile(bc_Big_ast){
 
                     if (objTree.Left.value === "long" || objTree.Left.value === "void") {
                         auxVars.declaring=objTree.Left.value;
+                        let ret = genCode(objTree.Right, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                        return ret;
+                    }
+
+                    if (objTree.Left.value === "const") {
+                        auxVars.const_sentence=true;
                         let ret = genCode(objTree.Right, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
                         return ret;
                     }
@@ -1268,6 +1289,31 @@ function bigastCompile(bc_Big_ast){
                 }
                 throw new TypeError("At line: "+objTree.Operation.line+". Code generation error: Unknown operation "+objTree.Operation.type);
             }
+        }
+
+        function setConstAsmCode(code, line){
+
+            var codelines=code.split("\n");
+            var retlines=[];
+
+            codelines.forEach(function (instruction) {
+                if (instruction.length == 0) {
+                    retlines.push("");
+                    return;
+                }
+                let parts=/^\s*SET\s+@(\w+)\s+#([\da-f]{16})\b\s*$/.exec(instruction);
+                if ( parts === null) {
+                    throw new TypeError("At line: "+line+". No operations can be done during 'const' assignment.");
+                }
+                let search = bc_Big_ast.memory.find(obj => obj.asm_name ==  parts[1]);
+                if (search.hex_content !== undefined) {
+                    throw new TypeError("At line: "+line+". Left side of an assigment with 'const' keyword already has been set.");
+                }
+                search.hex_content=parts[2];
+                retlines.push("^const "+instruction);
+            });
+
+            return retlines.join("\n")
         }
 
         //all cases here must be implemented in createInstruction code oKSx4ab
@@ -2074,7 +2120,7 @@ function bigastCompile(bc_Big_ast){
         if (MemObj.location != -1){
             writeAsmLine("^declare "+MemObj.asm_name);
             if (MemObj.hex_content !== undefined) {
-                writeAsmLine("SET @"+MemObj.asm_name+" #"+MemObj.hex_content);
+                writeAsmLine("^const SET @"+MemObj.asm_name+" #"+MemObj.hex_content);
             }
         }
     }

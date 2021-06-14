@@ -19,6 +19,7 @@ function asm_highlight(txt) {
         [0xf1,  0,  /^\s*(\w+):\s*$/ ],
         [0xf2,  0,  /^\s*\^comment\s+(.*)/ ],
         [0xf3,  0,  /^\s*(\^declare)\s+(\w+)\s*$/ ],
+        [0xf4,  0,  /^\s*(\^const)\s+(.*)/ ],
         [0x01, 13,  /^\s*(SET)\s+@(\w+)\s+#([\da-f]{16})\b\s*$/ ],          // SET @var #0000000000000001
         [0x02,  9,  /^\s*(SET)\s+@(\w+)\s+\$(\w+)\s*$/ ],                   // SET @var $var
         [0x03,  5,  /^\s*CLR\s+@(\w+)\s*$/ ],
@@ -183,6 +184,10 @@ function asm_highlight(txt) {
                         case 0xf3: //declare
                             tmp_string = addSpanColor(line[i],parts[1],asmPropertyColor);
                             ret += tmp_string;
+                            break;
+                        case 0xf4: //const
+                            tmp_string = addSpanColor(parts[1],parts[1],asmPropertyColor);
+                            ret += tmp_string + " " + asmHighLight(parts[2]).trim();
                             break;
                         case 0x01:
                             tmp_string = addSpanColor(line[i],parts[1],asmInstructionColor);

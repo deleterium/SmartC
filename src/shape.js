@@ -440,9 +440,16 @@
                 return;
             if (phrs.code[0].type === "Keyword") {
 
+                let const_token;
+
                 if (   phrs.code[0].value === "return"
                     || phrs.code[0].value === "goto")
                     return;
+
+                if ( phrs.code[0].value === "const" ) {
+                    //remove token so no influence in declarations
+                    const_token = phrs.code.shift();
+                }
 
                 if (   phrs.code[0].value === "struct"){
                     if (phrs.code.length<3){
@@ -621,6 +628,11 @@
                         }
                         idx++;
                     }
+                }
+
+                if (const_token !== undefined) {
+                    //give token back!
+                    phrs.code.unshift(const_token);
                 }
             }
             return ret;
