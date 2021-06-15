@@ -11,8 +11,10 @@ function bytecode(assembly_source) {
         op_code_table: [
             { op_code: 0xf0, name: "blank",   size:  0, args_type: "",    regex:   /^\s*$/  },
             { op_code: 0xf1, name: "label",   size:  0, args_type: "",    regex:   /^\s*(\w+):\s*$/  },
-            { op_code: 0xf2, name: "declare", size:  0, args_type: "",    regex:   /^\s*\^declare\s+(\w+)\s*$/  },
-            { op_code: 0xf3, name: "const",   size:  0, args_type: "",    regex:   /^\s*\^const\s+SET\s+@(\w+)\s+#([\da-f]{16})\b\s*$/  },
+            { op_code: 0xf2, name: "comment", size:  0, args_type: "",    regex:   /^\s*\^comment\s+(.*)/ },
+            { op_code: 0xf3, name: "declare", size:  0, args_type: "",    regex:   /^\s*\^declare\s+(\w+)\s*$/  },
+            { op_code: 0xf4, name: "const",   size:  0, args_type: "",    regex:   /^\s*\^const\s+SET\s+@(\w+)\s+#([\da-f]{16})\b\s*$/  },
+            { op_code: 0xf5, name: "program", size:  0, args_type: "",    regex:   /^\s*\^program\s+(\w+)\s+([\s\S]+)$/  },
             { op_code: 0x01, name: "SET_VAL", size: 13, args_type: "IL",  regex:   /^\s*SET\s+@(\w+)\s+#([\da-f]{16})\b\s*$/  },          // SET @var #0000000000000001
             { op_code: 0x02, name: "SET_DAT", size:  9, args_type: "II",  regex:   /^\s*SET\s+@(\w+)\s+\$(\w+)\s*$/  },                   // SET @var $var
             { op_code: 0x03, name: "CLR_DAT", size:  5, args_type: "I",   regex:   /^\s*CLR\s+@(\w+)\s*$/  },
@@ -139,6 +141,9 @@ function bytecode(assembly_source) {
         code:     [], // { source: "", address: 0, station: "", jumpLabel: "", branchLabel: "", size: 0, content: [], content_type: [], hexstring: "" }
         data:     [], // [ 0n, 0n, 1200n ]
         labels:   [], // { label: "asdf", address: 1234}
+        PName:    "",
+        PDescription: "",
+        PActivationAmount: "",
         bytecode: "",
         bytedata: "",
     };
@@ -217,14 +222,19 @@ function bytecode(assembly_source) {
             return;
         }
 
-        // ^declare asm_name
+        // ^comment user_comment
         if (instruction.op_code == 0xF2) {
+            return;
+        }
+
+        // ^declare asm_name
+        if (instruction.op_code == 0xF3) {
             getMemoryAddress(parts[1]);
             return;
         }
 
         //^const SET @(asm_name) #(hex_content)
-        if (instruction.op_code == 0xF3) {
+        if (instruction.op_code == 0xF4) {
             //This can cause a bug if const instruction become before declare instruction.
             //But this is forbidden by generator, so only bug if compiling from wronng man
             //made assembly code.
@@ -237,6 +247,20 @@ function bytecode(assembly_source) {
                 AsmObj.data.push(0n);
             }
             AsmObj.data.push(BigInt("0x"+parts[2]));
+            return;
+        }
+
+        // ^program type information
+        if (instruction.op_code == 0xF5) {
+            if (parts[1]== 'name') {
+                AsmObj.PName = parts[2];
+            }
+            if (parts[1]== 'description') {
+                AsmObj.PDescription = parts[2];
+            }
+            if (parts[1]== 'activationAmount') {
+                AsmObj.PActivationAmount = parts[2];
+            }
             return;
         }
 
@@ -383,6 +407,9 @@ function bytecode(assembly_source) {
             ByteData: AsmObj.bytedata,
             Memory: AsmObj.memory,
             Labels: AsmObj.labels,
+            PName:  AsmObj.PName,
+            PDescription: AsmObj.PDescription,
+            PActivationAmount: AsmObj.PActivationAmount,
             //DevInfo: AsmObj.code,
             //DevInfo2: AsmObj.data,
         };

@@ -35,6 +35,8 @@ function bigastCompile(bc_Big_ast){
     //main function for bigastCompile method, only run once.
     function bigastCompile_main(){
 
+        // add Config Info
+        configDeclarationGenerator();
 
         // add variables declaration
         if ( bc_Big_ast.Config.useVariableDeclaration) {
@@ -2115,6 +2117,20 @@ function bigastCompile(bc_Big_ast){
     }
     function writeAsmCode(lines){
         bc_auxVars.assemblyCode+=lines;
+    }
+
+
+    // Add relevant config information to assembly code
+    function configDeclarationGenerator() {
+        if (bc_Big_ast.Config.PName !== undefined && bc_Big_ast.Config.PName != "") {
+            writeAsmLine("^program name "+bc_Big_ast.Config.PName);
+        }
+        if (bc_Big_ast.Config.PDescription !== undefined && bc_Big_ast.Config.PDescription != "") {
+            writeAsmLine("^program description "+bc_Big_ast.Config.PDescription);
+        }
+        if (bc_Big_ast.Config.PActivationAmount !== undefined && bc_Big_ast.Config.PActivationAmount != "") {
+            writeAsmLine("^program activationAmount "+bc_Big_ast.Config.PActivationAmount);
+        }
     }
 
 

@@ -26,6 +26,10 @@
         version: "0",            //change with #pragma version 0
         warningToError:   true,  //change with #pragma warningToError false
         APIFunctions:     false, //enable with #include APIFunctions
+        PName:            "",    //set with #program name
+        PDescription:     "",    //set with #program description
+        PActivationAmount: "",   //set with #program activationAmount
+
     };
 
     //main function for shapeProgram method, only run once.
@@ -161,7 +165,7 @@
 
     function parseMacro(Token){
         var fields = Token.value.replace(/\s\s+/g, ' ').split(" ");
-        return { type: fields[0], property: fields[1], value: fields[2], line: Token.line }
+        return { type: fields[0], property: fields[1], value: fields.slice(2).join(" "), line: Token.line }
     }
 
 
@@ -685,7 +689,7 @@
     function processMacro( Token ) {
 
         function get_val(val){
-            if (val === undefined) {
+            if (val === undefined || val === "") {
                 return true;
             }
             if (val === "true" || val === "1") {
@@ -760,6 +764,33 @@
                 Big_ast.Config.APIFunctions = get_val(Token.value);
                 if (Big_ast.Config.APIFunctions !== undefined)
                     return;
+            }
+        }
+
+        if (Token.type === "program") {
+            var parts;
+            if (Token.property === "name") {
+                parts=/^[0-9a-zA-Z]{1,30}$/.exec(Token.value);
+                if (parts === null) {
+                    throw new TypeError("At line: "+Token.line+". Program name must contains only letters [a-z][A-Z][0-9], from 1 to 30 chars.");
+                }
+                Big_ast.Config.PName = Token.value;
+                return;
+            }
+            if (Token.property === "description") {
+                if (Token.value.length >= 1000) {
+                    throw new TypeError("At line: "+Token.line+". Program description max lenght is 1000 chars. It is "+Token.value.length+" chars.");
+                }
+                Big_ast.Config.PDescription = Token.value;
+                return;
+            }
+            if (Token.property === "activationAmount") {
+                parts=/^[0-9]{1,20}$/.exec(Token.value);
+                if (parts === null) {
+                    throw new TypeError("At line: "+Token.line+". Program activation must be only numbers.");
+                }
+                Big_ast.Config.PActivationAmount = Token.value;
+                return;
             }
         }
 

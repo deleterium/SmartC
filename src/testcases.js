@@ -857,6 +857,16 @@ const a=353; const d[1]=354; const car[1].driver=355; const car[0].passenger[1]=
     [ "long a, b, *c, d[2]; a++; const b=3+3+4;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #0000000000000009\n^declare d_0\n^declare d_1\n\nINC @a\n^const SET @b #000000000000000a\nFIN\n" ],
 //    [ "", false, "" ],
 
+//program macro
+[ "macro program", "div" ],
+    [ "#program name tEst2\n long a;  a++;", false, "^program name tEst2\n^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nINC @a\nFIN\n" ],
+    [ "#program description test teste tesssttt\n long a;  a++;", false, "^program description test teste tesssttt\n^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nINC @a\nFIN\n" ],
+    [ "#program activationAmount 100000\n long a;  a++;", false, "^program activationAmount 100000\n^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nINC @a\nFIN\n" ],
+    [ "#program name test-2\n long a;  a++;", true, "" ],
+    [ "#program name test2 d\n long a;  a++;", true, "" ],
+    [ "#program activationAmount 0xff\n long a;  a++;", true, "" ],
+//    [ "", false, "" ],
+
 //bugfixes
     [ "Bug fixes", "div" ],
     //bug 1, goto failed with undeclared variable

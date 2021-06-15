@@ -17,9 +17,10 @@ function asm_highlight(txt) {
      /*opCode, Size,  Matching RegEx */
         [0xf0,  0,  /^\s*$/ ],
         [0xf1,  0,  /^\s*(\w+):\s*$/ ],
-        [0xf2,  0,  /^\s*\^comment\s+(.*)/ ],
+        [0xf2,  0,  /^\s*(\^comment)\s+(.*)/ ],
         [0xf3,  0,  /^\s*(\^declare)\s+(\w+)\s*$/ ],
         [0xf4,  0,  /^\s*(\^const)\s+(.*)/ ],
+        [0xf5,  0,  /^\s*(\^program)\s+(\w+)\s+([\s\S]+)$/ ],
         [0x01, 13,  /^\s*(SET)\s+@(\w+)\s+#([\da-f]{16})\b\s*$/ ],          // SET @var #0000000000000001
         [0x02,  9,  /^\s*(SET)\s+@(\w+)\s+\$(\w+)\s*$/ ],                   // SET @var $var
         [0x03,  5,  /^\s*CLR\s+@(\w+)\s*$/ ],
@@ -181,6 +182,11 @@ function asm_highlight(txt) {
                             tmp_string = addSpanColorLast(tmp_string,":",asmPropertyColor);
                             ret += tmp_string;
                             break;
+                        case 0xf2: //comment
+                            tmp_string = addSpanColor(line[i],parts[1],asmPropertyColor);
+                            tmp_string = addSpanColorLast(tmp_string,parts[2],asmCommentColor);
+                            ret += tmp_string;
+                            break;
                         case 0xf3: //declare
                             tmp_string = addSpanColor(line[i],parts[1],asmPropertyColor);
                             ret += tmp_string;
@@ -188,6 +194,11 @@ function asm_highlight(txt) {
                         case 0xf4: //const
                             tmp_string = addSpanColor(parts[1],parts[1],asmPropertyColor);
                             ret += tmp_string + " " + asmHighLight(parts[2]).trim();
+                            break;
+                        case 0xf5: //program
+                            tmp_string = addSpanColor(line[i],parts[1],asmPropertyColor);
+                            tmp_string = addSpanColor(tmp_string,parts[3],asmCommentColor);
+                            ret += tmp_string;
                             break;
                         case 0x01:
                             tmp_string = addSpanColor(line[i],parts[1],asmInstructionColor);

@@ -126,6 +126,10 @@ function stringifyReplacer(key, value) {
 function fill_form(AT_Info) {
 
     var my_dom;
+    my_dom = document.getElementsByName("name");
+    my_dom[0].value=AT_Info.PName;
+    my_dom = document.getElementsByName("description");
+    my_dom[0].value=AT_Info.PDescription;
     my_dom = document.getElementsByName("code");
     my_dom[0].value=AT_Info.ByteCode;
     my_dom = document.getElementsByName("data");
@@ -136,12 +140,18 @@ function fill_form(AT_Info) {
     my_dom[0].value=AT_Info.CodeStackPages;
     my_dom = document.getElementsByName("uspages");
     my_dom[0].value=AT_Info.UserStackPages;
+    my_dom = document.getElementsByName("minActivationAmountNQT");
+    my_dom[0].value=AT_Info.PActivationAmount;
     my_dom = document.getElementsByName("feeNQT");
     my_dom[0].value=AT_Info.MinimumFeeNQT;
 }
 
 function clear_form(){
     var my_dom;
+    my_dom = document.getElementsByName("name");
+    my_dom[0].value="";
+    my_dom = document.getElementsByName("description");
+    my_dom[0].value="";
     my_dom = document.getElementsByName("code");
     my_dom[0].value="";
     my_dom = document.getElementsByName("data");
@@ -152,8 +162,10 @@ function clear_form(){
     my_dom[0].value="0";
     my_dom = document.getElementsByName("uspages");
     my_dom[0].value="0";
+    my_dom = document.getElementsByName("minActivationAmountNQT");
+    my_dom[0].value="";
     my_dom = document.getElementsByName("feeNQT");
-    my_dom[0].value="0";
+    my_dom[0].value="";
 }
 
 function testCode() {

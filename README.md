@@ -40,6 +40,9 @@ For future implementation these keywords can be added: `case`, `char`, `default`
 
 ### Macros
 Some special features can be enabled/disable via preprocessor directives:
+* `#program name YourProgramName`: Set program's name. Only regular letters and numbers allowed, max 30 chars in length.
+* `#program description Your program description`: Set program's description. No new lines and max length is 1000 chars.
+* `#program activationAmount 100000000`: Set program's activation amount in NQT (1 Burst = 100000000 NQT). If an incoming transaction has an amount is less than this value, it will not be processed by program (but the amount will be received!). Set a low value but bigger than worst case amount needed to run in your program. If set too low, your program will be frozen during execution (out of gas). If set too high, program balance will be high after execution (unburned balance). Remember to handle this case if creating serious program!
 * `#include APIFunctions [true/false/1/0/]`: Can make Burstcoin API functions available for use as functions. Default value is `false`. Can be enabled by declaring it with empty argument, `true` or `1`. Function names follow the [ciyam at documentation](https://ciyam.org/at/at_api.html).
 * `#pragma enableRandom [true/false/1/0/]`: Makes labels for jumps and conditionals receive a random value. Default value is `false`. Default behaviour is labels having an increasing number starting with 1 (number is base 36).
 * `#pragma enableLineLabels [true/false/1/0/]`: Adds line number to labels in assembly. Only usefull for debug purposes. Default value is `false`.
