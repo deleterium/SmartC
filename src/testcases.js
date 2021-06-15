@@ -299,24 +299,24 @@ var logical_tests = [
     [ "One Operation) { a++; }", "div" ],
 
 // Variable
-    [ "if (a) { a++; }",    false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a) { a++; }",    false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
 
 // Constant
-    [ "if (0) { a++; }",    false,   "__if1_endif) { a++; }", true,  "JMP :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (1) { a++; }",    false,   "__if1_endif) { a++; }", true,  "INC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (10) { a++; }",    false,   "__if1_endif) { a++; }", true,  "INC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (0) { a++; }",    false,   "__if1_endif) { a++; }", true,  "JMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (1) { a++; }",    false,   "__if1_endif) { a++; }", true,  "__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (10) { a++; }",    false,   "__if1_endif) { a++; }", true,  "__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
 
 // Operator
-    [ "if (a/2) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nSET @r1 #0000000000000002\nDIV @r0 $r1\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a%2) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nSET @r1 #0000000000000002\nMOD @r0 $r1\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a<<2) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nSET @r1 #0000000000000002\nSHL @r0 $r1\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a>>2) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nSET @r1 #0000000000000002\nSHR @r0 $r1\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a|2) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 #0000000000000002\nBOR @r0 $a\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a^2) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 #0000000000000002\nXOR @r0 $a\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a/2) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nSET @r1 #0000000000000002\nDIV @r0 $r1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a%2) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nSET @r1 #0000000000000002\nMOD @r0 $r1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a<<2) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nSET @r1 #0000000000000002\nSHL @r0 $r1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a>>2) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nSET @r1 #0000000000000002\nSHR @r0 $r1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a|2) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 #0000000000000002\nBOR @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a^2) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 #0000000000000002\nXOR @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
 
 //UnaryOperator
-    [ "if (!a) { a++; }",    false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (~a) { a++; }",    false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nNOT @r0\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!a) { a++; }",    false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (~a) { a++; }",    false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nNOT @r0\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
 
 //SetUnaryOperators
     [ "if (++a) { a++; }", true,   "__if1_endif) { a++; }", true,  "" ],
@@ -327,34 +327,34 @@ var logical_tests = [
     [ "if (a+=b) { a++; }", true,   "__if1_endif) { a++; }", true,  "" ],
 
 // Comparision
-    [ "if (a==b) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a!=b) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BEQ $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a>=b) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BLT $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a>b) { a++; }",   false,   "__if1_endif) { a++; }", true,  "BLE $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a<=b) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BGT $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a<b) { a++; }",   false,   "__if1_endif) { a++; }", true,  "BGE $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a==0) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a!=0) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a&&b) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\nBZR $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a==b) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a!=b) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BEQ $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a>=b) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BLT $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a>b) { a++; }",   false,   "__if1_endif) { a++; }", true,  "BLE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a<=b) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BGT $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a<b) { a++; }",   false,   "__if1_endif) { a++; }", true,  "BGE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a==0) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a!=0) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a&&b) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\nBZR $b :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if (a||b) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_start\nBNZ $b :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a==b&&c==d) { a++; }",false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__if1_endif\nBNE $c $d :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a==b&&c==d) { a++; }",false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__if1_endif\nBNE $c $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if (a==b||c==d) { a++; }", false,   "__if1_endif) { a++; }", true,  "BEQ $a $b :__if1_start\nBEQ $c $d :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
 
 //Arr
     [ "if (a[b]) { a++; }", true,   "" ],
 
 //CheckOperator Unary
-    [ "if (+a) { a++; }", false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (*a) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $($a)\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (-a) { a++; }", false,   "__if1_endif) { a++; }", true,  "CLR @r0\nSUB @r0 $a\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (~a) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nNOT @r0\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (+a) { a++; }", false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (*a) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $($a)\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (-a) { a++; }", false,   "__if1_endif) { a++; }", true,  "CLR @r0\nSUB @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (~a) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nNOT @r0\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if (&a) { a++; }", true,   "__if1_endif) { a++; }", true,  "" ],
 
 //CheckOperator Binary
-    [ "if (b+a) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nADD @r0 $b\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (b*a) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nMUL @r0 $b\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (b-a) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $b\nSUB @r0 $a\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (b&a) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nAND @r0 $b\nBZR $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (b+a) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nADD @r0 $b\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (b*a) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nMUL @r0 $b\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (b-a) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $b\nSUB @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (b&a) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nAND @r0 $b\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
 
 //NewCodeLine
     [ "if (,) { a++; }", true,   "__if1_endif) { a++; }", true,  "" ],
@@ -368,108 +368,108 @@ var logical_tests = [
     [ "Combinations with NOT) { a++; }", "div" ],
 
 // Variable
-    [ "if (!a) { a++; }",    false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!a) { a++; }",    false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
 
 // Constant
-    [ "if (!0) { a++; }",    false,   "__if1_endif) { a++; }", true,  "INC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!1) { a++; }",    false,   "__if1_endif) { a++; }", true,  "JMP :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!10) { a++; }",    false,   "__if1_endif) { a++; }", true,  "JMP :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!0) { a++; }",    false,   "__if1_endif) { a++; }", true,  "__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!1) { a++; }",    false,   "__if1_endif) { a++; }", true,  "JMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!10) { a++; }",    false,   "__if1_endif) { a++; }", true,  "JMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
 
 // Operator
-    [ "if (!(a/2)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nSET @r1 #0000000000000002\nDIV @r0 $r1\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a%2)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nSET @r1 #0000000000000002\nMOD @r0 $r1\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a<<2)) { a++; }", false,   "__if1_endif) { a++; }", true,   "SET @r0 $a\nSET @r1 #0000000000000002\nSHL @r0 $r1\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a>>2)) { a++; }", false,   "__if1_endif) { a++; }", true,   "SET @r0 $a\nSET @r1 #0000000000000002\nSHR @r0 $r1\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a|2)) { a++; }", false,   "__if1_endif) { a++; }", true,   "SET @r0 #0000000000000002\nBOR @r0 $a\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a^2)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 #0000000000000002\nXOR @r0 $a\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a/2)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nSET @r1 #0000000000000002\nDIV @r0 $r1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a%2)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nSET @r1 #0000000000000002\nMOD @r0 $r1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a<<2)) { a++; }", false,   "__if1_endif) { a++; }", true,   "SET @r0 $a\nSET @r1 #0000000000000002\nSHL @r0 $r1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a>>2)) { a++; }", false,   "__if1_endif) { a++; }", true,   "SET @r0 $a\nSET @r1 #0000000000000002\nSHR @r0 $r1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a|2)) { a++; }", false,   "__if1_endif) { a++; }", true,   "SET @r0 #0000000000000002\nBOR @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a^2)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 #0000000000000002\nXOR @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
 
 //UnaryOperator
-    [ "if (!!a) { a++; }",    false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!~a) { a++; }",    false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nNOT @r0\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!!a) { a++; }",    false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!~a) { a++; }",    false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nNOT @r0\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
 
 // Comparision
-    [ "if (!(a==b)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BEQ $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a!=b)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a>=b)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BGE $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a>b)) { a++; }",   false,   "__if1_endif) { a++; }", true,  "BGT $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a<=b)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BLE $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a<b)) { a++; }",   false,   "__if1_endif) { a++; }", true,  "BLT $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a==0)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a!=0)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a==b)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BEQ $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a!=b)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a>=b)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BGE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a>b)) { a++; }",   false,   "__if1_endif) { a++; }", true,  "BGT $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a<=b)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BLE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a<b)) { a++; }",   false,   "__if1_endif) { a++; }", true,  "BLT $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a==0)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a!=0)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if (!(a&&b)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_start\nBZR $b :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a||b)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\nBNZ $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a||b)) { a++; }",  false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\nBNZ $b :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if (!(a==b&&c==d)) { a++; }",false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__if1_start\nBNE $c $d :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a==b||c==d)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BEQ $a $b :__if1_endif\nBEQ $c $d :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a==b||c==d)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BEQ $a $b :__if1_endif\nBEQ $c $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
 
 //Arr
     [ "if (!(a[b])) { a++; }", true,   "__if1_endif) { a++; }", true,  "" ],
     [ "if (!a[b]) { a++; }", true,   "__if1_endif) { a++; }", true,  "" ],
 
 //CheckOperator Unary
-    [ "if (!(+a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(*a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $($a)\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(-a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "CLR @r0\nSUB @r0 $a\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(~a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nNOT @r0\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(+a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(*a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $($a)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(-a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "CLR @r0\nSUB @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(~a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nNOT @r0\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if (!(&a)) { a++; }", true,   "__if1_endif) { a++; }", true,  "" ],
 
 //CheckOperator Binary
-    [ "if (!(b+a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nADD @r0 $b\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(b*a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nMUL @r0 $b\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(b-a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $b\nSUB @r0 $a\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(b&a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nAND @r0 $b\nBNZ $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(b+a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nADD @r0 $b\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(b*a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nMUL @r0 $b\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(b-a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $b\nSUB @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(b&a)) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 $a\nAND @r0 $b\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
 
 //Combinations trying to break algorithm
     [ "Misc combinations) { a++; }", "div" ],
-    [ "if (a==b&&!(c==d)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__if1_endif\nBEQ $c $d :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(a==b)&&c==d) { a++; }", false,   "__if1_endif) { a++; }", true,  "BEQ $a $b :__if1_endif\nBNE $c $d :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a==b==c) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNE $b $c :__CMP_2_sF\nSET @r0 #0000000000000001\nJMP :__CMP_2_end\n__CMP_2_sF:\nCLR @r0\n__CMP_2_end:\nBNE $a $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if ((a==b)==c) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__CMP_2_sF\nSET @r0 #0000000000000001\nJMP :__CMP_2_end\n__CMP_2_sF:\nCLR @r0\n__CMP_2_end:\nBNE $r0 $c :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a==b&&c==d&&e==f&&g==h) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__if1_endif\nBNE $c $d :__if1_endif\nBNE $e $f :__if1_endif\nBNE $g $h :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a==b&&!(c==d)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__if1_endif\nBEQ $c $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(a==b)&&c==d) { a++; }", false,   "__if1_endif) { a++; }", true,  "BEQ $a $b :__if1_endif\nBNE $c $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a==b==c) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNE $b $c :__CMP_2_sF\nSET @r0 #0000000000000001\nJMP :__CMP_2_end\n__CMP_2_sF:\nCLR @r0\n__CMP_2_end:\nBNE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if ((a==b)==c) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__CMP_2_sF\nSET @r0 #0000000000000001\nJMP :__CMP_2_end\n__CMP_2_sF:\nCLR @r0\n__CMP_2_end:\nBNE $r0 $c :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a==b&&c==d&&e==f&&g==h) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__if1_endif\nBNE $c $d :__if1_endif\nBNE $e $f :__if1_endif\nBNE $g $h :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if (a==b||c==d||e==f||g==h) { a++; }", false,   "__if1_endif) { a++; }", true,  "BEQ $a $b :__if1_start\nBEQ $c $d :__if1_start\nBEQ $e $f :__if1_start\nBEQ $g $h :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if ((a==b||c==d)&&(e==f||g==h)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BEQ $a $b :__AND_2_next\nBEQ $c $d :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nBEQ $e $f :__if1_start\nBEQ $g $h :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if ((a==b && c==d) || (e==f && g==h)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__OR_2_next\nBNE $c $d :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBNE $e $f :__if1_endif\nBNE $g $h :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if ((a>=b && c>=d) || (e!=f && g!=h)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BLT $a $b :__OR_2_next\nBLT $c $d :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBEQ $e $f :__if1_endif\nBEQ $g $h :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if ((a==b && c==d) || (e==f && g==h)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__OR_2_next\nBNE $c $d :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBNE $e $f :__if1_endif\nBNE $g $h :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if ((a>=b && c>=d) || (e!=f && g!=h)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BLT $a $b :__OR_2_next\nBLT $c $d :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBEQ $e $f :__if1_endif\nBEQ $g $h :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if ((a>=b&&c>=d)||!(e==f&&g==h)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BLT $a $b :__OR_2_next\nBLT $c $d :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBNE $e $f :__if1_start\nBNE $g $h :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if ((a<=b||c<d)&&!(e==f||g==h)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BLE $a $b :__AND_2_next\nBLT $c $d :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nBEQ $e $f :__if1_endif\nBEQ $g $h :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if ((a<=b||c<d)&&!(e==f||g==h)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BLE $a $b :__AND_2_next\nBLT $c $d :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nBEQ $e $f :__if1_endif\nBEQ $g $h :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if (!(a<=b||c<d)&&(e==f||g==h)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BLE $a $b :__if1_endif\nBLT $c $d :__if1_endif\nBEQ $e $f :__if1_start\nBEQ $g $h :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a==~-b) { a++; }", false,   "__if1_endif) { a++; }", true,  "CLR @r0\nSUB @r0 $b\nNOT @r0\nBNE $a $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a==!~-b) { a++; }", false,   "__if1_endif) { a++; }", true,  "CLR @r0\nSUB @r0 $b\nNOT @r0\nBNZ $r0 :__NOT_2_sF\nSET @r0 #0000000000000001\nJMP :__NOT_2_end\n__NOT_2_sF:\nCLR @r0\n__NOT_2_end:\nBNE $a $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a==~-b) { a++; }", false,   "__if1_endif) { a++; }", true,  "CLR @r0\nSUB @r0 $b\nNOT @r0\nBNE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a==!~-b) { a++; }", false,   "__if1_endif) { a++; }", true,  "CLR @r0\nSUB @r0 $b\nNOT @r0\nBNZ $r0 :__NOT_2_sF\nSET @r0 #0000000000000001\nJMP :__NOT_2_end\n__NOT_2_sF:\nCLR @r0\n__NOT_2_end:\nBNE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if (a||(b&&c&&d)||e) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_start\nBZR $b :__OR_3_next\nBZR $c :__OR_3_next\nBZR $d :__OR_3_next\nJMP :__if1_start\n__OR_3_next:\nBNZ $e :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a&&(b||c||d)&&e) { a++; }", false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\nBNZ $b :__AND_3_next\nBNZ $c :__AND_3_next\nBNZ $d :__AND_3_next\nJMP :__if1_endif\n__AND_3_next:\nBZR $e :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a&&(b||c||d)&&e) { a++; }", false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\nBNZ $b :__AND_3_next\nBNZ $c :__AND_3_next\nBNZ $d :__AND_3_next\nJMP :__if1_endif\n__AND_3_next:\nBZR $e :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if (a||(b&&!c&&d)||e) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_start\nBZR $b :__OR_3_next\nBNZ $c :__OR_3_next\nBZR $d :__OR_3_next\nJMP :__if1_start\n__OR_3_next:\nBNZ $e :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a&&(b||!c||d)&&e) { a++; }", false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\nBNZ $b :__AND_3_next\nBZR $c :__AND_3_next\nBNZ $d :__AND_3_next\nJMP :__if1_endif\n__AND_3_next:\nBZR $e :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a==0&&(b==0||c==0&&d==0)&&e==0) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\nBZR $b :__AND_3_next\nBNZ $c :__if1_endif\nBNZ $d :__if1_endif\n__AND_3_next:\nBNZ $e :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(!(!(a==b)))) { a++; }", false,   "__if1_endif) { a++; }", true,  "BEQ $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!(!(!(!(a==b))))) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (( ( (a==5 || b==z) && c==z) || d==z ) && a==25+b) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 #0000000000000005\nBEQ $a $r0 :__AND_4_next\nBEQ $b $z :__AND_4_next\nJMP :__OR_3_next\n__AND_4_next:\nBNE $c $z :__OR_3_next\nJMP :__AND_2_next\n__OR_3_next:\nBEQ $d $z :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nSET @r0 $b\nSET @r1 #0000000000000019\nADD @r0 $r1\nBNE $a $r0 :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a&&(b||!c||d)&&e) { a++; }", false,   "__if1_endif) { a++; }", true,  "BZR $a :__if1_endif\nBNZ $b :__AND_3_next\nBZR $c :__AND_3_next\nBNZ $d :__AND_3_next\nJMP :__if1_endif\n__AND_3_next:\nBZR $e :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a==0&&(b==0||c==0&&d==0)&&e==0) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNZ $a :__if1_endif\nBZR $b :__AND_3_next\nBNZ $c :__if1_endif\nBNZ $d :__if1_endif\n__AND_3_next:\nBNZ $e :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(!(!(a==b)))) { a++; }", false,   "__if1_endif) { a++; }", true,  "BEQ $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!(!(!(!(a==b))))) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (( ( (a==5 || b==z) && c==z) || d==z ) && a==25+b) { a++; }", false,   "__if1_endif) { a++; }", true,  "SET @r0 #0000000000000005\nBEQ $a $r0 :__AND_4_next\nBEQ $b $z :__AND_4_next\nJMP :__OR_3_next\n__AND_4_next:\nBNE $c $z :__OR_3_next\nJMP :__AND_2_next\n__OR_3_next:\nBEQ $d $z :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nSET @r0 $b\nSET @r1 #0000000000000019\nADD @r0 $r1\nBNE $a $r0 :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if ((a||b)&&(c||d) && (e||f)&&(g||h) ) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNZ $a :__AND_2_next\nBNZ $b :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nBNZ $c :__AND_4_next\nBNZ $d :__AND_4_next\nJMP :__if1_endif\n__AND_4_next:\nBNZ $e :__AND_6_next\nBNZ $f :__AND_6_next\nJMP :__if1_endif\n__AND_6_next:\nBNZ $g :__if1_start\nBNZ $h :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if ((a&&b)||(c&&d) || (e&&f)||(g&&h)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BZR $a :__OR_2_next\nBZR $b :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBZR $c :__OR_4_next\nBZR $d :__OR_4_next\nJMP :__if1_start\n__OR_4_next:\nBZR $e :__OR_6_next\nBZR $f :__OR_6_next\nJMP :__if1_start\n__OR_6_next:\nBZR $g :__if1_endif\nBZR $h :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (((a&&b)||(c&&d)) && ((e&&f)||(g&&h))) { a++; }", false,   "__if1_endif) { a++; }", true,  "BZR $a :__OR_3_next\nBZR $b :__OR_3_next\nJMP :__AND_2_next\n__OR_3_next:\nBZR $c :__if1_endif\nBZR $d :__if1_endif\n__AND_2_next:\nBZR $e :__OR_6_next\nBZR $f :__OR_6_next\nJMP :__if1_start\n__OR_6_next:\nBZR $g :__if1_endif\nBZR $h :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if ((a&&b)||(c&&d) || (e&&f)||(g&&h)) { a++; }", false,   "__if1_endif) { a++; }", true,  "BZR $a :__OR_2_next\nBZR $b :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBZR $c :__OR_4_next\nBZR $d :__OR_4_next\nJMP :__if1_start\n__OR_4_next:\nBZR $e :__OR_6_next\nBZR $f :__OR_6_next\nJMP :__if1_start\n__OR_6_next:\nBZR $g :__if1_endif\nBZR $h :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (((a&&b)||(c&&d)) && ((e&&f)||(g&&h))) { a++; }", false,   "__if1_endif) { a++; }", true,  "BZR $a :__OR_3_next\nBZR $b :__OR_3_next\nJMP :__AND_2_next\n__OR_3_next:\nBZR $c :__if1_endif\nBZR $d :__if1_endif\n__AND_2_next:\nBZR $e :__OR_6_next\nBZR $f :__OR_6_next\nJMP :__if1_start\n__OR_6_next:\nBZR $g :__if1_endif\nBZR $h :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
     [ "if (!((a&&b)||(c&&d))) { a++; }", false,   "__if1_endif) { a++; }", true,  "BZR $a :__OR_2_next\nBZR $b :__OR_2_next\nJMP :__if1_endif\n__OR_2_next:\nBZR $c :__if1_start\nBZR $d :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (!((a||b)&&(c||d))) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNZ $a :__AND_2_next\nBNZ $b :__AND_2_next\nJMP :__if1_start\n__AND_2_next:\nBNZ $c :__if1_endif\nBNZ $d :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (!((a||b)&&(c||d))) { a++; }", false,   "__if1_endif) { a++; }", true,  "BNZ $a :__AND_2_next\nBNZ $b :__AND_2_next\nJMP :__if1_start\n__AND_2_next:\nBNZ $c :__if1_endif\nBNZ $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
 
     ];
 
 var keywords_tests = [
-    [ "if (a) { a++; }", false, "BZR $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a) { a++; } else { b--; }", false, "BZR $a :__if1_else\nINC @a\nJMP :__if1_endif\n__if1_else:\nDEC @b\n__if1_endif:\nFIN\n" ],
-    [ "while (a) { a++; }", false, "__loop1_continue:\nBZR $a :__loop1_break\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n" ],
-    [ "for (a=0;a<10;a++) { b++; }", false, "CLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nINC @b\n__loop1_continue:\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nFIN\n" ],
-    [ "do { a++; } while (a<b);", false, "__loop1_continue:\nINC @a\nBGE $a $b :__loop1_break\nJMP :__loop1_continue\n__loop1_break:\nFIN\n" ],
-    [ "if (a) a++;", false, "BZR $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n" ],
-    [ "if (a) a++; else b--;", false, "BZR $a :__if1_else\nINC @a\nJMP :__if1_endif\n__if1_else:\nDEC @b\n__if1_endif:\nFIN\n" ],
-    [ "while (a) a++;", false, "__loop1_continue:\nBZR $a :__loop1_break\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n" ],
-    [ "for (a=0;a<10;a++) b++;", false, "CLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nINC @b\n__loop1_continue:\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nFIN\n" ],
-    [ "do a++; while (a<b);", false, "__loop1_continue:\nINC @a\nBGE $a $b :__loop1_break\nJMP :__loop1_continue\n__loop1_break:\nFIN\n" ],
-    [ "while (a) { a++; if (a==5) break; b++; }", false, "__loop1_continue:\nBZR $a :__loop1_break\nINC @a\nSET @r0 #0000000000000005\nBNE $a $r0 :__if2_endif\nJMP :__loop1_break\n__if2_endif:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nFIN\n" ],
-    [ "while (a) { a++; if (a==5) continue; b++; }", false, "__loop1_continue:\nBZR $a :__loop1_break\nINC @a\nSET @r0 #0000000000000005\nBNE $a $r0 :__if2_endif\nJMP :__loop1_continue\n__if2_endif:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nFIN\n" ],
+    [ "if (a) { a++; }", false, "BZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a) { a++; } else { b--; }", false, "BZR $a :__if1_else\n__if1_start:\nINC @a\nJMP :__if1_endif\n__if1_else:\nDEC @b\n__if1_endif:\nFIN\n" ],
+    [ "while (a) { a++; }", false, "__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n" ],
+    [ "for (a=0;a<10;a++) { b++; }", false, "CLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\n__loop1_start:\nINC @b\n__loop1_continue:\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nFIN\n" ],
+    [ "do { a++; } while (a<b);", false, "__loop1_continue:\nINC @a\nBLT $a $b :__loop1_continue\n__loop1_break:\nFIN\n" ],
+    [ "if (a) a++;", false, "BZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "if (a) a++; else b--;", false, "BZR $a :__if1_else\n__if1_start:\nINC @a\nJMP :__if1_endif\n__if1_else:\nDEC @b\n__if1_endif:\nFIN\n" ],
+    [ "while (a) a++;", false, "__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n" ],
+    [ "for (a=0;a<10;a++) b++;", false, "CLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\n__loop1_start:\nINC @b\n__loop1_continue:\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nFIN\n" ],
+    [ "do a++; while (a<b);", false, "__loop1_continue:\nINC @a\nBLT $a $b :__loop1_continue\n__loop1_break:\nFIN\n" ],
+    [ "while (a) { a++; if (a==5) break; b++; }", false, "__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nSET @r0 #0000000000000005\nBNE $a $r0 :__if2_endif\n__if2_start:\nJMP :__loop1_break\n__if2_endif:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nFIN\n" ],
+    [ "while (a) { a++; if (a==5) continue; b++; }", false, "__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nSET @r0 #0000000000000005\nBNE $a $r0 :__if2_endif\n__if2_start:\nJMP :__loop1_continue\n__if2_endif:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nFIN\n" ],
     [ "a++; goto alabel; b++; alabel: c++;", false, "INC @a\nJMP :alabel\nINC @b\nalabel:\nINC @c\nFIN\n" ],
     [ "a++; asm { PSH @a\nPOP @b } b++;", false, "INC @a\nPSH @a\nPOP @b\nINC @b\nFIN\n" ],
     [ "a++; sleep 1;", false, "INC @a\nSET @r0 #0000000000000001\nSLP $r0\nFIN\n" ],
     [ "exit; a++; ", false, "FIN\nINC @a\nFIN\n" ],
     [ "halt;", false, "STP\nFIN\n" ],
-    [ "if (a) { a++; if (b) { b++; if (c) { c++; } } }", false, "BZR $a :__if1_endif\nINC @a\nBZR $b :__if2_endif\nINC @b\nBZR $c :__if3_endif\nINC @c\n__if3_endif:\n__if2_endif:\n__if1_endif:\nFIN\n" ],
-    [ "if (a) {\n a++;\n} else if (b) {\n b++;\n} else if (c) {\n c++;\n}", false, "BZR $a :__if1_else\nINC @a\nJMP :__if1_endif\n__if1_else:\nBZR $b :__if2_else\nINC @b\nJMP :__if2_endif\n__if2_else:\nBZR $c :__if3_endif\nINC @c\n__if3_endif:\n__if2_endif:\n__if1_endif:\nFIN\n" ],
+    [ "if (a) { a++; if (b) { b++; if (c) { c++; } } }", false, "BZR $a :__if1_endif\n__if1_start:\nINC @a\nBZR $b :__if2_endif\n__if2_start:\nINC @b\nBZR $c :__if3_endif\n__if3_start:\nINC @c\n__if3_endif:\n__if2_endif:\n__if1_endif:\nFIN\n" ],
+    [ "if (a) {\n a++;\n} else if (b) {\n b++;\n} else if (c) {\n c++;\n}", false, "BZR $a :__if1_else\n__if1_start:\nINC @a\nJMP :__if1_endif\n__if1_else:\nBZR $b :__if2_else\n__if2_start:\nINC @b\nJMP :__if2_endif\n__if2_else:\nBZR $c :__if3_endif\n__if3_start:\nINC @c\n__if3_endif:\n__if2_endif:\n__if1_endif:\nFIN\n" ],
     [ "a=2; const b=5; a++;", false, "SET @a #0000000000000002\n^const SET @b #0000000000000005\nINC @a\nFIN\n" ],
 ];
 
@@ -741,39 +741,39 @@ d[1]=pcar->passenger[b];\
 d[a]=pcar->passenger[b];", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^const SET @car_passenger #0000000000000008\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #0000000000000011\n^declare d_0\n^declare d_1\n\nSET @pcar #0000000000000005\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 #000000000000655a\nSET @($pcar + $r0) $r1\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @($pcar + $r0) $a\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $($c)\nSET @($pcar + $r0) $r1\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @($pcar + $r0) $d_1\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $($d + $a)\nSET @($pcar + $r0) $r1\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 #0000000000000001\nSET @r2 $($pcar + $r1)\nSET @($pcar + $r0) $r2\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $b\nSET @r2 #0000000000000003\nADD @r1 $r2\nSET @r2 $($pcar + $r1)\nSET @($pcar + $r0) $r2\nSET @a $b\nSET @r0 #0000000000000003\nADD @a $r0\nSET @a $($pcar + $a)\nSET @r0 $b\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $($pcar + $r0)\nSET @($c) $r1\nSET @d_1 $b\nSET @r0 #0000000000000003\nADD @d_1 $r0\nSET @d_1 $($pcar + $d_1)\nSET @r0 $b\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $($pcar + $r0)\nSET @($d + $a) $r1\nFIN\n" ],
 
     [ "Logical operations with arrays and structs",  "div" ],
-    [ "long a[2], b; if (a[b]) { b++; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^const SET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBZR $r0 :__if1_endif\nINC @b\n__if1_endif:\nFIN\n" ],
-    [ "long a[2], b; if (!(a[b])) { b++; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^const SET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBNZ $r0 :__if1_endif\nINC @b\n__if1_endif:\nFIN\n" ],
-    [ "long a[2], b; if (!a[b]) { b++; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^const SET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBNZ $r0 :__if1_endif\nINC @b\n__if1_endif:\nFIN\n" ],
+    [ "long a[2], b; if (a[b]) { b++; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^const SET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBZR $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nFIN\n" ],
+    [ "long a[2], b; if (!(a[b])) { b++; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^const SET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nFIN\n" ],
+    [ "long a[2], b; if (!a[b]) { b++; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^const SET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nFIN\n" ],
     [ "struct KOMBI { long driver; long collector; long passenger; } car;\
 long a, b;\
 if (car.driver=='Ze') { b++; }\
-if (a<=car.collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nBNE $car_driver $r0 :__if1_endif\nINC @b\n__if1_endif:\nBGT $a $car_collector :__if2_endif\nDEC @b\n__if2_endif:\nFIN\n" ],
+if (a<=car.collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nBNE $car_driver $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nBGT $a $car_collector :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n" ],
     [ "struct KOMBI { long driver; long collector; long passenger; } car[2];\
 long a, b;\
 if (car[1].driver=='Ze') { b++; }\
-if (a<=car[0].collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\n^const SET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nBNE $car_1_driver $r0 :__if1_endif\nINC @b\n__if1_endif:\nBGT $a $car_0_collector :__if2_endif\nDEC @b\n__if2_endif:\nFIN\n" ],
+if (a<=car[0].collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\n^const SET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nBNE $car_1_driver $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nBGT $a $car_0_collector :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n" ],
     [ "struct KOMBI { long driver; long collector; long passenger; } car[2];\
 long a, b;\
 if (car[b].driver=='Ze') { b++; }\
-if (a<=car[b].collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\n^const SET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare a\n^declare b\n\nSET @r0 $b\nSET @r1 #0000000000000003\nMUL @r0 $r1\nSET @r1 $($car + $r0)\nSET @r2 #000000000000655a\nBNE $r1 $r2 :__if1_endif\nINC @b\n__if1_endif:\nSET @r0 $b\nSET @r1 #0000000000000003\nMUL @r0 $r1\nINC @r0\nSET @r1 $($car + $r0)\nBGT $a $r1 :__if2_endif\nDEC @b\n__if2_endif:\nFIN\n" ],
+if (a<=car[b].collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\n^const SET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare a\n^declare b\n\nSET @r0 $b\nSET @r1 #0000000000000003\nMUL @r0 $r1\nSET @r1 $($car + $r0)\nSET @r2 #000000000000655a\nBNE $r1 $r2 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nSET @r0 $b\nSET @r1 #0000000000000003\nMUL @r0 $r1\nINC @r0\nSET @r1 $($car + $r0)\nBGT $a $r1 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n" ],
     [ "struct KOMBI { long driver; long collector; long passenger[3]; } car;\
 long a, b;\
 if (car.passenger[0]=='Ze') { b++; }\
-if (a<=car.passenger[2]) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^const SET @car_passenger #0000000000000008\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nBNE $car_passenger_0 $r0 :__if1_endif\nINC @b\n__if1_endif:\nBGT $a $car_passenger_2 :__if2_endif\nDEC @b\n__if2_endif:\nFIN\n" ],
+if (a<=car.passenger[2]) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^const SET @car_passenger #0000000000000008\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nBNE $car_passenger_0 $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nBGT $a $car_passenger_2 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n" ],
     [ "struct KOMBI { long driver; long collector; long passenger[3]; } car[2];\
 long a, b;\
 if (car[0].passenger[0]=='Ze') { b++; }\
-if (a<=car[b].passenger[2]) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\n^const SET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^const SET @car_0_passenger #0000000000000009\n^declare car_0_passenger_0\n^declare car_0_passenger_1\n^declare car_0_passenger_2\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^const SET @car_1_passenger #000000000000000f\n^declare car_1_passenger_0\n^declare car_1_passenger_1\n^declare car_1_passenger_2\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nBNE $car_0_passenger_0 $r0 :__if1_endif\nINC @b\n__if1_endif:\nSET @r0 $b\nSET @r1 #0000000000000006\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nINC @r0\nINC @r0\nSET @r1 $($car + $r0)\nBGT $a $r1 :__if2_endif\nDEC @b\n__if2_endif:\nFIN\n" ],
+if (a<=car[b].passenger[2]) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\n^const SET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^const SET @car_0_passenger #0000000000000009\n^declare car_0_passenger_0\n^declare car_0_passenger_1\n^declare car_0_passenger_2\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^const SET @car_1_passenger #000000000000000f\n^declare car_1_passenger_0\n^declare car_1_passenger_1\n^declare car_1_passenger_2\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nBNE $car_0_passenger_0 $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nSET @r0 $b\nSET @r1 #0000000000000006\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nINC @r0\nINC @r0\nSET @r1 $($car + $r0)\nBGT $a $r1 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n" ],
     [ "struct KOMBI { long driver; long collector; long passenger[3]; } car[2];\
 long a, b;\
 if (car[0].passenger[b]=='Ze') { b++; }\
-if (a<=car[b].passenger[a]) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\n^const SET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^const SET @car_0_passenger #0000000000000009\n^declare car_0_passenger_0\n^declare car_0_passenger_1\n^declare car_0_passenger_2\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^const SET @car_1_passenger #000000000000000f\n^declare car_1_passenger_0\n^declare car_1_passenger_1\n^declare car_1_passenger_2\n^declare a\n^declare b\n\nSET @r0 $($car_0_passenger + $b)\nSET @r1 #000000000000655a\nBNE $r0 $r1 :__if1_endif\nINC @b\n__if1_endif:\nSET @r0 $b\nSET @r1 #0000000000000006\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $a\nSET @r1 $($car + $r0)\nBGT $a $r1 :__if2_endif\nDEC @b\n__if2_endif:\nFIN\n" ],
+if (a<=car[b].passenger[a]) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\n^const SET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^const SET @car_0_passenger #0000000000000009\n^declare car_0_passenger_0\n^declare car_0_passenger_1\n^declare car_0_passenger_2\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^const SET @car_1_passenger #000000000000000f\n^declare car_1_passenger_0\n^declare car_1_passenger_1\n^declare car_1_passenger_2\n^declare a\n^declare b\n\nSET @r0 $($car_0_passenger + $b)\nSET @r1 #000000000000655a\nBNE $r0 $r1 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nSET @r0 $b\nSET @r1 #0000000000000006\nMUL @r0 $r1\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $a\nSET @r1 $($car + $r0)\nBGT $a $r1 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n" ],
     [ "struct KOMBI { long driver; long collector; long passenger; } ;\
 struct KOMBI car[2], *pcar;\
 long a, b;\
 pcar=&car[1];\
 if (pcar->driver=='Ze') { b++; }\
-if (a<=pcar->collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\n^const SET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare pcar\n^declare a\n^declare b\n\nSET @pcar #0000000000000009\nCLR @r0\nSET @r1 $($pcar + $r0)\nSET @r2 #000000000000655a\nBNE $r1 $r2 :__if1_endif\nINC @b\n__if1_endif:\nSET @r0 #0000000000000001\nSET @r1 $($pcar + $r0)\nBGT $a $r1 :__if2_endif\nDEC @b\n__if2_endif:\nFIN\n" ],
+if (a<=pcar->collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare car\n^const SET @car #0000000000000006\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare pcar\n^declare a\n^declare b\n\nSET @pcar #0000000000000009\nCLR @r0\nSET @r1 $($pcar + $r0)\nSET @r2 #000000000000655a\nBNE $r1 $r2 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nSET @r0 #0000000000000001\nSET @r1 $($pcar + $r0)\nBGT $a $r1 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n" ],
 
 
 //    [ "",  false,"" ],
@@ -865,7 +865,7 @@ const a=353; const d[1]=354; const car[1].driver=355; const car[0].passenger[1]=
     [ "void  teste(long * ret) { long temp = 2; goto newlabel; ret[temp] = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @($teste_ret + $teste_temp) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n" ],
     [ "void  teste(long * ret) { long temp = 2; goto newlabel; *(ret+temp) = temp; newlabel: temp++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @r0 $teste_temp\nADD @r0 $teste_ret\nSET @($r0) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n" ],
     //bug 3, ReuseAssignedVar not working inside a function.
-    [ "#pragma maxAuxVars 2\nlong itoa(long val) {\n    long ret, temp;\n    if (val >= 0 && val <= 99999999) { ret = (ret << 8) + temp; return ret; }\n    return '#error';\n}", false, "^declare r0\n^declare r1\n^declare itoa_val\n^declare itoa_ret\n^declare itoa_temp\n\nFIN\n\n__fn_itoa:\nPOP @itoa_val\nCLR @r0\nBLT $itoa_val $r0 :__if1_endif\nSET @r0 #0000000005f5e0ff\nBGT $itoa_val $r0 :__if1_endif\nSET @r0 $itoa_ret\nSET @r1 #0000000000000008\nSHL @r0 $r1\nSET @r1 $itoa_temp\nADD @r1 $r0\nSET @itoa_ret $r1\nPSH $itoa_ret\nRET\n__if1_endif:\nSET @r0 #0000726f72726523\nPSH $r0\nRET\n" ],
+    [ "#pragma maxAuxVars 2\nlong itoa(long val) {\n    long ret, temp;\n    if (val >= 0 && val <= 99999999) { ret = (ret << 8) + temp; return ret; }\n    return '#error';\n}", false, "^declare r0\n^declare r1\n^declare itoa_val\n^declare itoa_ret\n^declare itoa_temp\n\nFIN\n\n__fn_itoa:\nPOP @itoa_val\nCLR @r0\nBLT $itoa_val $r0 :__if1_endif\nSET @r0 #0000000005f5e0ff\nBGT $itoa_val $r0 :__if1_endif\nJMP :__if1_start\n__if1_start:\nSET @r0 $itoa_ret\nSET @r1 #0000000000000008\nSHL @r0 $r1\nSET @r1 $itoa_temp\nADD @r1 $r0\nSET @itoa_ret $r1\nPSH $itoa_ret\nRET\n__if1_endif:\nSET @r0 #0000726f72726523\nPSH $r0\nRET\n" ],
     //bug 4, Double declaration causing array pointer to point wrong location.
     [ "long a=0; long b; a++; long a=3;", true, "" ],
     [ "long a=0; long b; a++; void test(void) { a++; } long tt(void) { a++;} long test(void) {a++; return a; }", true, "" ],
@@ -909,7 +909,7 @@ void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r
     [ "struct KOMBI { long driver; long collector; long passenger[4]; } car; long a, b; ++car.passenger[a]; ", true, "" ],
     //bug 9, missing comma before if, while and for keywords lead to no error and statement being ignored.
     [ "long a, b; test2() if (a) a++; long test2(void) { b++; return b; }", true, "" ],
-    [ "long a, b; test2(); if (a) a++; long test2(void) { b++; return b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nJSR :__fn_test2\nPOP @r0\nBZR $a :__if1_endif\nINC @a\n__if1_endif:\nFIN\n\n__fn_test2:\nINC @b\nPSH $b\nRET\n" ],
+    [ "long a, b; test2(); if (a) a++; long test2(void) { b++; return b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nJSR :__fn_test2\nPOP @r0\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n\n__fn_test2:\nINC @b\nPSH $b\nRET\n" ],
     //bug 10, functions calls destroying content of registers. Implemented saving them in user stack
     [ "long a[5], b, c; b=atoi(c); a[b+1]=atoi('2'); a[b+1]=(b*2)/atoi('2'); long atoi(long val){return val+1;}", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^const SET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare b\n^declare c\n^declare atoi_val\n\nPSH $c\nJSR :__fn_atoi\nPOP @b\nSET @r0 $b\nINC @r0\nPSH $r0\nSET @r1 #0000000000000032\nPSH $r1\nJSR :__fn_atoi\nPOP @r1\nPOP @r0\nSET @($a + $r0) $r1\nSET @r0 $b\nINC @r0\nSET @r1 #0000000000000002\nMUL @r1 $b\nPSH $r1\nPSH $r0\nSET @r2 #0000000000000032\nPSH $r2\nJSR :__fn_atoi\nPOP @r2\nPOP @r0\nPOP @r1\nDIV @r1 $r2\nSET @($a + $r0) $r1\nFIN\n\n__fn_atoi:\nPOP @atoi_val\nSET @r0 $atoi_val\nINC @r0\nPSH $r0\nRET\n" ],
     //bug 11, function calls inside array brackets lead to error.

@@ -85,7 +85,9 @@ function bigastCompile(bc_Big_ast){
     // cg_jumpTarget must be set if the evaluation is part of conditionals or
     //   loops. It shall be the location where to jump if the evaluated 
     //   expression is false.
-    function codeGenerator(cg_ast, cg_jumpTarget) {
+    // cg_jumpNotTarget It is the jump location for complementary logic.
+    // cg_revLogic to use reverse logic for expression evaluation.
+    function codeGenerator(cg_ast, cg_jumpTarget, cg_jumpNotTarget, cg_revLogic) {
 
         const auxVars = {
 
@@ -147,10 +149,14 @@ function bigastCompile(bc_Big_ast){
         function codeGenerator_main(){
             auxVars.createTmpVarsTable();
 
-            var code, jmpTrueTarget;
+            var code;
+
+            if (cg_revLogic===undefined) {
+                cg_revLogic=false;
+            }
 
             if (cg_jumpTarget === undefined) {
-                code=genCode(cg_ast, false, false, cg_jumpTarget, jmpTrueTarget);
+                code=genCode(cg_ast, false, cg_revLogic, cg_jumpTarget, cg_jumpNotTarget);
                 if (code.MemObj !== undefined && auxVars.isTemp(code.MemObj.location) && code.MemObj.type.indexOf("_ptr") == -1 ) {
                     if ( cg_ast.Operation === undefined || cg_ast.Operation.type !== "FunctionCall") {
                         var line;
@@ -165,13 +171,10 @@ function bigastCompile(bc_Big_ast){
                     }
                 }
             } else {
-                jmpTrueTarget= cg_jumpTarget.slice(0,cg_jumpTarget.lastIndexOf("_"))+"_start";
-                code=genCode(cg_ast,  true, false, cg_jumpTarget, jmpTrueTarget);
+                code=genCode(cg_ast,  true, cg_revLogic, cg_jumpTarget, cg_jumpNotTarget);
             }
 
             code.instructionset+=auxVars.postOperations;
-            if (cg_jumpTarget !== undefined)
-                code.instructionset+=createInstruction({type: "Label"},jmpTrueTarget);
 
             //optimizations for jumps and labels
             if (code.instructionset.indexOf(":") >=0) {
@@ -2554,7 +2557,8 @@ function bigastCompile(bc_Big_ast){
             if (isEmpty(Sentence.ConditionOpTree)) {
                 throw new TypeError("At line: " + Sentence.line + ". Condition can not be empty.");
             }
-            writeAsmCode( codeGenerator(Sentence.ConditionOpTree, sent_id+"_endif"));
+            writeAsmCode( codeGenerator(Sentence.ConditionOpTree, sent_id+"_endif", sent_id+"_start"));
+            writeAsmLine( sent_id+"_start:" );
             Sentence.if_true.forEach( compileSentence );
             writeAsmLine( sent_id+"_endif:" );
 
@@ -2563,7 +2567,8 @@ function bigastCompile(bc_Big_ast){
             if (isEmpty(Sentence.ConditionOpTree)) {
                 throw new TypeError("At line: " + Sentence.line + ". Condition can not be empty.");
             }
-            writeAsmCode( codeGenerator(Sentence.ConditionOpTree, sent_id+"_else") );
+            writeAsmCode( codeGenerator(Sentence.ConditionOpTree, sent_id+"_else", sent_id+"_start") );
+            writeAsmLine( sent_id+"_start:" );
             Sentence.if_true.forEach( compileSentence );
             writeAsmLine( "JMP :" + sent_id + "_endif" );
             writeAsmLine( sent_id+"_else:" );
@@ -2576,7 +2581,8 @@ function bigastCompile(bc_Big_ast){
             if (isEmpty(Sentence.ConditionOpTree)) {
                 throw new TypeError("At line: " + Sentence.line + ". Condition can not be empty.");
             }
-            writeAsmCode( codeGenerator(Sentence.ConditionOpTree, sent_id+"_break") );
+            writeAsmCode( codeGenerator(Sentence.ConditionOpTree, sent_id+"_break", sent_id+"_start") );
+            writeAsmLine( sent_id+"_start:" );
             bc_auxVars.latest_loop_id.push(sent_id);
             Sentence.while_true.forEach( compileSentence );
             bc_auxVars.latest_loop_id.pop();
@@ -2592,8 +2598,7 @@ function bigastCompile(bc_Big_ast){
             if (isEmpty(Sentence.ConditionOpTree)) {
                 throw new TypeError("At line: " + Sentence.line + ". Condition can not be empty.");
             }
-            writeAsmCode( codeGenerator(Sentence.ConditionOpTree, sent_id+"_break") );
-            writeAsmLine( "JMP :" + sent_id + "_continue" );
+            writeAsmCode( codeGenerator(Sentence.ConditionOpTree, sent_id+"_break", sent_id+"_continue", true) );
             writeAsmLine( sent_id+"_break:" );
 
         } else if (Sentence.type === "for") {
@@ -2603,7 +2608,8 @@ function bigastCompile(bc_Big_ast){
             if (isEmpty(Sentence.three_sentences[1].OpTree)) {
                 throw new TypeError("At line: " + Sentence.line + ". Condition can not be empty.");
             }
-            writeAsmCode( codeGenerator(Sentence.three_sentences[1].OpTree, sent_id+"_break") );
+            writeAsmCode( codeGenerator(Sentence.three_sentences[1].OpTree, sent_id+"_break", sent_id+"_start") );
+            writeAsmLine( sent_id + "_start:" );
             bc_auxVars.latest_loop_id.push(sent_id);
             Sentence.while_true.forEach( compileSentence );
             bc_auxVars.latest_loop_id.pop();
