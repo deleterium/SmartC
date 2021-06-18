@@ -830,6 +830,9 @@ function bigastCompile(bc_Big_ast){
                     // Other Unary Objects, not logic.
 
                     if (objTree.Operation.value === "+") { //unary plus -> do nothing
+                        if (auxVars.left_side_of_assignment === true) {
+                            throw new TypeError("At line: "+objTree.Operation.line+". Can not have unary operator '+' on left side of assignment.");
+                        }
                         return genCode(objTree.Center, logicalOp, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
                     }
 
@@ -1137,12 +1140,30 @@ function bigastCompile(bc_Big_ast){
                             return { MemObj: TmpMemObj, instructionset: instructionstrain };
                         }
                     }
-                    //if optimization is possible, change operators order (only commutativa operations!)
+                    //Try optimization if left side is constant (only commutativa operations!)
                     if (LGenObj.MemObj.type === "constant"){
                         if (checkOperatorOptimization(objTree.Operation.value, LGenObj.MemObj)) {
                             let temp=RGenObj;
                             RGenObj=LGenObj;
                             LGenObj=temp;
+                        }
+                    // Try optimization if operation is commutative, right side is register and left side is not
+                    } else if (auxVars.isTemp(RGenObj.MemObj.location) && !auxVars.isTemp(LGenObj.MemObj.location)
+                                &&  (  objTree.Operation.value == "+" || objTree.Operation.value == "*" || objTree.Operation.value == "&"
+                                     ||objTree.Operation.value == "^" || objTree.Operation.value == "|" ) ) {
+                        let temp=RGenObj;
+                        RGenObj=LGenObj;
+                        LGenObj=temp;
+                    // Try optimization if operation is commutative, right side is constant ()
+                    } else if ( RGenObj.MemObj.type === "constant" ) {
+                        if ( !checkOperatorOptimization(objTree.Operation.value, RGenObj.MemObj)) {
+                            //if there is a better otimization, dont try this one
+                            if (  objTree.Operation.value == "+" || objTree.Operation.value == "*" || objTree.Operation.value == "&"
+                                 ||objTree.Operation.value == "^" || objTree.Operation.value == "|" ) {
+                                let temp=RGenObj;
+                                RGenObj=LGenObj;
+                                LGenObj=temp;
+                            }
                         }
                     }
                     if (!auxVars.isTemp(LGenObj.MemObj.location)){
