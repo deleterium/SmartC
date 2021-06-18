@@ -150,14 +150,14 @@ function parser(tokens) {
                 return { type: 'Comparision', precedence: 6, name: 'EqualTo', value: '==', line: tokens[current-1].line};
             }
         } 
-        return { type: 'Assignment', precedence: 9, name: 'Set', value: token.value, line: tokens[current-1].line };
+        return { type: 'Assignment', precedence: 10, name: 'Set', value: token.value, line: tokens[current-1].line };
     }
     if (token.type === 'star') {
         current++;
         if (current < maxlen) {
             if (tokens[current].type === 'equal') {
                 ++current;
-                return { type: 'SetOperator', precedence: 9,value: token.value + "=", line: tokens[current-1].line };
+                return { type: 'SetOperator', precedence: 10,value: token.value + "=", line: tokens[current-1].line };
             }
         }
         if (isBinaryOperator(current))
@@ -180,7 +180,7 @@ function parser(tokens) {
         if (current < maxlen) {
             if (tokens[current].type === 'equal') {
                 ++current;
-                return { type: 'SetOperator', precedence: 9, value: "+=", line: tokens[current-1].line };
+                return { type: 'SetOperator', precedence: 10, value: "+=", line: tokens[current-1].line };
             } else if (tokens[current].type === 'plus') {
                 ++current;
                 return { type: 'SetUnaryOperator', precedence: 2, value: "++", line: tokens[current-1].line };
@@ -196,7 +196,7 @@ function parser(tokens) {
         if (current < maxlen)
             if (tokens[current].type === 'equal') {
                 ++current;
-                return { type: 'SetOperator', precedence: 9, value: token.value + "=", line: tokens[current-1].line };
+                return { type: 'SetOperator', precedence: 10, value: token.value + "=", line: tokens[current-1].line };
             }
         return { type: 'Operator', precedence: 3, value: token.value, line: tokens[current-1].line };
     }
@@ -212,7 +212,7 @@ function parser(tokens) {
                 return { type: 'SetUnaryOperator', precedence: 2, value: "--", line: tokens[current-1].line };
             } else if (tokens[current].type === 'equal') {
                 current++;
-                return { type: 'SetOperator', precedence: 9, value: "-=", line: tokens[current-1].line };
+                return { type: 'SetOperator', precedence: 10, value: "-=", line: tokens[current-1].line };
             } else if (tokens[current].type === 'greater') {
                 current++;
                 return { type: 'Member', precedence: 0, value: "->", line: tokens[current-1].line };
@@ -228,7 +228,7 @@ function parser(tokens) {
         if (current < maxlen) {
             if (tokens[current].type === 'colon') {
                 current++;
-                return { type: 'Keyword', precedence: 11, value: 'label', id: token.value, line: tokens[current-2].line };
+                return { type: 'Keyword', precedence: 12, value: 'label', id: token.value, line: tokens[current-2].line };
             }
         }
         var node = { type: 'Variable', pointer: "no", mod_array: "no", precedence: 0, value: token.value, line: tokens[current-1].line };
@@ -236,7 +236,7 @@ function parser(tokens) {
     }
     if (token.type === 'keyword') {
         current++;
-        var node = { type: 'Keyword', precedence: 11, value: token.value, line: tokens[current-1].line };
+        var node = { type: 'Keyword', precedence: 12, value: token.value, line: tokens[current-1].line };
         if (token.value === "asm") {
             node.asmText = token.asmText;
         }
@@ -247,7 +247,7 @@ function parser(tokens) {
         return {
           type: 'Terminator',
           value: token.value,
-          precedence: 11,
+          precedence: 12,
           line: tokens[current-1].line };
     }
     if (token.type === 'comma') {
@@ -255,7 +255,7 @@ function parser(tokens) {
         return {
           type: 'Delimiter',
           value: token.value,
-          precedence: 10,
+          precedence: 11,
           line: tokens[current-1].line };
     }
     if (token.type === 'colon') {
@@ -285,7 +285,7 @@ function parser(tokens) {
         if (current < maxlen) {
             if (tokens[current].type === 'equal') {
                 current++;
-                return { type: 'SetOperator', precedence: 9, value: "%=" , line: tokens[current-1].line };
+                return { type: 'SetOperator', precedence: 10, value: "%=" , line: tokens[current-1].line };
             }
         }
         return {  type: 'Operator', precedence: 3, value: token.value, line: tokens[current-1].line };
@@ -302,7 +302,7 @@ function parser(tokens) {
                 if (current < maxlen) {
                     if(tokens[current].type === 'equal') {
                         current++;
-                        return { type: "SetOperator",  precedence: 9, value: "<<=", line: tokens[current-1].line };
+                        return { type: "SetOperator",  precedence: 10, value: "<<=", line: tokens[current-1].line };
                     }
                 }
                 return { type: 'Operator', precedence: 5, value: "<<", line: tokens[current-1].line };
@@ -319,7 +319,7 @@ function parser(tokens) {
             }
             if(tokens[current].type === 'equal') {
                 current++;
-                return { type: 'SetOperator', precedence: 9, value: "&=", line: tokens[current-1].line };
+                return { type: 'SetOperator', precedence: 10, value: "&=", line: tokens[current-1].line };
             }
         }
         if (isBinaryOperator(current))
@@ -332,11 +332,11 @@ function parser(tokens) {
         if (current < maxlen) {
             if(tokens[current].type === 'pipe') {
                 current++;
-                return { type: 'Comparision', precedence: 8, value: "||", line: tokens[current-1].line };
+                return { type: 'Comparision', precedence: 9, value: "||", line: tokens[current-1].line };
             }
             if(tokens[current].type === 'equal') {
                 current++;
-                return { type: 'SetOperator', precedence: 9, value: "|=", line: tokens[current-1].line };
+                return { type: 'SetOperator', precedence: 10, value: "|=", line: tokens[current-1].line };
             }
         }
         return { type: 'Operator', precedence: 7, value: token.value, line: tokens[current-1].line };
@@ -353,7 +353,7 @@ function parser(tokens) {
                 if (current < maxlen) {
                     if(tokens[current].type === 'equal') {
                         current++;
-                        return { type: "SetOperator", precedence: 9, value: ">>=", line: tokens[current-1].line };
+                        return { type: "SetOperator", precedence: 10, value: ">>=", line: tokens[current-1].line };
                     }
                 }
                 return { type: 'Operator', precedence: 5, value: ">>", line: tokens[current-1].line };
@@ -366,7 +366,7 @@ function parser(tokens) {
         if (current < maxlen) {
             if(tokens[current].type === 'equal') {
                 current++;
-                return { type: 'SetOperator', precedence: 9, name: 'XorEqual', value: '^=', line: tokens[current-1].line };
+                return { type: 'SetOperator', precedence: 10, name: 'XorEqual', value: '^=', line: tokens[current-1].line };
             }
         }
         return { type: 'Operator', precedence: 7, name: 'Xor', value: token.value, line: tokens[current-1].line };

@@ -73,21 +73,25 @@ All global statements are grouped at the begining of assembly code (even if afte
 If you plan to use a number many times, declare it globaly and use in your code. This can save one instruction for each constant used and also make your code smaller. Example: `long n0xff=0xff; if (x==n0xff)...` But if you use it only a few times, or is under memory pressure, you can use constants at your code but making it bigger. For big programs it is more common be unde codesize pressure, so this is a greate exchange. The exception is Zero. Setting a variable to zero has an special assembly code. Comparisions against zero are also smaller than comparisions against variables. Comparisions against numbers are big.  Try it to see assembly code genereated! If you are under memory pressure (or want to code smalest code possibe) use global variables, because exchanging variables thru functions will cause they to be declared twice, pushed onto stack and poped at function.
 
 ### Operators precedence
-When two or more symbols with same precedence are in an expression, the operations will be evaluated from right to left. Example: `a=16/4/4` will be evaluated as `a=(16/(4/4))`. If in doubt, use parentesis!
+Following table presents operators precedence order that are [based on C](https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence) but with some simplifications.  When two or more symbols with same precedence are in an expression, the operations will be evaluated from left to right, with exception for unary operators, assignment and keyword. Example: `a=16/4/4` will be evaluated as `a=(16/4)/4`, just like in C. If in doubt, use parentesis!
 
-| Order | Symbol | Description |
-| --- | --- | --- |
-| 1 | `()`   `[]`   `{}` | Scope, array, statements group |
-| 2 | `!`   `~`   `-`   `+`   `*`   `&`   `++`   `--` | Unary operators |
-| 3 | `*`   `/`   `%` | Multiplication, division, modulo |
-| 4 | `+`   `-` | Addition and subtraction |
-| 5 | `<<`   `>>` | Bitwise shift left and right  |
-| 6 | `<`   `<=`   `>`   `>=`   `==`   `!=` | Comparisons |
-| 7 | `&`   `^`   `\|` | Bitwise AND XOR OR |
-| 8 | `&&`   `\|\|`   `\|` | Logical AND  OR |
-| 9 | `=`   `+=`   `-=`   `*=`   `/=`   `%=`   `&=`   `\|=`   `;=`   `^=`   `<<=`   `>>=` | Assignment operators|
-| 10 | `,`  | Delimiter, comma |
-| 11 | `;` `keywords`  | Terminator, semi, keywords |
+| Order | Symbol | Description | Associativity |
+| --- | --- | --- | --- |
+| 1 | `()`   `[]`   `{}` `.` `->` | Scope, array, statements group, members selection | Left-to-right |
+| 2 | `!`   `~`   `-`   `+`   `*`   `&`   `++`   `--` | Unary operators | Right-to-left* |
+| 3 | `*`   `/`   `%` | Multiplication, division, modulo | Left-to-right |
+| 4 | `+`   `-` | Addition and subtraction | Left-to-right |
+| 5 | `<<`   `>>` | Bitwise shift left and right  | Left-to-right |
+| 6 | `<`   `<=`   `>`   `>=`   `==`   `!=` | Comparisons |Left-to-right |
+| 7 | `&`   `^`   `\|` | Bitwise AND XOR OR | Left-to-right |
+| 8 | `&&`   | Logical AND | Left-to-right |
+| 9 | `\|\|`   | Logical OR | Left-to-right |
+| 10 9 | `=`   `+=`   `-=`   `*=`   `/=`   `%=`   `&=`   `\|=`   `;=`   `^=`   `<<=`   `>>=` | Assignment operators| Right-to-left |
+| 11 10 | `,`  | Delimiter, comma | Left-to-right |
+| 12 11 | `;` `keywords`  | Terminator, semi, keywords | Right-to-left |
+
+* Post increment and post decrement operators are exceptions, being evaluated from left-to-right again.
+
 
 ### Internal names
 
@@ -109,7 +113,7 @@ Tokens are divided in groups and later on checked if their combinations are sync
 | Delimiter | `,` | Use if you want to write two expressions on same statement |
 | Terminator | `;` | Indicating the end of one statement |
 | Macro | `#` | Preprocessor statement, ends at a newline `\n` character. |
-| Member | `.`    `->` | Used to read content of a struct member. |
+| Member | `.`    `->` | Used to select a struct member. |
 
 ### Internal object structure
 If you plan to learn, inspect or modify the source, read the [Big_AST.md](https://github.com/deleterium/BurstAT-CC/blob/main/Big_AST.md) file, where object structure is described.

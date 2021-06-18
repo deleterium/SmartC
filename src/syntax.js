@@ -20,11 +20,24 @@ function createSyntacticTree(ast) {
     //precedente evaluation loop
     var i, j;
     var end = false;
-    for (j=11; j>1 && end === false ; j--) {
-        for (i=0; i<ast.length; i++) {
-            if (ast[i].precedence == j) {
-                end = true;
-                break;
+    for (j=12; j>1 && end === false ; j--) {
+        if (j==12 || j==10 || j==2) {
+            // Right to left associativity for
+            // 12) Terminator, semi, keywords
+            // 10) Assignment operators
+            //  2) Unary operators
+            for (i=0; i<ast.length; i++) {
+                if (ast[i].precedence == j) {
+                    end = true;
+                    break;
+                }
+            }
+        } else { //Left to right associativity for others
+            for (i=ast.length-1; i>0; i--) {
+                if (ast[i].precedence == j) {
+                    end = true;
+                    break;
+                }
             }
         }
     }
@@ -101,13 +114,7 @@ function createSyntacticTree(ast) {
     // Here we start to process operations tokens (precedente >= 2)
     } else if (ast[i].type == "Operator") {
 
-        //optimize tempvar assigment for binary commutative operations
-        if (ast[i].value == "+" || ast[i].value == "*" || ast[i].value == "&" || ast[i].value == "^" || ast[i].value == "|" )
-            return { Right: createSyntacticTree(ast.slice(0,i)),
-                Operation: ast[i],
-                Left:      createSyntacticTree(ast.slice(i+1)) };
-        else
-            return { Left:  createSyntacticTree(ast.slice(0,i)),
+        return { Left:  createSyntacticTree(ast.slice(0,i)),
                 Operation: ast[i],
                 Right:     createSyntacticTree(ast.slice(i+1)) };
 
@@ -148,6 +155,7 @@ function createSyntacticTree(ast) {
         return { Left:     createSyntacticTree(ast.slice(1)),
                 Operation: ast[0] };
 
+    // Process exceptions for post increment and post decrement (left-to-right associativity)
     } else if (ast[0].type == "Variable" && ast[ast.length-1].type == "SetUnaryOperator"){
         for (let j=1; j<ast.length-1; j++) {
             if (ast[j].type == "Variable" || ast[j].type == "Member")
