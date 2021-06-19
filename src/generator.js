@@ -2262,7 +2262,7 @@ function bigastCompile(bc_Big_ast){
 
         var jumpToLabels;
         var jmpto, lbl, dest;
-        var setdat, opdat, clrdat;
+        var setdat, opdat, clrdat, popdat;
         var pshdat;
         var optimized_lines;
 
@@ -2385,6 +2385,35 @@ function bigastCompile(bc_Big_ast){
                     }
                 }
 
+                //inspect branches and optimize branch to jumps
+                jmpto = /^\s*B.+:(\w+)$/.exec(value); //matches all branches instructions
+                if (jmpto !== null) {
+                    //if referenced label is next instruction, meaningless jump
+                    i=index;
+                    while (++i<array.length-1) {
+                        lbl = /^\s*(\w+):\s*$/.exec(array[i]);
+                        if ( lbl === null) {
+                            if (array[i] === "" || array[i] === "DELETE") {
+                                continue;
+                            }
+                            break;
+                        }
+                        if (jmpto[1] === lbl[1]) {
+                            array[index]="DELETE"
+                            optimized_lines++;
+                            return;
+                        }
+                    }
+                    //inspect jump location
+                    dest = getLabeldestination(jmpto[1]);
+                    lbl = /^\s*(\w+):\s*$/.exec(dest);
+                    if (lbl !== null) {
+                        array[index] = jmpto[0].replace(jmpto[1], lbl[1]); //if branch to other jump, just branch over there
+                        optimized_lines++;
+                        return;
+                    }
+                }
+
                 //ADD @r0 $b
                 //SET @b $r0
                 // turns ADD @b $r0
@@ -2486,6 +2515,20 @@ function bigastCompile(bc_Big_ast){
                     }
                 }
 
+                //POP @r0
+                //SET @z $r0
+                // turns POP @z
+                popdat=/^\s*POP\s+@(\w+)\s*$/.exec(value);
+                if (popdat !== null) {
+                    setdat=/^\s*SET\s+@(\w+)\s+\$(\w+)\s*$/.exec(array[index+1]);
+                    if ( setdat !== null && setdat[2] == popdat[1]) {
+                        array[index]="POP @"+setdat[1];
+                        array[index+1]="DELETE";
+                        optimized_lines++;
+                        return;
+                    }
+                }
+
                 //Optimize pointer operations with zero index
                 clrdat=/^\s*CLR\s+@(\w+)\s*$/.exec(value);
                 if (clrdat !== null) {
@@ -2523,13 +2566,6 @@ function bigastCompile(bc_Big_ast){
                     }
                 }
 
-                //TODO:
-                //SET @r0 $a
-                //SET @r1 #0000000000000030
-                //ADD @r0 $r1
-                //SET @a $r0
-                // turns SET @r1 #0000000000000030
-                //       ADD @a $r1
             });
         } while (optimized_lines != 0);
 
