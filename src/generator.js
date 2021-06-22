@@ -1237,6 +1237,9 @@ function bigastCompile(bc_Big_ast){
                     if (RGenObj.MemObj === undefined) {
                         throw new TypeError("At line: "+objTree.Operation.line+". Invalid right value for "+objTree.Operation.type+". Possible void value.");
                     }
+                    if (LGenObj.MemObj.type==="array" && LGenObj.MemObj.declaration==="long_ptr" && RGenObj.MemObj.size == 1) {
+                        throw new TypeError("At line: "+objTree.Operation.line+". Invalid left value for "+objTree.Operation.type+". Can not reassign an array.");
+                    }
                     if (bc_Big_ast.Config.useVariableDeclaration){
                         if ( !auxVars.isTemp(RGenObj.MemObj.location) ){
                             if (LGenObj.MemObj.declaration != RGenObj.MemObj.declaration){
@@ -1329,6 +1332,12 @@ function bigastCompile(bc_Big_ast){
                 }
                 let parts=/^\s*SET\s+@(\w+)\s+#([\da-f]{16})\b\s*$/.exec(instruction);
                 if ( parts === null) {
+                    parts=/^\s*CLR\s+@(\w+)\s*$/.exec(instruction);
+                    if ( parts !== null ) {
+                        //allow CLR instruction and change to SET zero
+                        retlines.push("^const SET @"+parts[1]+" #0000000000000000");
+                        return;
+                    }
                     throw new TypeError("At line: "+line+". No operations can be done during 'const' assignment.");
                 }
                 let search = bc_Big_ast.memory.find(obj => obj.asm_name ==  parts[1]);
@@ -2263,7 +2272,7 @@ function bigastCompile(bc_Big_ast){
         var jumpToLabels;
         var jmpto, lbl, dest;
         var setdat, opdat, clrdat, popdat;
-        var pshdat;
+        var psh_slp_dat;
         var optimized_lines;
 
         do {
@@ -2454,13 +2463,13 @@ function bigastCompile(bc_Big_ast){
                     }
 
                     //SET @r0 $a
-                    //PSH $r0
-                    // turns PSH $a
-                    pshdat=/^\s*PSH\s+\$(\w+)\s*$/.exec(array[index+1]);
-                    if (pshdat !== null) {
-                        if (pshdat[1] == setdat[1]) {
+                    //PSH $r0 / SLP $r0
+                    // turns PSH $a / SLP $a
+                    psh_slp_dat=/^\s*(PSH|SLP)\s+\$(\w+)\s*$/.exec(array[index+1]);
+                    if (psh_slp_dat !== null) {
+                        if (psh_slp_dat[2] == setdat[1]) {
                             array[index]="DELETE";
-                            array[index+1]="PSH $"+setdat[2];
+                            array[index+1]=psh_slp_dat[1]+" $"+setdat[2];
                             optimized_lines++;
                             return;
                         }

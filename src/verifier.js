@@ -319,9 +319,9 @@ function verify(ast) {
         if (index==0) {
             search=language_rules.find(rules => rules.Current === "begin" && rules.Next === value.type);
             if (search===undefined)
-                throw new SyntaxError("At line: " + value.line + ". Combination not found on verifier rules: " + search.Current + " and " + search.Current);
+                throw new SyntaxError("At line: " + value.line + ". Combination not found on verifier rules: " + search.Current + " and " + search.Current + ". Missing ';'?");
             if (search.Possible==="n")
-                throw new SyntaxError("At line: " + value.line + ". Forbidden combination during rules verification: " + search.Current + " and " + search.Current);
+                throw new SyntaxError("At line: " + value.line + ". Forbidden combination during rules verification: " + search.Current + " and " + search.Current + ". Missing ';'?");
             if (search.Possible==="po" && value.pointer !== "yes")
                 throw new SyntaxError("At line: " + value.line + ". Combination allowed only for pointer operation: " + search.Current + " and " + search.Current);
             if (search.Possible==="npo")
@@ -337,9 +337,9 @@ function verify(ast) {
             search=language_rules.find(rules => rules.Current === value.type && rules.Next === array[index+1].type);
         }
         if (search===undefined)
-            throw new SyntaxError("At line: " + value.line + ".Combination not found on verifier rules: " + search.Current + " and " + search.Next);
+            throw new SyntaxError("At line: " + value.line + ".Combination not found on verifier rules: " + search.Current + " and " + search.Next + ". Missing ';'?");
         if (search.Possible==="n")
-            throw new SyntaxError("At line: " + value.line + ". Forbidden combination during rules verification: " + search.Current + " and " + search.Next);
+            throw new SyntaxError("At line: " + value.line + ". Forbidden combination during rules verification: " + search.Current + " and " + search.Next + ". Missing ';'?");
         if (search.Possible==="po" && value.pointer !== "yes")
             throw new SyntaxError("At line: " + value.line + ". Combination allowed only for pointer operation: " + search.Current + " and " + search.Next);
         if (search.Possible==="npo")

@@ -373,13 +373,19 @@ function parser(tokens) {
     }
     if (token.type === 'numberDec') {
         current++;
-        let val = BigInt(token.value).toString(16);
+        if (/^[0-9_]+$/.exec(token.value) === null) {
+            throw new TypeError("At line: "+token.line+". Decimal numbers must start with a number and can have only chars '0-9' or '_'.");
+        }
+        let val = BigInt(token.value.replace(/_/g,"")).toString(16); //allow use of _ in numbers, like 10_000
         val = val.padStart((Math.floor((val.length-1)/16)+1)*16, '0');
         return { type: 'Constant', precedence: 0, value: val, line: tokens[current-1].line };
     }
     if (token.type === 'numberHex') {
         current++;
-        let val = token.value.replace("0x","").toLowerCase();
+        let val = token.value.replace(/_|0x/g,"").toLowerCase();
+        if (/^[0-9a-f_]+$/.exec(val) === null) {
+            throw new TypeError("At line: "+token.line+". Hexadecimal numbers must start with '0x' and can have only chars '0-9', 'a-f', 'A-F' or '_'.");
+        }
         val = val.padStart((Math.floor((val.length-1)/16)+1)*16, '0');
         return { type: 'Constant', precedence: 0, value: val, line: tokens[current-1].line };
     }

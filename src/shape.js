@@ -371,9 +371,9 @@
             prefix=scope_name+"_";
         }
 
-        function get_array_size(tkn) {
+        function get_array_size(tkn, line) {
             if (tkn.length !== 1 || tkn[0].type !== "Constant") {
-                throw new TypeError("At line: " + tkn.line + ". Wrong array declaration. Only constant size declarations allowed.");
+                throw new TypeError("At line: " + line + ". Wrong array declaration. Only constant size declarations allowed.");
             }
             return parseInt(tkn[0].value,16);
         }
@@ -490,7 +490,7 @@
                             while (idx+1<phrs.code.length) {
                                 if (phrs.code[idx+1].type === "Arr") { //Array declaration
                                     idx++;
-                                    dimensions.push(get_array_size(phrs.code[idx].params));
+                                    dimensions.push(get_array_size(phrs.code[idx].params, phrs.code[idx].line));
                                 } else {
                                     break;
                                 }
@@ -582,7 +582,7 @@
                             while (idx+1<phrs.code.length) {
                                 if (phrs.code[idx+1].type === "Arr") { //Array declaration
                                     idx++;
-                                    dimensions.push(get_array_size(phrs.code[idx].params));
+                                    dimensions.push(get_array_size(phrs.code[idx].params, phrs.code[idx].line));
                                 } else {
                                     break;
                                 }
@@ -785,11 +785,11 @@
                 return;
             }
             if (Token.property === "activationAmount") {
-                parts=/^[0-9]{1,20}$/.exec(Token.value);
+                parts=/^[0-9_]{1,20}$/.exec(Token.value);
                 if (parts === null) {
-                    throw new TypeError("At line: "+Token.line+". Program activation must be only numbers.");
+                    throw new TypeError("At line: "+Token.line+". Program activation must be only numbers or '_'.");
                 }
-                Big_ast.Config.PActivationAmount = Token.value;
+                Big_ast.Config.PActivationAmount = Token.value.replace(/_/g,"");
                 return;
             }
         }
