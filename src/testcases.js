@@ -46,8 +46,10 @@ function runTestCases() {
     [ "a='BURST-MKCL-2226-W6AH-7ARVS';", false,  undefined, true, "SET @a #5c6ee8000049c552\nFIN\n" ],
     [ "a=6660515985630020946;", false,  undefined, true, "SET @a #5c6ee8000049c552\nFIN\n" ],
     [ "a=18446744073709551615;", false,  undefined, true, "SET @a #ffffffffffffffff\nFIN\n" ],
-    [ "a=18446744073709551616;", true,  undefined, true, "SET @a #0000000000000000\nFIN\n" ],
-    [ "a=18446744073709551617;", true,  undefined, true, "SET @a #0000000000000001\nFIN\n" ],
+    [ "a=18446744073709551616;", true,  undefined, true, "" ],
+    [ "a=18446744073709551617;", true,  undefined, true, "" ],
+    //allow '_' in decimal and hexadecimal numbers
+    [ "a=5_0000_0000; b=5_0000_0000; c=0x00ff_00fe_7fff; d=0x00ff00fe7fff;", false,  undefined, true, "SET @a #000000001dcd6500\nSET @b #000000001dcd6500\nSET @c #000000ff00fe7fff\nSET @d #000000ff00fe7fff\nFIN\n" ],
 
 
 
@@ -808,7 +810,7 @@ if (a<=pcar->collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2
 //globalOptimization
     [ "globalOptimization", "div" ],
     [ "#pragma globalOptimization\nlong a,b; for (a=0;a<10;a++) { b++; } b--;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nINC @b\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nDEC @b\nFIN\n" ],
-    [ "#pragma globalOptimization\nlong a,b; while (b) {a++; while (1) { if (a) break;  } } a++;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $b :__loop1_break\nINC @a\n__loop2_continue:\nBZR $a :__if3_endif\nJMP :__loop1_continue\n__if3_endif:\nJMP :__loop2_continue\n__loop1_break:\nINC @a\nFIN\n" ],
+    [ "#pragma globalOptimization\nlong a,b; while (b) {a++; while (1) { if (a) break;  } } a++;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $b :__loop1_break\nINC @a\n__loop2_continue:\nBZR $a :__loop2_continue\nJMP :__loop1_continue\n__loop1_break:\nINC @a\nFIN\n" ],
     [ "#pragma globalOptimization\nlong a,b; if (!b) {a++; } b++;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nBNZ $b :__if1_endif\nINC @a\n__if1_endif:\nINC @b\nFIN\n" ],
     [ "#pragma globalOptimization\nlong a,b; void main (void) { a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\n\nPCS\nINC @a\nFIN\n" ],
     [ "#pragma globalOptimization\nlong a,b; if (!b) {a++; } else { b++;} ", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nBNZ $b :__if1_else\nINC @a\nFIN\n__if1_else:\nINC @b\nFIN\n" ],
@@ -841,7 +843,8 @@ d[a]=5;\
 for (a=0;a<10;a++) d[a]=1;\n\
 pcar->driver=*c;pcar->driver=d[1];pcar->driver=d[a];pcar->driver=pcar->collector;\
 a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #0000000000000010\n^declare d_0\n^declare d_1\n^declare z\n\nSET @pcar #0000000000000008\nSET @r1 #000000000000655a\nSET @($pcar + $n2) $r1\nSET @($pcar) $a\nCLR @r0\nSUB @r0 $a\nADD @b $r0\nSET @r0 #0000000000000005\nSET @($d) $r0\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nSET @($d + $a) $n1\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nSET @r1 $($c)\nSET @($pcar) $r1\nSET @($pcar) $d_1\nSET @r1 $($d + $a)\nSET @($pcar) $r1\nSET @r2 $($pcar + $n1)\nSET @($pcar) $r2\nSET @a $($pcar + $n1)\nINC @z\nSET @r1 $($pcar)\nSET @($c) $r1\nSET @d_1 $($pcar + $n1)\nSET @r1 $($pcar + $n1)\nSET @($d + $a) $r1\nFIN\n" ],
-    [ "#pragma globalOptimization\n#pragma maxConstVars 3\nlong a, b, c; teste(a, 2); void teste(long aa, long bb) { aa=bb;} ",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n^declare a\n^declare b\n^declare c\n^declare teste_aa\n^declare teste_bb\n\nPSH $n2\nPSH $a\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_aa\nPOP @teste_bb\nSET @teste_aa $teste_bb\nRET\n" ],
+    [ "#pragma globalOptimization\n#pragma maxConstVars 3\nlong a, b, c; teste(a, 2); void teste(long aa, long bb) { aa=bb;} ",  false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n^declare a\n^declare b\n^declare c\n^declare teste_aa\n^declare teste_bb\n\nPSH $n2\nPSH $a\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_aa\nPOP @teste_aa\nRET\n" ],
+    [ "#pragma globalOptimization\n#pragma maxConstVars 3\nsleep 1;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n\nSLP $n1\nFIN\n" ],
 //    [ "", false, "" ],
 
 //const keyword
@@ -855,6 +858,10 @@ const a=353; const d[1]=354; const car[1].driver=355; const car[0].passenger[1]=
     [ "long a, b, *c, d[2]; const d=&a;", true, "" ],
     [ "long a, b, *c, d[2]; const long e=3; a++; const e=4;", true, "" ],
     [ "long a, b, *c, d[2]; a++; const b=3+3+4;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #0000000000000009\n^declare d_0\n^declare d_1\n\nINC @a\n^const SET @b #000000000000000a\nFIN\n" ],
+    //when const declaration in multilong assigment, change CLR to SET #0
+    [ "long a[3]; const a[]='alow'; a[]='tchau';", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^const SET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n\n^const SET @a_0 #00000000776f6c61\n^const SET @a_1 #0000000000000000\n^const SET @a_2 #0000000000000000\nSET @a_0 #0000007561686374\nCLR @a_1\nCLR @a_2\nFIN\n" ],
+    //After above optimizations, this code was being executed wrong
+    [ "long a, b[5]; b[]=&a;", true, "" ],
 //    [ "", false, "" ],
 
 //program macro
@@ -865,6 +872,8 @@ const a=353; const d[1]=354; const car[1].driver=355; const car[0].passenger[1]=
     [ "#program name test-2\n long a;  a++;", true, "" ],
     [ "#program name test2 d\n long a;  a++;", true, "" ],
     [ "#program activationAmount 0xff\n long a;  a++;", true, "" ],
+    //allow _ in activationAmount
+    [ "#program activationAmount 5_0000_0000", false, "^program activationAmount 500000000\n^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n\nFIN\n" ],
 //    [ "", false, "" ],
 
 //bugfixes
