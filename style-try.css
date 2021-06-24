@@ -17,6 +17,10 @@ h1 {
 
 fieldset {
 	border: solid 0.5vh #ccc;
+	padding: 2vh 0.5vw 2vh 0.5vw;
+	margin: 2vh 0.5vh;
+	border-radius: 2vh;
+	max-width: 100%;
 }
 
 legend, .tooltip {
@@ -24,47 +28,62 @@ legend, .tooltip {
 	color: #114;
 	padding: 3px 6px;
 	border: 0.2vh solid #114;
-
+	transition: all ease 0.3s;
+}
+legend:hover {
+	background: #eb8;
+}
+legend {
+	cursor: pointer;
 }
 
-iframe {
+#deployment_iframe {
 	border: 1px solid #114;
+	width: 97%;
+	height: 33vh;
 }
 
-p {
-	padding: 1vw;
-}
-	
 pre {
 	padding: 1vw;
 	min-height: 50px;
 	font-family: "Lucida Console", "Courier New", 'monospace';
+	white-space: pre-wrap;
+	word-wrap: anywhere;
+	max-width: 100%;
+}
+
+#actions_window {
+	display: flex;
+	justify-content: center;
 }
 
 /* Buttons */
 .btn_class {
-	padding: 1vh;
-	font-size: 3vh;
+	padding: 0.7vw;
+	font-size: 2vw;
 	background: #fff;
 	transition: all ease 0.3s;
-	border: solid 0.5vh #ccc; }
+	border: solid 0.5vh #ccc;
+	border-radius: 1vh;
+	margin: 0 0.5vw;
+	display: flex;
+}
 
 #source_is_c:checked ~ #bt1      { background: #ccf; }
 #debug:checked ~ #bt2            { background: #ccf; }
 label:hover                      { background: #ddf; }
 #debug:hover, #source_is_c:hover { background: #fcc; }
-#compile { margin-left: 2vh; margin-right: 2vh; }
-#bt2     { margin-left: 2vh; }
-#test:hover    { background: #fdd; }
-#compile:hover { background: #dfd; }
+#test:hover     { background: #fdd; }
+#compile:hover  { background: #dfd; }
+#btn_help:hover { background: #dfd; }
 
 /* CLASSES and IDs configs */
 .tooltip {
-	position: fixed;
+	position: sticky;
 	white-space: nowrap;
-	display: block;
-	bottom: 1vh;
-	right:  1vh;
+	display: inline;
+	bottom: 1%;
+	left:  100%;
 }
 
 #source-code {
@@ -96,13 +115,56 @@ label:hover                      { background: #ddf; }
 /* general lay-out */
 .table {
 	width: 100%;
+	display: table;
 }
-.div_options {
+.div_row {
+	display: table-row;
+}
+.div_cell {
+	display: table-cell;
+	width: 50%;
+	vertical-align: middle;
+}
+
+.div_window_normal {
+	padding: 1vh;
+}
+.div_window_center {
+	padding: 1vh;
 	display: flex;
-	justify-content: center; }
-.div_full {
-	padding: 2vh 0.5vw 2vh 0.5vw;}
-.left {	float: left; }
-.right { float: right; }
-.right, .left {	width: 48vw; padding: 0.5vw;}
+	justify-content: center;
+}
+
 .inc_height { min-height: 150px; }
+
+.half {
+	width: auto;
+	float: left;
+	max-width: 100%;
+	min-width: 45vw;
+}
+
+
+.winbox {
+    background: linear-gradient(90deg, #228, #114);
+    border-radius: 12px 12px 0 0;
+    box-shadow: none;
+}
+
+.winbox.min {
+    border-radius: 0;
+}
+
+.wb-body {
+    /* the width of window border: */
+    margin: 4px;
+    background: #ddd;
+}
+
+.wb-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.wb-full  { display: none }
