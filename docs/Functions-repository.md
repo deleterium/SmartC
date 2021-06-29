@@ -1,3 +1,5 @@
+[Back](./)
+
 # Functions repository
 These functions can be added to projects and speed up development time!
 
@@ -166,3 +168,5 @@ long concat(long * source, long source_length, long * ret, long ret_length)
     return i_ret + n8 * i_buffer;
 }
 ```
+
+[Back](./)

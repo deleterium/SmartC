@@ -1,7 +1,7 @@
 'use strict';
 
 // Author: Rui Deleterium
-// Project: https://github.com/deleterium/BurstAT-Compiler
+// Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 // Some parts based on w3schools code for highlighting howto
 

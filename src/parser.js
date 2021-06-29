@@ -1,7 +1,7 @@
 "use strict";
 
 // Author: Rui Deleterium
-// Project: https://github.com/deleterium/BurstAT-Compiler
+// Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
 /* **************************** LICENSE ***************************** *
@@ -394,6 +394,10 @@ function parser(tokens) {
         let val;
         if ( token.value.startsWith("BURST-") ) {
             val = rsDecode(token.value.slice(6)).padStart(16, '0');
+        } else if ( token.value.startsWith("S-") ) {
+            val = rsDecode(token.value.slice(2)).padStart(16, '0');
+        } else if ( token.value.startsWith("TS-") ) {
+            val = rsDecode(token.value.slice(3)).padStart(16, '0');
         } else {
             val = str2long(token.value);
         }

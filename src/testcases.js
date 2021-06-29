@@ -1,7 +1,7 @@
 "use strict";
 
 // Author: Rui Deleterium
-// Project: https://github.com/deleterium/BurstAT-Compiler
+// Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
 function runTestCases() {
@@ -44,6 +44,8 @@ function runTestCases() {
     [ "a+=2;", false,  undefined, true, "INC @a\nINC @a\nFIN\n" ],
     [ "a+=0xfffffff;", false,  undefined, true, "SET @r0 #000000000fffffff\nADD @a $r0\nFIN\n" ],
     [ "a='BURST-MKCL-2226-W6AH-7ARVS';", false,  undefined, true, "SET @a #5c6ee8000049c552\nFIN\n" ],
+    [ "a='TS-MKCL-2226-W6AH-7ARVS';", false,  undefined, true, "SET @a #5c6ee8000049c552\nFIN\n" ],
+    [ "a='S-MKCL-2226-W6AH-7ARVS';", false,  undefined, true, "SET @a #5c6ee8000049c552\nFIN\n" ],
     [ "a=6660515985630020946;", false,  undefined, true, "SET @a #5c6ee8000049c552\nFIN\n" ],
     [ "a=18446744073709551615;", false,  undefined, true, "SET @a #ffffffffffffffff\nFIN\n" ],
     [ "a=18446744073709551616;", true,  undefined, true, "" ],

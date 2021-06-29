@@ -1,7 +1,7 @@
 "use strict";
 
 // Author: Rui Deleterium
-// Project: https://github.com/deleterium/BurstAT-Compiler
+// Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
 // Verifies if an ast produced by parser complies with our syntax rules.

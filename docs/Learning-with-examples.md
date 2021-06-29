@@ -1,7 +1,7 @@
+[Back](./)
 
-
-# Lessons and examples to create smart contracts in Burstcoin's network
-Following guide, focused on BurstAT-CC compiler, will show examples with progressive complexity and comments how they works. It is expected that you know C language. It is a good idea to read all docs from BurstAT-CC site, and also ciyam official documentation available [here](https://ciyam.org/at/).
+# Lessons and examples to create smart contracts in Signum network
+Following guide will show examples with progressive complexity and comments how they works. It is expected that you know C language. It is a good idea to read all docs from SmartC wiki, and also ciyam official documentation available [here](https://ciyam.org/at/).
 
 ## Basic contracts
 
@@ -96,14 +96,14 @@ void get_next_tx_details(long last_timestamp) {
 * Of course you can implement a new way.
 * Global variable is used because it needs less instructions to make same thing. It is important to note, because every assembly instructions will be charged a fee for execution and there is limitations for code and memory sizes when deploying an smart contract in the blockchain.
 
-### Sending burst
+### Sending signa
 ```c
-#program name SendBurst
-#program description Using a function to send burst.
+#program name SendSigna
+#program description Using a function to send signa.
 #include APIFunctions
 
-const long send_to="BURST-2LER-KMQ8-88WQ-EPKST";
-//long ONE_BURST=100000000;
+const long send_to="S-2LER-KMQ8-88WQ-EPKST";
+//long ONE_BURST=1_0000_0000;
 
 void main(void) {
     long lastTX, curr_balance;
@@ -118,20 +118,20 @@ void main(void) {
     curr_balance = Get_Current_Balance();
 
     if (curr_balance > 30*100000000) {
-        send_burst.recipient = send_to;
-        send_burst.amount = curr_balance - 5*100000000;
-        Send_Burst();
+        send_signa.recipient = send_to;
+        send_signa.amount = curr_balance - 5 * 1_0000_0000;
+        Send_Signa();
     }
 }
 
-struct SENDBURST {
+struct SENDSIGNA {
    long recipient;
    long amount;
-} send_burst;
+} send_signa;
 
-void Send_Burst() {
-    Set_B1(send_burst.recipient);
-    Send_To_Address_In_B(send_burst.amount);
+void Send_Signa() {
+    Set_B1(send_signa.recipient);
+    Send_To_Address_In_B(send_signa.amount);
 }
 
 struct TXINFO {
@@ -163,7 +163,7 @@ void get_next_tx_details(long last_timestamp) {
 ```
 * Loop thru all incoming messages doing nothing. When there is no more tx, then check if account balance is greater than 30 burst. If it is, send funds to address defined and keep 5 burst in contract account.
 * Function `Send_Burst()` is very simple and can be implemented passing arguments, or even embeed in code.
-* Burst quantity is always specified in NQT. 1 Burst is 100.000.000 NQT. 
+* Burst quantity is always specified in NQT. 1 Burst is 1.0000.0000 NQT. 
 
 ### Sending a message
 ```c
@@ -236,19 +236,21 @@ void get_next_tx_details(long last_timestamp) {
 ### Sending a message and burst
 ```c
 //function and global variable shown
-struct SENDMESSAGEBURST {
+struct SENDMESSAGESIGNA {
    long recipient;
    long amount;
    long message[4];
-} send_message_burst;
+} send_message_signa;
 
-void Send_Message_Burst() {
-    Set_B1(send_message_burst.recipient);
-    Set_A1_A2(send_message_burst.message[0], send_message_burst.message[1]);
-    Set_A3_A4(send_message_burst.message[2], send_message_burst.message[3]);
+void Send_Message_Signa() {
+    Set_B1(send_message_signa.recipient);
+    Set_A1_A2(send_message_signa.message[0], send_message_signa.message[1]);
+    Set_A3_A4(send_message_signa.message[2], send_message_signa.message[3]);
     Send_A_To_Address_In_B();
-    Send_To_Address_In_B(send_message_burst.amount);
+    Send_To_Address_In_B(send_message_signa.amount);
 }
 ```
-* Easy, just join the API call to send message and send burst. Function and global variable is show in example.
+* Easy, just join the API call to send message and send signa. Function and global variable is show in example.
 * Set values then call the function.
+
+[Back](./)

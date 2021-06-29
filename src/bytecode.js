@@ -1,7 +1,7 @@
 "use strict";
 
 // Author: Rui Deleterium
-// Project: https://github.com/deleterium/BurstAT-Compiler
+// Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
 
@@ -402,7 +402,6 @@ function bytecode(assembly_source) {
             UserStackPages: uspages,
             CodePages: codepages,
             MinimumFeeNQT: minimumfee,
-            MinimumFeeBurst: minimumfee / 100000000,
             ByteCode: AsmObj.bytecode,
             ByteData: AsmObj.bytedata,
             Memory: AsmObj.memory,

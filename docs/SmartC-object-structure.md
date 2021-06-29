@@ -1,3 +1,6 @@
+TO BE UPDATED!!!
+[Back](./)
+
 # Javascript Object Structure in BurstAT-CC
 Compiling process consists in organize the code into an AST (Abstract Syntax Tree). The objects and properties are explained bellow. A convention is that variables that are objects starts with a capital letter. The object types can be recursive to describe entire program. Array of objects are also used. To understand this text, keep in mind
 * Objects will be named `Object {}`
@@ -93,3 +96,5 @@ Statements are processed and Big_AST object is created with some temporary prope
 Traverse the Big_ast received translating `Tokens {}` to `OpTree {}`. Big_ast_OpTree is almost ready.
 ## asmCode = bigastCompile(big_ast_opTree);
 Some small modifications done and all sentences, functions and declarations translated into assembly code.
+
+[Back](./)

@@ -1,7 +1,7 @@
 "use strict";
 
 // Author: Rui Deleterium
-// Project: https://github.com/deleterium/BurstAT-Compiler
+// Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
 
@@ -81,7 +81,7 @@ function bigastCompile(bc_Big_ast){
 
 
     // Traverse the AST created by syntaxer and creates a stream of assembly
-    //   instructions. Due to caracteristics of Burstcoin's AT language, I
+    //   instructions. Due to caracteristics of CIYAM assembly language, I
     //   decided to make use of auxiliary variables as registers because it
     //   is more effective than handle user stack.
     // cg_jumpTarget must be set if the evaluation is part of conditionals or

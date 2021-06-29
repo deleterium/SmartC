@@ -1,7 +1,7 @@
 "use strict";
 
 // Author: Rui Deleterium
-// Project: https://github.com/deleterium/BurstAT-Compiler
+// Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
 /* **************************** LICENSE ***************************** *
@@ -405,7 +405,7 @@ function tokenizer(input) {
 
         search=keywords_bd_forbidden.find(word => word === val);
         if (search!==undefined) {
-          throw new TypeError('At line:'+curr_line+". Keyword "+val+" can not be used in BurstAT");
+          throw new TypeError('At line:'+curr_line+". Keyword "+val+" can not be used in SmartC");
         }
 
         search=keywords_bd_not_implemented.find(word => word === val);
