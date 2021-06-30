@@ -32,7 +32,7 @@ Some special features can be enabled/disable via preprocessor directives:
 * `#pragma maxConstVars N`: Compiler will create variable from 1 to maxConstVars. Variables will be named 'n1', 'n2', ... 'n10'. It is very usefull to use togheter to 'globalOptimization', because global optimization will change all numbers references to these variables and optimize code, making code much much smaller! Default min value is `0` (deactivated) and max is `10`.
 * `#pragma reuseAssignedVar [true/false/1/0/]`: When set, compiler will try to use a variable on left sign of and `Assignment` as a register. If variable is also used on right side, the compiler will not reuse it. This can save one assembly instruction for every expression used! Default value is `true` and it is highly recomended to maintain it active.
 * `#pragma useVariableDeclaration [true/false/1/0/]`: Makes the compiler to check if all variables are declared before their use. Default value is `true`. When false, default assembler behaviour is create variables as they appears. Good to avoid typing errors. Must be on when using arrays and structs.
-* `#pragma version N`: Informs compiler which compiler's version the code was developed. Default value is `0` and there is no plan yet to have a version `1`.
+* `#pragma version N`: Informs which compiler's version the code was developed. Must be set if not using development version.
 * `#pragma warningToError [true/false/1/0/]`: All warnings to compiler errors. Default value is `true`. Warning messages begin with WARNING, other ones are actualy errors.
 
 ### Variables

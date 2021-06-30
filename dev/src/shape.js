@@ -15,7 +15,7 @@
 
     // configurations for compiler
     Big_ast.Config = {
-        compiler_version: "0",   //sets this compiler version!!!
+        compiler_version: "dev",   //sets this compiler version!!!
         enableRandom:     false, //enable with #pragma enableRandom true
         enableLineLabels: false, //enable with #pragma enableLineLabels true
         globalOptimization: false, //enable with #pragma globalOptimization true
@@ -23,7 +23,7 @@
         maxConstVars:     0,     //change with #pragma maxConstVars N
         reuseAssignedVar: true,  //disable with #pragma reuseAssignedVar false
         useVariableDeclaration: true, //change with #pragma useVariableDeclaration false
-        version: "0",            //change with #pragma version 0
+        version: "dev",            //change with #pragma version 0
         warningToError:   true,  //change with #pragma warningToError false
         APIFunctions:     false, //enable with #include APIFunctions
         PName:            "",    //set with #program name
@@ -49,8 +49,11 @@
 
         // Macro handler
         Big_ast.Global.macros.forEach( processMacro );
+        if (Big_ast.Config.version === "") {
+            throw new TypeError("Compiler version not set. Pin current compiler version in your program with '#pragma version "+Big_ast.Config.compiler_version+"'.");
+        }
         if (Big_ast.Config.version !== Big_ast.Config.compiler_version) {
-            new TypeError("This compiler is version '"+Big_ast.Config.compiler_version+"'. File needs a compiler version '"+Big_ast.Config.version+"'.");
+            throw new TypeError("This compiler is version '"+Big_ast.Config.compiler_version+"'. File needs a compiler version '"+Big_ast.Config.version+"'.");
         }
 
         Big_ast.typesDefinitions = createDefaultTypesTable();

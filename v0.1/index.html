@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SmartC - C Compiler for Signum - 0.1</title>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="index.js"></script>
+
+    <script src="src/tokenizer.js"></script>
+    <script src="src/parser.js"></script>
+    <script src="src/verifier.js"></script>
+    <script src="src/shape.js"></script>
+    <script src="src/syntax.js"></script>
+    <script src="src/generator.js"></script>
+    <script src="src/testcases.js"></script>
+    <script src="src/bytecode.js"></script>
+    <script src="src/asm_highlight.js"></script>
+
+    <script src="3rd-party/winbox.bundle.js"></script>
+</head>
+
+<body onload='javascript:onLoad()'>
+    <h1>SmartC - C Compiler for Signum - 0.1</h1>
+    <fieldset id="source_fieldset"><legend id="source_legend">&#10064; Source code:</legend>
+        <div id="source_window" class="div_window_normal">
+            <textarea id="source-code" placeholder="Write here your program." class="inc_height" spellcheck="false" wrap="soft"></textarea>
+            <span id="tooltip_span" class="tooltip">Cursor: 0:0</span>
+        </div>
+    </fieldset>
+
+    <fieldset id="actions_fieldset" class="half"><legend id="actions_legend">&#10064; Actions:</legend>
+        <div id="actions_window" class="div_window_center">
+            <input type="checkbox" id="source_is_c" checked="true" style="display: none;">
+            <input type="checkbox" id="debug" style="display: none;">
+            <button id="compile" class="btn_class">Compile</button>
+            <button id="btn_help" class="btn_class" title="Project documentation" >Help</button>
+            <button id="test" class="btn_class" title="Run test cases!">Tests</button>
+            <label for="source_is_c" class="btn_class" id="bt1" title="Toggle source language">C</label>
+            <label for="debug" class="btn_class" id="bt2" title="Debug" title="Show more information">Debug</label>
+        </div>
+    </fieldset>
+
+    <fieldset id="status_fieldset" class="half"><legend id="status_legend">&#10064; Status:</legend>
+        <div id="status_window" class="div_window_normal">
+            <pre id="status_output"></pre>
+        </div>
+    </fieldset>
+
+    <fieldset id="assembly_fieldset" class="half"><legend id="assembly_legend">&#10064; Assembly output:</legend>
+        <div id="assembly_window" class="div_window_normal">
+            <pre id="assembly_output"></pre>
+        </div>
+    </fieldset>
+
+    <fieldset id="deployment_fieldset" class="half"><legend id="deployment_legend">&#10064; Localhost node deployment form for smart contract:</legend>
+        <div id="deployment_window" class="div_window_normal">
+            <section class="table">
+                <div class="div_row"><div class="div_cell">Deployment:</div><div class="div_cell">
+                    <label title="localhost:6876" class="default"><input type="radio" onclick="deployClick(this);" value="6876" name="deploy" checked="true"> Testnet </label>&nbsp;&nbsp;
+                    <label title="localhost:8125" class="default"><input type="radio" onclick="deployClick(this);" value="8125" name="deploy"> Main </label></div>
+                </div>
+            </section>
+            <form action="http://localhost:6876/burst" method="POST" target="formresponse" id="deploy_form" >
+            <section class="table">
+                <input type="hidden" name="requestType" value="createATProgram">
+                <div class="div_row"><div class="div_cell">Contract Name:</div><div class="div_cell"><input type="text" name="name" style="width:100%;" pattern="[a-zA-Z0-9]{1,10}" title="Only letters (a to Z) and numbers"></div></div>
+                <div class="div_row"><div class="div_cell">Description:</div><div class="div_cell"><textarea name="description" rows="5" style="width:100%;min-width:200px;"></textarea></div></div>
+                <!-- <div class="div_row"><div class="div_cell">creationBytes:</div><div class="div_cell"><input type="text" name="creationBytes" style="width:100%;min-width:200px;"></div></div> -->
+                <div class="div_row"><div class="div_cell">Bytecode:</div><div class="div_cell"><input type="text" name="code" style="width:100%;min-width:200px;" pattern="[a-fA-F0-9]{1,}"></div></div>
+                <div class="div_row"><div class="div_cell">Bytedata:</div><div class="div_cell"><input type="text" name="data" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">Data Pages:</div><div class="div_cell"><input type="number" name="dpages" value="1" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">Code Stack Pages:</div><div class="div_cell"><input type="number" name="cspages" value="0" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">User Stack Pages:</div><div class="div_cell"><input type="number" name="uspages" value="0" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">Min. Activation Amount NQT:</div><div class="div_cell"><input type="text" name="minActivationAmountNQT" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">Secret Phrase:</div><div class="div_cell"><input type="password" name="secretPhrase" style="width:100%;min-width:200px;"></div></div>
+                <!-- <div class="div_row"><div class="div_cell">publicKey:</div><div class="div_cell"><input type="text" name="publicKey" style="width:100%;min-width:200px;"></div></div> -->
+                <div class="div_row"><div class="div_cell">Fee (NQT):</div><div class="div_cell"><input type="text" name="feeNQT" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">Tx Deadline (minutes):</div><div class="div_cell"><input type="text" name="deadline" style="width:100%;min-width:200px;" value="24"></div></div>
+                <!-- <div class="div_row"><div class="div_cell">referencedTransactionFullHash:</div><div class="div_cell"><input type="text" name="referencedTransactionFullHash" style="width:100%;min-width:200px;"></div></div> -->
+                <div class="div_row"><div class="div_cell">Broadcast Tx?</div><div class="div_cell"><input type="text" name="broadcast" style="width:100%;min-width:200px;" placeholder="true"></div></div>
+                <!--
+                <div class="div_row"><div class="div_cell">message:</div><div class="div_cell"><input type="text" name="message" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">messageIsText:</div><div class="div_cell"><input type="text" name="messageIsText" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">messageToEncrypt:</div><div class="div_cell"><input type="text" name="messageToEncrypt" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">messageToEncryptIsText:</div><div class="div_cell"><input type="text" name="messageToEncryptIsText" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">encryptedMessageData:</div><div class="div_cell"><input type="text" name="encryptedMessageData" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">encryptedMessageNonce:</div><div class="div_cell"><input type="text" name="encryptedMessageNonce" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">messageToEncryptToSelf:</div><div class="div_cell"><input type="text" name="messageToEncryptToSelf" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">messageToEncryptToSelfIsText:</div><div class="div_cell"><input type="text" name="messageToEncryptToSelfIsText" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">encryptToSelfMessageData:</div><div class="div_cell"><input type="text" name="encryptToSelfMessageData" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">encryptToSelfMessageNonce:</div><div class="div_cell"><input type="text" name="encryptToSelfMessageNonce" style="width:100%;min-width:200px;"></div></div>
+                <div class="div_row"><div class="div_cell">recipientPublicKey:</div><div class="div_cell"><input type="text" name="recipientPublicKey" style="width:100%;min-width:200px;"></div></div>
+                -->
+                <div class="div_row"><div class="div_cell"><input type="submit" class="btn btn-default" value="submit"></div><div class="div_cell"></div></div>
+            </section>
+            </form>
+            <h5>Response:</h5>
+            <iframe src="about:blank" name='formresponse' id="deployment_iframe"></iframe>
+        </div>
+    </fieldset>
+</body>
+</html>

@@ -14,7 +14,7 @@ To empower developers, allowing them to create complex and highly optimized smar
 - [ ] Add syntax highlighting and save projects in brownser LocalStorage.
 
 ## Usage
-Download project to your computer and open file `try.html` in your browser. Optionally [run it on gitpages!](https://deleterium.github.io/SmartC/try.html). After compiling, information to create the AT is presented.
+Download project to your computer and open file `index.html` of desired version in your browser. Optionally [run it on gitpages](https://deleterium.github.io/SmartC/v0.1/index.html) latest version. After compiling, information to create the AT is presented.
 
 ## Learning
 Visit [documentation page](./docs/) to start learning.
