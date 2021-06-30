@@ -19,6 +19,5 @@ Download project to your computer and open file `index.html` of desired version 
 ## Learning
 Visit [documentation page](./docs/) to start learning.
 
-## Donation
-Did you like the project? Donate to S-DKVF-VE8K-KUXB-DELET.
-
+## Support
+Did you like the project? Consider be owner of one NFT keyword. The [smart contract](https://deleterium.github.io/SmartC/NFT/) is online at S-2Z65-L478-VKD4-386YY. More information [here](https://deleterium.info/NFT/). Or, buy me a coffe: S-DKVF-VE8K-KUXB-DELET.
