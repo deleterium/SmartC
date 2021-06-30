@@ -19,7 +19,7 @@ All messages must be unencrypted!!!
 
 ## Auction details
 * first_stage: Owner sends a message to start an auction. While there is no bids, owner can still change starting price, change to sale, or even lock again the item.
-* second_stage: After first bid is accepted, the auction is unstoppable by owner. When a new bid is accepted, a new minimal bid is set 10% higher than the current bid and a new end date is set after 360 blocks. The highest bid amount will stay on contract balance and previous bid is refunded.
+* second_stage: After first bid is accepted, the auction is unstoppable by owner. When a new bid is accepted, a new minimal bid is set 10% higher than the current bid and a new end date is set after 1440 blocks (4 days). The highest bid amount will stay on contract balance and previous bid is refunded.
 * third_stage: It is auction end. From the highest bid amount is deducted an extra contract fee of 1 Signa (auction demands extra computations). Then it is deducted a support fee of 3% for Sigcc project. The previous owner receives the remaining signa and the new owner receives a message to inform ownership. Two hours before an auction end, if a message is received, the contract stays awake to avoid delays on payment. If there is no message within this time, then the auction will be ended on next transaction, before processing it. Auctioned item status will be changed to 'hold'.
 
 ## Smart contract source code
