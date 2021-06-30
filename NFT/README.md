@@ -14,7 +14,7 @@ All messages must be unencrypted!!!
 ## General commands
 All messages must be unencrypted!!!
 * status: Send a message `status do` and contract will send back a message to inform if item do is 1) locked; 2) on sale and its price; or 3) on auction with next bid amount and the numbers of blocks until auction's end. This features make sure the contract is blockchain complete and don't is dependent of this webpage.
-* buy: Send a message buy continue with an amount bigger or equal current item price (plus 2 signa for contract activation) to become its new owner. If the amout is bigger, contract will refund the excess paid. Contract will set a new price 10% bigger than last one and item will stay on sale.
+* buy: Send a message `buy continue` with an amount bigger or equal current item price (plus 2 signa for contract activation) to become its new owner. If the amout is bigger, contract will refund the excess paid. Contract will set a new price 10% bigger than last one and item will stay on sale.
 * bid: Send a message `bid const` with an amount bigger or equal item minimal bid (plus 2 signa for contract activation) to have your bid accepted. Any bigger amount will be understood as a bid, so no refund will happen. The balance will be secured in contract account. On auction end the balance will be sent to last owner and the highest bid sender will be new owner. If a new bigger bid is received, last bid will be refund to last sender.
 
 ## Auction details
