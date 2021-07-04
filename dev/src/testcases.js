@@ -1005,6 +1005,8 @@ var bytecode_tests = [
 
     var code;
     var result="";
+    var itemPass=0;
+    var itemFail=0;
 
     result+="<h3>Assembly tests</h3>";
     for (var i=0; i<bytecode_tests.length; i++) {
@@ -1016,19 +1018,27 @@ var bytecode_tests = [
             result+="<br>Test "+i+" ";
             code = bytecode(bytecode_tests[i][0]);
             if (bytecode_tests[i][1] === false) {
-                if (code.ByteCode === bytecode_tests[i][2] && code.ByteData === bytecode_tests[i][3])
+                if (code.ByteCode === bytecode_tests[i][2] && code.ByteData === bytecode_tests[i][3]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>\n"+encodedStr(bytecode_tests[i][0])+"</span>";
-                else
+                    itemPass++;
+                } else {
                     result+="<span style='color:red'>Fail...</span> (run OK) Code: <span style='color:blue'>\n"+encodedStr(bytecode_tests[i][0])+"</span>\n\
 Exp ByteCode: "+bytecode_tests[i][2]+"\nExp ByteData: "+bytecode_tests[i][3]+"\n\
 GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
-            } else
+                    itemFail++;
+                }
+            } else {
                 result+="<span style='color:red'>Fail...</span> (run OK) Code: <span style='color:purple'>\n"+encodedStr(bytecode_tests[i][0])+"\n</span> Expected to throw exception but\nGOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
+                itemFail++;
+            }
         } catch (e) {
-            if (bytecode_tests[i][1] === true)
+            if (bytecode_tests[i][1] === true) {
                 result+="Pass! (failed) Code: <span style='color:purple'>\n"+encodedStr(bytecode_tests[i][0])+"</span>";
-            else
+                itemPass++;
+            } else {
                 result+="<span style='color:red'>Fail...</span> (failed) Code: <span style='color:purple'>\n"+encodedStr(bytecode_tests[i][0])+"</span>   GOT\n"+e;
+                itemFail++;
+            }
         }
     }
 
@@ -1042,17 +1052,25 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
             result+="<br>Test "+i+" ";
             code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer(full_tests[i][0]))))));
             if (full_tests[i][1] === false) {
-                if (code === full_tests[i][2])
+                if (code === full_tests[i][2]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(full_tests[i][0])+"</span>";
-                else
+                    itemPass++;
+                } else {
                     result+="<span style='color:red'>Fail...</span> (run OK) Code: <span style='color:blue'>"+encodedStr(full_tests[i][0])+"</span> Expected \n"+full_tests[i][2]+"   GOT\n"+code;
-            } else
+                    itemFail++;
+                }
+            } else {
                 result+="<span style='color:red'>Fail...</span> (run OK) Code: <span style='color:purple'>"+encodedStr(full_tests[i][0])+"</span> Expected to throw exception but GOT\n"+code;
+                itemFail++;
+            }
         } catch (e) {
-            if (full_tests[i][1] === true)
+            if (full_tests[i][1] === true) {
                 result+="Pass! (failed) Code: <span style='color:purple'>"+encodedStr(full_tests[i][0])+"</span>";
-            else
+                itemPass++;
+            } else {
                 result+="<span style='color:red'>Fail...</span> (failed) Code: <span style='color:purple'>"+encodedStr(full_tests[i][0])+"</span>   GOT\n"+e;
+                itemFail++;
+            }
         }
     }
 
@@ -1066,17 +1084,25 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
             result+="<br>Test "+i+" ";
             code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer("#pragma useVariableDeclaration false\n"+keywords_tests[i][0]))))));
             if (keywords_tests[i][1] === false) {
-                if (code === keywords_tests[i][2])
+                if (code === keywords_tests[i][2]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(keywords_tests[i][0])+"</span>";
-                else
+                    itemPass++;
+                } else {
                     result+="<span style='color:red'>Fail...</span> (run OK) Code: <span style='color:blue'>"+encodedStr(keywords_tests[i][0])+"</span> Expected \n"+keywords_tests[i][2]+"   GOT\n"+code;
-            } else
+                    itemFail++;
+                }
+            } else {
                 result+="<span style='color:red'>Fail...</span> (run OK) Code: <span style='color:purple'>"+encodedStr(keywords_tests[i][0])+"</span> Expected to throw exception but GOT\n"+code;
+                itemFail++;
+            }
         } catch (e) {
-            if (keywords_tests[i][1] === true)
+            if (keywords_tests[i][1] === true) {
                 result+="Pass! (failed) Code: <span style='color:purple'>"+encodedStr(keywords_tests[i][0])+"</span>";
-            else
+                itemPass++;
+            } else {
                 result+="<span style='color:red'>Fail...</span> (failed) Code: <span style='color:purple'>"+encodedStr(keywords_tests[i][0])+"</span>   GOT\n"+e;
+                itemFail++;
+            }
         }
     }
 
@@ -1090,17 +1116,25 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
             result+="<br>Test "+i+" ";
             code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer("#pragma useVariableDeclaration false\n"+logical_tests[i][0]))))));
             if (logical_tests[i][1] === false) {
-                if (code === logical_tests[i][4])
+                if (code === logical_tests[i][4]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(logical_tests[i][0])+"</span>";
-                else
+                    itemPass++;
+                } else {
                     result+="<span style='color:red'>Fail...</span> (run OK) Code: <span style='color:blue'>"+encodedStr(logical_tests[i][0])+"</span> Expected \n"+logical_tests[i][4]+"   GOT\n"+code;
-            } else
+                    itemFail++;
+                }
+            } else {
                 result+="<span style='color:red'>Fail...</span> (run OK) Code: <span style='color:purple'>"+encodedStr(logical_tests[i][0])+"</span> Expected to throw exception but GOT\n"+code;
+                itemFail++;
+            }
         } catch (e) {
-            if (logical_tests[i][1] === true)
+            if (logical_tests[i][1] === true) {
                 result+="Pass! (failed) Code: <span style='color:purple'>"+encodedStr(logical_tests[i][0])+"</span>";
-            else
+                itemPass++;
+            } else {
                 result+="<span style='color:red'>Fail...</span> (failed) Code: <span style='color:purple'>"+encodedStr(logical_tests[i][0])+"</span>   GOT\n"+e;
+                itemFail++;
+            }
         }
     }
 
@@ -1114,19 +1148,27 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
             result+="<br>Test "+i+" ";
             code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer("#pragma useVariableDeclaration false\n"+tests[i][0]))))));
             if (tests[i][1] === false) {
-                if (code === tests[i][4])
+                if (code === tests[i][4]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(tests[i][0])+"</span>";
-                else
+                    itemPass++;
+                } else {
                     result+="<span style='color:red'>Fail...</span> (run OK) Code: <span style='color:blue'>"+encodedStr(tests[i][0])+"</span> Expected \n"+tests[i][4]+"   GOT\n"+code;
-            } else
+                    itemFail++;
+                }
+            } else {
                 result+="<span style='color:red'>Fail...</span> (run OK) Code: <span style='color:purple'>"+encodedStr(tests[i][0])+"</span> Expected to throw exception but GOT\n"+code;
+                itemFail++;
+            }
         } catch (e) {
-            if (tests[i][1] === true)
+            if (tests[i][1] === true) {
                 result+="Pass! (failed) Code: <span style='color:purple'>"+encodedStr(tests[i][0])+"</span>";
-            else
+                itemPass++;
+            } else {
                 result+="<span style='color:red'>Fail...</span> (failed) Code: <span style='color:purple'>"+encodedStr(tests[i][0])+"</span>   GOT\n"+e;
+                itemFail++;
+            }
         }
     }
 
-    return result;
+    return "Tests completed: "+itemPass+" Passed; "+itemFail+" Failed.\n\n"+result;
 }
