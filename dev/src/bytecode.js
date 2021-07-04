@@ -355,10 +355,19 @@ function bytecode(assembly_source) {
                     case 0x24: CodeObj.content[0] = 0x23; break; // BNE_DAT -> BEQ_DAT
                 }
                 // change branch destination
-                AsmObj.code[idx+1].station = "__"+CodeObj.address;
                 CodeObj.branchLabel = "__"+CodeObj.address;
-                // insert jump operation
-                AsmObj.code.splice(idx+1, 0, JumpCode);
+                if (AsmObj.code[idx+1].station.length != 0) {
+                    //station already filled, add a new code for label
+                    let LabelCode =  JSON.parse(JSON.stringify(Code_Template));
+                    LabelCode.source = "JUMP: "+CodeObj.source;
+                    LabelCode.size = 0;
+                    LabelCode.station = "__"+CodeObj.address;
+                    AsmObj.code.splice(idx+1, 0, JumpCode, LabelCode);
+                } else {
+                    AsmObj.code[idx+1].station = "__"+CodeObj.address;
+                    // insert jump operation
+                    AsmObj.code.splice(idx+1, 0, JumpCode);
+                }
                 return false; // do it again.
             }
         }
