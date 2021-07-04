@@ -2272,6 +2272,7 @@ function bigastCompile(bc_Big_ast){
         var jumpToLabels;
         var jmpto, lbl, dest;
         var setdat, opdat, clrdat, popdat;
+        var branchdat;
         var psh_slp_dat;
         var optimized_lines;
 
@@ -2318,6 +2319,80 @@ function bigastCompile(bc_Big_ast){
                         if (val <= bc_Big_ast.Config.maxConstVars && setdat[1] !== "n"+val) {
                             array[index]="SET @"+setdat[1]+" $n"+val;
                             optimized_lines++;
+                        }
+                    }
+                }
+
+                //BNE $r0 $var37 :lab_f75
+                //JMP :lab_fa2
+                //lab_f75:
+                //  turns BEQ $r0 $var37 :lab_fa2
+                branchdat = /^\s*(BGT|BLT|BGE|BLE|BEQ|BNE)\s+\$(\w+)\s+\$(\w+)\s+:(\w+)\s*$/.exec(value);
+                if (branchdat != null) {
+                    lbl = /^\s*(\w+):\s*$/.exec(array[index+2]);
+                    if (lbl != null && branchdat[4] == lbl[1]) {
+                        jmpto = /^\s*JMP\s+:(\w+)\s*$/.exec(array[index+1]);
+                        if (jmpto != null) {
+
+                            //if jump location is RET or FIN, optimize to RET or FIN.
+                            dest = getLabeldestination(jmpto[1]);
+                            if (/^\s*RET\s*$/.exec(dest) !== null ){
+                                array[index+1] = "RET"; //if jump to return, just return from here
+                                optimized_lines++;
+                                return;
+                            }
+                            if (/^\s*FIN\s*$/.exec(dest) !== null ){
+                                array[index+1] = "FIN"; //if jump to exit, just exit from here
+                                optimized_lines++;
+                                return;
+                            }
+
+                            var instr;
+                            if      (branchdat[1] == "BGT") instr="BLE";
+                            else if (branchdat[1] == "BLT") instr="BGE";
+                            else if (branchdat[1] == "BGE") instr="BLT";
+                            else if (branchdat[1] == "BLE") instr="BGT";
+                            else if (branchdat[1] == "BEQ") instr="BNE";
+                            else instr="BEQ";
+                            array[index] = instr + " $" + branchdat[2] + " $" + branchdat[3] + " :" + jmpto[1];
+                            array[index+1]="DELETE";
+                            optimized_lines++;
+                            return;
+                        }
+                    }
+                }
+
+                //BNZ $r0 :lab_f75
+                //JMP :lab_fa2
+                //lab_f75:
+                //  turns BZR $r0 :lab_fa2
+                branchdat = /^\s*(BZR|BNZ)\s+\$(\w+)\s+:(\w+)\s*$/.exec(value);
+                if (branchdat != null) {
+                    lbl = /^\s*(\w+):\s*$/.exec(array[index+2]); //matches labels
+                    if (lbl != null && branchdat[3] == lbl[1]) {
+                        jmpto = /^\s*JMP\s+:(\w+)\s*$/.exec(array[index+1]);
+                        if (jmpto != null) {
+
+                            //if jump location is RET or FIN, optimize to RET or FIN.
+                            dest = getLabeldestination(jmpto[1]);
+                            if (/^\s*RET\s*$/.exec(dest) !== null ){
+                                array[index+1] = "RET"; //if jump to return, just return from here
+                                optimized_lines++;
+                                return;
+                            }
+                            if (/^\s*FIN\s*$/.exec(dest) !== null ){
+                                array[index+1] = "FIN"; //if jump to exit, just exit from here
+                                optimized_lines++;
+                                return;
+                            }
+
+                            var instr;
+                            if (branchdat[1] == "BZR") instr="BNZ";
+                            else instr="BZR";
+                            array[index] = instr + " $" + branchdat[2] + " :" + jmpto[1];
+                            array[index+1]="DELETE";
+                            optimized_lines++;
+                            return;
                         }
                     }
                 }
