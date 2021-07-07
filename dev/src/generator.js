@@ -2458,7 +2458,7 @@ function bigastCompile(bc_Big_ast){
                     while (++i<array.length-1) {
                         lbl = /^\s*(\w+):\s*$/.exec(array[i]);
                         if ( lbl === null) {
-                            if (array[i] === "" || array[i] === "DELETE") {
+                            if (array[i] === "" || array[i] === "DELETE" || /^\s*\^\w+(.*)/.exec(array[i]) != null) {
                                 continue;
                             }
                             array[i]="DELETE"

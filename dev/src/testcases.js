@@ -939,6 +939,8 @@ void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r
     [ "long a[5], b, c; b=a[atoi(\"2\")+1]; long atoi(long val){ return val+1;}", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^const SET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare b\n^declare c\n^declare atoi_val\n\nSET @b #0000000000000032\nPSH $b\nJSR :__fn_atoi\nPOP @b\nINC @b\nSET @b $($a + $b)\nFIN\n\n__fn_atoi:\nPOP @atoi_val\nSET @r0 $atoi_val\nINC @r0\nPSH $r0\nRET\n" ],
     //bug 13, optimization deleting assembly compiler directives
     [ "#pragma globalOptimization\nwhile (1) halt; const long n8=8, n10=10, n0xff=0xff; long atoi(long val) { return 3; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare n8\n^declare n10\n^declare n0xff\n^declare atoi_val\n\n__loop1_continue:\nSTP\nJMP :__loop1_continue\n^const SET @n8 #0000000000000008\n^const SET @n10 #000000000000000a\n^const SET @n0xff #00000000000000ff\n\n" ],
+    //bug 14, (more) optimization deleting assembly compiler directives
+    [ "#pragma globalOptimization\n teste(); exit; const long n0xff=0xff; void teste(void) { const long b=5; b++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare n0xff\n^declare teste_b\n\nJSR :__fn_teste\nFIN\n^const SET @n0xff #00000000000000ff\n\n__fn_teste:\n^const SET @teste_b #0000000000000005\nINC @teste_b\nRET\n" ],
 //    [ "", false, "" ],
     
 
