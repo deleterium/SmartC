@@ -1994,7 +1994,6 @@ function bigastCompile(bc_Big_ast){
                         } else {
                             TmpMemObj1=auxVars.getNewRegister();
                             retinstr+=createInstruction(genAssignmentToken(), TmpMemObj1, param1);
-                            free_param1=true;
                         }
                     } else {
                         throw new TypeError("At line: "+objoperator.line+". Not implemented type in createInstruction for keyword: param1 type '"+param1.type+"'.");
