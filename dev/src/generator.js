@@ -2541,7 +2541,7 @@ function bigastCompile(bc_Big_ast){
                     //PSH $r0 / SLP $r0
                     // turns PSH $a / SLP $a
                     psh_slp_dat=/^\s*(PSH|SLP)\s+\$(\w+)\s*$/.exec(array[index+1]);
-                    if (psh_slp_dat !== null) {
+                    if (psh_slp_dat !== null && isRegister(setdat[1])) {
                         if (psh_slp_dat[2] == setdat[1]) {
                             array[index]="DELETE";
                             array[index+1]=psh_slp_dat[1]+" $"+setdat[2];
@@ -2603,7 +2603,7 @@ function bigastCompile(bc_Big_ast){
                 //SET @z $r0
                 // turns POP @z
                 popdat=/^\s*POP\s+@(\w+)\s*$/.exec(value);
-                if (popdat !== null) {
+                if (popdat !== null && isRegister(popdat[1])) {
                     setdat=/^\s*SET\s+@(\w+)\s+\$(\w+)\s*$/.exec(array[index+1]);
                     if ( setdat !== null && setdat[2] == popdat[1]) {
                         array[index]="POP @"+setdat[1];
@@ -2676,6 +2676,12 @@ function bigastCompile(bc_Big_ast){
                 return tmplines[idx]
             }
             throw new TypeError("Strange error during optimizations.");
+        }
+
+        function isRegister(name) {
+            if (/^r\d$/.exec(name) != null) //matches r0 .. r9
+                return true;
+            return false;
         }
     }
 
