@@ -2309,6 +2309,11 @@ function bigastCompile(bc_Big_ast){
             tmplines.forEach( function (value, index, array){
                 var i;
 
+                //do not analyze these values or compiler directives
+                if (value == "DELETE" || value == "" || /^\s*\^\w+(.*)/.exec(array[i]) != null) {
+                    return;
+                }
+
                 // change SET_VAL to SET_DAT for values defined in ConstVars
                 // This also enables more optimizations on pointers and PSH!
                 if (bc_Big_ast.Config.maxConstVars > 0) {
@@ -2596,6 +2601,19 @@ function bigastCompile(bc_Big_ast){
                             break;
                         }
                     }
+
+                    //SET @r0 $n2
+                    //BLT $i $r0 :__if151_c_endif
+                    // turns BLT $i $n2 :__if151_c_endif (very specific optimization)
+                    branchdat=/^\s*(BGT|BLT|BGE|BLE|BEQ|BNE)\s+\$(\w+)\s+\$(\w+)\s+:(\w+)\s*$/.exec(array[index+1]);
+                    if (branchdat !== null && branchdat[3] == setdat[1] && isRegister(setdat[1]) && /^n\d$/.exec(setdat[2]) != null) {
+                        array[index]=branchdat[1]+" $"+branchdat[2]+" $"+setdat[2]+" :"+branchdat[4];
+                        array[index+1]="DELETE";
+                        optimized_lines++;
+                        return;
+
+                    }
+
                 }
 
                 //POP @r0
