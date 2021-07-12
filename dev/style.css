@@ -92,11 +92,37 @@ label:hover                      { background: #ddf; }
 	overflow-x: auto;
 	color: #114;
 	width: calc(100% - 3vw);
-	margin: 0vw;
-	padding: 1vw;
+	margin: 0;
+	/* padding definition code 7hgdfeds Change all!!! (also index.js)*/
+	padding: 1em;
 	background: #fafbfc;
-	border: solid 0.5vh #ccc;
+	border: 1px black solid;
+	font-size: 100%;
+	outline: none;
 	font-family: "Lucida Console", "Courier New", 'monospace'; }
+
+#color_code {
+	background: #fafbfc;
+	border:  1px black solid;
+	margin: 0;
+	/* padding definition code 7hgdfeds Change all!!! (also index.js)*/
+	padding: 1em;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	width: calc(100% - 3vw);
+	z-index: -1;
+}
+
+.transp {
+	opacity: 0;
+	transition: all ease 3s;
+}
+.opaque {
+	opacity: 1;
+	transition: all ease 0.2s;
+}
+
 
 ::selection {
 	color: #114;
@@ -126,6 +152,10 @@ label:hover                      { background: #ddf; }
 	vertical-align: middle;
 }
 
+.div_window_source {
+	padding: 0px;
+	position: relative;
+}
 .div_window_normal {
 	padding: 1vh;
 }

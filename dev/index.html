@@ -18,13 +18,16 @@
     <script src="src/asm_highlight.js"></script>
 
     <script src="3rd-party/winbox.bundle.js"></script>
+    <script src="3rd-party/highlight.min.js"></script>
+    <link  href="3rd-party/styles/tomorrow.css" rel="stylesheet">
 </head>
 
 <body onload='javascript:onLoad()'>
     <h1>SmartC - C Compiler for Signum - dev</h1>
     <fieldset id="source_fieldset"><legend id="source_legend">&#10064; Source code:</legend>
-        <div id="source_window" class="div_window_normal">
+        <div id="source_window" class="div_window_source">
             <textarea id="source-code" placeholder="Write here your program." class="inc_height" spellcheck="false" wrap="soft"></textarea>
+            <pre id="color_code"></pre>
             <span id="tooltip_span" class="tooltip">Cursor: 0:0</span>
         </div>
     </fieldset>
@@ -64,7 +67,7 @@
             <form action="http://localhost:6876/burst" method="POST" target="formresponse" id="deploy_form" >
             <section class="table">
                 <input type="hidden" name="requestType" value="createATProgram">
-                <div class="div_row"><div class="div_cell">Contract Name:</div><div class="div_cell"><input type="text" name="name" style="width:100%;" pattern="[a-zA-Z0-9]{1,10}" title="Only letters (a to Z) and numbers"></div></div>
+                <div class="div_row"><div class="div_cell">Contract Name:</div><div class="div_cell"><input type="text" name="name" style="width:100%;" pattern="[a-zA-Z0-9]{1,30}" title="Only letters (a to Z) and numbers"></div></div>
                 <div class="div_row"><div class="div_cell">Description:</div><div class="div_cell"><textarea name="description" rows="5" style="width:100%;min-width:200px;"></textarea></div></div>
                 <!-- <div class="div_row"><div class="div_cell">creationBytes:</div><div class="div_cell"><input type="text" name="creationBytes" style="width:100%;min-width:200px;"></div></div> -->
                 <div class="div_row"><div class="div_cell">Bytecode:</div><div class="div_cell"><input type="text" name="code" style="width:100%;min-width:200px;" pattern="[a-fA-F0-9]{1,}"></div></div>

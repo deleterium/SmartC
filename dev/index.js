@@ -2,6 +2,7 @@ function onLoad() {
     var scode = document.getElementById("source-code");
     scode.addEventListener('keyup',textKeyUp);
     scode.addEventListener('click',textKeyUp);
+    scode.addEventListener('mousemove',SetSourceCode);
 
     document.getElementById("compile").addEventListener('click', compileCode);
     document.getElementById("test").addEventListener('click', testCode);
@@ -20,6 +21,8 @@ function onLoad() {
     detachDeployment().minimize(true);
 }
 
+var colorToggle;
+var colorMode;
 
 function compileCode(){
 
@@ -69,9 +72,11 @@ function textKeyUp () {
     var text = elem.value;
     var i;
 
+    SetSourceCode();
+
     // grows text area
     var oldrow = elem.rows;
-    var newrow = (text.match(/\n/g) || '').length + 2;
+    var newrow = (text.match(/\n/g) || '').length + 5;
 
     //eye-candy (resize in 8 steps using polinomial interpolation)
     i=1;
@@ -83,20 +88,44 @@ function textKeyUp () {
         } else {
             i++;
             elem.rows = Math.round( i*i*(oldrow -newrow)/(end*end) + i*(newrow - oldrow)*(2/end) + oldrow);
+            /* padding definition code 7hgdfeds Change all!!! (also style.css)*/
+            document.getElementById('color_code').style.height="calc("+elem.clientHeight+"px - 2em)";
         }
     }
     if (newrow-oldrow > 3 || newrow-oldrow < -3) id=setInterval(frame, 100);
     else elem.rows = newrow;
     //eye-candy end
 
-    //if coding in assembly, update also assembly output.
-    if (document.getElementById("source_is_c").checked === false) {
-        document.getElementById("assembly_output").innerHTML = asm_highlight(document.getElementById("source-code").value);
-    }
+    /* padding definition code 7hgdfeds Change all!!! (also style.css)*/
+    document.getElementById('color_code').style.height="calc("+elem.clientHeight+"px - 2em)";
 
     //update tooltip info (line:column)
     var cpos = elem.value.substr(0, elem.selectionStart).split("\n");
     document.getElementById("tooltip_span").innerHTML="Cursor: "+ cpos.length + ":"+cpos[cpos.length-1].length;
+}
+
+function SetColorCode () {
+    if (colorMode!="color") {
+        colorMode="color"
+        clearInterval(colorToggle);
+        var source=document.getElementById('source-code');
+        var dest=document.getElementById('color_code');
+
+        if(document.getElementById("source_is_c").checked) {
+            dest.innerHTML=hljs.highlight(source.value, {language: 'c'}).value+"\n\n\n\n\n";
+        } else {
+            dest.innerHTML=asm_highlight(source.value)+"\n\n\n\n\n";
+        }
+        source.className ="transp";
+    }
+}
+function SetSourceCode () {
+    clearInterval(colorToggle);
+    colorToggle=setInterval(SetColorCode, 500);
+    if (colorMode!="source") {
+        colorMode="source";
+        document.getElementById('source-code').className="opaque";
+    }
 }
 
 /* debug use only
