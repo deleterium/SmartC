@@ -9,6 +9,9 @@ function onLoad() {
     document.getElementById("test").addEventListener('click', testCode);
     document.getElementById("btn_help").addEventListener('click', detachHelp);
     document.getElementById("source_is_c").addEventListener('click', toggleLang);
+    document.getElementById("save").addEventListener('click', SaveSource);
+    document.getElementById("load").addEventListener('click', LoadSource);
+
 
     document.getElementById("source_legend").addEventListener('click',detachSource);
     document.getElementById("actions_legend").addEventListener('click',detachActions);
@@ -125,6 +128,28 @@ function SetSourceCode (force) {
         colorMode="source";
         document.getElementById('source-code').className="opaque";
     }
+}
+
+function SaveSource() {
+    var text = document.getElementById('save').innerHTML;
+    localStorage.setItem('program', document.getElementById('source-code').value);
+    setTimeout(function () {
+        document.getElementById('save').innerHTML=text;
+    }, 5000);
+    document.getElementById('save').innerHTML="&#9745;"
+}
+function LoadSource() {
+    var temp = document.getElementById('source-code').value;
+    if (temp === "" || confirm("Sure over-write current program?") == true) {
+        document.getElementById('source-code').value=localStorage.getItem("program");
+        textKeyUp(true);
+        temp = document.getElementById('load').innerHTML;
+        setTimeout(function () {
+            document.getElementById('load').innerHTML=temp;
+        }, 5000);
+        document.getElementById('load').innerHTML="&#9745;"
+    }
+    document.getElementById("source-code").focus();
 }
 
 /* debug use only
