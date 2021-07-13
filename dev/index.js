@@ -1,6 +1,7 @@
 function onLoad() {
     var scode = document.getElementById("source-code");
     scode.addEventListener('keyup',textKeyUp);
+    scode.addEventListener('keydown',textKeyUp);
     scode.addEventListener('click',textKeyUp);
     scode.addEventListener('mousemove',SetSourceCode);
 
@@ -67,12 +68,12 @@ function compileCode(){
     }
 }
 
-function textKeyUp () {
+function textKeyUp (force) {
     var elem = document.getElementById("source-code");
     var text = elem.value;
     var i;
 
-    SetSourceCode();
+    SetSourceCode(force);
 
     // grows text area
     var oldrow = elem.rows;
@@ -88,16 +89,14 @@ function textKeyUp () {
         } else {
             i++;
             elem.rows = Math.round( i*i*(oldrow -newrow)/(end*end) + i*(newrow - oldrow)*(2/end) + oldrow);
-            /* padding definition code 7hgdfeds Change all!!! (also style.css)*/
-            document.getElementById('color_code').style.height="calc("+elem.clientHeight+"px - 2em)";
+            document.getElementById('color_code').style.height=elem.offsetHeight+"px";
         }
     }
     if (newrow-oldrow > 3 || newrow-oldrow < -3) id=setInterval(frame, 100);
     else elem.rows = newrow;
     //eye-candy end
 
-    /* padding definition code 7hgdfeds Change all!!! (also style.css)*/
-    document.getElementById('color_code').style.height="calc("+elem.clientHeight+"px - 2em)";
+    document.getElementById('color_code').style.height=elem.offsetHeight+"px";
 
     //update tooltip info (line:column)
     var cpos = elem.value.substr(0, elem.selectionStart).split("\n");
@@ -107,7 +106,7 @@ function textKeyUp () {
 function SetColorCode () {
     if (colorMode!="color") {
         colorMode="color"
-        clearInterval(colorToggle);
+        clearTimeout(colorToggle);
         var source=document.getElementById('source-code');
         var dest=document.getElementById('color_code');
 
@@ -119,10 +118,10 @@ function SetColorCode () {
         source.className ="transp";
     }
 }
-function SetSourceCode () {
-    clearInterval(colorToggle);
-    colorToggle=setInterval(SetColorCode, 500);
-    if (colorMode!="source") {
+function SetSourceCode (force) {
+    clearTimeout(colorToggle);
+    colorToggle=setTimeout(SetColorCode, 500);
+    if (colorMode!="source" || force === true) {
         colorMode="source";
         document.getElementById('source-code').className="opaque";
     }
@@ -281,6 +280,7 @@ function toggleLang(ev) {
         document.getElementById("bt1").innerText = "Assembly";
     }
     document.getElementById("assembly_output").innerHTML = "";
+    textKeyUp(true);
 }
 
 function deployClick(deploy_port) {
