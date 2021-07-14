@@ -134,6 +134,9 @@ function createSyntacticTree(ast) {
         if (ast.length == 1) {
             return ast[0];
         }
+        if (i!=0) {
+            throw new SyntaxError("At line: "+ast[0].line+". Sentence not starting with keyword... Missing ';' ?");
+        }
         return { Left:      createSyntacticTree(ast.slice(0,i+1)),
                 Operation: ast[i],
                 Right:     createSyntacticTree(ast.slice(i+1)) };

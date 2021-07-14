@@ -947,6 +947,8 @@ void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r
     [ "long a, slot[4]; sleep slot[a];", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare slot\n^const SET @slot #0000000000000007\n^declare slot_0\n^declare slot_1\n^declare slot_2\n^declare slot_3\n\nSET @r0 $($slot + $a)\nSLP $r0\nFIN\n" ],
     //bug 17 Could not start program with function
     [ "Send_To_Address_In_B(sendEachBlockNQT);\n#include APIFunctions\n#pragma useVariableDeclaration false", false, "FUN send_to_Address_in_B $sendEachBlockNQT\nFIN\n" ],
+    //bug 18 Fix infinite recursion loop with wrong code
+    [ "Send_To_Address_In_B(sendEachBlockNQT) sleep SLP_BLOCKS;", true, "" ],
 //    [ "", false, "" ],
     
 
