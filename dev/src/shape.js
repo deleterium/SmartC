@@ -102,7 +102,7 @@
             if (sP_ast[curr].type === "Function") {
                 function_name = sP_ast[curr].value;
                 if (sP_ast.length >curr +2) {
-                    if (sP_ast[curr-1].type == "Keyword" && sP_ast[curr+1].type == "CodeCave" && sP_ast[curr+2].type == "CodeDomain") {
+                    if (curr > 0 && sP_ast[curr-1].type == "Keyword" && sP_ast[curr+1].type == "CodeCave" && sP_ast[curr+2].type == "CodeDomain") {
                         args=[];
                         tokens = sP_ast[curr+1].params;
                         // alteration here, do also in generator.js code 3Ewuinl

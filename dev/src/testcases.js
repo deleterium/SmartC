@@ -945,6 +945,8 @@ void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r
     [ "#pragma globalOptimization\n long a, b; a=b;insertPlayer(a); void insertPlayer(long address) { long id; id=(address >> 27); }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare insertPlayer_address\n^declare insertPlayer_id\n\nSET @a $b\nPSH $a\nJSR :__fn_insertPlayer\nFIN\n\n__fn_insertPlayer:\nPOP @insertPlayer_address\nSET @insertPlayer_id $insertPlayer_address\nSET @r0 #000000000000001b\nSHR @insertPlayer_id $r0\nRET\n" ],
     //bug 16, Could not return or sleep with array and variable index
     [ "long a, slot[4]; sleep slot[a];", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare slot\n^const SET @slot #0000000000000007\n^declare slot_0\n^declare slot_1\n^declare slot_2\n^declare slot_3\n\nSET @r0 $($slot + $a)\nSLP $r0\nFIN\n" ],
+    //bug 17 Could not start program with function
+    [ "Send_To_Address_In_B(sendEachBlockNQT);\n#include APIFunctions\n#pragma useVariableDeclaration false", false, "FUN send_to_Address_in_B $sendEachBlockNQT\nFIN\n" ],
 //    [ "", false, "" ],
     
 
