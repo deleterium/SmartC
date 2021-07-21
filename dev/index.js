@@ -34,6 +34,9 @@ function compileCode(){
 
     var codeString = document.getElementById("source-code").value;
     var token_output, parser_output, ver_output, big_ast, big_ast_opTree;
+    var msg;
+
+    const t0 = new Date();
 
     try{
         if (document.getElementById("source_is_c").checked) {
@@ -54,11 +57,12 @@ function compileCode(){
         //document.getElementById("status_output").innerHTML = asmCode+"\n\n"+JSON.stringify(big_ast_opTree, null, '    ');
         //document.getElementById("status_output").innerHTML = JSON.stringify(bcode, stringifyReplacer , '    ');
         //document.getElementById("status_output").innerHTML = JSON.stringify(bcode, null , '    ');
-        var msg="<span class='msg_success'>Compile sucessfull!!!</span>";
+        const t1 = new Date();
+        msg="<span class='msg_success'>Compile sucessfull!!!</span> <small>Compiled at " + t1.getHours() +":"+t1.getMinutes()+":"+t1.getSeconds();
         if (document.getElementById("debug").checked) {
-            msg+="\n\n"+JSON.stringify(bcode, null , '    ')
+            msg+=" in "+(t1-t0)+" ms.\n\n"+JSON.stringify(bcode, null , '    ')
         }
-        document.getElementById("status_output").innerHTML = msg;
+        document.getElementById("status_output").innerHTML = msg+"</small>";
 
         fill_form(bcode);
 
