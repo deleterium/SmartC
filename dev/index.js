@@ -3,7 +3,9 @@ function onLoad() {
     scode.addEventListener('keyup',textKeyUp);
     scode.addEventListener('keydown',textKeyUp);
     scode.addEventListener('click',textKeyUp);
-    scode.addEventListener('mousemove',SetSourceCode);
+    scode.addEventListener('mousedown',SetSourceCode);
+    scode.addEventListener('mouseup',textKeyUp);
+    scode.addEventListener('paste',textKeyUp);
 
     document.getElementById("compile").addEventListener('click', compileCode);
     document.getElementById("test").addEventListener('click', testCode);
@@ -107,10 +109,17 @@ function textKeyUp (force) {
 }
 
 function SetColorCode () {
+    var source=document.getElementById('source-code');
+
+    if (source.selectionStart != source.selectionEnd) {
+        //Do not highlight if some text is selected. This prevents
+        //  text selection to fade away.
+        return;
+    }
+
     if (colorMode!="color") {
         colorMode="color"
         clearTimeout(colorToggle);
-        var source=document.getElementById('source-code');
         var dest=document.getElementById('color_code');
 
         if(document.getElementById("source_is_c").checked) {
