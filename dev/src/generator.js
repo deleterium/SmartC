@@ -1175,6 +1175,18 @@ function bigastCompile(bc_Big_ast){
                         TmpMemObj=LGenObj.MemObj;
                     }
 
+                    //Pointer verifications
+                    if (bc_Big_ast.Config.useVariableDeclaration){
+                        if (RGenObj.MemObj.declaration.indexOf("_ptr") != -1 && TmpMemObj.declaration.indexOf("_ptr") == -1) {
+                            //Case when adding numbers to pointers
+                            TmpMemObj.declaration+="_ptr";
+                        }
+                        if (TmpMemObj.declaration.indexOf("_ptr") != -1) {
+                            if (objTree.Operation.value != "+" && objTree.Operation.value != "-")
+                                throw new TypeError("At line: "+objTree.Operation.line+". Operation not allowed on pointers. Only '+', '-', '++' and '--' are.");
+                        }
+                    }
+
                     instructionstrain+=createInstruction(objTree.Operation, TmpMemObj, RGenObj.MemObj);
 
                     if (logicalOp === true) {
@@ -1240,6 +1252,19 @@ function bigastCompile(bc_Big_ast){
                     if (LGenObj.MemObj.type==="array" && LGenObj.MemObj.declaration==="long_ptr" && RGenObj.MemObj.size == 1) {
                         throw new TypeError("At line: "+objTree.Operation.line+". Invalid left value for "+objTree.Operation.type+". Can not reassign an array.");
                     }
+                    //Pointer verifications
+                    if (bc_Big_ast.Config.useVariableDeclaration){
+                        if (    LGenObj.MemObj.declaration.indexOf("_ptr") != -1
+                            && objTree.Operation.type === "SetOperator"
+                            && RGenObj.MemObj.declaration.indexOf("_ptr") == -1) {
+                            //Case when adding numbers to pointers
+                            RGenObj.MemObj.declaration+="_ptr";
+                            if (objTree.Operation.value != '+=' && objTree.Operation.value != '-='){
+                                throw new TypeError("At line: "+objTree.Operation.line+". Operation not allowed on pointers. Only '+', '-', '++' and '--' are.");
+                            }
+                        }
+                    }
+
                     if (bc_Big_ast.Config.useVariableDeclaration){
                         if ( !auxVars.isTemp(RGenObj.MemObj.location) ){
                             if (LGenObj.MemObj.declaration != RGenObj.MemObj.declaration){

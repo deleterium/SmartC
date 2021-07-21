@@ -502,6 +502,8 @@ pa = pb; pa = &pb; pa = &vb; *pa= vb;\
     [ "#pragma warningToError false\nlong a[4], *b, c; c=&a; c=&a[0]; c=&c;",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^const SET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\n\nSET @c #0000000000000005\nSET @c #0000000000000006\nSET @c #000000000000000b\nFIN\n" ],
 
     [ "long *a, b, c;\n*(a+1)=b; *(a+30)=b; *(a+c)=b;\nb=*(a+1); b=*(a+30); b=*(a+c);",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare c\n\nSET @r0 $a\nINC @r0\nSET @($r0) $b\nSET @r0 #000000000000001e\nADD @r0 $a\nSET @($r0) $b\nSET @r0 $a\nADD @r0 $c\nSET @($r0) $b\nSET @b $a\nINC @b\nSET @r0 $($b)\nSET @b $r0\nSET @b #000000000000001e\nADD @b $a\nSET @r0 $($b)\nSET @b $r0\nSET @b $a\nADD @b $c\nSET @r0 $($b)\nSET @b $r0\nFIN\n" ],
+    [ "long *a, b, Array[4]; a=Array+2; a=Array-b; a+=7; a++;",    false,"^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare Array\n^const SET @Array #0000000000000008\n^declare Array_0\n^declare Array_1\n^declare Array_2\n^declare Array_3\n\nSET @a $Array\nINC @a\nINC @a\nSET @a $Array\nSUB @a $b\nSET @r0 #0000000000000007\nADD @a $r0\nINC @a\nFIN\n" ],
+    [ "long *a, b, Array[4]; a=Array*2;",    true,"" ],
 //    [ "",    false,"" ],
 
 // Array
