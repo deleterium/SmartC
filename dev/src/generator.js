@@ -2668,6 +2668,19 @@ function bigastCompile(bc_Big_ast){
                         optimized_lines++;
                         return;
                     }
+
+                    //POP @r0
+                    //PSH $r0
+                    // turns nothing (safe for registers)
+                    psh_slp_dat=/^\s*(PSH|SLP)\s+\$(r\d+)\s*$/.exec(array[index+1]);
+                    if (psh_slp_dat !== null) {
+                        if (psh_slp_dat[2] == popdat[1]) {
+                            array[index]="DELETE";
+                            array[index+1]="DELETE";
+                            optimized_lines++;
+                            return;
+                        }
+                    }
                 }
 
                 //Optimize pointer operations with zero index
