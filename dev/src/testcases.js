@@ -949,6 +949,8 @@ void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r
     [ "Send_To_Address_In_B(sendEachBlockNQT);\n#include APIFunctions\n#pragma useVariableDeclaration false", false, "FUN send_to_Address_in_B $sendEachBlockNQT\nFIN\n" ],
     //bug 18 Fix infinite recursion loop with wrong code
     [ "Send_To_Address_In_B(sendEachBlockNQT) sleep SLP_BLOCKS;", true, "" ],
+    //bug19 Optimization creating wrong code. Removed optimization on double SET instruction
+    [ "#pragma globalOptimization\nlong _idx, uCount; _idx = ~(_idx+uCount); uCount = _idx; _idx++;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare _idx\n^declare uCount\n\nSET @r0 $_idx\nADD @r0 $uCount\nNOT @r0\nSET @_idx $r0\nSET @uCount $_idx\nINC @_idx\nFIN\n" ],
 //    [ "", false, "" ],
     
 

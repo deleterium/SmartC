@@ -2527,8 +2527,7 @@ function bigastCompile(bc_Big_ast){
                     if ( opdat !== null && setdat[1] == opdat[3]) {
                         if (opdat[1] === "ADD" || opdat[1] === "SUB" || opdat[1] === "MUL" || opdat[1] === "DIV" ||
                             opdat[1] === "AND" || opdat[1] === "XOR" || opdat[1] === "BOR" ||
-                            opdat[1] === "MOD" || opdat[1] === "SHL" || opdat[1] === "SHR" ||
-                            opdat[1] === "SET" ) {
+                            opdat[1] === "MOD" || opdat[1] === "SHL" || opdat[1] === "SHR" ) {
                             array[index]=opdat[1]+" @"+opdat[2]+" $"+setdat[2];
                             array[index+1]="DELETE";
                             optimized_lines++;
