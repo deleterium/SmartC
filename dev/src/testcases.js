@@ -849,6 +849,7 @@ a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;
     [ "#pragma globalOptimization\n#pragma maxConstVars 3\nsleep 1;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n\nSLP $n1\nFIN\n" ],
     [ "#pragma globalOptimization\n long a,b; if ( a==4 && (b || a )) { a++; a=4;} b++;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n\nSET @r0 #0000000000000004\nBNE $a $r0 :__if1_endif\nBNZ $b :__if1_start\nBZR $a :__if1_endif\n__if1_start:\nINC @a\nSET @a #0000000000000004\n__if1_endif:\nINC @b\nFIN\n" ],
     [ "#pragma globalOptimization\n long a,b, c; if ( a==4 && (b || a>c )) { a++; a=4; } b++;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare b\n^declare c\n\nSET @r0 #0000000000000004\nBNE $a $r0 :__if1_endif\nBNZ $b :__if1_start\nBLE $a $c :__if1_endif\n__if1_start:\nINC @a\nSET @a #0000000000000004\n__if1_endif:\nINC @b\nFIN\n" ],
+    [ "#pragma globalOptimization\n long a; a=~a;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nNOT @a\nFIN\n" ],
 //    [ "", false, "" ],
 
 //const keyword

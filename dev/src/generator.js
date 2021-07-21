@@ -2273,6 +2273,7 @@ function bigastCompile(bc_Big_ast){
         var setdat, opdat, clrdat, popdat;
         var branchdat;
         var psh_slp_dat;
+        var notdat, setdat2;
         var optimized_lines;
 
         do {
@@ -2571,7 +2572,7 @@ function bigastCompile(bc_Big_ast){
                             //SET @r0 $a
                             //SET @z $($val + $r0)
                             // turns SET @z $($val + $a)
-                            let setdat2 = /^\s*SET\s+@(\w+)\s+\$\(\$(\w+)\s*\+\s*\$(\w+)\)\s*$/.exec(array[i]);
+                            setdat2 = /^\s*SET\s+@(\w+)\s+\$\(\$(\w+)\s*\+\s*\$(\w+)\)\s*$/.exec(array[i]);
                             if (setdat2 !== null && setdat[1] == setdat2[3]) {
                                 array[index]="DELETE";
                                 array[i]="SET @"+setdat2[1]+" $($"+setdat2[2]+" + $"+setdat[2]+")";
@@ -2613,6 +2614,21 @@ function bigastCompile(bc_Big_ast){
 
                     }
 
+                    //SET @r0 $a
+                    //NOT @r0 (only registers)
+                    //SET @a $r0
+                    // turns NOT @a (safe!)
+                    notdat = /^\s*NOT\s+@(r\d+)\s*$/.exec(array[index+1]);
+                    if (notdat !== null && notdat[1] == setdat[1]) {
+                        setdat2 = /^\s*SET\s+@(\w+)\s+\$(\w+)\s*$/.exec(array[index+2]);
+                        if (setdat2 !== null && setdat[1] == setdat2[2] && setdat[2] == setdat2[1]) {
+                            array[index]="NOT @"+setdat[2];
+                            array[index+1]="DELETE";
+                            array[index+2]="DELETE";
+                            optimized_lines++;
+                            return;
+                        }
+                    }
                 }
 
                 //POP @r0
