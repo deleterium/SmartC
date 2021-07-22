@@ -33,14 +33,15 @@ var colorMode;
 function compileCode(){
 
     var codeString = document.getElementById("source-code").value;
-    var token_output, parser_output, ver_output, big_ast, big_ast_opTree;
+    var preprocessor_output, token_output, parser_output, ver_output, big_ast, big_ast_opTree;
     var msg;
 
     const t0 = new Date();
 
     try{
         if (document.getElementById("source_is_c").checked) {
-            token_output = tokenizer(codeString);
+            preprocessor_output = preprocessor(codeString);
+            token_output = tokenizer(preprocessor_output);
             parser_output = parser(token_output);
             ver_output = verify(parser_output);
             big_ast = shapeProgram(ver_output);

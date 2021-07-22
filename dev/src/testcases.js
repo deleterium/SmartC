@@ -885,6 +885,16 @@ const a=353; const d[1]=354; const car[1].driver=355; const car[0].passenger[1]=
     [ "#program activationAmount 5_0000_0000", false, "^program activationAmount 500000000\n^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n\nFIN\n" ],
 //    [ "", false, "" ],
 
+//define macro
+[ "macro define", "div" ],
+    [ "#define MAX 4\nlong a; a=MAX; long MAXimus=2;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare MAXimus\n\nSET @a #0000000000000004\nSET @MAXimus #0000000000000002\nFIN\n" ],
+    [ "#define MAX 4\n long a; a=MAX;\n #define MAX 2\n long MAXimus=MAX;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare MAXimus\n\nSET @a #0000000000000004\nSET @MAXimus #0000000000000002\nFIN\n" ],
+    [ "#define MAX 4\n long a; a=MAX;\n #define MAX \n long MAXimus=MAX;", true, "" ],
+    [ "#define 444 4\nlong a; a=444;\n #undef 444\nlong MAXimus=444;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare MAXimus\n\nSET @a #0000000000000004\nSET @MAXimus #00000000000001bc\nFIN\n" ],
+    [ "#define MAX 4\n#define MAX1 (MAX + 1)\n long a; if (a > MAX1) a++;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nSET @r0 #0000000000000005\nBLE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+    [ "#define MAX 4\n#define MAX1 (MAX + 1)\n#undef MAX\n long a; if (a > MAX1) a++;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nSET @r0 #0000000000000005\nBLE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n" ],
+//    [ "", false, "" ],
+
 //bugfixes
     [ "Bug fixes", "div" ],
     //bug 1, goto failed with undeclared variable
@@ -1071,7 +1081,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
                 continue;
             }
             result+="<br>Test "+i+" ";
-            code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer(full_tests[i][0]))))));
+            code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer(preprocessor(full_tests[i][0])))))));
             if (full_tests[i][1] === false) {
                 if (code === full_tests[i][2]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(full_tests[i][0])+"</span>";
@@ -1103,7 +1113,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
                 continue;
             }
             result+="<br>Test "+i+" ";
-            code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer("#pragma useVariableDeclaration false\n"+keywords_tests[i][0]))))));
+            code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer(preprocessor("#pragma useVariableDeclaration false\n"+keywords_tests[i][0])))))));
             if (keywords_tests[i][1] === false) {
                 if (code === keywords_tests[i][2]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(keywords_tests[i][0])+"</span>";
@@ -1135,7 +1145,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
                 continue;
             }
             result+="<br>Test "+i+" ";
-            code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer("#pragma useVariableDeclaration false\n"+logical_tests[i][0]))))));
+            code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer(preprocessor("#pragma useVariableDeclaration false\n"+logical_tests[i][0])))))));
             if (logical_tests[i][1] === false) {
                 if (code === logical_tests[i][4]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(logical_tests[i][0])+"</span>";
@@ -1167,7 +1177,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
                 continue;
             }
             result+="<br>Test "+i+" ";
-            code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer("#pragma useVariableDeclaration false\n"+tests[i][0]))))));
+            code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer(preprocessor("#pragma useVariableDeclaration false\n"+tests[i][0])))))));
             if (tests[i][1] === false) {
                 if (code === tests[i][4]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(tests[i][0])+"</span>";
