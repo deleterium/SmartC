@@ -1,0 +1,219 @@
+/* GENERAL config */
+* {
+    box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	font-family: sans-serif;
+	background: #ddd;
+	display: grid;
+	grid-gap: 1em;
+}
+
+h1 {
+	padding: 1vh;
+	background: #da7;
+	color: #114;
+	margin: 0 0 3vh 0;
+	text-align: center;
+	border-bottom: 0.5vh double #114;
+}
+
+fieldset {
+	border: solid 0.5vh #ccc;
+	padding: 1em;
+	margin: 0em 1em;
+	border-radius: 2vh;
+}
+
+legend, .tooltip {
+	background-color: #da7;
+	color: #114;
+	padding: 3px 6px;
+	border: 0.2vh solid #114;
+	transition: all ease 0.3s;
+}
+legend:hover {
+	background: #eb8;
+}
+legend {
+	cursor: pointer;
+}
+
+#deployment_iframe {
+	border: 1px solid #114;
+	width: 97%;
+	height: 33vh;
+}
+
+pre {
+	padding: 0;
+	margin: 0;
+	min-height: 50px;
+	font-family: "Lucida Console", "Courier New", 'monospace';
+	white-space: pre-wrap;
+	word-wrap: anywhere;
+	max-width: 100%;
+}
+
+/* Buttons */
+.btn_class {
+	padding: 0.5em;
+	font-size: 100%;
+	text-align: center;
+	background: #fff;
+	transition: all ease 0.3s;
+	border: solid 0.5vh #ccc;
+	border-radius: 1vh;
+	margin: 0;
+}
+
+#source_is_c:checked ~ #bt1      { background: #ccf; }
+#debug:checked ~ #bt2            { background: #fdd; }
+label:hover                      { background: #ddf; }
+#debug:hover ~ #bt2 { background: #fcc; }
+#test:hover     { background: #fdd; }
+.btn_class:hover{ background: #dfd; }
+
+/* CLASSES and IDs configs */
+.tooltip {
+	position: sticky;
+	white-space: nowrap;
+	display: inline;
+	bottom: 1%;
+	left:  100%;
+}
+
+#source-code {
+	resize: none;
+	overflow-y: hidden;
+	overflow-x: auto;
+	outline: none;
+}
+#color_code {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	z-index: -1;
+}
+#source-code, #color_code {
+	background: #fafbfc;
+	border: 1px black solid;
+	border-radius: 5px;
+	font-size: 100%;
+	color: #114;
+	margin: 0;
+	padding: 1em;
+	font-family: "Lucida Console", "Courier New", 'monospace';
+	width: 100%;
+}
+
+.transp {
+	opacity: 0;
+	transition: all ease 3s;
+}
+.opaque {
+	opacity: 1;
+	transition: all ease 0.2s;
+}
+
+
+::selection {
+	color: #114;
+	background: rgb(202, 202, 238);
+}
+
+.msg_failure {
+	font-weight: bold;
+	color: red;
+}
+.msg_success {
+	font-weight: bold;
+	color: green;
+}
+
+/* general lay-out */
+.table {
+	width: 100%;
+	display: table;
+}
+.div_row {
+	display: table-row;
+}
+.div_cell {
+	display: table-cell;
+	width: 50%;
+	vertical-align: middle;
+}
+
+/*Grid for page (desktop) */
+@media only screen and (min-width: 960px) {
+	.gdrow1 { grid-row-start: 1; }
+	.gdrow2 { grid-row-start: 2; }
+	.gdrow3 { grid-row-start: 3; }
+	.gdrow4 { grid-row-start: 4; }
+	.gdcol1 { grid-column-start: 1; }
+	.gdcol2 { grid-column-start: 2; }
+	.gdcol12 { grid-column-start: 1; grid-column-end: 3; }
+}
+
+/*Grid for page (mobile) */
+@media only screen and (max-width: 960px) {
+	.gmrow1 { grid-row-start: 1; }
+	.gmrow2 { grid-row-start: 2; }
+	.gmrow3 { grid-row-start: 3; }
+	.gmrow4 { grid-row-start: 4; }
+	.gmrow5 { grid-row-start: 5; }
+	.gmrow6 { grid-row-start: 6; }
+}
+
+/*Grid for buttons */
+.grow1 { grid-row-start: 1; }
+.grow2 { grid-row-start: 2; }
+.gcol1 { grid-column-start: 1; }
+.gcol2 { grid-column-start: 2; }
+.gcol3 { grid-column-start: 3; }
+.gcol4 { grid-column-start: 4; }
+.gcol12 { grid-column-start: 1; grid-column-end: 3;}
+
+.div_window_source {
+	padding: 0px;
+	position: relative;
+}
+.div_window_normal {
+	padding: 1vh;
+}
+.div_window_grid {
+	padding: 1vh;
+	display: grid;
+	grid-gap: 1em;
+	/* justify-content: center; */
+}
+
+.inc_height { min-height: 150px; }
+
+.winbox {
+    background: linear-gradient(90deg, #228, #114);
+    border-radius: 12px 12px 0 0;
+    box-shadow: none;
+}
+
+.winbox.min {
+    border-radius: 0;
+}
+
+.wb-body {
+    /* the width of window border: */
+    margin: 4px;
+    background: #ddd;
+}
+
+.wb-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.wb-full  { display: none }
