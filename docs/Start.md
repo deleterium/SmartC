@@ -1,7 +1,7 @@
 [Back](./)
 
 ## Language rules
-Expressions are C-like and evaluated from left to right. Rules are simpler than in C, so complexes expressions may have different evaluations from C, but simple expressions shall have same outcome given special characteristics in Signum assembly language (derived from CIYAM).
+This project aims to be as close to C as possible. But given special characteristics in Signum assembly language (derived from CIYAM) some differences will occur.
 
 ### Comments
 As C, can be one line `//` or multi-line `/* .... */`;
@@ -21,10 +21,17 @@ For future implementation these keywords can be added: `case`, `char`, `default`
 
 ### Macros
 Some special features can be enabled/disable via preprocessor directives:
+#### #program
 * `#program name YourProgramName`: Set program's name. Only regular letters and numbers allowed, max 30 chars in length.
 * `#program description Your program description`: Set program's description. No new lines and max length is 1000 chars.
 * `#program activationAmount 100000000`: Set program's activation amount in NQT (1 Burst = 100000000 NQT). If an incoming transaction has an amount is less than this value, it will not be processed by program (but the amount will be received!). Set a low value but bigger than worst case amount needed to run in your program. If set too low, your program will be frozen during execution (out of gas). If set too high, program balance will be high after execution (unburned balance). Remember to handle this case if creating serious program!
+#### #include
 * `#include APIFunctions [true/false/1/0/]`: Can make Burstcoin API functions available for use as functions. Default value is `false`. Can be enabled by declaring it with empty argument, `true` or `1`. Function names follow the [ciyam at documentation](https://ciyam.org/at/at_api.html).
+#### #define
+* `#define CNAME`: Just define CNAME.
+* `#define CNAME value or expression`: Replaces all ocurrences of 'CNAME' to 'value or expression' starting on next line. Already defined are values `true` for 1; `false` and `NULL` for 0.
+* `#undef CNAME`: Undefines CNAME.
+#### #pragma
 * `#pragma enableRandom [true/false/1/0/]`: Makes labels for jumps and conditionals receive a random value. Default value is `false`. Default behaviour is labels having an increasing number starting with 1 (number is base 36).
 * `#pragma enableLineLabels [true/false/1/0/]`: Adds line number to labels in assembly. Only usefull for debug purposes. Default value is `false`.
 * `#pragma globalOptimization [true/false/1/0/]`: Adds a final step to the compiler where generated code will be optimized. Default value is `false` until more test are done. Makes generated assembly code even less readable, removing labels not referenced by jumps.
@@ -53,8 +60,15 @@ All global statements are grouped at the beginning of assembly code (even if aft
 ### Designing tips
 If you plan to use a number many times, declare it globally and use in your code. This can save one instruction for each constant used and also make your code smaller. Example: `long n0xff=0xff; if (x==n0xff)...` But if you use it only a few times, or is under memory pressure, you can use constants at your code but making it bigger. For big programs it is more common be under codesize pressure, so this is a great exchange. The exception is Zero. Setting a variable to zero has an special assembly code. Comparisons against zero are also smaller than comparisons against variables. Comparisons against numbers are long assembly instrunctions. Try it to see assembly code genereated! If you are under memory pressure (or want to code smallest code possible) use global variables, because exchanging variables thru functions will cause they to be declared twice, pushed onto stack and popped at function.
 
+### Main differences from C
+* signed or unsigned: There is no difference between signed and unsigned longs. The rule is that all values behave as signed when comparing values or during arithmetic operations, but treated as unsigned during bit operations. Keep this in mind if developing with gcc.
+* Precedence of operators: Rules are simpler in SmartC. Note differences in special for bitwise OR. Check assembly code or use parenthesis if in doubt.
+* static: Variables by default are static in SmartC. Set values at the start of function if needed. Their values will not be changed in other functions unless variable is global.
+* Initial value: By default all values are set to zero ar contract creation, so it is not need to initialize them with zero when needed.
+* register: By default there are 5, from r0..r4. They can be used without declaration, but inspect assembly code to ensure they are not changed during other instructions. Unlike registers in modern CPUs, these registers in SmartC are just regular variables created and used by compiler.
+
 ## Notes
-* Run testcases to check tested operations. It shall be no failed cases in red.
+* Run testcases to check tested operations. It shall be no failed cases.
 * Please report a bug if any strange behavior is found.
 
 [Back](./)
