@@ -15,7 +15,7 @@
 
     // configurations for compiler
     Big_ast.Config = {
-        compiler_version: "dev",   //sets this compiler version!!!
+        compiler_version: "0.2",   //sets this compiler version!!!
         enableRandom:     false, //enable with #pragma enableRandom true
         enableLineLabels: false, //enable with #pragma enableLineLabels true
         globalOptimization: false, //enable with #pragma globalOptimization true
@@ -23,7 +23,7 @@
         maxConstVars:     0,     //change with #pragma maxConstVars N
         reuseAssignedVar: true,  //disable with #pragma reuseAssignedVar false
         useVariableDeclaration: true, //change with #pragma useVariableDeclaration false
-        version: "dev",            //change with #pragma version 0
+        version: "",            //change with #pragma version 0
         warningToError:   true,  //change with #pragma warningToError false
         APIFunctions:     false, //enable with #include APIFunctions
         PName:            "",    //set with #program name
