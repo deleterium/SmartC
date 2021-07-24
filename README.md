@@ -20,4 +20,4 @@ Download project to your computer and open file `index.html` of desired version 
 Visit [documentation page](./docs/) to start learning.
 
 ## Support
-Did you like the project? Consider be owner of one NFT keyword. The smart contract is online at S-2Z65-L478-VKD4-386YY. More information [here](https://deleterium.info/NFT/). Or, buy me a coffe: S-DKVF-VE8K-KUXB-DELET.
+Did you like the project? Consider be owner of one NFT keyword. The smart contract is online at S-2Z65-L478-VKD4-386YY. More information [here](https://deleterium.info/NFT/). Check also other [commemorative](./commemorative/) smart contracts. My address: S-DKVF-VE8K-KUXB-DELET.
