@@ -17,7 +17,7 @@ To empower developers, allowing them to create complex and highly optimized smar
 Download project to your computer and open file `index.html` of desired version in your browser. Optionally run latest version [on gitpages](https://deleterium.github.io/SmartC/v0.2/index.html). After compiling, information to create the AT is presented and it is possible to deploy on your own local node.
 
 ## Learning
-Visit [documentation page](./docs/) to start learning.
+Visit [documentation page](https://deleterium.github.io/SmartC/docs/) to start learning.
 
 ## Support
 Did you like the project? Consider be owner of one NFT keyword. The smart contract is online at S-2Z65-L478-VKD4-386YY. More information [here](https://deleterium.info/NFT/). Check also other [commemorative](./commemorative/) smart contracts. My address: S-DKVF-VE8K-KUXB-DELET.
