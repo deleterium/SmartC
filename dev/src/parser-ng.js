@@ -546,7 +546,8 @@ function parser(tokens) {
             big_mul *= 32n;
         }
 
-        return big_val.toString(16);
+        //fixes a='S-D3HS-T6ML-SJHU-2R5R2';
+        return big_val.toString(16).padStart(16,"0");
     }
 
     return parser_main();
