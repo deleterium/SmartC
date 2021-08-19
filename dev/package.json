@@ -1,27 +1,44 @@
 {
-    "name": "smartc",
-    "version": "dev",
-    "description": "C Compiler for smart contracts on Signum network",
-    "private": true,
-    "homepage": "https://github.com/deleterium/SmartC",
-    "scripts": {
-        "dev": "npx tsc",
-        "lint": "npx eslint ./src/*.ts",
-        "build": "npx tsc"
-    },
-    "eslintConfig": {
-        "env": {
-            "browser": true
-        }
-    },
-    "devDependencies": {
-        "@typescript-eslint/eslint-plugin": "^4.29.1",
-        "@typescript-eslint/parser": "^4.29.1",
-        "eslint": "^7.32.0",
-        "eslint-config-standard": "^16.0.3",
-        "eslint-plugin-import": "^2.24.0",
-        "eslint-plugin-node": "^11.1.0",
-        "eslint-plugin-promise": "^5.1.0",
-        "typescript": "^4.3.5"
+  "name": "smartc",
+  "version": "0.3.0",
+  "description": "C Compiler for smart contracts on Signum network",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deleterium/SmartC.git"
+  },
+  "keywords": [
+    "smartc",
+    "compiler",
+    "blockchain",
+    "c",
+    "typescript"
+  ],
+  "author": "Rui Deleterium",
+  "private": true,
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/deleterium/SmartC/issues"
+  },
+  "homepage": "https://github.com/deleterium/SmartC#readme",
+  "scripts": {
+    "dev": "npx tsc",
+    "lint": "npx eslint ./src/*.ts",
+    "build": "npx tsc"
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": true
     }
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.29.1",
+    "@typescript-eslint/parser": "^4.29.1",
+    "eslint": "^7.32.0",
+    "eslint-config-standard": "^16.0.3",
+    "eslint-plugin-import": "^2.24.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "typescript": "^4.3.5"
+  }
 }
