@@ -1,3 +1,5 @@
+* [Non-Technical FAQ](./Non-Technical-FAQ)
+### Technical documentation:
 * [Start](./Start)
 * [Deeper into SmartC](./Deeper-into-SmartC)
 * [API Functions](./API-Pseudo-Code)
