@@ -8,7 +8,7 @@ To empower developers, allowing them to create complex and highly optimized smar
 Download project to your computer and open file `index.html` of desired version in your browser. Optionally run latest version [on gitpages](https://deleterium.github.io/SmartC/v0.2/index.html). After compiling, information to create the AT is presented and it is possible to deploy on your own local node.
 
 ## FAQ
-Some information and explanation about the project for users that aren't programmers can be found on [Non-Technical FAQ](./https://deleterium.github.io/SmartC/docs/Non-Technical-FAQ);
+Some information and explanation about the project for users that aren't programmers can be found on [Non-Technical FAQ](https://deleterium.github.io/SmartC/docs/Non-Technical-FAQ);
 
 ## Learning
 Visit [documentation page](https://deleterium.github.io/SmartC/docs/) to get detailed technical information about the project. Check also [this channel on Youtube](https://www.youtube.com/channel/UC1MeALyx2YrWuDKsgqcBRHA) with a starting guide.
