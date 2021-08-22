@@ -195,17 +195,14 @@ function bigastProcessSyntax(baps_Big_ast) {
                 ps_Sntc.OpTree = createSyntacticTree(ps_Sntc.code);
                 delete ps_Sntc.code;
 
-            } else if (prop === "if_true") {
-                ps_Sntc.if_true.forEach(stnc => processSentence(stnc));
+            } else if (prop === "trueBlock") {
+                ps_Sntc.trueBlock.forEach(stnc => processSentence(stnc));
 
-            } else if (prop === "if_false") {
-                ps_Sntc.if_false.forEach(stnc => processSentence(stnc));
+            } else if (prop === "falseBlock") {
+                ps_Sntc.falseBlock.forEach(stnc => processSentence(stnc));
 
-            } else if (prop === "while_true") {
-                ps_Sntc.while_true.forEach(stnc => processSentence(stnc));
-
-            } else if (prop === "three_sentences") {
-                ps_Sntc.three_sentences.forEach(stnc => processSentence(stnc));
+            } else if (prop === "threeSentences") {
+                ps_Sntc.threeSentences.forEach(stnc => processSentence(stnc));
 
             } else if (prop === "Phrase") { //matches 'struct'
                 processSentence(ps_Sntc.Phrase);

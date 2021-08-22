@@ -1,1637 +1,1829 @@
- "use strict";
-
 // Author: Rui Deleterium
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-// Arrange sentences into Globalsentences or in functions
-// calls.
+/* global DECLARATION_TYPES TOKEN */
 
- function shapeProgram(sP_ast) {
+interface AST_CONFIG {
+    /** This compiler version!!! */
+    compilerVersion: 'dev',
+    /** Add random string to labels: #pragma enableRandom  */
+    enableRandom: boolean,
+    /** Add line number to labels: #pragma enableLineLabels */
+    enableLineLabels: boolean,
+    /** Make final global optimization: #pragma globalOptimization */
+    globalOptimization: boolean,
+    /** Number of auxiliary vars to be declared by compiler: #pragma maxAuxVars */
+    maxAuxVars: number,
+    /** Number of auxiliary Constants to be declared by compiler: #pragma maxConstVars */
+    maxConstVars: number,
+    /** Try to reuse variable at left side of assigment: #pragma reuseAssignedVar */
+    reuseAssignedVar: boolean,
+    /** Enforces declaration of variables: #pragma useVariableDeclaration */
+    useVariableDeclaration: boolean,
+    /** Compiler version asked by program: #pragma version */
+    version: string,
+    /** Warning to error: #pragma warningToError */
+    warningToError: boolean,
+    /** Support for API Functions: #include APIFunctions */
+    APIFunctions: boolean,
+    /** Program Name: #program name */
+    PName: string,
+    /** Program description: #program description */
+    PDescription: string,
+    /** Program activationAmount: #program activationAmount */
+    PActivationAmount: string,
+}
 
-    var Big_ast = { Global: {}, functions: [] , memory: [], labels: [], typesDefinitions: [], Config: {} };
-    var curr=0;
-    var latest_loop_id = [];
+interface AST_MACRO {
+    /** pragma, program or include */
+    type: string
+    /** Macro property, only one word */
+    property: string
+    /** Macro value, allowed many words */
+    value: string
+    line: number
+}
 
-    // configurations for compiler
-    Big_ast.Config = {
-        compiler_version: "dev",   //sets this compiler version!!!
-        enableRandom:     false, //enable with #pragma enableRandom true
-        enableLineLabels: false, //enable with #pragma enableLineLabels true
-        globalOptimization: false, //enable with #pragma globalOptimization true
-        maxAuxVars:       5,     //change with #pragma maxAuxVars N
-        maxConstVars:     0,     //change with #pragma maxConstVars N
-        reuseAssignedVar: true,  //disable with #pragma reuseAssignedVar false
-        useVariableDeclaration: true, //change with #pragma useVariableDeclaration false
-        version: "dev",            //change with #pragma version 0
-        warningToError:   true,  //change with #pragma warningToError false
-        APIFunctions:     false, //enable with #include APIFunctions
-        PName:            "",    //set with #program name
-        PDescription:     "",    //set with #program description
-        PActivationAmount: "",   //set with #program activationAmount
+type MEMORY_BASE_TYPES = 'register' | 'long' | 'struct' | 'array'
 
-    };
+interface MEMORY_SLOT {
+    /** Variable base types: 'register' | 'long' | 'struct' | 'array' */
+    type: MEMORY_BASE_TYPES
+    /** Variable name in assembly code */
+    asmName?: string
+    /** Controls if variable was already defined an can be used. */
+    isDeclared: boolean
+    /** Variable type during declaration */
+    declaration: DECLARATION_TYPES
+    /** Offset in memory. -1 if this slot is not in memory */
+    address: number
+    /** Variable name */
+    name: string
+    /** Variable scope */
+    scope: string
+    /** Variable size in longs */
+    size: number
+    /** struct type definition OR array type definition  */
+    typeDefinition?: string
+    /** For constants: content */
+    hexContent?: string
+    /** Array only property: base type */
+    arrayItemType?: string
+    /** Array only property: type definition of vase type (could be structs!) */
+    arrayItemTypeDefinition?: string
+    /** Total size of array. (is the same as size???) */
+    arrayTotalSize?: number
+}
 
-    //main function for shapeProgram method, only run once.
-    function shapeProgram_main() {
+// eslint-disable-next-line no-use-before-define
+type SENTENCES = SENTENCE_PHRASE | SENTENCE_IF_ENDIF | SENTENCE_IF_ELSE | SENTENCE_WHILE | SENTENCE_DO | SENTENCE_FOR | SENTENCE_STRUCT
 
-        prepareBigAst();
+interface SENTENCE_PHRASE {
+    type: 'phrase'
+    code?: TOKEN[]
+    OpTree?: {}
+}
+interface SENTENCE_IF_ENDIF {
+    type: 'ifEndif'
+    id: string
+    line: number
+    condition?: TOKEN[]
+    ConditionOpTree?: {}
+    trueBlock: SENTENCES[]
+}
+interface SENTENCE_IF_ELSE {
+    type: 'ifElse'
+    id: string
+    line: number
+    condition?: TOKEN[]
+    ConditionOpTree?: {}
+    trueBlock: SENTENCES[]
+    falseBlock: SENTENCES[]
+}
+interface SENTENCE_WHILE {
+    type: 'while'
+    id: string
+    line: number
+    condition?: TOKEN[]
+    ConditionOpTree?: {}
+    trueBlock: SENTENCES[]
+}
+interface SENTENCE_DO {
+    type: 'do'
+    id: string
+    line: number
+    condition?: TOKEN[]
+    ConditionOpTree?: {}
+    trueBlock: SENTENCES[]
+}
+interface SENTENCE_FOR {
+    type: 'for'
+    id: string
+    line: number
+    threeSentences: SENTENCES[]
+    trueBlock: SENTENCES[]
+}
+interface SENTENCE_STRUCT {
+    type: 'struct',
+    line: number,
+    name: string,
+    members: SENTENCES[],
+    Phrase: SENTENCE_PHRASE
+}
 
-        curr=0;
-        Big_ast.Global.sentences = code2sentenceS(Big_ast.Global.code)
-        delete Big_ast.Global.code;
+interface STRUCT_TYPE_DEFINITION {
+    type: 'struct',
+    name: string,
+    structMembers: MEMORY_SLOT[],
+    structAccumulatedSize: [string, number][],
+    MemoryTemplate: MEMORY_SLOT
+}
+interface ARRAY_TYPE_DEFINITION {
+    type: 'array'
+    name: string
+    // TODO is temporary?
+    arrayDimensions: number[]
+    arrayMultiplierDim: number[]
+    MemoryTemplate: MEMORY_SLOT
+}
+interface REGISTER_TYPE_DEFINITION {
+    type: 'register'
+    name: '',
+    MemoryTemplate: MEMORY_SLOT
+}
+interface LONG_TYPE_DEFINITION {
+    type: 'long'
+    name: '',
+    MemoryTemplate: MEMORY_SLOT
+}
+type TYPE_DEFINITIONS = STRUCT_TYPE_DEFINITION | ARRAY_TYPE_DEFINITION | REGISTER_TYPE_DEFINITION | LONG_TYPE_DEFINITION
 
-        Big_ast.functions.forEach(function (func) {
-            curr=0;
-            func.sentences= code2sentenceS(func.code);
-            delete func.code;
-        });
+interface AST_FUNCTION {
+    /** type of function declaration */
+    declaration: DECLARATION_TYPES
+    /** Function name */
+    name: string
+    /** Temporary, holding function arguments tokens */
+    arguments?: TOKEN[]
+    /** Variables of function arguments */
+    argsMemObj: MEMORY_SLOT[]
+    /** Temporary, holding function block tokens */
+    code?: TOKEN[]
+    /** Definitive sentences for function block. Not used on API Functions */
+    sentences?: SENTENCES[]
+    /** Line number of function declaration */
+    line?: number
+    /** Assembly name for API Functions only */
+    asmName?: string
+}
 
-        // Macro handler
-        Big_ast.Global.macros.forEach( processMacro );
-        if (Big_ast.Config.version === "") {
-            throw new TypeError("Compiler version not set. Pin current compiler version in your program with '#pragma version "+Big_ast.Config.compiler_version+"'.");
+interface AST_GLOBAL {
+    /** Definitions for API functions */
+    APIFunctions: AST_FUNCTION[]
+    /** macros values */
+    macros: AST_MACRO[]
+    /** Temporary, holding tokens objects */
+    code?: TOKEN[]
+    /** Definitive structure for compilation */
+    sentences?: SENTENCES[]
+}
+
+interface AST {
+    /** Global statements and information */
+    Global: AST_GLOBAL,
+    /** Declared functions */
+    functions: AST_FUNCTION[],
+    /** Variables and constants in memory */
+    memory: MEMORY_SLOT[],
+    /** All labels used in program */
+    labels: string[],
+    /** Extended information for arrays and structs */
+    typesDefinitions: TYPE_DEFINITIONS[],
+    /** Compiler configurations */
+    Config: AST_CONFIG,
+}
+
+/** Translate an array of tokens to a BigAST representing the program
+ * @param tokenAST Array of tokens
+ * @returns AST object in final type, but still incomplete.
+ * @throws {TypeError | SyntaxError} at any mistakes
+ */
+// eslint-disable-next-line no-unused-vars
+function shapeProgram (tokenAST: TOKEN[]): AST {
+    const BigAST: AST = {
+        Global: {
+            APIFunctions: [],
+            macros: []
+        },
+        functions: [],
+        memory: [],
+        labels: [],
+        typesDefinitions: [],
+        // Default configuration for compiler
+        Config: {
+            compilerVersion: 'dev',
+            enableRandom: false,
+            enableLineLabels: false,
+            globalOptimization: false,
+            maxAuxVars: 5,
+            maxConstVars: 0,
+            reuseAssignedVar: true,
+            useVariableDeclaration: true,
+            version: 'dev',
+            warningToError: true,
+            APIFunctions: false,
+            PName: '',
+            PDescription: '',
+            PActivationAmount: ''
         }
-        if (Big_ast.Config.version !== Big_ast.Config.compiler_version) {
-            throw new TypeError("This compiler is version '"+Big_ast.Config.compiler_version+"'. File needs a compiler version '"+Big_ast.Config.version+"'.");
+    }
+
+    const AuxVars: {
+        currentToken: number
+        /** current loop name to be used if break or continue keywords are found. */
+        latestLoopId: string[]
+        /** If true, compilation loop on generator() will not expect the variable to be declared. Used in function arguments. */
+        setIsDeclared: boolean
+        /** Variables scope (function name) */
+        currentScopeName:string
+        /** Prefix to be used in variables names (function name + '_') */
+        currentPrefix: string
+    } = {
+        currentToken: 0,
+        latestLoopId: [],
+        setIsDeclared: false,
+        currentScopeName: '',
+        currentPrefix: ''
+    }
+
+    /* * * Main function! * * */
+    function shapeMain () {
+        splitGlobalAndFunctions()
+
+        if (BigAST.Global.macros !== undefined) {
+            BigAST.Global.macros.forEach(processMacro)
+        }
+        if (BigAST.Config.version === '') {
+            throw new TypeError(`Compiler version not set. Pin current compiler version in your program adding '#pragma version ${BigAST.Config.compilerVersion}' to code.`)
+        }
+        if (BigAST.Config.version !== BigAST.Config.compilerVersion) {
+            throw new TypeError(`This compiler is version '${BigAST.Config.compilerVersion}'. File needs a compiler version '${BigAST.Config.version}'. Update '#pragma version' macro or run another SmartC version.`)
         }
 
-        Big_ast.typesDefinitions = createDefaultTypesTable();
+        BigAST.typesDefinitions = createDefaultTypesTable()
 
-        addRegistersInMemory();
+        addRegistersInMemory()
 
-        addConstantsInMemory();
+        addConstantsInMemory()
 
-        createMemoryTable(Big_ast.Global.sentences, "", false);
+        AuxVars.currentScopeName = ''
+        AuxVars.currentPrefix = ''
+        AuxVars.currentToken = 0
+        BigAST.Global.sentences = code2sentenceS(BigAST.Global.code)
+        createMemoryTable(BigAST.Global.sentences)
+        delete BigAST.Global.code
 
-        for (let i=0; i< Big_ast.functions.length; i++) {
-            createMemoryTable(Big_ast.functions[i].arguments, Big_ast.functions[i].name, true);
-            createMemoryTable(Big_ast.functions[i].sentences, Big_ast.functions[i].name, false);
+        for (let i = 0; i < BigAST.functions.length; i++) {
+            processFunction(i)
+            delete BigAST.functions[i].arguments
+            delete BigAST.functions[i].code
+
+            const fnSentences = BigAST.functions[i].sentences
+            if (fnSentences !== undefined && fnSentences.length > 0) {
+                createMemoryTable(fnSentences)
+            }
         };
 
-        if (Big_ast.Config.APIFunctions) {
-            Big_ast.Global.APIFunctions = createAPItable();
+        if (BigAST.Config.APIFunctions) {
+            BigAST.Global.APIFunctions = createAPItable()
         }
 
-        checkDoublesDefinitions();
+        checkDoublesDefinitions()
 
-        consolidateMemory();
+        consolidateMemory()
 
-        shapeFunctionArgs();
-
-        return Big_ast;
+        return BigAST
     }
 
+    /**
+     * Organize incoming tokens (tokenAST) into only tree posibilities:
+     * 1) global statements,
+     * 2) macros or
+     * 3) functions
+     * */
+    function splitGlobalAndFunctions () {
+        BigAST.Global.code = []
 
-    // Organize these variables in the Big_ast:
-    //   functions[].ReturnType
-    //   functions[].ReturnPointer
-    //   functions[].Name
-    //   functions[].Arguments
-    function prepareBigAst() {
-
-        var args=[];
-        var tokens;
-        var Node;
-        var function_name;
-
-        Big_ast.Global.code = [];
-        Big_ast.Global.macros = [];
-
-        for (curr =0; curr < sP_ast.length; curr++) {
-            if (sP_ast[curr].type === "Function") {
-                function_name = sP_ast[curr].value;
-                if (sP_ast.length >curr +2) {
-                    if (curr > 0 && sP_ast[curr-1].type == "Keyword" && sP_ast[curr+1].type == "CodeCave" && sP_ast[curr+2].type == "CodeDomain") {
-                        args=[];
-                        tokens = sP_ast[curr+1].params;
-                        // alteration here, do also in generator.js code 3Ewuinl
-                        for (var i=0; i< tokens.length; i++) {
-                            if (tokens[i].type === "Keyword" && tokens[i].value === "void" ) {
-                                if ( i!=0 || tokens.length > 1 )
-                                    throw new SyntaxError("At line: " + tokens[i].line + ". Invalid use of void in function definition" );
-                                break;
-                            }
-                            if (i+1 >= tokens.length)
-                                throw new SyntaxError("At line: " + tokens[i].line + ". Wrong function definition.");
-                            if (tokens[i].type === "Keyword" && tokens[i].value !== "struct" && tokens[i+1].type === "Variable") {
-                                let curr_prev=curr;
-                                curr=0;
-                                args=args.concat( code2sentence( [ tokens[i], tokens[i+1] , { type: 'Terminator', value: ';' } ] ) );
-                                curr=curr_prev;
-                                i++;
-                                continue;
-                            }
-                            if ( i+2 < tokens.length && tokens[i].type === "Keyword" && tokens[i+1].value === "*" && tokens[i+2].type === "Variable") {
-                                let curr_prev=curr;
-                                curr=0;
-                                args=args.concat( code2sentence( [ tokens[i], tokens[i+1], tokens[i+2], { type: 'Terminator', value: ';' } ] ) );
-                                curr=curr_prev;
-                                i+=2;
-                                continue;
-                            }
-                            if ( i+3 < tokens.length && tokens[i].type === "Keyword" && tokens[i].value === "struct" && tokens[i+1].type === "Variable" && tokens[i+2].value === "*" && tokens[i+3].type === "Variable") {
-                                let curr_prev=curr;
-                                curr=0;
-                                args=args.concat( code2sentence( [ tokens[i], tokens[i+1], tokens[i+2], tokens[i+3], { type: 'Terminator', value: ';' } ] ) );
-                                curr=curr_prev;
-                                i+=3;
-                                continue;
-                            }
-                                if (tokens[i].type === "Delimiter")
-                                continue;
-                            throw new SyntaxError("At line: " + tokens[i].line + ". Token '"+tokens[i].type+ "' not allowed in function declaration");
-                        }
-                        Big_ast.Global.code.pop();
-                        Big_ast.functions.push(
-                            { return_type: sP_ast[curr-1].value,
-                            return_pointer: sP_ast[curr].pointer,
-                            name: sP_ast[curr].value,
-                            arguments: args,
-                            code: sP_ast[curr+2].params
-                            } );
-                        curr+=2;
-                        continue;
-                    }
-                } else {
-                    throw new SyntaxError("Unexpected end of file during function call. Function: "+function_name);
+        for (AuxVars.currentToken = 0; AuxVars.currentToken < tokenAST.length; AuxVars.currentToken++) {
+            if (AuxVars.currentToken + 2 < tokenAST.length && tokenAST[AuxVars.currentToken].type === 'Function' && tokenAST[AuxVars.currentToken + 1].type === 'CodeCave' && tokenAST[AuxVars.currentToken + 2].type === 'CodeDomain') {
+                // Function definition found
+                if (AuxVars.currentToken > 0 && tokenAST[AuxVars.currentToken - 1].type === 'Keyword') {
+                    // Function does not return pointer
+                    BigAST.Global.code.pop()
+                    BigAST.functions.push({
+                        argsMemObj: [],
+                        sentences: [],
+                        declaration: tokenAST[AuxVars.currentToken - 1].value as DECLARATION_TYPES,
+                        line: tokenAST[AuxVars.currentToken].line,
+                        name: tokenAST[AuxVars.currentToken].value,
+                        arguments: tokenAST[AuxVars.currentToken + 1].params,
+                        code: tokenAST[AuxVars.currentToken + 2].params
+                    })
+                    AuxVars.currentToken += 2
+                    continue
+                }
+                if (AuxVars.currentToken > 1 && tokenAST[AuxVars.currentToken - 2].type === 'Keyword' && tokenAST[AuxVars.currentToken - 1].type === 'UnaryOperator' && tokenAST[AuxVars.currentToken - 1].value === '*') {
+                    // Function returns a pointer
+                    BigAST.Global.code.pop()
+                    BigAST.Global.code.pop()
+                    BigAST.functions.push(
+                        {
+                            argsMemObj: [],
+                            sentences: [],
+                            // TODO testcase for function returning pointer
+                            declaration: (tokenAST[AuxVars.currentToken - 2].value + '_ptr') as DECLARATION_TYPES,
+                            line: tokenAST[AuxVars.currentToken].line,
+                            name: tokenAST[AuxVars.currentToken].value,
+                            arguments: tokenAST[AuxVars.currentToken + 1].params,
+                            code: tokenAST[AuxVars.currentToken + 2].params
+                        })
+                    AuxVars.currentToken += 2
+                    continue
+                }
+                // TODO TESTCASE
+                if (AuxVars.currentToken > 1 && tokenAST[AuxVars.currentToken - 2].type === 'Keyword' && tokenAST[AuxVars.currentToken - 2].value === 'struct' &&
+                    tokenAST[AuxVars.currentToken - 1].type === 'Variable') {
+                    // Function returns a struct
+                    throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct currently not implemented.`)
+                }
+                // TODO TESTCASE
+                if (AuxVars.currentToken > 2 && tokenAST[AuxVars.currentToken - 3].type === 'Keyword' && tokenAST[AuxVars.currentToken - 3].value === 'struct' &&
+                    tokenAST[AuxVars.currentToken - 2].type === 'Variable' &&
+                    tokenAST[AuxVars.currentToken - 1].type === 'UnaryOperator' && tokenAST[AuxVars.currentToken - 1].value === '*') {
+                    // Function returns a struct pointer
+                    throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct pointer currently not implemented.`)
                 }
             }
-            if (sP_ast[curr].type === "Macro") {
-                Big_ast.Global.macros.push(parseMacro(sP_ast[curr]));
-                continue;
+
+            if (tokenAST[AuxVars.currentToken].type === 'Macro') {
+                const fields = tokenAST[AuxVars.currentToken].value.replace(/\s\s+/g, ' ').split(' ')
+                BigAST.Global.macros.push({ type: fields[0], property: fields[1], value: fields.slice(2).join(' '), line: tokenAST[AuxVars.currentToken].line })
+                continue
             }
-            Big_ast.Global.code.push(sP_ast[curr]);
+
+            // Not function neither macro, so it is global statement
+            BigAST.Global.code.push(tokenAST[AuxVars.currentToken])
         }
     }
 
-
-    function parseMacro(Token){
-        var fields = Token.value.replace(/\s\s+/g, ' ').split(" ");
-        return { type: fields[0], property: fields[1], value: fields.slice(2).join(" "), line: Token.line }
-    }
-
-
-    function code2sentenceS(codetrain){
-
-        for (var sentences=[]; curr < codetrain.length; curr++ ) {
-            sentences = sentences.concat( code2sentence(codetrain) );
+    // Expects one or more sentences inside codetrain
+    function code2sentenceS (codetrain: TOKEN[] = [], addTerminator: boolean = false) {
+        if (addTerminator) {
+            codetrain.push({ type: 'Terminator', value: ';', precedence: 11, line: codetrain[AuxVars.currentToken].line })
         }
-
-        return sentences;
+        let sentences: SENTENCES[] = []
+        for (; AuxVars.currentToken < codetrain.length; AuxVars.currentToken++) {
+            sentences = sentences.concat(code2sentence(codetrain))
+        }
+        return sentences
     }
 
+    // Expects only one sentence in codetrain
+    function code2sentence (codetrain: TOKEN[]): SENTENCES[] {
+        const phrase: TOKEN[] = []
 
-    function code2sentence(codetrain){
-
-        var phrase=[];
-        var Node;
-        var temp;
-
-        var curr_prev;
-
-        if ( codetrain[curr].type ===  "CodeDomain") {
-            curr_prev = curr;
-            curr=0;
-            temp =  code2sentenceS(codetrain[curr_prev].params);
-            curr = curr_prev;
-            return temp;
+        if (codetrain[AuxVars.currentToken].type === 'CodeDomain') {
+            const savedPosition = AuxVars.currentToken
+            AuxVars.currentToken = 0
+            const temp = code2sentenceS(codetrain[savedPosition].params)
+            AuxVars.currentToken = savedPosition
+            return temp
         }
 
         // One sentence ending with terminator (or maybe another loop/conditional)
-        while (curr < codetrain.length) {
-
-            if (codetrain[curr].type === "Terminator") {
-                return [ { type: "phrase", code: phrase } ];
+        while (AuxVars.currentToken < codetrain.length) {
+            if (codetrain[AuxVars.currentToken].type === 'Terminator') {
+                // end of sentence!
+                return [{ type: 'phrase', code: phrase }]
             }
 
-            if (codetrain[curr].type === "CodeCave") {
-
-                if (codetrain[curr-1].value === "if") {
+            if (codetrain[AuxVars.currentToken].type === 'CodeCave') {
+                if (codetrain[AuxVars.currentToken - 1].value === 'if') {
                     if (phrase.length > 1) {
-                        throw new SyntaxError("At line: " + phrase[0].line + ". Statement including 'if' in wrong way. Possible missing ';'.");
+                        throw new SyntaxError(`At line: ${phrase[0].line}. Statement including 'if' in wrong way. Possible missing ';'.`)
                     }
-                    phrase.pop();
-                    Node = { type: "",
-                            id: "__if"+codetrain[curr].line,
-                            line: codetrain[curr].line,
-                            condition: codetrain[curr].params, };
+                    phrase.pop()
+                    const id = `__if${codetrain[AuxVars.currentToken].line}`
+                    const line = codetrain[AuxVars.currentToken].line
+                    const condition = codetrain[AuxVars.currentToken].params
+                    AuxVars.currentToken++
+                    const trueBlock = code2sentence(codetrain)
 
-                    curr++;
-                    Node.if_true = code2sentence(codetrain);
-
-                    if (curr+1 < codetrain.length){
-                        if ( codetrain[curr+1].type ===  "Keyword" && codetrain[curr+1].value ===  "else") {
-                            curr+=2;
-                            Node.if_false = code2sentence(codetrain);
-                            Node.type= "if_else";
-                        } else
-                            Node.type = "if_endif";
-                    } else
-                        Node.type = "if_endif";
-
-                    return [ Node ];
-                }
-
-                if (codetrain[curr-1].value === "while") {
-                    if (phrase.length > 1) {
-                        throw new SyntaxError("At line: " + phrase[0].line + ". Statement including 'while' in wrong way. Possible missing ';'.");
-                    }
-                    phrase.pop();
-                    Node = { type: "while",
-                            id: "__loop"+codetrain[curr].line,
-                            line: codetrain[curr].line,
-                            condition: codetrain[curr].params, };
-
-                    curr++;
-                    latest_loop_id.push(Node.id);
-                    Node.while_true = code2sentence(codetrain);
-                    latest_loop_id.pop();
-
-                    return [ Node ];
-                }
-
-                if (codetrain[curr-1].value === "for") {
-                    if (phrase.length > 1) {
-                        throw new SyntaxError("At line: " + phrase[0].line + ". Statement including 'for' in wrong way. Possible missing ';'.");
-                    }
-                    phrase.pop();
-                    Node = { type: "for",
-                            id: "__loop"+codetrain[curr].line,
-                            line: codetrain[curr].line, };
-
-                    curr_prev = curr;
-                    curr=0;
-                    codetrain[curr_prev].params.push({ type: 'Terminator', value: ';', precedence: 11, line:  codetrain[curr].line });
-                    Node.three_sentences =  code2sentenceS(codetrain[curr_prev].params);
-                    curr = curr_prev;
-                    if (Node.three_sentences.length != 3)
-                        throw new SyntaxError("At line: " + codetrain[curr].line + ". Expected 3 sentences for 'for(;;){}' loop. Got '"+Node.three_sentences.length);
-                    if (Node.three_sentences[0].type !== "phrase" || Node.three_sentences[1].type !== "phrase" || Node.three_sentences[2].type !== "phrase" )
-                        throw new SyntaxError("At line: " + codetrain[curr].line + ". Sentences inside 'for(;;)' can not be other loops or conditionals");
-
-                    curr++;
-                    latest_loop_id.push(Node.id);
-                    Node.while_true = code2sentence(codetrain);
-                    latest_loop_id.pop();
-
-                    return [ Node ];
-                }
-            }
-
-            if (codetrain[curr].type === "Keyword") {
-
-                if (codetrain[curr].value === "do") {
-
-                    Node = { type: "do",
-                            id: "__loop"+codetrain[curr].line,
-                            line: codetrain[curr].line, };
-
-                    curr++;
-                    latest_loop_id.push(Node.id);
-                    Node.while_true = code2sentence(codetrain);
-                    latest_loop_id.pop();
-
-                    curr++;
-                    if (curr +2 >= codetrain.length)
-                        throw new SyntaxError("At line: " + codetrain[curr-1].line + ". Incomplete do{}while(); sentence ");
-                    if (codetrain[curr].type !== "Keyword")
-                        throw new SyntaxError("At line: " + codetrain[curr].line + ". Wrong do{}while(); sentence ");
-                    if (codetrain[curr].value !== "while")
-                        throw new SyntaxError("At line: " + codetrain[curr].line + ". Wrong do{}while(); sentence ");
-
-                    curr++;
-                    if (codetrain[curr].type !== "CodeCave") {
-                        throw new SyntaxError("At line: " + codetrain[curr].line + ". Wrong do{}while(); sentence ");
-                    }
-                    Node.condition = codetrain[curr].params;
-
-                    curr++;
-                    if (codetrain[curr].type !== "Terminator")
-                        throw new SyntaxError("At line: " + codetrain[curr].line + ". Missing ';', found " + codetrain[curr].type);
-
-                    return [ Node ];
-                }
-
-                if (codetrain[curr].value === "asm" || codetrain[curr].value === "label") {
-                    return [ { type: "phrase", code: [codetrain[curr]] } ];
-                }
-
-                if (codetrain[curr].value === "break" || codetrain[curr].value === "continue") {
-                    if (latest_loop_id.length==0)
-                        throw new SyntaxError("At line: " + codetrain[curr].line + ". '" + codetrain[curr].value + "' outside a loop.");
-                    codetrain[curr].id=latest_loop_id[latest_loop_id.length-1];
-                }
-
-                if (codetrain[curr].value === "else") {
-                    throw new SyntaxError("At line: " + codetrain[curr].line + ". 'else' not associated with an 'if(){}else{}' sentence");
-                }
-
-                if (codetrain[curr].value === "struct") {
-                    if (curr + 2 >= codetrain.length)
-                        throw new SyntaxError("At line: " + codetrain[curr].line + ". Missing arguments for 'struct' sentence.");
-                    if (codetrain[curr+1].type !== "Variable")
-                        throw new SyntaxError("At line: " + codetrain[curr].line + ". Missing 'name' for  'struct' sentence ");
-                    if (codetrain[curr+2].type === "CodeDomain") {
-                        curr+=2;
-                        Node = { type: "struct",
-                            line: codetrain[curr-2].line,
-                            name: codetrain[curr-1].value,
-                            members: code2sentence(codetrain),
-                            Phrase: {type: "phrase", code: [] } };
-                        Node.Phrase.code.push(codetrain[curr-2], codetrain[curr-1]);
-                        curr++;
-                        while (curr < codetrain.length) {
-                            if (codetrain[curr].type === "Terminator") {
-                                return [ Node ];
-                            }
-                            Node.Phrase.code.push(codetrain[curr]);
-                            curr++;
+                    if (AuxVars.currentToken + 1 < codetrain.length) {
+                        if (codetrain[AuxVars.currentToken + 1].type === 'Keyword' && codetrain[AuxVars.currentToken + 1].value === 'else') {
+                            AuxVars.currentToken += 2
+                            return [{
+                                type: 'ifElse',
+                                id: id,
+                                line: line,
+                                condition: condition,
+                                trueBlock: trueBlock,
+                                falseBlock: code2sentence(codetrain)
+                            }]
                         }
-                        throw new SyntaxError("At end of file. Wrong 'struct' declaration. Missing ';'");
                     }
+                    return [{
+                        type: 'ifEndif',
+                        id: id,
+                        line: line,
+                        condition: condition,
+                        trueBlock: trueBlock
+                    }]
+                }
+
+                if (codetrain[AuxVars.currentToken - 1].value === 'while') {
+                    if (phrase.length > 1) {
+                        throw new SyntaxError(`At line: ${phrase[0].line}'. Statement including 'while' in wrong way. Possible missing ';'.`)
+                    }
+                    phrase.pop()
+                    const id = `__loop${codetrain[AuxVars.currentToken].line}`
+                    const line = codetrain[AuxVars.currentToken].line
+                    const condition = codetrain[AuxVars.currentToken].params
+                    AuxVars.currentToken++
+                    AuxVars.latestLoopId.push(id)
+                    const trueBlock = code2sentence(codetrain)
+                    AuxVars.latestLoopId.pop()
+                    return [{
+                        type: 'while',
+                        id: id,
+                        line: line,
+                        condition: condition,
+                        trueBlock: trueBlock
+                    }]
+                }
+
+                if (codetrain[AuxVars.currentToken - 1].value === 'for') {
+                    if (phrase.length > 1) {
+                        throw new SyntaxError(`At line: ${phrase[0].line}. Statement including 'for' in wrong way. Possible missing ';'.`)
+                    }
+                    if (codetrain[AuxVars.currentToken].type !== 'CodeCave') {
+                        throw new SyntaxError(`At line: ${phrase[0].line}. Expected '(' in 'for(;;){}' loop.`)
+                    }
+                    phrase.pop()
+                    const id = `__loop${codetrain[AuxVars.currentToken].line}`
+                    const line = codetrain[AuxVars.currentToken].line
+
+                    // codetrain[AuxVars.currentToken].params.push();
+                    const savePosition = AuxVars.currentToken
+                    AuxVars.currentToken = 0
+                    const threeSentences = code2sentenceS(codetrain[savePosition].params, true)
+                    AuxVars.currentToken = savePosition
+                    if (threeSentences.length !== 3) {
+                        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Expected 3 sentences for 'for(;;){}' loop. Got ${threeSentences.length}`)
+                    }
+                    if (threeSentences[0].type !== 'phrase' || threeSentences[1].type !== 'phrase' || threeSentences[2].type !== 'phrase') {
+                        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Sentences inside 'for(;;)' can not be other loops or conditionals`)
+                    }
+
+                    AuxVars.currentToken++
+                    AuxVars.latestLoopId.push(id)
+                    const trueBlock = code2sentence(codetrain)
+                    AuxVars.latestLoopId.pop()
+
+                    return [{
+                        type: 'for',
+                        id: id,
+                        line: line,
+                        threeSentences: threeSentences,
+                        trueBlock: trueBlock
+                    }]
                 }
             }
 
-            phrase.push(codetrain[curr]);
-            curr++;
+            if (codetrain[AuxVars.currentToken].type === 'Keyword') {
+                if (codetrain[AuxVars.currentToken].value === 'else') {
+                    throw new SyntaxError('At line: ' + codetrain[AuxVars.currentToken].line + ". 'else' not associated with an 'if(){}else{}' sentence")
+                }
+
+                if (codetrain[AuxVars.currentToken].value === 'asm' || codetrain[AuxVars.currentToken].value === 'label') {
+                    return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]] }]
+                }
+
+                if (codetrain[AuxVars.currentToken].value === 'do') {
+                    const id = `__loop${codetrain[AuxVars.currentToken].line}`
+                    const line = codetrain[AuxVars.currentToken].line
+
+                    AuxVars.currentToken++
+                    AuxVars.latestLoopId.push(id)
+                    const trueBlock = code2sentence(codetrain)
+                    AuxVars.latestLoopId.pop()
+
+                    AuxVars.currentToken++
+                    if (AuxVars.currentToken + 2 >= codetrain.length) {
+                        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Incomplete do{}while(); sentence.`)
+                    }
+                    if (codetrain[AuxVars.currentToken].type !== 'Keyword' || codetrain[AuxVars.currentToken].value !== 'while') {
+                        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Wrong do{}while(); sentence.`)
+                    }
+                    AuxVars.currentToken++
+                    if (codetrain[AuxVars.currentToken].type !== 'CodeCave') {
+                        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Wrong do{}while(); sentence.`)
+                    }
+                    const condition = codetrain[AuxVars.currentToken].params
+
+                    AuxVars.currentToken++
+                    if (codetrain[AuxVars.currentToken].type !== 'Terminator') {
+                        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Missing ';', found '${codetrain[AuxVars.currentToken].type}'.`)
+                    }
+
+                    return [{
+                        type: 'do',
+                        id: id,
+                        line: line,
+                        trueBlock: trueBlock,
+                        condition: condition
+                    }]
+                }
+
+                if (codetrain[AuxVars.currentToken].value === 'struct') {
+                    if (AuxVars.currentToken + 2 >= codetrain.length) {
+                        throw new SyntaxError('At line: ' + codetrain[AuxVars.currentToken].line + ". Missing arguments for 'struct' sentence.")
+                    }
+                    if (codetrain[AuxVars.currentToken + 1].type !== 'Variable') {
+                        throw new SyntaxError('At line: ' + codetrain[AuxVars.currentToken].line + ". Missing 'name' for  'struct' sentence ")
+                    }
+                    if (codetrain[AuxVars.currentToken + 2].type === 'CodeDomain') {
+                        AuxVars.currentToken += 2
+                        const Node: SENTENCE_STRUCT = {
+                            type: 'struct',
+                            line: codetrain[AuxVars.currentToken - 2].line,
+                            name: codetrain[AuxVars.currentToken - 1].value,
+                            members: code2sentence(codetrain),
+                            Phrase: { type: 'phrase' }
+                        }
+                        Node.Phrase.code = [codetrain[AuxVars.currentToken - 2], codetrain[AuxVars.currentToken - 1]]
+                        AuxVars.currentToken++
+                        while (AuxVars.currentToken < codetrain.length) {
+                            if (codetrain[AuxVars.currentToken].type === 'Terminator') {
+                                return [Node]
+                            }
+                            Node.Phrase.code.push(codetrain[AuxVars.currentToken])
+                            AuxVars.currentToken++
+                        }
+                        throw new SyntaxError("At end of file. Wrong 'struct' declaration. Missing ';'")
+                    }
+                }
+
+                if (codetrain[AuxVars.currentToken].value === 'break' || codetrain[AuxVars.currentToken].value === 'continue') {
+                    if (AuxVars.latestLoopId.length === 0) {
+                        throw new SyntaxError('At line: ' + codetrain[AuxVars.currentToken].line + ". '" + codetrain[AuxVars.currentToken].value + "' outside a loop.")
+                    }
+                    // Just update information and continue on loop
+                    codetrain[AuxVars.currentToken].extValue = AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1]
+                }
+            }
+
+            phrase.push(codetrain[AuxVars.currentToken])
+            AuxVars.currentToken++
         }
 
-        if (phrase.length != 0)
-            throw new SyntaxError("At line: " + codetrain[curr-1].line + ". Missing ';'. ");
-
-        //Never reaches this point?
-        throw new SyntaxError("At line: " + codetrain[curr-1].line + ". Strange error. ");
+        if (phrase.length !== 0) {
+            throw new SyntaxError('At line: ' + codetrain[AuxVars.currentToken - 1].line + ". Missing ';'. ")
+        }
+        // Never reach this point
+        throw new SyntaxError('At line: ' + codetrain[AuxVars.currentToken - 1].line + '. Strange error. ')
     }
-
 
     // Not recursive. Only top level declarations allowed.
     // This creates only global variables or function scope variables.
-    function createMemoryTable(sntcs, scope_name, set_dec_in_generator) {
-        var table=[];
-        var prefix = "";
-        if (scope_name.length > 0) {
-            prefix=scope_name+"_";
+    function createMemoryTable (sntcs: SENTENCES[]) {
+        sntcs.forEach(function (phrs) {
+            let memTemplate: MEMORY_SLOT[] | undefined
+            if (phrs.type === 'struct') {
+                struct2typedefinition(phrs)
+                memTemplate = phrase2memoryObject(phrs.Phrase)
+            } else if (phrs.type === 'phrase') {
+                memTemplate = phrase2memoryObject(phrs)
+            }
+
+            if (memTemplate !== undefined && memTemplate.length > 0) {
+                BigAST.memory = BigAST.memory.concat(memTemplate)
+            }
+        })
+    }
+
+    function getArraySize (tkn: TOKEN[] = [], line: number) {
+        if (tkn.length !== 1 || tkn[0].type !== 'Constant') {
+            throw new TypeError('At line: ' + line + '. Wrong array declaration. Only constant size declarations allowed.')
+        }
+        return parseInt(tkn[0].value, 16)
+    }
+
+    function struct2typedefinition (structPhrase: SENTENCE_STRUCT) {
+        // create struct type definition
+        const StructTypeD: STRUCT_TYPE_DEFINITION = {
+            name: AuxVars.currentPrefix + structPhrase.name,
+            type: 'struct',
+            structMembers: [],
+            structAccumulatedSize: [],
+            MemoryTemplate: {
+                address: -1,
+                name: '',
+                type: 'struct',
+                typeDefinition: AuxVars.currentPrefix + structPhrase.name,
+                scope: AuxVars.currentScopeName,
+                size: -1,
+                isDeclared: AuxVars.setIsDeclared,
+                declaration: 'struct'
+            }
         }
 
-        function get_array_size(tkn, line) {
-            if (tkn.length !== 1 || tkn[0].type !== "Constant") {
-                throw new TypeError("At line: " + line + ". Wrong array declaration. Only constant size declarations allowed.");
+        const savedPrefix = AuxVars.currentPrefix
+        AuxVars.currentPrefix = ''
+        structPhrase.members.forEach(struphrs => {
+            const memobj = phrase2memoryObject(struphrs, structPhrase.name)
+            if (memobj !== undefined) {
+                StructTypeD.structMembers = StructTypeD.structMembers.concat(memobj)
             }
-            return parseInt(tkn[0].value,16);
+        })
+
+        StructTypeD.MemoryTemplate.size = StructTypeD.structMembers.length
+
+        let accumulatedSize = 0
+        StructTypeD.structMembers.forEach(function (memb) {
+            StructTypeD.structAccumulatedSize.push([memb.name, accumulatedSize])
+            if (memb.type !== 'struct' || memb.declaration.indexOf('_ptr') !== -1) { // Remeber to change here code yolj1A
+                accumulatedSize++
+            }
+        })
+        AuxVars.currentPrefix = savedPrefix
+        BigAST.typesDefinitions.push(StructTypeD)
+    }
+
+    /** Takes a phrase and process variables to MEMORY_SLOT
+         * Fills types definitions of necessary
+         * Inserts labels at BigAST.labels */
+    function phrase2memoryObject (phrs: SENTENCES, structName = ''): MEMORY_SLOT[] | undefined {
+        let ret: MEMORY_SLOT[] = []
+        let ispointer = false
+        if (structName !== '') {
+            structName += '_'
         }
 
-        function struct2typedefinition(stru_phrase){
-
-            //create struct type definition
-            let StructTypeD = { type_name: prefix+stru_phrase.name,
-                type: "struct",
-                struct_members: [],
-                struct_size_acc: [] };
-
-            let old_prefix = prefix;
-            prefix = "";
-            stru_phrase.members.forEach ( function (struphrs) {
-                StructTypeD.struct_members = StructTypeD.struct_members.concat(phrase2memoryObject(struphrs,stru_phrase.name));
-            });
-
-            StructTypeD.Memory_template = {
-                location: -1,
-                name: "",
-                type: "struct",
-                type_name: StructTypeD.type_name,
-                scope: scope_name,
-                size: StructTypeD.struct_members.length,
-                dec_in_generator: set_dec_in_generator,
-                declaration: "struct",
-            };
-
-            let size_acc=0;
-            StructTypeD.struct_members.forEach ( function (memb){
-                StructTypeD.struct_size_acc.push([ memb.name, size_acc ]);
-                if (memb.type!=="struct" || memb.declaration.indexOf("_ptr") !=-1) //Remeber to change here code yolj1A
-                    size_acc++;
-            });
-            prefix = old_prefix;
-            Big_ast.typesDefinitions.push(StructTypeD);
+        if (phrs.type === undefined || phrs.type !== 'phrase') {
+            throw new TypeError('Unknow object type arrived at phrase2memoryObject.')
+        }
+        const phraseCode = phrs.code
+        if (phraseCode === undefined || phraseCode.length === 0) { // empty statement
+            return
         }
 
-        // takes a phrase and returns an array of Memory {}
-        //   fills types definitions of necessary
-        function phrase2memoryObject(phrs, structName){
-
-            let Token;
-            let Memory_template;
-            let ret = [];
-            let ispointer = false;
-            if (structName === undefined) structName="";
-            else structName+="_";
-
-            if (phrs.type === undefined) {
-                throw new TypeError("Unknow object type arrived at phrase2memoryObject.");
+        if (phraseCode[0].type === 'Keyword' && phraseCode[0].value === 'label') {
+            // TODO testcase with 2 labels
+            const labelID = phraseCode[0].extValue
+            if (labelID === undefined || labelID === '') {
+                throw new TypeError(`At line: ${phraseCode[0].line}. Found a label without id.`)
             }
-            if (phrs.code.length == 0) { //empty statement
-                return;
+            if (BigAST.labels.find(val => val === labelID) !== undefined) {
+                throw new TypeError(`At line: ${phraseCode[0].line}. Label name already in use.`)
             }
+            BigAST.labels.push(labelID)
+            return
+        }
 
-            if (phrs.code[0].type === "Keyword" && phrs.code[0].value === "label" ) {
-                //transform this label in a fake variable
-                Big_ast.labels.push({
-                    name: phrs.code[0].id,
-                    type: phrs.code[0].value,
-                    scope: scope_name  });
-                return;
+        if (phraseCode.length < 2) {
+            return
+        }
+
+        if (phraseCode[0].type === 'Keyword') {
+            let TokenConst:TOKEN | undefined
+
+            if (phraseCode[0].value === 'return' ||
+                    phraseCode[0].value === 'goto') {
+                return
             }
 
-            if (phrs.code.length<2)
-                return;
-            if (phrs.code[0].type === "Keyword") {
+            if (phraseCode[0].value === 'const') {
+                // remove token so no influence in declarations
+                TokenConst = phraseCode.shift()
+            }
 
-                let const_token;
+            let keywordIndex = 0
+            let end = false
+            while (end === false) {
+                end = true
 
-                if (   phrs.code[0].value === "return"
-                    || phrs.code[0].value === "goto")
-                    return;
-
-                if ( phrs.code[0].value === "const" ) {
-                    //remove token so no influence in declarations
-                    const_token = phrs.code.shift();
-                }
-
-                if (   phrs.code[0].value === "struct"){
-                    if (phrs.code.length<3){
-                        return;
+                if (phraseCode[keywordIndex].value === 'struct') {
+                    if (keywordIndex + 3 > phraseCode.length) {
+                        return
                     }
-                    let search = Big_ast.typesDefinitions.find(obj => obj.type_name == phrs.code[1].value && obj.type === phrs.code[0].value );
-                    if (search === undefined && prefix.length > 0 ) {
-                        search = Big_ast.typesDefinitions.find(obj => obj.type_name == prefix+phrs.code[1].value && obj.type === phrs.code[0].value );
+                    const structNameDef = phraseCode[keywordIndex + 1].value
+                    let search = BigAST.typesDefinitions.find(obj => obj.name === structNameDef && obj.type === 'struct')
+                    if (search === undefined && AuxVars.currentPrefix.length > 0) {
+                        search = BigAST.typesDefinitions.find(obj => obj.name === AuxVars.currentPrefix + structNameDef && obj.type === 'struct')
                     }
                     if (search === undefined) {
-                        throw new TypeError("At line: "+phrs.code[1].line+". Could not find type definition for 'struct' '"+phrs.code[1].value);
+                        throw new TypeError('At line: ' + phraseCode[keywordIndex + 1].line + ". Could not find type definition for 'struct' '" + phraseCode[keywordIndex + 1].value)
                     }
 
-                    let idx = 2;
-                    while (idx < phrs.code.length) {
-                        let dimensions = [];
-                        Memory_template = JSON.parse(JSON.stringify(search.Memory_template));
+                    let idx = keywordIndex + 2
+                    while (idx < phraseCode.length) {
+                        const dimensions: number[] = []
+                        const MemTemplate: MEMORY_SLOT = JSON.parse(JSON.stringify(search.MemoryTemplate))
 
-                        if ( phrs.code[idx].type === "Delimiter") {
-                            idx++;
-                            continue;
+                        if (phraseCode[idx].type === 'Delimiter') {
+                            idx++
+                            continue
                         }
-                        if ( phrs.code[idx].value === "*" && idx+1 < phrs.code.length && phrs.code[idx+1].type === "Variable" ) {
-                            ispointer = true;
-                            Memory_template.declaration+="_ptr";
-                            idx++;
+                        if (phraseCode[idx].type === 'Keyword') {
+                            keywordIndex = idx
+                            end = false
+                            break
                         }
-                        Memory_template.name = phrs.code[idx].value;
-                        Memory_template.asm_name = prefix+phrs.code[idx].value;
-                        Memory_template.scope = scope_name;
-                        Memory_template.dec_in_generator=set_dec_in_generator;
+                        if (phraseCode[idx].value === '*' && idx + 1 < phraseCode.length && phraseCode[idx + 1].type === 'Variable') {
+                            ispointer = true
+                            MemTemplate.declaration += '_ptr'
+                            idx++
+                        }
+                        MemTemplate.name = phraseCode[idx].value
+                        MemTemplate.asmName = AuxVars.currentPrefix + phraseCode[idx].value
+                        MemTemplate.scope = AuxVars.currentScopeName
+                        MemTemplate.isDeclared = AuxVars.setIsDeclared
 
-                        if ( phrs.code[idx].type === "Variable") {
-                            while (idx+1<phrs.code.length) {
-                                if (phrs.code[idx+1].type === "Arr") { //Array declaration
-                                    idx++;
-                                    dimensions.push(get_array_size(phrs.code[idx].params, phrs.code[idx].line));
+                        if (phraseCode[idx].type === 'Variable') {
+                            while (idx + 1 < phraseCode.length) {
+                                if (phraseCode[idx + 1].type === 'Arr') { // Array declaration
+                                    idx++
+                                    dimensions.push(getArraySize(phraseCode[idx].params, phraseCode[idx].line))
                                 } else {
-                                    break;
+                                    break
                                 }
                             }
 
-                            if (dimensions.length>0){ //is array of structs
-                                Memory_template.type="array";
-                                Memory_template.type_name= Memory_template.asm_name;
-                                Memory_template.asm_name = prefix+Memory_template.name;
-                                Memory_template.arr_item_type=search.type;
-                                Memory_template.arr_item_type_name=search.type_name;
-                                Memory_template.declaration += "_ptr";
-                                Memory_template.arr_total_size = 1+ dimensions.reduce(function (total, num) {
-                                    return total * num; }, search.Memory_template.size);
+                            if (dimensions.length > 0) { // is array of structs
+                                MemTemplate.type = 'array'
+                                MemTemplate.typeDefinition = MemTemplate.asmName
+                                MemTemplate.asmName = AuxVars.currentPrefix + MemTemplate.name
+                                MemTemplate.arrayItemType = search.type
+                                MemTemplate.arrayItemTypeDefinition = search.name
+                                MemTemplate.declaration += '_ptr'
+                                MemTemplate.arrayTotalSize = 1 + dimensions.reduce(function (total, num) {
+                                    return total * num
+                                }, search.MemoryTemplate.size)
 
-                                ret.push(Memory_template);
-                                for (let x=0, i=0 ; x < dimensions.length ; x++) {
-                                    for (let y=0; y<dimensions[x]; y++) {
-                                        ret=ret.concat(assignStructVariable(phrs.code[1].value,phrs.code[idx-dimensions.length].value+"_"+i, ispointer));
-                                        i++;
+                                ret.push(MemTemplate)
+                                for (let x = 0, i = 0; x < dimensions.length; x++) {
+                                    for (let y = 0; y < dimensions[x]; y++) {
+                                        ret = ret.concat(assignStructVariable(phraseCode[1].value, phraseCode[idx - dimensions.length].value + '_' + i, ispointer))
+                                        i++
                                     }
                                 }
 
                                 // create array type definition
                                 if (dimensions.length > 0) {
-                                    let TypeD = { type_name: prefix+phrs.code[idx-dimensions.length].value,
-                                        type: "array",
-                                        arr_dimensions: dimensions,
-                                        arr_multiplier_dim: [] };
-                                    let j = dimensions.length-1;
-                                    let acc=search.Memory_template.size;
+                                    const TypeD: ARRAY_TYPE_DEFINITION = {
+                                        name: AuxVars.currentPrefix + phraseCode[idx - dimensions.length].value,
+                                        type: 'array',
+                                        arrayDimensions: dimensions,
+                                        arrayMultiplierDim: [],
+                                        // CHECK unneed?
+                                        MemoryTemplate: MemTemplate
+                                    }
+                                    let j = dimensions.length - 1
+                                    let acc = search.MemoryTemplate.size
                                     do {
-                                        TypeD.arr_multiplier_dim.unshift(acc);
-                                        acc*=dimensions[j];
-                                        j--;
-                                    } while (j>=0);
-                                    Big_ast.typesDefinitions.push(TypeD);
+                                        TypeD.arrayMultiplierDim.unshift(acc)
+                                        acc *= dimensions[j]
+                                        j--
+                                    } while (j >= 0)
+                                    BigAST.typesDefinitions.push(TypeD)
                                 }
-
-                            } else { //is not array of structs
+                            } else { // is not array of structs
                                 if (ispointer) {
-                                    ret=ret.concat(Memory_template);
+                                    ret = ret.concat(MemTemplate)
                                 } else {
-                                    ret=ret.concat(assignStructVariable(phrs.code[1].value,phrs.code[idx].value, ispointer));
+                                    ret = ret.concat(assignStructVariable(phraseCode[1].value, phraseCode[idx].value, ispointer))
                                 }
                             }
-                            idx++;
-                            continue;
+                            idx++
+                            continue
                         }
-                        if ( phrs.code[idx].type === "Terminator") {
-                            break;
+                        if (phraseCode[idx].type === 'Terminator') {
+                            break
                         }
-                        throw new TypeError("At line: "+phrs.code[idx].line+". Invalid element (type: '"+phrs.code[idx].type+"' value: '"+phrs.code[idx].value+"') found in struct definition!");
+                        throw new TypeError('At line: ' + phraseCode[idx].line + ". Invalid element (type: '" + phraseCode[idx].type + "' value: '" + phraseCode[idx].value + "') found in struct definition!")
                     }
-                    return ret;
+                    if (phraseCode[idx] !== undefined && phraseCode[idx].type === 'Keyword') {
+                        continue
+                    }
+                    return ret
                 }
 
-                if ( phrs.code[0].value === "long" ){
-                    let idx = 1;
-                    let valid=true;
-                    while (idx < phrs.code.length) {
-                        if ( phrs.code[idx].type === "Delimiter") {
-                            idx++;
-                            valid=true;
-                            continue;
+                if (phraseCode[keywordIndex].value === 'long') {
+                    let idx = keywordIndex + 1
+                    let valid = true
+                    while (idx < phraseCode.length) {
+                        if (phraseCode[idx].type === 'Delimiter') {
+                            idx++
+                            valid = true
+                            continue
+                        }
+                        if (phraseCode[idx].type === 'Keyword') {
+                            keywordIndex = idx
+                            end = false
+                            break
                         }
 
-                        if ( valid === true && phrs.code[idx].value === "*" && idx+1 < phrs.code.length && phrs.code[idx+1].type === "Variable" ) {
-                            ispointer = true;
-                            idx++;
+                        if (valid === true && phraseCode[idx].value === '*' && idx + 1 < phraseCode.length && phraseCode[idx + 1].type === 'Variable') {
+                            ispointer = true
+                            idx++
                         }
 
                         if (valid === true) {
-                            let dimensions = [];
-
-                            let search = Big_ast.typesDefinitions.find(obj => obj.type === phrs.code[0].value );
+                            const dimensions: number[] = []
+                            const search = BigAST.typesDefinitions.find(obj => obj.type === 'long') as (LONG_TYPE_DEFINITION | undefined)
                             if (search === undefined) {
-                                throw "não achei type definition";
+                                throw new TypeError(`At line: ${phraseCode[idx].line}. Type definition for 'long' not found`)
                             }
-                            Memory_template = JSON.parse(JSON.stringify(search.Memory_template));
-                            Memory_template.name = phrs.code[idx].value;
-                            Memory_template.asm_name = prefix+phrs.code[idx].value;
-                            Memory_template.scope = scope_name;
+                            const MemTemplate: MEMORY_SLOT = JSON.parse(JSON.stringify(search.MemoryTemplate))
+                            MemTemplate.name = phraseCode[idx].value
+                            MemTemplate.asmName = AuxVars.currentPrefix + phraseCode[idx].value
+                            MemTemplate.scope = AuxVars.currentScopeName
                             if (ispointer) {
-                                Memory_template.declaration += "_ptr";
+                                MemTemplate.declaration += '_ptr'
                             }
-                            Memory_template.dec_in_generator=set_dec_in_generator;
+                            MemTemplate.isDeclared = AuxVars.setIsDeclared
 
-                            while (idx+1<phrs.code.length) {
-                                if (phrs.code[idx+1].type === "Arr") { //Array declaration
-                                    idx++;
-                                    dimensions.push(get_array_size(phrs.code[idx].params, phrs.code[idx].line));
+                            while (idx + 1 < phraseCode.length) {
+                                if (phraseCode[idx + 1].type === 'Arr') { // Array declaration
+                                    idx++
+                                    dimensions.push(getArraySize(phraseCode[idx].params, phraseCode[idx].line))
                                 } else {
-                                    break;
+                                    break
                                 }
                             }
 
-                            // fill more information if it is an array
-                            if (dimensions.length>0){
-                                Memory_template.type="array";
-                                Memory_template.type_name= Memory_template.asm_name;
-                                Memory_template.arr_item_type=search.type;
-                                Memory_template.declaration += "_ptr";
-                                Memory_template.arr_total_size = 1+ dimensions.reduce(function (total, num) {
-                                    return total * num; }, 1);
-                            }
+                            if (dimensions.length === 0) {
+                                // NOT array
+                                ret.push(MemTemplate)
+                            } else {
+                                // IS array
+                                // fill more information in memory template
+                                MemTemplate.type = 'array'
+                                MemTemplate.typeDefinition = MemTemplate.asmName
+                                MemTemplate.arrayItemType = search.type
+                                MemTemplate.declaration += '_ptr'
+                                MemTemplate.arrayTotalSize = 1 + dimensions.reduce(function (total, num) {
+                                    return total * num
+                                }, 1)
 
-                            //Create item in memory_template
-                            ret.push(Memory_template);
+                                // Create item in memory_template
+                                ret.push(MemTemplate)
 
-                            if (Memory_template.type==="array"){
-                                //Create array items in memory_template
-                                for (let i=1; i< Memory_template.arr_total_size; i++) {
-                                    let Mem2 = JSON.parse(JSON.stringify(search.Memory_template));
-                                    Mem2.name = Memory_template.name+"_"+(i-1),
-                                    Mem2.asm_name = Memory_template.asm_name+"_"+(i-1),
-                                    Mem2.scope = scope_name;
-                                    ret.push(Mem2);
+                                // Create array items in memory_template
+                                for (let i = 1; i < MemTemplate.arrayTotalSize; i++) {
+                                    const Mem2: MEMORY_SLOT = JSON.parse(JSON.stringify(search.MemoryTemplate))
+                                    Mem2.name = `${MemTemplate.name}_${i - 1}`
+                                    Mem2.asmName = `${MemTemplate.asmName}_${i - 1}`
+                                    Mem2.scope = AuxVars.currentScopeName
+                                    ret.push(Mem2)
                                 }
 
                                 // create array type definition
-                                if (Memory_template.arr_total_size > 1) {
-                                    let TypeD = { type_name: structName+Memory_template.asm_name,
-                                        type: "array",
-                                        arr_dimensions: dimensions,
-                                        arr_multiplier_dim: [] };
-                                    let j = dimensions.length-1;
-                                    let acc=1;
+                                if (MemTemplate.arrayTotalSize > 1) {
+                                    const TypeD: ARRAY_TYPE_DEFINITION = {
+                                        name: structName + MemTemplate.asmName,
+                                        type: 'array',
+                                        arrayDimensions: dimensions,
+                                        arrayMultiplierDim: [],
+                                        // CHECK unneed?
+                                        MemoryTemplate: MemTemplate
+                                    }
+                                    let j = dimensions.length - 1
+                                    let acc = 1
                                     do {
-                                        TypeD.arr_multiplier_dim.unshift(acc);
-                                        acc*=dimensions[j];
-                                        j--;
-                                    } while (j>=0);
-                                    Big_ast.typesDefinitions.push(TypeD);
+                                        TypeD.arrayMultiplierDim.unshift(acc)
+                                        acc *= dimensions[j]
+                                        j--
+                                    } while (j >= 0)
+                                    BigAST.typesDefinitions.push(TypeD)
                                 }
                             }
-                            valid = false;
-                            ispointer = false;
+                            valid = false
+                            ispointer = false
                         }
-                        idx++;
-                    }
-                }
-
-                if (const_token !== undefined) {
-                    //give token back!
-                    phrs.code.unshift(const_token);
-                }
-            }
-            return ret;
-        }
-
-        function assignStructVariable(struc_name, variable_name, ispointer) {
-
-            let search = Big_ast.typesDefinitions.find(obj => obj.type === "struct" && obj.type_name === struc_name);
-            if (search === undefined && prefix.length > 0 ) {
-                search = Big_ast.typesDefinitions.find(obj => obj.type === "struct" && obj.type_name === prefix+struc_name );
-            }
-            if (search === undefined) {
-                throw new TypeError("Could not find type definition for 'struct' '"+struc_name);
-            }
-
-            let newmemory = [ JSON.parse(JSON.stringify(search.Memory_template)) ];
-            if (!ispointer) {
-                newmemory= newmemory.concat( JSON.parse(JSON.stringify(search.struct_members)) );
-            }
-            newmemory.forEach( function (Mem){
-                if (Mem.name === "") {
-                    Mem.name = variable_name;
-                } else {
-                    Mem.name = variable_name+"_"+Mem.name;
-                }
-                Mem.asm_name = prefix+Mem.name;
-            });
-            return newmemory;
-        }
-
-        // createMemoryTable() code
-        sntcs.forEach( function (phrs) {
-            let memory_template;
-            if (phrs.type === "struct") {
-                struct2typedefinition(phrs);
-                memory_template = phrase2memoryObject(phrs.Phrase);
-            } else if (phrs.type === "phrase") {
-                memory_template = phrase2memoryObject(phrs);
-            }
-
-            if (memory_template !== undefined && memory_template.length > 0) {
-                Big_ast.memory = Big_ast.memory.concat(memory_template);
-            }
-
-        });
-        return ;
-    }
-
-    // read macros values and put them into Big_ast.Config object
-    function processMacro( Token ) {
-
-        function get_val(val){
-            if (val === undefined || val === "") {
-                return true;
-            }
-            if (val === "true" || val === "1") {
-                return true;
-            }
-            if (val === "false" || val === "0") {
-                return false;
-            }
-            return undefined;
-        }
-
-        if (Token.type === "pragma") {
-            if (Token.property === "maxAuxVars") {
-                if (Token.value !== undefined) {
-                    var num = parseInt(Token.value);
-                    if (num < 1 || num > 10) {
-                        throw new RangeError("At line: "+Token.line+". Value out of permitted range 1..10.");
-                    }
-                    Big_ast.Config.maxAuxVars = num;
-                    return;
-                }
-            }
-            if (Token.property === "maxConstVars") {
-                if (Token.value !== undefined) {
-                    var num = parseInt(Token.value);
-                    if (num < 0 || num > 10) {
-                        throw new RangeError("At line: "+Token.line+". Value out of permitted range 0..10.");
-                    }
-                    Big_ast.Config.maxConstVars = num;
-                    return;
-                }
-            }
-            if (Token.property === "reuseAssignedVar") {
-                Big_ast.Config.reuseAssignedVar = get_val(Token.value);
-                if (Big_ast.Config.reuseAssignedVar !== undefined)
-                    return;
-            }
-            if (Token.property === "enableRandom") {
-                Big_ast.Config.enableRandom = get_val(Token.value);
-                if (Big_ast.Config.enableRandom !== undefined)
-                    return;
-            }
-            if (Token.property === "enableLineLabels") {
-                Big_ast.Config.enableLineLabels = get_val(Token.value);
-                if (Big_ast.Config.enableLineLabels !== undefined)
-                    return;
-            }
-            if (Token.property === "globalOptimization") {
-                Big_ast.Config.globalOptimization = get_val(Token.value);
-                if (Big_ast.Config.globalOptimization !== undefined)
-                    return;
-            }
-            if (Token.property === "useVariableDeclaration") {
-                Big_ast.Config.useVariableDeclaration = get_val(Token.value);
-                if (Big_ast.Config.useVariableDeclaration !== undefined)
-                    return;
-            }
-            if (Token.property === "version") {
-                Big_ast.Config.version = Token.value;
-                if (Big_ast.Config.version !== undefined)
-                    return;
-            }
-            if (Token.property === "warningToError") {
-                Big_ast.Config.warningToError = get_val(Token.value);
-                if (Big_ast.Config.warningToError !== undefined)
-                    return;
-            }
-        }
-
-        if (Token.type === "include") {
-            if (Token.property === "APIFunctions") {
-                Big_ast.Config.APIFunctions = get_val(Token.value);
-                if (Big_ast.Config.APIFunctions !== undefined)
-                    return;
-            }
-        }
-
-        if (Token.type === "program") {
-            var parts;
-            if (Token.property === "name") {
-                parts=/^[0-9a-zA-Z]{1,30}$/.exec(Token.value);
-                if (parts === null) {
-                    throw new TypeError("At line: "+Token.line+". Program name must contains only letters [a-z][A-Z][0-9], from 1 to 30 chars.");
-                }
-                Big_ast.Config.PName = Token.value;
-                return;
-            }
-            if (Token.property === "description") {
-                if (Token.value.length >= 1000) {
-                    throw new TypeError("At line: "+Token.line+". Program description max lenght is 1000 chars. It is "+Token.value.length+" chars.");
-                }
-                Big_ast.Config.PDescription = Token.value;
-                return;
-            }
-            if (Token.property === "activationAmount") {
-                parts=/^[0-9_]{1,20}$/.exec(Token.value);
-                if (parts === null) {
-                    throw new TypeError("At line: "+Token.line+". Program activation must be only numbers or '_'.");
-                }
-                Big_ast.Config.PActivationAmount = Token.value.replace(/_/g,"");
-                return;
-            }
-        }
-
-        throw new TypeError("At line: "+Token.line+". Unknow macro property and/or value: #"+Token.type+" "+Token.property+" "+Token.value);
-    }
-
-    function addRegistersInMemory(){
-        if ( Big_ast.Config.useVariableDeclaration) {
-            let search = Big_ast.typesDefinitions.find(obj => obj.type === "register");
-            if (search === undefined){
-                throw new TypeError("Not found type 'register' at types definitions.");
-            }
-            for (var i=0; i< Big_ast.Config.maxAuxVars; i++){
-                let Memory_template = JSON.parse(JSON.stringify(search.Memory_template));
-                Memory_template.name = "r"+i;
-                Memory_template.asm_name = "r"+i;
-                Big_ast.memory.push(Memory_template);
-            }
-        }
-    }
-
-    function addConstantsInMemory(){
-        if ( Big_ast.Config.useVariableDeclaration) {
-            let search = Big_ast.typesDefinitions.find(obj => obj.type === "register");
-            if (search === undefined){
-                throw new TypeError("Not found type 'register' at types definitions.");
-            }
-            for (var i=1; i<= Big_ast.Config.maxConstVars; i++){
-                let Memory_template = JSON.parse(JSON.stringify(search.Memory_template));
-                Memory_template.name = "n"+i;
-                Memory_template.asm_name = "n"+i;
-                Memory_template.hex_content = i.toString(16).padStart(16,"0");
-                Big_ast.memory.push(Memory_template);
-            }
-        }
-    }
-    
-    function checkDoublesDefinitions() {
-        var i,j;
-        if (Big_ast.Config.useVariableDeclaration === false) {
-            return;
-        }
-        for ( i=0; i< Big_ast.memory.length -1 ; i++) {
-            for (j=i+1; j< Big_ast.memory.length; j++) {
-                if (Big_ast.memory[i].asm_name === Big_ast.memory[j].asm_name) {
-                    throw new TypeError("Error: Variable '"+Big_ast.memory[i].name+"' was declared more than one time.");
-                }
-            }
-        }
-        for ( i=0; i< Big_ast.functions.length ; i++) {
-            for (j=i+1; j< Big_ast.functions.length; j++) {
-                if (Big_ast.functions[i].name == Big_ast.functions[j].name) {
-                    throw new TypeError("Error: Function '"+Big_ast.functions[i].name+"' was declared more than one time.");
-                }
-            }
-            if (Big_ast.Config.APIFunctions === true) {
-                for (j=0; j< Big_ast.Global.APIFunctions.length; j++) {
-                    if (   Big_ast.functions[i].name === Big_ast.Global.APIFunctions[j].name
-                        || Big_ast.functions[i].name === Big_ast.Global.APIFunctions[j].asmName) {
-                        throw new TypeError("Error: Function '"+Big_ast.functions[i].name+"' has same name of one API Functions.");
+                        idx++
                     }
                 }
             }
-        }
-        for ( i=0; i< Big_ast.labels.length -1 ; i++) {
-            for (j=i+1; j< Big_ast.labels.length; j++) {
-                if (Big_ast.labels[i].asm_name === Big_ast.labels[j].asm_name) {
-                    throw new TypeError("Error: Label '"+Big_ast.labels[i].name+"' was declared more than one time.");
-                }
+
+            if (TokenConst !== undefined) {
+                // give token back!
+                phraseCode.unshift(TokenConst)
             }
         }
+        return ret
     }
 
-    //process function arguments and arrange them in form or MemObj.
-    //This will make easier to check declaration types during function calls
-    //  to avoid wrong types to be passed to function (causing their DEATH)
-    //Shall be consistent with phrase2memoryObject() function
-    function shapeFunctionArgs() {
-        var fn;
-
-        function getMemObj(var_name) {
-            return Big_ast.memory.find(obj => obj.name == var_name && obj.scope === Big_ast.functions[fn].name );
+    function assignStructVariable (structName: string, varName: string, ispointer: boolean) {
+        let search = BigAST.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === structName) as (STRUCT_TYPE_DEFINITION | undefined)
+        if (search === undefined && AuxVars.currentPrefix.length > 0) {
+            search = BigAST.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === AuxVars.currentPrefix + structName) as (STRUCT_TYPE_DEFINITION | undefined)
+        }
+        if (search === undefined) {
+            throw new TypeError(`Could not find type definition for 'struct' '${structName}'`)
         }
 
-        function phrase2MemObj(phrs){
-
-            if (phrs.type === undefined) {
-                throw new TypeError("Unknow object type arrived at phrase2MemObj.");
-            }
-            if (phrs.code.length == 0) { //empty statement (void declaration)
-                return;
-            }
-            if (phrs.code.length<2){
-                throw new TypeError("At line: "+phrs.code[0].line+". Invalid statement in function declaration. Only 'struct' and 'long' allowed.");;
-            }
-
-            if (phrs.code[0].type === "Keyword") {
-
-                if (   phrs.code[0].value === "struct"){
-                    if (phrs.code.length == 4 ){
-                        if ( phrs.code[2].value === "*" && phrs.code[3].type === "Variable" ) {
-                            return getMemObj(phrs.code[3].value);
-                        }
-                        throw new TypeError("At line: "+phrs.code[0].line+". Only 'struct TYPE * name' allowed on function declaration.");
-                    }
-                    throw new TypeError("At line: "+phrs.code[0].line+". Only struct pointers allowed on function declaration");
-
-                } else if ( phrs.code[0].value === "long" ){
-                    if (phrs.code.length == 2 ){
-                        return getMemObj(phrs.code[1].value);
-                    } else if (phrs.code.length == 3 && phrs.code[1].value === "*"){
-                        return getMemObj(phrs.code[2].value);
-                    } else {
-                        throw new TypeError("At line: "+phrs.code[0].line+". Only 'long name' or 'long * name' allowed on function declaration.");
-                    }
-                }
-                throw new TypeError("At line: "+phrs.code[0].line+". Invalid keyword in function declaration. Only 'struct' and 'long' allowed.");
-            }
-            throw new TypeError("At line: "+phrs.code[0].line+". Invalid statement in function declaration. Only 'struct' and 'long' allowed.");
+        let newmemory: MEMORY_SLOT[] = [JSON.parse(JSON.stringify(search.MemoryTemplate))]
+        if (!ispointer) {
+            newmemory = newmemory.concat(JSON.parse(JSON.stringify(search.structMembers)))
         }
-
-        for (fn=0; fn< Big_ast.functions.length; fn++) {
-            let ret = [];
-            Big_ast.functions[fn].arguments.forEach(function (Phrase) {
-                ret.push(phrase2MemObj(Phrase))
-            });
-            Big_ast.functions[fn].argsMemObj = ret;
-            delete Big_ast.functions[fn].arguments;
-        }
-    }
-
-
-
-    function consolidateMemory(){
-        var var_counter=0;
-        Big_ast.memory.forEach( function (thisvar){
-            if (thisvar.type === "struct" && thisvar.declaration.indexOf("_ptr") == -1) {//Remeber to change here code yolj1A
-                thisvar.hex_content=var_counter.toString(16).padStart(16,"0");
-            } else if (thisvar.type === "array") {
-                thisvar.location=var_counter;
-                var_counter++;
-                thisvar.hex_content=var_counter.toString(16).padStart(16,"0");
+        newmemory.forEach(Mem => {
+            if (Mem.name === '') {
+                Mem.name = varName
             } else {
-                thisvar.location=var_counter;
-                var_counter++;
+                Mem.name = varName + '_' + Mem.name
             }
-        });
+            Mem.asmName = AuxVars.currentPrefix + Mem.name
+        })
+        return newmemory
     }
 
-    function createDefaultTypesTable(){
-        return [ {
+    /** Reads/verifies one macro token and add it into BigAST.Config object
+     * */
+    function processMacro (Token: AST_MACRO) {
+        let boolVal: boolean | undefined
+
+        if (Token.value === undefined || Token.value === '') {
+            boolVal = true
+        } else if (Token.value === 'true' || Token.value === '1') {
+            boolVal = true
+        } else if (Token.value === 'false' || Token.value === '0') {
+            boolVal = false
+        }
+
+        if (Token.type === 'pragma') {
+            if (Token.property === 'maxAuxVars') {
+                if (Token.value !== undefined) {
+                    const num = parseInt(Token.value)
+                    if (num < 1 || num > 10) {
+                        throw new RangeError(`At line: ${Token.line}. Value out of permitted range 1..10.`)
+                    }
+                    BigAST.Config.maxAuxVars = num
+                    return
+                }
+            }
+            if (Token.property === 'maxConstVars') {
+                if (Token.value !== undefined) {
+                    const num = parseInt(Token.value)
+                    if (num < 0 || num > 10) {
+                        throw new RangeError(`At line: ${Token.line}. Value out of permitted range 0..10.`)
+                    }
+                    BigAST.Config.maxConstVars = num
+                    return
+                }
+            }
+            if (Token.property === 'reuseAssignedVar' && boolVal !== undefined) {
+                BigAST.Config.reuseAssignedVar = boolVal
+                return
+            }
+            if (Token.property === 'enableRandom' && boolVal !== undefined) {
+                BigAST.Config.enableRandom = boolVal
+                return
+            }
+            if (Token.property === 'enableLineLabels' && boolVal !== undefined) {
+                BigAST.Config.enableLineLabels = boolVal
+                return
+            }
+            if (Token.property === 'globalOptimization' && boolVal !== undefined) {
+                BigAST.Config.globalOptimization = boolVal
+                return
+            }
+            if (Token.property === 'useVariableDeclaration' && boolVal !== undefined) {
+                BigAST.Config.useVariableDeclaration = boolVal
+                return
+            }
+            if (Token.property === 'version') {
+                BigAST.Config.version = Token.value
+                if (BigAST.Config.version !== undefined) {
+                    return
+                }
+            }
+            if (Token.property === 'warningToError' && boolVal !== undefined) {
+                BigAST.Config.warningToError = boolVal
+                return
+            }
+        }
+
+        if (Token.type === 'include') {
+            if (Token.property === 'APIFunctions' && boolVal !== undefined) {
+                BigAST.Config.APIFunctions = boolVal
+                return
+            }
+        }
+
+        if (Token.type === 'program') {
+            if (Token.property === 'name') {
+                const parts = /^[0-9a-zA-Z]{1,30}$/.exec(Token.value)
+                if (parts === null) {
+                    throw new TypeError(`At line: ${Token.line}. Program name must contains only letters [a-z][A-Z][0-9], from 1 to 30 chars.`)
+                }
+                BigAST.Config.PName = Token.value
+                return
+            }
+            if (Token.property === 'description') {
+                if (Token.value.length >= 1000) {
+                    throw new TypeError(`At line: ${Token.line}. Program description max lenght is 1000 chars. It is ${Token.value.length} chars.`)
+                }
+                BigAST.Config.PDescription = Token.value
+                return
+            }
+            if (Token.property === 'activationAmount') {
+                const parts = /^[0-9_]{1,20}$/.exec(Token.value)
+                if (parts === null) {
+                    throw new TypeError(`At line: ${Token.line}. Program activation must be only numbers or '_'.`)
+                }
+                BigAST.Config.PActivationAmount = Token.value.replace(/_/g, '')
+                return
+            }
+        }
+
+        throw new TypeError(`At line: ${Token.line}. Unknow macro property and/or value: '#${Token.type} ${Token.property} ${Token.value}'. Please check valid values on Help page`)
+    }
+
+    function addRegistersInMemory () {
+        if (BigAST.Config.useVariableDeclaration) {
+            const search = BigAST.typesDefinitions.find(obj => obj.type === 'register') as (REGISTER_TYPE_DEFINITION | undefined)
+            if (search === undefined) {
+                throw new TypeError("Not found type 'register' at types definitions.")
+            }
+            for (let i = 0; i < BigAST.Config.maxAuxVars; i++) {
+                const MemTemplate: MEMORY_SLOT = JSON.parse(JSON.stringify(search.MemoryTemplate))
+                MemTemplate.name = `r${i}`
+                MemTemplate.asmName = `r${i}`
+                BigAST.memory.push(MemTemplate)
+            }
+        }
+    }
+
+    function addConstantsInMemory () {
+        if (BigAST.Config.useVariableDeclaration) {
+            const search = BigAST.typesDefinitions.find(obj => obj.type === 'register') as (REGISTER_TYPE_DEFINITION | undefined)
+            if (search === undefined) {
+                throw new TypeError("Not found type 'register' at types definitions.")
+            }
+            for (let i = 1; i <= BigAST.Config.maxConstVars; i++) {
+                const MemTemplate: MEMORY_SLOT = JSON.parse(JSON.stringify(search.MemoryTemplate))
+                MemTemplate.name = `n${i}`
+                MemTemplate.asmName = `n${i}`
+                MemTemplate.hexContent = i.toString(16).padStart(16, '0')
+                BigAST.memory.push(MemTemplate)
+            }
+        }
+    }
+
+    /** Process/checks function arguments and code, transforming them into argsMemObj and sentences properties  */
+    function processFunction (fnNum: number) {
+        const currentFunction = BigAST.functions[fnNum]
+        if (currentFunction.code === undefined) {
+            currentFunction.sentences = []
+        } else {
+            AuxVars.currentToken = 0
+            currentFunction.sentences = code2sentenceS(currentFunction.code)
+        }
+
+        if (currentFunction.arguments === undefined || currentFunction.arguments.length === 0) {
+            throw new TypeError(`At line: ${currentFunction.line}. Missing arguments for function '${currentFunction.name}'. Do you mean 'void'?`)
+        }
+        if (currentFunction.arguments.length === 1 && currentFunction.arguments[0].type === 'Keyword' && currentFunction.arguments[0].value === 'void') {
+            currentFunction.arguments.pop()
+        }
+        AuxVars.currentScopeName = currentFunction.name
+        AuxVars.currentPrefix = AuxVars.currentScopeName + '_'
+        if (currentFunction.arguments.length === 0) {
+            currentFunction.argsMemObj = []
+        } else {
+            AuxVars.setIsDeclared = true
+            AuxVars.currentToken = 0
+            const sentence = code2sentenceS(currentFunction.arguments, true)
+            if (sentence.length > 1) {
+                throw new TypeError(`At line: ${currentFunction.line}. Wrong arguments for function '${currentFunction.name}'.`)
+            }
+            const memObj = phrase2memoryObject(sentence[0])
+            if (memObj === undefined) {
+                throw new TypeError(`At line: ${currentFunction.line}. Error in one or more arguments for function '${currentFunction.name}'.`)
+            }
+            currentFunction.argsMemObj = memObj
+            BigAST.memory = BigAST.memory.concat(memObj)
+            AuxVars.setIsDeclared = false
+        }
+    }
+
+    function checkDoublesDefinitions () {
+        let i, j
+        if (BigAST.Config.useVariableDeclaration === false) {
+            return
+        }
+        for (i = 0; i < BigAST.memory.length - 1; i++) {
+            for (j = i + 1; j < BigAST.memory.length; j++) {
+                if (BigAST.memory[i].asmName === BigAST.memory[j].asmName) {
+                    throw new TypeError(`Error: Variable '${BigAST.memory[i].name}' was declared more than one time.`)
+                }
+            }
+        }
+        for (i = 0; i < BigAST.functions.length; i++) {
+            for (j = i + 1; j < BigAST.functions.length; j++) {
+                if (BigAST.functions[i].name === BigAST.functions[j].name) {
+                    throw new TypeError("Error: Function '" + BigAST.functions[i].name + "' was declared more than one time.")
+                }
+            }
+            if (BigAST.Config.APIFunctions === true) {
+                for (j = 0; j < BigAST.Global.APIFunctions.length; j++) {
+                    if (BigAST.functions[i].name === BigAST.Global.APIFunctions[j].name ||
+                        BigAST.functions[i].name === BigAST.Global.APIFunctions[j].asmName) {
+                        throw new TypeError("Error: Function '" + BigAST.functions[i].name + "' has same name of one API Functions.")
+                    }
+                }
+            }
+        }
+    }
+
+    // Fills the correct address of memory objects.
+    function consolidateMemory () {
+        let counter = 0
+        BigAST.memory.forEach(function (thisvar) {
+            if (thisvar.type === 'struct' && thisvar.declaration.indexOf('_ptr') === -1) { // Remeber to change here code yolj1A
+                thisvar.hexContent = counter.toString(16).padStart(16, '0')
+            } else if (thisvar.type === 'array') {
+                thisvar.address = counter
+                counter++
+                thisvar.hexContent = counter.toString(16).padStart(16, '0')
+            } else {
+                thisvar.address = counter
+                counter++
+            }
+        })
+    }
+
+    function createDefaultTypesTable (): TYPE_DEFINITIONS[] {
+        return [{
             type: 'register',
-            Memory_template: {
-                location: -1,
-                name: "",
-                asm_name: "",
-                type: "register",
-                type_name: null,
-                scope: "",
-                declaration: "long",
+            name: '',
+            MemoryTemplate: {
+                address: -1,
+                name: '',
+                asmName: '',
+                type: 'register',
+                scope: '',
+                declaration: 'long',
                 size: 1,
-                dec_in_generator: true,
+                isDeclared: true
             }
         }, {
             type: 'long',
-            Memory_template: {
-                location: -1,
-                name: "",
-                asm_name: "",
-                type: "long",
-                type_name: null,
-                scope: "",
-                declaration: "long",
+            name: '',
+            MemoryTemplate: {
+                address: -1,
+                name: '',
+                asmName: '',
+                type: 'long',
+                scope: '',
+                declaration: 'long',
                 size: 1,
-                dec_in_generator: false,
+                isDeclared: false
             }
-        } ];
+        }]
     }
 
-
-    //Create table, it will be used for any real program
-    function createAPItable(){
+    // Returns the API functions object
+    function createAPItable (): AST_FUNCTION[] {
         return [
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_A1",
-                "arguments": [],
-                "asmName": "get_A1",
+                argsMemObj: [],
+                asmName: 'get_A1',
+                declaration: 'long',
+                name: 'Get_A1'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_A2",
-                "arguments": [],
-                "asmName": "get_A2",
+                argsMemObj: [],
+                asmName: 'get_A2',
+                declaration: 'long',
+                name: 'Get_A2'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_A3",
-                "arguments": [],
-                "asmName": "get_A3",
+                argsMemObj: [],
+                asmName: 'get_A3',
+                declaration: 'long',
+                name: 'Get_A3'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_A4",
-                "arguments": [],
-                "asmName": "get_A4",
+                argsMemObj: [],
+                asmName: 'get_A4',
+                declaration: 'long',
+                name: 'Get_A4'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_B1",
-                "arguments": [],
-                "asmName": "get_B1",
+                argsMemObj: [],
+                asmName: 'get_B1',
+                declaration: 'long',
+                name: 'Get_B1'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_B2",
-                "arguments": [],
-                "asmName": "get_B2",
+                argsMemObj: [],
+                asmName: 'get_B2',
+                declaration: 'long',
+                name: 'Get_B2'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_B3",
-                "arguments": [],
-                "asmName": "get_B3",
+                argsMemObj: [],
+                asmName: 'get_B3',
+                declaration: 'long',
+                name: 'Get_B3'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_B4",
-                "arguments": [],
-                "asmName": "get_B4",
+                argsMemObj: [],
+                asmName: 'get_B4',
+                declaration: 'long',
+                name: 'Get_B4'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Set_A1",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr",
-                        "line": 9,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr',
+                        asmName: 'Set_A1_addr',
+                        type: 'long',
+                        scope: 'Set_A1',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "set_A1",
+                asmName: 'set_A1',
+                declaration: 'void',
+                name: 'Set_A1'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Set_A2",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr",
-                        "line": 10,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr',
+                        asmName: 'Set_A2_addr',
+                        type: 'long',
+                        scope: 'Set_A2',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "set_A2",
+                asmName: 'set_A2',
+                declaration: 'void',
+                name: 'Set_A2'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Set_A3",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr",
-                        "line": 11,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr',
+                        asmName: 'Set_A3_addr',
+                        type: 'long',
+                        scope: 'Set_A3',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "set_A3",
+                asmName: 'set_A3',
+                declaration: 'void',
+                name: 'Set_A3'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Set_A4",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr",
-                        "line": 12,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr',
+                        asmName: 'Set_A4_addr',
+                        type: 'long',
+                        scope: 'Set_A4',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "set_A4",
+                asmName: 'set_A4',
+                declaration: 'void',
+                name: 'Set_A4'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Set_A1_A2",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr1",
-                        "line": 13,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr1',
+                        asmName: 'Set_A1_A2_addr1',
+                        type: 'long',
+                        scope: 'Set_A1_A2',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     },
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr2",
-                        "line": 13,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr2',
+                        asmName: 'Set_A1_A2_addr2',
+                        type: 'long',
+                        scope: 'Set_A1_A2',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "set_A1_A2",
+                asmName: 'set_A1_A2',
+                declaration: 'void',
+                name: 'Set_A1_A2'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Set_A3_A4",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr1",
-                        "line": 14,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr1',
+                        asmName: 'Set_A3_A4_addr1',
+                        type: 'long',
+                        scope: 'Set_A3_A4',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     },
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr2",
-                        "line": 14,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr2',
+                        asmName: 'Set_A3_A4_addr2',
+                        type: 'long',
+                        scope: 'Set_A3_A4',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "set_A3_A4",
+                asmName: 'set_A3_A4',
+                declaration: 'void',
+                name: 'Set_A3_A4'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Set_B1",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr",
-                        "line": 15,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr',
+                        asmName: 'Set_B1_addr',
+                        type: 'long',
+                        scope: 'Set_B1',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "set_B1",
+                asmName: 'set_B1',
+                declaration: 'void',
+                name: 'Set_B1'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Set_B2",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr",
-                        "line": 16,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr',
+                        asmName: 'Set_B2_addr',
+                        type: 'long',
+                        scope: 'Set_B2',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "set_B2",
+                asmName: 'set_B2',
+                declaration: 'void',
+                name: 'Set_B2'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Set_B3",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr",
-                        "line": 17,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr',
+                        asmName: 'Set_B3_addr',
+                        type: 'long',
+                        scope: 'Set_B3',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "set_B3",
+                asmName: 'set_B3',
+                declaration: 'void',
+                name: 'Set_B3'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Set_B4",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr",
-                        "line": 18,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr',
+                        asmName: 'Set_B4_addr',
+                        type: 'long',
+                        scope: 'Set_B4',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "set_B4",
+                asmName: 'set_B4',
+                declaration: 'void',
+                name: 'Set_B4'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Set_B1_B2",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr1",
-                        "line": 19,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr1',
+                        asmName: 'Set_B1_B2_addr1',
+                        type: 'long',
+                        scope: 'Set_B1_B2',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     },
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr2",
-                        "line": 19,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr2',
+                        asmName: 'Set_B1_B2_addr2',
+                        type: 'long',
+                        scope: 'Set_B1_B2',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "set_B1_B2",
+                asmName: 'set_B1_B2',
+                declaration: 'void',
+                name: 'Set_B1_B2'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Set_B3_B4",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr1",
-                        "line": 20,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr1',
+                        asmName: 'Set_B3_B4_addr1',
+                        type: 'long',
+                        scope: 'Set_B3_B4',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     },
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr2",
-                        "line": 20,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr2',
+                        asmName: 'Set_B3_B4_addr2',
+                        type: 'long',
+                        scope: 'Set_B3_B4',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "set_B3_B4",
+                asmName: 'set_B3_B4',
+                declaration: 'void',
+                name: 'Set_B3_B4'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Clear_A",
-                "arguments": [],
-                "asmName": "clear_A",
+                argsMemObj: [],
+                asmName: 'clear_A',
+                declaration: 'void',
+                name: 'Clear_A'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Clear_B",
-                "arguments": [],
-                "asmName": "clear_B",
+                argsMemObj: [],
+                asmName: 'clear_B',
+                declaration: 'void',
+                name: 'Clear_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Clear_A_And_B",
-                "arguments": [],
-                "asmName": "clear_A_B",
+                argsMemObj: [],
+                asmName: 'clear_A_B',
+                declaration: 'void',
+                name: 'Clear_A_And_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Copy_A_From_B",
-                "arguments": [],
-                "asmName": "copy_A_From_B",
+                argsMemObj: [],
+                asmName: 'copy_A_From_B',
+                declaration: 'void',
+                name: 'Copy_A_From_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Copy_B_From_A",
-                "arguments": [],
-                "asmName": "copy_B_From_A",
+                argsMemObj: [],
+                asmName: 'copy_B_From_A',
+                declaration: 'void',
+                name: 'Copy_B_From_A'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Check_A_Is_Zero",
-                "arguments": [],
-                "asmName": "check_A_Is_Zero",
+                argsMemObj: [],
+                asmName: 'check_A_Is_Zero',
+                declaration: 'long',
+                name: 'Check_A_Is_Zero'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Check_B_Is_Zero",
-                "arguments": [],
-                "asmName": "check_B_Is_Zero",
+                argsMemObj: [],
+                asmName: 'check_B_Is_Zero',
+                declaration: 'long',
+                name: 'Check_B_Is_Zero'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Check_A_Equals_B",
-                "arguments": [],
-                "asmName": "check_A_equals_B",
+                argsMemObj: [],
+                asmName: 'check_A_equals_B',
+                declaration: 'long',
+                name: 'Check_A_Equals_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Swap_A_and_B",
-                "arguments": [],
-                "asmName": "swap_A_and_B",
+                argsMemObj: [],
+                asmName: 'swap_A_and_B',
+                declaration: 'void',
+                name: 'Swap_A_and_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "OR_A_with_B",
-                "arguments": [],
-                "asmName": "OR_A_with_B",
+                argsMemObj: [],
+                asmName: 'OR_A_with_B',
+                declaration: 'void',
+                name: 'OR_A_with_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "OR_B_with_A",
-                "arguments": [],
-                "asmName": "OR_B_with_A",
+                argsMemObj: [],
+                asmName: 'OR_B_with_A',
+                declaration: 'void',
+                name: 'OR_B_with_A'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "AND_A_with_B",
-                "arguments": [],
-                "asmName": "AND_A_with_B",
+                argsMemObj: [],
+                asmName: 'AND_A_with_B',
+                declaration: 'void',
+                name: 'AND_A_with_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "AND_B_with_A",
-                "arguments": [],
-                "asmName": "AND_B_with_A",
+                argsMemObj: [],
+                asmName: 'AND_B_with_A',
+                declaration: 'void',
+                name: 'AND_B_with_A'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "XOR_A_with_B",
-                "arguments": [],
-                "asmName": "XOR_A_with_B",
+                argsMemObj: [],
+                asmName: 'XOR_A_with_B',
+                declaration: 'void',
+                name: 'XOR_A_with_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "XOR_B_with_A",
-                "arguments": [],
-                "asmName": "XOR_B_with_A",
+                argsMemObj: [],
+                asmName: 'XOR_B_with_A',
+                declaration: 'void',
+                name: 'XOR_B_with_A'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Add_A_To_B",
-                "arguments": [],
-                "asmName": "add_A_to_B",
+                argsMemObj: [],
+                asmName: 'add_A_to_B',
+                declaration: 'void',
+                name: 'Add_A_To_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Add_B_To_A",
-                "arguments": [],
-                "asmName": "add_B_to_A",
+                argsMemObj: [],
+                asmName: 'add_B_to_A',
+                declaration: 'void',
+                name: 'Add_B_To_A'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Sub_A_From_B",
-                "arguments": [],
-                "asmName": "sub_A_from_B",
+                argsMemObj: [],
+                asmName: 'sub_A_from_B',
+                declaration: 'void',
+                name: 'Sub_A_From_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Sub_B_From_A",
-                "arguments": [],
-                "asmName": "sub_B_from_A",
+                argsMemObj: [],
+                asmName: 'sub_B_from_A',
+                declaration: 'void',
+                name: 'Sub_B_From_A'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Mul_A_By_B",
-                "arguments": [],
-                "asmName": "mul_A_by_B",
+                argsMemObj: [],
+                asmName: 'mul_A_by_B',
+                declaration: 'void',
+                name: 'Mul_A_By_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Mul_B_By_A",
-                "arguments": [],
-                "asmName": "mul_B_by_A",
+                argsMemObj: [],
+                asmName: 'mul_B_by_A',
+                declaration: 'void',
+                name: 'Mul_B_By_A'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Div_A_By_B",
-                "arguments": [],
-                "asmName": "div_A_by_B",
+                argsMemObj: [],
+                asmName: 'div_A_by_B',
+                declaration: 'void',
+                name: 'Div_A_By_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Div_B_By_A",
-                "arguments": [],
-                "asmName": "div_B_by_A",
+                argsMemObj: [],
+                asmName: 'div_B_by_A',
+                declaration: 'void',
+                name: 'Div_B_By_A'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "MD5_A_To_B",
-                "arguments": [],
-                "asmName": "MD5_A_to_B",
+                argsMemObj: [],
+                asmName: 'MD5_A_to_B',
+                declaration: 'void',
+                name: 'MD5_A_To_B'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Check_MD5_A_With_B",
-                "arguments": [],
-                "asmName": "check_MD5_A_with_B",
+                argsMemObj: [],
+                asmName: 'check_MD5_A_with_B',
+                declaration: 'long',
+                name: 'Check_MD5_A_With_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "HASH160_A_To_B",
-                "arguments": [],
-                "asmName": "HASH160_A_to_B",
+                argsMemObj: [],
+                asmName: 'HASH160_A_to_B',
+                declaration: 'void',
+                name: 'HASH160_A_To_B'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Check_HASH160_A_With_B",
-                "arguments": [],
-                "asmName": "check_HASH160_A_with_B",
+                argsMemObj: [],
+                asmName: 'check_HASH160_A_with_B',
+                declaration: 'long',
+                name: 'Check_HASH160_A_With_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "SHA256_A_To_B",
-                "arguments": [],
-                "asmName": "SHA256_A_to_B",
+                argsMemObj: [],
+                asmName: 'SHA256_A_to_B',
+                declaration: 'void',
+                name: 'SHA256_A_To_B'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Check_SHA256_A_With_B",
-                "arguments": [],
-                "asmName": "check_SHA256_A_with_B",
+                argsMemObj: [],
+                asmName: 'check_SHA256_A_with_B',
+                declaration: 'long',
+                name: 'Check_SHA256_A_With_B'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_Block_Timestamp",
-                "arguments": [],
-                "asmName": "get_Block_Timestamp",
+                argsMemObj: [],
+                asmName: 'get_Block_Timestamp',
+                declaration: 'long',
+                name: 'Get_Block_Timestamp'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_Creation_Timestamp",
-                "arguments": [],
-                "asmName": "get_Creation_Timestamp",
+                argsMemObj: [],
+                asmName: 'get_Creation_Timestamp',
+                declaration: 'long',
+                name: 'Get_Creation_Timestamp'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_Last_Block_Timestamp",
-                "arguments": [],
-                "asmName": "get_Last_Block_Timestamp",
+                argsMemObj: [],
+                asmName: 'get_Last_Block_Timestamp',
+                declaration: 'long',
+                name: 'Get_Last_Block_Timestamp'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Put_Last_Block_Hash_In_A",
-                "arguments": [],
-                "asmName": "put_Last_Block_Hash_In_A",
+                argsMemObj: [],
+                asmName: 'put_Last_Block_Hash_In_A',
+                declaration: 'void',
+                name: 'Put_Last_Block_Hash_In_A'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "A_To_Tx_After_Timestamp",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr",
-                        "line": 54,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr',
+                        asmName: 'A_To_Tx_After_Timestamp_addr',
+                        type: 'long',
+                        scope: 'A_To_Tx_After_Timestamp',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "A_to_Tx_after_Timestamp",
+                asmName: 'A_to_Tx_after_Timestamp',
+                declaration: 'void',
+                name: 'A_To_Tx_After_Timestamp'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_Type_For_Tx_In_A",
-                "arguments": [],
-                "asmName": "get_Type_for_Tx_in_A",
+                argsMemObj: [],
+                asmName: 'get_Type_for_Tx_in_A',
+                declaration: 'long',
+                name: 'Get_Type_For_Tx_In_A'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_Amount_For_Tx_In_A",
-                "arguments": [],
-                "asmName": "get_Amount_for_Tx_in_A",
+                argsMemObj: [],
+                asmName: 'get_Amount_for_Tx_in_A',
+                declaration: 'long',
+                name: 'Get_Amount_For_Tx_In_A'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_Timestamp_For_Tx_In_A",
-                "arguments": [],
-                "asmName": "get_Timestamp_for_Tx_in_A",
+                argsMemObj: [],
+                asmName: 'get_Timestamp_for_Tx_in_A',
+                declaration: 'long',
+                name: 'Get_Timestamp_For_Tx_In_A'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_Random_Id_For_Tx_In_A",
-                "arguments": [],
-                "asmName": "get_Ticket_Id_for_Tx_in_A",
+                argsMemObj: [],
+                asmName: 'get_Ticket_Id_for_Tx_in_A',
+                declaration: 'long',
+                name: 'Get_Random_Id_For_Tx_In_A'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Message_From_Tx_In_A_To_B",
-                "arguments": [],
-                "asmName": "message_from_Tx_in_A_to_B",
+                argsMemObj: [],
+                asmName: 'message_from_Tx_in_A_to_B',
+                declaration: 'void',
+                name: 'Message_From_Tx_In_A_To_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "B_To_Address_Of_Tx_In_A",
-                "arguments": [],
-                "asmName": "B_to_Address_of_Tx_in_A",
+                argsMemObj: [],
+                asmName: 'B_to_Address_of_Tx_in_A',
+                declaration: 'void',
+                name: 'B_To_Address_Of_Tx_In_A'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "B_To_Address_Of_Creator",
-                "arguments": [],
-                "asmName": "B_to_Address_of_Creator",
+                argsMemObj: [],
+                asmName: 'B_to_Address_of_Creator',
+                declaration: 'void',
+                name: 'B_To_Address_Of_Creator'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_Current_Balance",
-                "arguments": [],
-                "asmName": "get_Current_Balance",
+                argsMemObj: [],
+                asmName: 'get_Current_Balance',
+                declaration: 'long',
+                name: 'Get_Current_Balance'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Get_Previous_Balance",
-                "arguments": [],
-                "asmName": "get_Previous_Balance",
+                argsMemObj: [],
+                asmName: 'get_Previous_Balance',
+                declaration: 'long',
+                name: 'Get_Previous_Balance'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Send_To_Address_In_B",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr",
-                        "line": 64,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr',
+                        asmName: 'Send_To_Address_In_B_addr',
+                        type: 'long',
+                        scope: 'Send_To_Address_In_B',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "send_to_Address_in_B",
+                asmName: 'send_to_Address_in_B',
+                declaration: 'void',
+                name: 'Send_To_Address_In_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Send_All_To_Address_In_B",
-                "arguments": [],
-                "asmName": "send_All_to_Address_in_B",
+                argsMemObj: [],
+                asmName: 'send_All_to_Address_in_B',
+                declaration: 'void',
+                name: 'Send_All_To_Address_In_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Send_Old_To_Address_In_B",
-                "arguments": [],
-                "asmName": "send_Old_to_Address_in_B",
+                argsMemObj: [],
+                asmName: 'send_Old_to_Address_in_B',
+                declaration: 'void',
+                name: 'Send_Old_To_Address_In_B'
             },
             {
-                "return_type": "void",
-                "return_pointer": "no",
-                "name": "Send_A_To_Address_In_B",
-                "arguments": [],
-                "asmName": "send_A_to_Address_in_B",
+                argsMemObj: [],
+                asmName: 'send_A_to_Address_in_B',
+                declaration: 'void',
+                name: 'Send_A_To_Address_In_B'
             },
             {
-                "return_type": "long",
-                "return_pointer": "no",
-                "name": "Add_Minutes_To_Timestamp",
-                "arguments": [
+                argsMemObj: [
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr2",
-                        "line": 68,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr2',
+                        asmName: 'Add_Minutes_To_Timestamp_addr2',
+                        type: 'long',
+                        scope: 'Add_Minutes_To_Timestamp',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     },
                     {
-                        "type": "Variable",
-                        "pointer": "no",
-                        "precedence": 0,
-                        "value": "addr3",
-                        "line": 68,
-                        "declaration": "long"
+                        address: -1,
+                        name: 'addr3',
+                        asmName: 'Add_Minutes_To_Timestamp_addr3',
+                        type: 'long',
+                        scope: 'Add_Minutes_To_Timestamp',
+                        declaration: 'long',
+                        size: 1,
+                        isDeclared: true
                     }
                 ],
-                "asmName": "add_Minutes_to_Timestamp",
+                asmName: 'add_Minutes_to_Timestamp',
+                declaration: 'long',
+                name: 'Add_Minutes_To_Timestamp'
             }
-        ];
+        ]
     }
 
-    return shapeProgram_main();
+    return shapeMain()
 }
-
-
