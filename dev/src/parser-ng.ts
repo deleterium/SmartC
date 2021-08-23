@@ -26,8 +26,10 @@ interface TOKEN {
     declaration?: DECLARATION_TYPES
     /** Empty string for Arr, CodeCave, CodeDomain */
     value: string
-    /** Only applicable to Arr, CodeCave, CodeDomain */
+    /** Only applicable to Arr, CodeCave, CodeDomain, Variable with modifier */
     params?: TOKEN[]
+    /** Only applicable to variable with modifier like array or struct */
+    variableModifier?: { type: string, content: any }[]
     /** Only applicable to types: asm, break, continue or label */
     extValue?: string
 }
