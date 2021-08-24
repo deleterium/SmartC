@@ -2,7 +2,7 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-/* global DECLARATION_TYPES TOKEN */
+/* global DECLARATION_TYPES TOKEN AST */
 
 interface SC_CONFIG {
     /** This compiler version!!! */
@@ -81,15 +81,18 @@ type SENTENCES = SENTENCE_PHRASE | SENTENCE_IF_ENDIF | SENTENCE_IF_ELSE | SENTEN
 
 interface SENTENCE_PHRASE {
     type: 'phrase'
+    /** Array of tokens, recursive on Arr, Codecave and CodeDomain */
     code?: TOKEN[]
-    OpTree?: {}
+    /** Tokens organized in an AST */
+    CodeAST?: AST
 }
 interface SENTENCE_IF_ENDIF {
     type: 'ifEndif'
     id: string
     line: number
     condition?: TOKEN[]
-    ConditionOpTree?: {}
+    /** Tokens organized in an AST */
+    ConditionAST?: AST
     trueBlock: SENTENCES[]
 }
 interface SENTENCE_IF_ELSE {
@@ -97,7 +100,7 @@ interface SENTENCE_IF_ELSE {
     id: string
     line: number
     condition?: TOKEN[]
-    ConditionOpTree?: {}
+    ConditionAST?: AST
     trueBlock: SENTENCES[]
     falseBlock: SENTENCES[]
 }
@@ -106,7 +109,7 @@ interface SENTENCE_WHILE {
     id: string
     line: number
     condition?: TOKEN[]
-    ConditionOpTree?: {}
+    ConditionAST?: AST
     trueBlock: SENTENCES[]
 }
 interface SENTENCE_DO {
@@ -114,7 +117,7 @@ interface SENTENCE_DO {
     id: string
     line: number
     condition?: TOKEN[]
-    ConditionOpTree?: {}
+    ConditionAST?: AST
     trueBlock: SENTENCES[]
 }
 interface SENTENCE_FOR {
