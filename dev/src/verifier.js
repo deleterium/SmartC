@@ -1,15 +1,16 @@
 "use strict";
 /* global TOKEN_TYPES TOKEN */
-/** Verifies if a Tokens-AST produced by parser complies with our syntax rules.
-  * @param ast Object to check.
-  * @returns The same ast unchanged.
-  * @throws {SyntaxError} at any mistakes
-  * */
+// Author: Rui Deleterium
+// Project: https://github.com/deleterium/SmartC
+// License: BSD 3-Clause License
+/** Verifies if an array of Tokens complies with our syntax rules.
+ * This is just a verification pass.
+ * @param tokenTrain Object to check.
+ * @returns The same tokenTrain unchanged.
+ * @throws {SyntaxError} at any mistakes
+ * */
 // eslint-disable-next-line no-unused-vars
-function verify(ast) {
-    // y-> Yes, possible combination
-    // n-> No, not possible combination
-    // kc->  keyword check (depends on keyword and not implemented)
+function verify(tokenTrain) {
     const tokenRules = [
         { Current: 'Variable', Next: 'Variable', Possible: 'y' },
         { Current: 'Variable', Next: 'UnaryOperator', Possible: 'n' },
@@ -369,9 +370,9 @@ function verify(ast) {
         }
     }
     /* * * Main function! * * */
-    if (ast === undefined) {
-        throw new SyntaxError('Undefined ast reached verify() function.');
+    if (tokenTrain === undefined) {
+        throw new SyntaxError('Undefined tokenTrain reached verify() function.');
     }
-    ast.forEach(checkRules);
-    return (ast);
+    tokenTrain.forEach(checkRules);
+    return (tokenTrain);
 }

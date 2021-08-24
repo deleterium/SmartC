@@ -3,15 +3,16 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 /**
- * Traverse Bigast transforming specific properties from arrays of
- * tokens into an actually abstract syntax tree, checking operators
- * precedence and let operations in correct order for assembler
- * @param BigAST to be processed
- * @returns BigAST processed
+ * Traverse Program transforming some sentences properties from arrays of
+ * tokens into an actually abstract syntax tree. Check operators
+ * precedence and let operations in correct order for assembler.
+ * This is parser third and final pass.
+ * @param Program to be processed
+ * @returns Program processed
  * @throws {TypeError|SyntaxError} on any mistake.
  */
 // eslint-disable-next-line no-unused-vars
-function bigastProcessSyntax(BigAST) {
+function syntaxProcess(Program) {
     /**
      * Traverse an array of tokens to create a real AST based on
      * simple operations. Only unary or binary operations permitted here
@@ -227,15 +228,15 @@ function bigastProcessSyntax(BigAST) {
         }
     }
     /* * * Main function! * * */
-    if (BigAST === undefined || BigAST.Global.sentences === undefined) {
+    if (Program === undefined || Program.Global.sentences === undefined) {
         throw new TypeError('Undefined AST arrived at syntax()');
     }
-    BigAST.Global.sentences.forEach(processSentence);
-    BigAST.functions.forEach(func => {
-        if (func.sentences === undefined) {
+    Program.Global.sentences.forEach(processSentence);
+    Program.functions.forEach(CurrentFunction => {
+        if (CurrentFunction.sentences === undefined) {
             throw new TypeError('Undefined AST arrived at syntax()');
         }
-        func.sentences.forEach(processSentence);
+        CurrentFunction.sentences.forEach(processSentence);
     });
-    return BigAST;
+    return Program;
 }
