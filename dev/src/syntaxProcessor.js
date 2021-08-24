@@ -191,7 +191,7 @@ function syntaxProcess(Program) {
         }
         throw new SyntaxError('At line: ' + tokenArray[0].line + ". Token '" + tokenArray[0].type + "' with value '" + tokenArray[0].value + "' does not match any syntax rules.");
     }
-    // Process recursively one Sentence object, creating an OpTree object that was
+    // Process recursively one Sentence object, creating an CodeAST, that was
     //   processed sintacticly.
     function processSentence(SentenceObj) {
         switch (SentenceObj.type) {
@@ -199,7 +199,7 @@ function syntaxProcess(Program) {
                 if (SentenceObj.code === undefined) {
                     throw new TypeError('Unknow object arrived at processSentence');
                 }
-                SentenceObj.OpTree = createSyntacticTree(SentenceObj.code);
+                SentenceObj.CodeAST = createSyntacticTree(SentenceObj.code);
                 delete SentenceObj.code;
                 break;
             case 'ifElse':
@@ -214,7 +214,7 @@ function syntaxProcess(Program) {
                 if (SentenceObj.condition.length === 0) {
                     throw new SyntaxError(`At line ${SentenceObj.line}. Sentence condition can not be empty`);
                 }
-                SentenceObj.ConditionOpTree = createSyntacticTree(SentenceObj.condition);
+                SentenceObj.ConditionAST = createSyntacticTree(SentenceObj.condition);
                 delete SentenceObj.condition;
                 SentenceObj.trueBlock.forEach(processSentence);
                 break;
