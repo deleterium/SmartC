@@ -475,6 +475,12 @@ var keywords_tests = [
     [ "if (a) { a++; if (b) { b++; if (c) { c++; } } }", false, "BZR $a :__if1_endif\n__if1_start:\nINC @a\nBZR $b :__if2_endif\n__if2_start:\nINC @b\nBZR $c :__if3_endif\n__if3_start:\nINC @c\n__if3_endif:\n__if2_endif:\n__if1_endif:\nFIN\n" ],
     [ "if (a) {\n a++;\n} else if (b) {\n b++;\n} else if (c) {\n c++;\n}", false, "BZR $a :__if1_else\n__if1_start:\nINC @a\nJMP :__if1_endif\n__if1_else:\nBZR $b :__if2_else\n__if2_start:\nINC @b\nJMP :__if2_endif\n__if2_else:\nBZR $c :__if3_endif\n__if3_start:\nINC @c\n__if3_endif:\n__if2_endif:\n__if1_endif:\nFIN\n" ],
     [ "a=2; const b=5; a++;", false, "SET @a #0000000000000002\n^const SET @b #0000000000000005\nINC @a\nFIN\n" ],
+    [ "Empty conditions", "div" ],
+    [ "if () { a++; }", true, "" ],
+    [ "if () { a++; } else { b--; }", true, "" ],
+    [ "while () { a++; }", true, "" ],
+    [ "for (;;) { b++; }", false, "__loop1_condition:\n__loop1_start:\nINC @b\n__loop1_continue:\nJMP :__loop1_condition\n__loop1_break:\nFIN\n" ],
+    [ "do { a++; } while ();", true, "" ],
 ];
 
 var full_tests = [

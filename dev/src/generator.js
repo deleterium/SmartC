@@ -2805,9 +2805,6 @@ function generate(bc_Big_ast){
 
         } else if (Sentence.type === "ifEndif") {
             sent_id = "__if"+bc_auxVars.getNewJumpID(Sentence.line);
-            if (isEmpty(Sentence.ConditionAST)) {
-                throw new TypeError("At line: " + Sentence.line + ". Condition can not be empty.");
-            }
             writeAsmCode( codeGenerator(Sentence.ConditionAST, sent_id+"_endif", sent_id+"_start"));
             writeAsmLine( sent_id+"_start:" );
             Sentence.trueBlock.forEach( compileSentence );
@@ -2815,9 +2812,6 @@ function generate(bc_Big_ast){
 
         } else if (Sentence.type === "ifElse") {
             sent_id = "__if"+bc_auxVars.getNewJumpID(Sentence.line);
-            if (isEmpty(Sentence.ConditionAST)) {
-                throw new TypeError("At line: " + Sentence.line + ". Condition can not be empty.");
-            }
             writeAsmCode( codeGenerator(Sentence.ConditionAST, sent_id+"_else", sent_id+"_start") );
             writeAsmLine( sent_id+"_start:" );
             Sentence.trueBlock.forEach( compileSentence );
@@ -2829,9 +2823,6 @@ function generate(bc_Big_ast){
         } else if (Sentence.type === "while") {
             sent_id = "__loop"+bc_auxVars.getNewJumpID(Sentence.line);
             writeAsmLine( sent_id+"_continue:" );
-            if (isEmpty(Sentence.ConditionAST)) {
-                throw new TypeError("At line: " + Sentence.line + ". Condition can not be empty.");
-            }
             writeAsmCode( codeGenerator(Sentence.ConditionAST, sent_id+"_break", sent_id+"_start") );
             writeAsmLine( sent_id+"_start:" );
             bc_auxVars.latest_loop_id.push(sent_id);
@@ -2846,9 +2837,6 @@ function generate(bc_Big_ast){
             bc_auxVars.latest_loop_id.push(sent_id);
             Sentence.trueBlock.forEach( compileSentence );
             bc_auxVars.latest_loop_id.pop();
-            if (isEmpty(Sentence.ConditionAST)) {
-                throw new TypeError("At line: " + Sentence.line + ". Condition can not be empty.");
-            }
             writeAsmCode( codeGenerator(Sentence.ConditionAST, sent_id+"_break", sent_id+"_continue", true) );
             writeAsmLine( sent_id+"_break:" );
 
@@ -2856,9 +2844,6 @@ function generate(bc_Big_ast){
             sent_id = "__loop"+bc_auxVars.getNewJumpID(Sentence.line);
             writeAsmCode( codeGenerator(Sentence.threeSentences[0].CodeAST) );
             writeAsmLine( sent_id+"_condition:" );
-            if (isEmpty(Sentence.threeSentences[1].CodeAST)) {
-                throw new TypeError("At line: " + Sentence.line + ". Condition can not be empty.");
-            }
             writeAsmCode( codeGenerator(Sentence.threeSentences[1].CodeAST, sent_id+"_break", sent_id+"_start") );
             writeAsmLine( sent_id + "_start:" );
             bc_auxVars.latest_loop_id.push(sent_id);
