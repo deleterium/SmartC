@@ -2,10 +2,10 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-/* global TOKEN AST SENTENCES */
+/* global TOKEN CONTRACT SENTENCES */
 
 // eslint-disable-next-line no-use-before-define
-type PURE_AST = UNARY_ASN | BINARY_ASN | END_ASN | EXCEPTION_ASN
+type AST = UNARY_ASN | BINARY_ASN | END_ASN | EXCEPTION_ASN
 
 interface UNARY_ASN {
     /** Unary Abstract Syntax Node */
@@ -13,7 +13,7 @@ interface UNARY_ASN {
     /** Unary operator token */
     Operation: TOKEN
     /** Continuation of AST */
-    Center: PURE_AST
+    Center: AST
 }
 interface BINARY_ASN {
     /** Binary Abstract Syntax Node */
@@ -21,9 +21,9 @@ interface BINARY_ASN {
     /** Binary operator token */
     Operation: TOKEN
     /** Left side AST */
-    Left: PURE_AST
+    Left: AST
     /** Left side AST */
-    Right: PURE_AST
+    Right: AST
 }
 interface END_ASN {
     /** End Abstract Syntax Node */
@@ -37,28 +37,29 @@ interface EXCEPTION_ASN {
     /** Binary operator token. Currently only SetUnaryOperator */
     Operation: TOKEN
     /** Left side AST. Indicating pre-increment or pre-decrement */
-    Left?: PURE_AST
+    Left?: AST
     /** Rigth side AST. Indicating post-increment or post-decrement */
-    Right?: PURE_AST
+    Right?: AST
 }
 
 /**
- * Traverse Bigast transforming specific properties from arrays of
- * tokens into an actually abstract syntax tree, checking operators
- * precedence and let operations in correct order for assembler
- * @param BigAST to be processed
- * @returns BigAST processed
+ * Traverse Program transforming some sentences properties from arrays of
+ * tokens into an actually abstract syntax tree. Check operators
+ * precedence and let operations in correct order for assembler.
+ * This is parser third and final pass.
+ * @param Program to be processed
+ * @returns Program processed
  * @throws {TypeError|SyntaxError} on any mistake.
  */
 // eslint-disable-next-line no-unused-vars
-function bigastProcessSyntax (BigAST: AST) {
+function syntaxProcess (Program: CONTRACT) {
     /**
      * Traverse an array of tokens to create a real AST based on
      * simple operations. Only unary or binary operations permitted here
      * and the tree will always end in a END NODE.
      * Uses precedence values to decide the operations order.
      */
-    function createSyntacticTree (tokenArray: TOKEN[] | undefined): PURE_AST {
+    function createSyntacticTree (tokenArray: TOKEN[] | undefined): AST {
         if (tokenArray === undefined) {
             throw new SyntaxError('Undefined AST to create syntactic tree')
         }
@@ -269,15 +270,15 @@ function bigastProcessSyntax (BigAST: AST) {
     }
 
     /* * * Main function! * * */
-    if (BigAST === undefined || BigAST.Global.sentences === undefined) {
+    if (Program === undefined || Program.Global.sentences === undefined) {
         throw new TypeError('Undefined AST arrived at syntax()')
     }
-    BigAST.Global.sentences.forEach(processSentence)
-    BigAST.functions.forEach(func => {
-        if (func.sentences === undefined) {
+    Program.Global.sentences.forEach(processSentence)
+    Program.functions.forEach(CurrentFunction => {
+        if (CurrentFunction.sentences === undefined) {
             throw new TypeError('Undefined AST arrived at syntax()')
         }
-        func.sentences.forEach(processSentence)
+        CurrentFunction.sentences.forEach(processSentence)
     })
-    return BigAST
+    return Program
 }

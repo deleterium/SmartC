@@ -6,7 +6,7 @@
 // License: BSD 3-Clause License
 
 
-function bigastCompile(bc_Big_ast){
+function generate(bc_Big_ast){
 
     // holds variables needed during compilation
     const bc_auxVars = {

@@ -40,13 +40,13 @@ function compileCode(){
 
     try{
         if (document.getElementById("source_is_c").checked) {
-            preprocessor_output = preprocessor(codeString);
-            token_output = tokenizer(preprocessor_output);
-            parser_output = parser(token_output);
+            preprocessor_output = preprocess(codeString);
+            token_output = tokenize(preprocessor_output);
+            parser_output = parse(token_output);
             ver_output = verify(parser_output);
-            big_ast = shapeProgram(ver_output);
-            big_ast_opTree = bigastProcessSyntax(big_ast);
-            asmCode = bigastCompile(big_ast_opTree);
+            big_ast = shape(ver_output);
+            big_ast_opTree = syntaxProcess(big_ast);
+            asmCode = generate(big_ast_opTree);
         } else {
             asmCode = codeString;
         }

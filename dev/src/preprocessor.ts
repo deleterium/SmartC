@@ -2,19 +2,22 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-interface PREPROCESSOR_RULES {
-    regex: RegExp
-    type: 'DEFINE_NULL' | 'DEFINE_VAL' | 'UNDEF'
-}
-
-// Preprocessor function. Takes source code as input and returns it preprocessed
-function preprocessor (sourcecode: string) {
-    const PreprocessorCodes: PREPROCESSOR_RULES[] = [
+/**
+ * Process macro substitutions on source code
+ * @param sourcecode Source code input
+ * @returns preprocessed string
+ */
+// eslint-disable-next-line no-unused-vars
+function preprocess (sourcecode: string) {
+    const preprocessorCodes: {
+        regex: RegExp
+        type: 'DEFINE_NULL' | 'DEFINE_VAL' | 'UNDEF'
+    } [] = [
         { regex: /^\s*#define\s+(\w+)\s*$/, type: 'DEFINE_NULL' },
         { regex: /^\s*#define\s+(\w+)\s+(.*)\s*$/, type: 'DEFINE_VAL' },
         { regex: /^\s*#undef\s+(\w+)\s*$/, type: 'UNDEF' }
     ]
-    let PreprocessorReplacements = [
+    let preprocessorReplacements = [
         { cname: 'true', value: '1' },
         { cname: 'false', value: '0' },
         { cname: 'NULL', value: '0' }
@@ -22,13 +25,11 @@ function preprocessor (sourcecode: string) {
     ]
 
     function getPrepRule (codeline: string) {
-        let parts
-
-        for (let i = 0; i < PreprocessorCodes.length; i++) {
-            parts = PreprocessorCodes[i].regex.exec(codeline)
+        for (let i = 0; i < preprocessorCodes.length; i++) {
+            const parts = preprocessorCodes[i].regex.exec(codeline)
             if (parts !== null) {
                 return {
-                    Code: PreprocessorCodes[i],
+                    Code: preprocessorCodes[i],
                     parts: parts
                 }
             }
@@ -37,7 +38,7 @@ function preprocessor (sourcecode: string) {
     }
 
     function replaceDefines (codeline: string) {
-        PreprocessorReplacements.forEach(function (replacement) {
+        preprocessorReplacements.forEach(function (replacement) {
             const rep = new RegExp('\\b' + replacement.cname + '\\b', 'g')
             codeline = codeline.replace(rep, replacement.value)
         })
@@ -57,23 +58,23 @@ function preprocessor (sourcecode: string) {
         }
         switch (PrepRule.Code.type) {
         case 'DEFINE_NULL':
-            idx = PreprocessorReplacements.findIndex(obj => obj.cname === PrepRule.parts[1])
+            idx = preprocessorReplacements.findIndex(obj => obj.cname === PrepRule.parts[1])
             if (idx === -1) {
-                PreprocessorReplacements.push({ cname: PrepRule.parts[1], value: '' })
+                preprocessorReplacements.push({ cname: PrepRule.parts[1], value: '' })
             } else {
-                PreprocessorReplacements[idx].value = ''
+                preprocessorReplacements[idx].value = ''
             }
             break
         case 'DEFINE_VAL':
-            idx = PreprocessorReplacements.findIndex(obj => obj.cname === PrepRule.parts[1])
+            idx = preprocessorReplacements.findIndex(obj => obj.cname === PrepRule.parts[1])
             if (idx === -1) {
-                PreprocessorReplacements.push({ cname: PrepRule.parts[1], value: replaceDefines(PrepRule.parts[2]) })
+                preprocessorReplacements.push({ cname: PrepRule.parts[1], value: replaceDefines(PrepRule.parts[2]) })
             } else {
-                PreprocessorReplacements[idx].value = PrepRule.parts[2]
+                preprocessorReplacements[idx].value = PrepRule.parts[2]
             }
             break
         case 'UNDEF':
-            PreprocessorReplacements = PreprocessorReplacements.filter(obj => obj.cname !== PrepRule.parts[1])
+            preprocessorReplacements = preprocessorReplacements.filter(obj => obj.cname !== PrepRule.parts[1])
             break
         default:
                 // not implementd

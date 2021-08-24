@@ -18,7 +18,14 @@ interface PRE_TOKEN {
     asmText?: string
 }
 
-function tokenizer (input: string): PRE_TOKEN[] {
+/**
+ * Transforms input source code into an array of pre tokens.
+ * This array is not recursive.
+ * @param input source code
+ * @returns array of pre tokens
+ */
+// eslint-disable-next-line no-unused-vars
+function tokenize (input: string): PRE_TOKEN[] {
     const singleTokensSpecs = [
         { char: '=', tokenType: 'equal' },
         { char: '*', tokenType: 'star' },
@@ -116,14 +123,14 @@ function tokenizer (input: string): PRE_TOKEN[] {
     let currentChar:string, remainingText: string
 
     let current = 0
-    const tokens: PRE_TOKEN[] = []
+    const preTokens: PRE_TOKEN[] = []
     let currentLine = 1
 
     while (current < input.length) {
         currentChar = input.charAt(current)
         remainingText = input.slice(current)
 
-        // Resolve double regex tokens
+        // Resolve double regex preTokens
         const found = regexDoubleTokensSpecs.find(ruleN => {
             const startParts = ruleN.start.exec(remainingText)
             if (startParts != null) {
@@ -135,7 +142,7 @@ function tokenizer (input: string): PRE_TOKEN[] {
                         current += endParts[1].length
                         return true// breaks find function
                     }
-                    tokens.push({ type: ruleN.tokenType, value: endParts[1].slice(0, -ruleN.removeTrailing), line: currentLine })
+                    preTokens.push({ type: ruleN.tokenType, value: endParts[1].slice(0, -ruleN.removeTrailing), line: currentLine })
                     currentLine += (endParts[1].match(/\n/g) || '').length
                     current += endParts[1].length
                     return true// breaks find function
@@ -149,7 +156,7 @@ function tokenizer (input: string): PRE_TOKEN[] {
             continue
         }
 
-        // Resolve single regex tokens
+        // Resolve single regex preTokens
         const found2 = regexSingleTokensSpecs.find(ruleN => {
             const startParts = ruleN.start.exec(remainingText)
             if (startParts != null) {
@@ -164,12 +171,12 @@ function tokenizer (input: string): PRE_TOKEN[] {
                     if (asmParts === null) {
                         throw new TypeError('At line:' + currentLine + ' Error parsing `asm { ... }` keyword')
                     }
-                    tokens.push({ type: 'keyword', value: 'asm', line: currentLine, asmText: asmParts[2] })
+                    preTokens.push({ type: 'keyword', value: 'asm', line: currentLine, asmText: asmParts[2] })
                     currentLine += (asmParts[1].match(/\n/g) || '').length
                     current += asmParts[1].length
                     return true// breaks find function
                 }
-                tokens.push({ type: ruleN.tokenType, value: startParts[1], line: currentLine })
+                preTokens.push({ type: ruleN.tokenType, value: startParts[1], line: currentLine })
                 currentLine += (startParts[1].match(/\n/g) || '').length
                 current += startParts[1].length + ruleN.addLength
                 return true// breaks find function
@@ -180,7 +187,7 @@ function tokenizer (input: string): PRE_TOKEN[] {
             continue
         }
 
-        // Resolve all single tokens
+        // Resolve all single preTokens
         const search = singleTokensSpecs.find(charDB => charDB.char === currentChar)
         if (search !== undefined) {
             if (search.tokenType === 'NONE') {
@@ -201,12 +208,12 @@ function tokenizer (input: string): PRE_TOKEN[] {
                         }
                         break
                     }
-                    tokens.push({ type: 'macro', value: val, line: currentLine - i - 1 })
+                    preTokens.push({ type: 'macro', value: val, line: currentLine - i - 1 })
                     continue
                 }
                 throw new TypeError(`At line: ${currentLine}. SPECIAL rule not implemented in tokenizer().`)
             }
-            tokens.push({ type: search.tokenType, value: currentChar, line: currentLine })
+            preTokens.push({ type: search.tokenType, value: currentChar, line: currentLine })
             current++
             continue
         }
@@ -214,5 +221,5 @@ function tokenizer (input: string): PRE_TOKEN[] {
         throw new TypeError(`At line: ${currentLine}. Forbidden character found: '${currentChar}'.`)
     }
 
-    return tokens
+    return preTokens
 }

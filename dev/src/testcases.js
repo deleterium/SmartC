@@ -1083,7 +1083,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
                 continue;
             }
             result+="<br>Test "+i+" ";
-            code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer(preprocessor(full_tests[i][0])))))));
+            code = generate(syntaxProcess(shape(verify(parse(tokenize(preprocess(full_tests[i][0])))))));
             if (full_tests[i][1] === false) {
                 if (code === full_tests[i][2]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(full_tests[i][0])+"</span>";
@@ -1115,7 +1115,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
                 continue;
             }
             result+="<br>Test "+i+" ";
-            code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer(preprocessor("#pragma useVariableDeclaration false\n"+keywords_tests[i][0])))))));
+            code = generate(syntaxProcess(shape(verify(parse(tokenize(preprocess("#pragma useVariableDeclaration false\n"+keywords_tests[i][0])))))));
             if (keywords_tests[i][1] === false) {
                 if (code === keywords_tests[i][2]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(keywords_tests[i][0])+"</span>";
@@ -1147,7 +1147,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
                 continue;
             }
             result+="<br>Test "+i+" ";
-            code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer(preprocessor("#pragma useVariableDeclaration false\n"+logical_tests[i][0])))))));
+            code = generate(syntaxProcess(shape(verify(parse(tokenize(preprocess("#pragma useVariableDeclaration false\n"+logical_tests[i][0])))))));
             if (logical_tests[i][1] === false) {
                 if (code === logical_tests[i][4]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(logical_tests[i][0])+"</span>";
@@ -1179,7 +1179,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
                 continue;
             }
             result+="<br>Test "+i+" ";
-            code = bigastCompile(bigastProcessSyntax(shapeProgram(verify(parser(tokenizer(preprocessor("#pragma useVariableDeclaration false\n"+tests[i][0])))))));
+            code = generate(syntaxProcess(shape(verify(parse(tokenize(preprocess("#pragma useVariableDeclaration false\n"+tests[i][0])))))));
             if (tests[i][1] === false) {
                 if (code === tests[i][4]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(tests[i][0])+"</span>";

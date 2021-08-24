@@ -34,18 +34,17 @@ interface TOKEN {
     extValue?: string
 }
 
-interface TOKEN_SPEC {
-    sequence: string[]
-    action(item: number): TOKEN
-}
-
-/** Translate an array of pre tokens to an array of tokens
+/** Translate an array of pre tokens to an array of tokens. First phase of parsing.
  * @param tokens Array of pre-tokens
  * @returns Array of TOKENS. Recursive on Arr, CodeCave and CodeDomain types
  * @throws {TypeError | SyntaxError} at any mistakes
  */
 // eslint-disable-next-line no-unused-vars
-function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
+function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
+    interface TOKEN_SPEC {
+        sequence: string[]
+        action(item: number): TOKEN
+    }
     // This object stores a recipe to transform one or more pre_tokens into one
     //   token. All non-recursive items are here. The order they are
     //   arrange are important to decide in cases where same element token can be
@@ -107,33 +106,33 @@ function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
         {
             sequence: ['numberDec'],
             action (tokenID): TOKEN {
-                const tkn = preTokens[tokenID]
-                let val = BigInt(tkn.value.replace(/_/g, '')).toString(16)
+                const ptkn = preTokens[tokenID]
+                let val = BigInt(ptkn.value.replace(/_/g, '')).toString(16)
                 val = val.padStart((Math.floor((val.length - 1) / 16) + 1) * 16, '0')
-                return { type: 'Constant', precedence: 0, value: val, line: tkn.line }
+                return { type: 'Constant', precedence: 0, value: val, line: ptkn.line }
             }
         },
         {
             sequence: ['numberHex'],
             action (tokenID): TOKEN {
-                const tkn = preTokens[tokenID]
-                let val = tkn.value.replace(/_/g, '').toLowerCase()
+                const ptkn = preTokens[tokenID]
+                let val = ptkn.value.replace(/_/g, '').toLowerCase()
                 val = val.padStart((Math.floor((val.length - 1) / 16) + 1) * 16, '0')
-                return { type: 'Constant', precedence: 0, value: val, line: tkn.line }
+                return { type: 'Constant', precedence: 0, value: val, line: ptkn.line }
             }
         },
         {
             sequence: ['string'],
             action (tokenID): TOKEN {
                 let val: string
-                const tkn = preTokens[tokenID]
-                const parts = /^(BURST-|S-|TS-)([2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{5})/.exec(tkn.value)
+                const ptkn = preTokens[tokenID]
+                const parts = /^(BURST-|S-|TS-)([2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{5})/.exec(ptkn.value)
                 if (parts !== null) {
                     val = rsDecode(parts[2])
                 } else {
-                    val = str2long(tkn.value)
+                    val = str2long(ptkn.value)
                 }
-                return { type: 'Constant', precedence: 0, value: val, line: tkn.line }
+                return { type: 'Constant', precedence: 0, value: val, line: ptkn.line }
             }
         },
 
@@ -374,68 +373,68 @@ function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
 
     // Process element preTokens started at position mainLoopIndex (outer scope) and returns a functional token
     function getNextToken () {
-        const tkn = preTokens[mainLoopIndex]
-        let auxObj: TOKEN
+        const currentPreToken = preTokens[mainLoopIndex]
+        let retToken: TOKEN
 
         // take care of not recursive tokens
-        const found = notRecursiveTokensSpecs.find(matchRule)
-        if (found !== undefined) {
-            auxObj = found.action(mainLoopIndex)
-            mainLoopIndex += found.sequence.length
-            return auxObj
+        const foundRule = notRecursiveTokensSpecs.find(matchRule)
+        if (foundRule !== undefined) {
+            retToken = foundRule.action(mainLoopIndex)
+            mainLoopIndex += foundRule.sequence.length
+            return retToken
         }
 
         // take care of recursive tokens
-        switch (tkn.value) {
+        switch (currentPreToken.value) {
         case ']':
         case ')':
         case '}':
-            throw new SyntaxError(`At line: ${tkn.line}. Unmatched closing '${tkn.value}'.`)
+            throw new SyntaxError(`At line: ${currentPreToken.line}. Unmatched closing '${currentPreToken.value}'.`)
 
         case '[':
-            auxObj = { type: 'Arr', value: '', precedence: 1, line: tkn.line }
+            retToken = { type: 'Arr', value: '', precedence: 1, line: currentPreToken.line }
             mainLoopIndex++
-            auxObj.params = []
+            retToken.params = []
             while (preTokens[mainLoopIndex].value !== ']') {
-                auxObj.params.push(getNextToken())
+                retToken.params.push(getNextToken())
                 // getNextToken will increase mainLoopIndex for loop
                 if (preTokens[mainLoopIndex] === undefined) {
-                    throw new SyntaxError(`At end of file. Missing closing ']' for Arr started at line: ${auxObj.line}.`)
+                    throw new SyntaxError(`At end of file. Missing closing ']' for Arr started at line: ${retToken.line}.`)
                 }
             }
             // discard closing bracket
             mainLoopIndex++
-            return auxObj
+            return retToken
 
         case '(':
-            auxObj = { type: 'CodeCave', value: '', precedence: 1, line: tkn.line }
+            retToken = { type: 'CodeCave', value: '', precedence: 1, line: currentPreToken.line }
             mainLoopIndex++
-            auxObj.params = []
+            retToken.params = []
             while (preTokens[mainLoopIndex].value !== ')') {
-                auxObj.params.push(getNextToken())
+                retToken.params.push(getNextToken())
                 // getNextToken will increase mainLoopIndex for loop
                 if (preTokens[mainLoopIndex] === undefined) {
-                    throw new SyntaxError(`At end of file. Missing closing ')' for CodeCave started at line: ${auxObj.line}.`)
+                    throw new SyntaxError(`At end of file. Missing closing ')' for CodeCave started at line: ${retToken.line}.`)
                 }
             }
             mainLoopIndex++
-            return auxObj
+            return retToken
 
         case '{':
-            auxObj = { type: 'CodeDomain', value: '', precedence: 1, line: tkn.line }
+            retToken = { type: 'CodeDomain', value: '', precedence: 1, line: currentPreToken.line }
             mainLoopIndex++
-            auxObj.params = []
+            retToken.params = []
             while (preTokens[mainLoopIndex].value !== '}') {
-                auxObj.params.push(getNextToken())
+                retToken.params.push(getNextToken())
                 // getNextToken will increase mainLoopIndex for loop
                 if (preTokens[mainLoopIndex] === undefined) {
-                    throw new SyntaxError(`At end of file. Missing closing '}' for CodeDomain started at line: ${auxObj.line}.`)
+                    throw new SyntaxError(`At end of file. Missing closing '}' for CodeDomain started at line: ${retToken.line}.`)
                 }
             }
             mainLoopIndex++
-            return auxObj
+            return retToken
         }
-        throw new TypeError(`At line: ${tkn.line}. Unknow token found: type: '${tkn.type}' value: '${tkn.value}'.`)
+        throw new TypeError(`At line: ${currentPreToken.line}. Unknow token found: type: '${currentPreToken.type}' value: '${currentPreToken.value}'.`)
     }
 
     function matchRule (ruleN: TOKEN_SPEC) {
@@ -587,10 +586,10 @@ function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
 
     /* * * Main function! * * */
     let mainLoopIndex = 0
-    const ast: TOKEN[] = []
+    const tokenTrain: TOKEN[] = []
     // this is the mainLoop!
     while (mainLoopIndex < preTokens.length) {
-        ast.push(getNextToken())
+        tokenTrain.push(getNextToken())
     }
-    return ast
+    return tokenTrain
 }

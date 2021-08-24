@@ -4,7 +4,7 @@
 
 /* global DECLARATION_TYPES TOKEN */
 
-interface AST_CONFIG {
+interface SC_CONFIG {
     /** This compiler version!!! */
     compilerVersion: 'dev',
     /** Add random string to labels: #pragma enableRandom  */
@@ -35,7 +35,7 @@ interface AST_CONFIG {
     PActivationAmount: string,
 }
 
-interface AST_MACRO {
+interface SC_MACRO {
     /** pragma, program or include */
     type: string
     /** Macro property, only one word */
@@ -159,7 +159,7 @@ interface LONG_TYPE_DEFINITION {
 }
 type TYPE_DEFINITIONS = STRUCT_TYPE_DEFINITION | ARRAY_TYPE_DEFINITION | REGISTER_TYPE_DEFINITION | LONG_TYPE_DEFINITION
 
-interface AST_FUNCTION {
+interface SC_FUNCTION {
     /** type of function declaration */
     declaration: DECLARATION_TYPES
     /** Function name */
@@ -178,22 +178,22 @@ interface AST_FUNCTION {
     asmName?: string
 }
 
-interface AST_GLOBAL {
+interface SC_GLOBAL {
     /** Definitions for API functions */
-    APIFunctions: AST_FUNCTION[]
+    APIFunctions: SC_FUNCTION[]
     /** macros values */
-    macros: AST_MACRO[]
+    macros: SC_MACRO[]
     /** Temporary, holding tokens objects */
     code?: TOKEN[]
     /** Definitive structure for compilation */
     sentences?: SENTENCES[]
 }
 
-interface AST {
+interface CONTRACT {
     /** Global statements and information */
-    Global: AST_GLOBAL,
+    Global: SC_GLOBAL,
     /** Declared functions */
-    functions: AST_FUNCTION[],
+    functions: SC_FUNCTION[],
     /** Variables and constants in memory */
     memory: MEMORY_SLOT[],
     /** All labels used in program */
@@ -201,17 +201,18 @@ interface AST {
     /** Extended information for arrays and structs */
     typesDefinitions: TYPE_DEFINITIONS[],
     /** Compiler configurations */
-    Config: AST_CONFIG,
+    Config: SC_CONFIG,
 }
 
-/** Translate an array of tokens to a BigAST representing the program
+/** Translate an array of tokens to an object representing the program.
+ * This is the second phase of parser
  * @param tokenAST Array of tokens
- * @returns AST object in final type, but still incomplete.
+ * @returns CONTRACT object in final type, but still incomplete.
  * @throws {TypeError | SyntaxError} at any mistakes
  */
 // eslint-disable-next-line no-unused-vars
-function shapeProgram (tokenAST: TOKEN[]): AST {
-    const BigAST: AST = {
+function shape (tokenAST: TOKEN[]): CONTRACT {
+    const Program: CONTRACT = {
         Global: {
             APIFunctions: [],
             macros: []
@@ -261,17 +262,17 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
     function shapeMain () {
         splitGlobalAndFunctions()
 
-        if (BigAST.Global.macros !== undefined) {
-            BigAST.Global.macros.forEach(processMacro)
+        if (Program.Global.macros !== undefined) {
+            Program.Global.macros.forEach(processMacro)
         }
-        if (BigAST.Config.version === '') {
-            throw new TypeError(`Compiler version not set. Pin current compiler version in your program adding '#pragma version ${BigAST.Config.compilerVersion}' to code.`)
+        if (Program.Config.version === '') {
+            throw new TypeError(`Compiler version not set. Pin current compiler version in your program adding '#pragma version ${Program.Config.compilerVersion}' to code.`)
         }
-        if (BigAST.Config.version !== BigAST.Config.compilerVersion) {
-            throw new TypeError(`This compiler is version '${BigAST.Config.compilerVersion}'. File needs a compiler version '${BigAST.Config.version}'. Update '#pragma version' macro or run another SmartC version.`)
+        if (Program.Config.version !== Program.Config.compilerVersion) {
+            throw new TypeError(`This compiler is version '${Program.Config.compilerVersion}'. File needs a compiler version '${Program.Config.version}'. Update '#pragma version' macro or run another SmartC version.`)
         }
 
-        BigAST.typesDefinitions = createDefaultTypesTable()
+        Program.typesDefinitions = createDefaultTypesTable()
 
         addRegistersInMemory()
 
@@ -280,30 +281,30 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
         AuxVars.currentScopeName = ''
         AuxVars.currentPrefix = ''
         AuxVars.currentToken = 0
-        BigAST.Global.sentences = code2sentenceS(BigAST.Global.code)
-        createMemoryTable(BigAST.Global.sentences)
-        delete BigAST.Global.code
+        Program.Global.sentences = code2sentenceS(Program.Global.code)
+        createMemoryTable(Program.Global.sentences)
+        delete Program.Global.code
 
-        for (let i = 0; i < BigAST.functions.length; i++) {
+        for (let i = 0; i < Program.functions.length; i++) {
             processFunction(i)
-            delete BigAST.functions[i].arguments
-            delete BigAST.functions[i].code
+            delete Program.functions[i].arguments
+            delete Program.functions[i].code
 
-            const fnSentences = BigAST.functions[i].sentences
+            const fnSentences = Program.functions[i].sentences
             if (fnSentences !== undefined && fnSentences.length > 0) {
                 createMemoryTable(fnSentences)
             }
         };
 
-        if (BigAST.Config.APIFunctions) {
-            BigAST.Global.APIFunctions = createAPItable()
+        if (Program.Config.APIFunctions) {
+            Program.Global.APIFunctions = createAPItable()
         }
 
         checkDoublesDefinitions()
 
         consolidateMemory()
 
-        return BigAST
+        return Program
     }
 
     /**
@@ -313,15 +314,15 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
      * 3) functions
      * */
     function splitGlobalAndFunctions () {
-        BigAST.Global.code = []
+        Program.Global.code = []
 
         for (AuxVars.currentToken = 0; AuxVars.currentToken < tokenAST.length; AuxVars.currentToken++) {
             if (AuxVars.currentToken + 2 < tokenAST.length && tokenAST[AuxVars.currentToken].type === 'Function' && tokenAST[AuxVars.currentToken + 1].type === 'CodeCave' && tokenAST[AuxVars.currentToken + 2].type === 'CodeDomain') {
                 // Function definition found
                 if (AuxVars.currentToken > 0 && tokenAST[AuxVars.currentToken - 1].type === 'Keyword') {
                     // Function does not return pointer
-                    BigAST.Global.code.pop()
-                    BigAST.functions.push({
+                    Program.Global.code.pop()
+                    Program.functions.push({
                         argsMemObj: [],
                         sentences: [],
                         declaration: tokenAST[AuxVars.currentToken - 1].value as DECLARATION_TYPES,
@@ -335,9 +336,9 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
                 }
                 if (AuxVars.currentToken > 1 && tokenAST[AuxVars.currentToken - 2].type === 'Keyword' && tokenAST[AuxVars.currentToken - 1].type === 'UnaryOperator' && tokenAST[AuxVars.currentToken - 1].value === '*') {
                     // Function returns a pointer
-                    BigAST.Global.code.pop()
-                    BigAST.Global.code.pop()
-                    BigAST.functions.push(
+                    Program.Global.code.pop()
+                    Program.Global.code.pop()
+                    Program.functions.push(
                         {
                             argsMemObj: [],
                             sentences: [],
@@ -368,12 +369,12 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
 
             if (tokenAST[AuxVars.currentToken].type === 'Macro') {
                 const fields = tokenAST[AuxVars.currentToken].value.replace(/\s\s+/g, ' ').split(' ')
-                BigAST.Global.macros.push({ type: fields[0], property: fields[1], value: fields.slice(2).join(' '), line: tokenAST[AuxVars.currentToken].line })
+                Program.Global.macros.push({ type: fields[0], property: fields[1], value: fields.slice(2).join(' '), line: tokenAST[AuxVars.currentToken].line })
                 continue
             }
 
             // Not function neither macro, so it is global statement
-            BigAST.Global.code.push(tokenAST[AuxVars.currentToken])
+            Program.Global.code.push(tokenAST[AuxVars.currentToken])
         }
     }
 
@@ -608,7 +609,7 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
             }
 
             if (memTemplate !== undefined && memTemplate.length > 0) {
-                BigAST.memory = BigAST.memory.concat(memTemplate)
+                Program.memory = Program.memory.concat(memTemplate)
             }
         })
     }
@@ -658,12 +659,12 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
             }
         })
         AuxVars.currentPrefix = savedPrefix
-        BigAST.typesDefinitions.push(StructTypeD)
+        Program.typesDefinitions.push(StructTypeD)
     }
 
     /** Takes a phrase and process variables to MEMORY_SLOT
          * Fills types definitions of necessary
-         * Inserts labels at BigAST.labels */
+         * Inserts labels at Program.labels */
     function phrase2memoryObject (phrs: SENTENCES, structName = ''): MEMORY_SLOT[] | undefined {
         let ret: MEMORY_SLOT[] = []
         let ispointer = false
@@ -685,10 +686,10 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
             if (labelID === undefined || labelID === '') {
                 throw new TypeError(`At line: ${phraseCode[0].line}. Found a label without id.`)
             }
-            if (BigAST.labels.find(val => val === labelID) !== undefined) {
+            if (Program.labels.find(val => val === labelID) !== undefined) {
                 throw new TypeError(`At line: ${phraseCode[0].line}. Label name already in use.`)
             }
-            BigAST.labels.push(labelID)
+            Program.labels.push(labelID)
             return
         }
 
@@ -719,9 +720,9 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
                         return
                     }
                     const structNameDef = phraseCode[keywordIndex + 1].value
-                    let search = BigAST.typesDefinitions.find(obj => obj.name === structNameDef && obj.type === 'struct')
+                    let search = Program.typesDefinitions.find(obj => obj.name === structNameDef && obj.type === 'struct')
                     if (search === undefined && AuxVars.currentPrefix.length > 0) {
-                        search = BigAST.typesDefinitions.find(obj => obj.name === AuxVars.currentPrefix + structNameDef && obj.type === 'struct')
+                        search = Program.typesDefinitions.find(obj => obj.name === AuxVars.currentPrefix + structNameDef && obj.type === 'struct')
                     }
                     if (search === undefined) {
                         throw new TypeError('At line: ' + phraseCode[keywordIndex + 1].line + ". Could not find type definition for 'struct' '" + phraseCode[keywordIndex + 1].value)
@@ -797,7 +798,7 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
                                         acc *= dimensions[j]
                                         j--
                                     } while (j >= 0)
-                                    BigAST.typesDefinitions.push(TypeD)
+                                    Program.typesDefinitions.push(TypeD)
                                 }
                             } else { // is not array of structs
                                 if (ispointer) {
@@ -842,7 +843,7 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
 
                         if (valid === true) {
                             const dimensions: number[] = []
-                            const search = BigAST.typesDefinitions.find(obj => obj.type === 'long') as (LONG_TYPE_DEFINITION | undefined)
+                            const search = Program.typesDefinitions.find(obj => obj.type === 'long') as (LONG_TYPE_DEFINITION | undefined)
                             if (search === undefined) {
                                 throw new TypeError(`At line: ${phraseCode[idx].line}. Type definition for 'long' not found`)
                             }
@@ -907,7 +908,7 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
                                         acc *= dimensions[j]
                                         j--
                                     } while (j >= 0)
-                                    BigAST.typesDefinitions.push(TypeD)
+                                    Program.typesDefinitions.push(TypeD)
                                 }
                             }
                             valid = false
@@ -927,9 +928,9 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
     }
 
     function assignStructVariable (structName: string, varName: string, ispointer: boolean) {
-        let search = BigAST.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === structName) as (STRUCT_TYPE_DEFINITION | undefined)
+        let search = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === structName) as (STRUCT_TYPE_DEFINITION | undefined)
         if (search === undefined && AuxVars.currentPrefix.length > 0) {
-            search = BigAST.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === AuxVars.currentPrefix + structName) as (STRUCT_TYPE_DEFINITION | undefined)
+            search = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === AuxVars.currentPrefix + structName) as (STRUCT_TYPE_DEFINITION | undefined)
         }
         if (search === undefined) {
             throw new TypeError(`Could not find type definition for 'struct' '${structName}'`)
@@ -950,9 +951,9 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
         return newmemory
     }
 
-    /** Reads/verifies one macro token and add it into BigAST.Config object
+    /** Reads/verifies one macro token and add it into Program.Config object
      * */
-    function processMacro (Token: AST_MACRO) {
+    function processMacro (Token: SC_MACRO) {
         let boolVal: boolean | undefined
 
         if (Token.value === undefined || Token.value === '') {
@@ -970,7 +971,7 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
                     if (num < 1 || num > 10) {
                         throw new RangeError(`At line: ${Token.line}. Value out of permitted range 1..10.`)
                     }
-                    BigAST.Config.maxAuxVars = num
+                    Program.Config.maxAuxVars = num
                     return
                 }
             }
@@ -980,45 +981,45 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
                     if (num < 0 || num > 10) {
                         throw new RangeError(`At line: ${Token.line}. Value out of permitted range 0..10.`)
                     }
-                    BigAST.Config.maxConstVars = num
+                    Program.Config.maxConstVars = num
                     return
                 }
             }
             if (Token.property === 'reuseAssignedVar' && boolVal !== undefined) {
-                BigAST.Config.reuseAssignedVar = boolVal
+                Program.Config.reuseAssignedVar = boolVal
                 return
             }
             if (Token.property === 'enableRandom' && boolVal !== undefined) {
-                BigAST.Config.enableRandom = boolVal
+                Program.Config.enableRandom = boolVal
                 return
             }
             if (Token.property === 'enableLineLabels' && boolVal !== undefined) {
-                BigAST.Config.enableLineLabels = boolVal
+                Program.Config.enableLineLabels = boolVal
                 return
             }
             if (Token.property === 'globalOptimization' && boolVal !== undefined) {
-                BigAST.Config.globalOptimization = boolVal
+                Program.Config.globalOptimization = boolVal
                 return
             }
             if (Token.property === 'useVariableDeclaration' && boolVal !== undefined) {
-                BigAST.Config.useVariableDeclaration = boolVal
+                Program.Config.useVariableDeclaration = boolVal
                 return
             }
             if (Token.property === 'version') {
-                BigAST.Config.version = Token.value
-                if (BigAST.Config.version !== undefined) {
+                Program.Config.version = Token.value
+                if (Program.Config.version !== undefined) {
                     return
                 }
             }
             if (Token.property === 'warningToError' && boolVal !== undefined) {
-                BigAST.Config.warningToError = boolVal
+                Program.Config.warningToError = boolVal
                 return
             }
         }
 
         if (Token.type === 'include') {
             if (Token.property === 'APIFunctions' && boolVal !== undefined) {
-                BigAST.Config.APIFunctions = boolVal
+                Program.Config.APIFunctions = boolVal
                 return
             }
         }
@@ -1029,14 +1030,14 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
                 if (parts === null) {
                     throw new TypeError(`At line: ${Token.line}. Program name must contains only letters [a-z][A-Z][0-9], from 1 to 30 chars.`)
                 }
-                BigAST.Config.PName = Token.value
+                Program.Config.PName = Token.value
                 return
             }
             if (Token.property === 'description') {
                 if (Token.value.length >= 1000) {
                     throw new TypeError(`At line: ${Token.line}. Program description max lenght is 1000 chars. It is ${Token.value.length} chars.`)
                 }
-                BigAST.Config.PDescription = Token.value
+                Program.Config.PDescription = Token.value
                 return
             }
             if (Token.property === 'activationAmount') {
@@ -1044,7 +1045,7 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
                 if (parts === null) {
                     throw new TypeError(`At line: ${Token.line}. Program activation must be only numbers or '_'.`)
                 }
-                BigAST.Config.PActivationAmount = Token.value.replace(/_/g, '')
+                Program.Config.PActivationAmount = Token.value.replace(/_/g, '')
                 return
             }
         }
@@ -1053,39 +1054,39 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
     }
 
     function addRegistersInMemory () {
-        if (BigAST.Config.useVariableDeclaration) {
-            const search = BigAST.typesDefinitions.find(obj => obj.type === 'register') as (REGISTER_TYPE_DEFINITION | undefined)
+        if (Program.Config.useVariableDeclaration) {
+            const search = Program.typesDefinitions.find(obj => obj.type === 'register') as (REGISTER_TYPE_DEFINITION | undefined)
             if (search === undefined) {
                 throw new TypeError("Not found type 'register' at types definitions.")
             }
-            for (let i = 0; i < BigAST.Config.maxAuxVars; i++) {
+            for (let i = 0; i < Program.Config.maxAuxVars; i++) {
                 const MemTemplate: MEMORY_SLOT = JSON.parse(JSON.stringify(search.MemoryTemplate))
                 MemTemplate.name = `r${i}`
                 MemTemplate.asmName = `r${i}`
-                BigAST.memory.push(MemTemplate)
+                Program.memory.push(MemTemplate)
             }
         }
     }
 
     function addConstantsInMemory () {
-        if (BigAST.Config.useVariableDeclaration) {
-            const search = BigAST.typesDefinitions.find(obj => obj.type === 'register') as (REGISTER_TYPE_DEFINITION | undefined)
+        if (Program.Config.useVariableDeclaration) {
+            const search = Program.typesDefinitions.find(obj => obj.type === 'register') as (REGISTER_TYPE_DEFINITION | undefined)
             if (search === undefined) {
                 throw new TypeError("Not found type 'register' at types definitions.")
             }
-            for (let i = 1; i <= BigAST.Config.maxConstVars; i++) {
+            for (let i = 1; i <= Program.Config.maxConstVars; i++) {
                 const MemTemplate: MEMORY_SLOT = JSON.parse(JSON.stringify(search.MemoryTemplate))
                 MemTemplate.name = `n${i}`
                 MemTemplate.asmName = `n${i}`
                 MemTemplate.hexContent = i.toString(16).padStart(16, '0')
-                BigAST.memory.push(MemTemplate)
+                Program.memory.push(MemTemplate)
             }
         }
     }
 
     /** Process/checks function arguments and code, transforming them into argsMemObj and sentences properties  */
     function processFunction (fnNum: number) {
-        const currentFunction = BigAST.functions[fnNum]
+        const currentFunction = Program.functions[fnNum]
         if (currentFunction.code === undefined) {
             currentFunction.sentences = []
         } else {
@@ -1115,34 +1116,34 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
                 throw new TypeError(`At line: ${currentFunction.line}. Error in one or more arguments for function '${currentFunction.name}'.`)
             }
             currentFunction.argsMemObj = memObj
-            BigAST.memory = BigAST.memory.concat(memObj)
+            Program.memory = Program.memory.concat(memObj)
             AuxVars.setIsDeclared = false
         }
     }
 
     function checkDoublesDefinitions () {
         let i, j
-        if (BigAST.Config.useVariableDeclaration === false) {
+        if (Program.Config.useVariableDeclaration === false) {
             return
         }
-        for (i = 0; i < BigAST.memory.length - 1; i++) {
-            for (j = i + 1; j < BigAST.memory.length; j++) {
-                if (BigAST.memory[i].asmName === BigAST.memory[j].asmName) {
-                    throw new TypeError(`Error: Variable '${BigAST.memory[i].name}' was declared more than one time.`)
+        for (i = 0; i < Program.memory.length - 1; i++) {
+            for (j = i + 1; j < Program.memory.length; j++) {
+                if (Program.memory[i].asmName === Program.memory[j].asmName) {
+                    throw new TypeError(`Error: Variable '${Program.memory[i].name}' was declared more than one time.`)
                 }
             }
         }
-        for (i = 0; i < BigAST.functions.length; i++) {
-            for (j = i + 1; j < BigAST.functions.length; j++) {
-                if (BigAST.functions[i].name === BigAST.functions[j].name) {
-                    throw new TypeError("Error: Function '" + BigAST.functions[i].name + "' was declared more than one time.")
+        for (i = 0; i < Program.functions.length; i++) {
+            for (j = i + 1; j < Program.functions.length; j++) {
+                if (Program.functions[i].name === Program.functions[j].name) {
+                    throw new TypeError("Error: Function '" + Program.functions[i].name + "' was declared more than one time.")
                 }
             }
-            if (BigAST.Config.APIFunctions === true) {
-                for (j = 0; j < BigAST.Global.APIFunctions.length; j++) {
-                    if (BigAST.functions[i].name === BigAST.Global.APIFunctions[j].name ||
-                        BigAST.functions[i].name === BigAST.Global.APIFunctions[j].asmName) {
-                        throw new TypeError("Error: Function '" + BigAST.functions[i].name + "' has same name of one API Functions.")
+            if (Program.Config.APIFunctions === true) {
+                for (j = 0; j < Program.Global.APIFunctions.length; j++) {
+                    if (Program.functions[i].name === Program.Global.APIFunctions[j].name ||
+                        Program.functions[i].name === Program.Global.APIFunctions[j].asmName) {
+                        throw new TypeError("Error: Function '" + Program.functions[i].name + "' has same name of one API Functions.")
                     }
                 }
             }
@@ -1152,7 +1153,7 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
     // Fills the correct address of memory objects.
     function consolidateMemory () {
         let counter = 0
-        BigAST.memory.forEach(function (thisvar) {
+        Program.memory.forEach(function (thisvar) {
             if (thisvar.type === 'struct' && thisvar.declaration.indexOf('_ptr') === -1) { // Remeber to change here code yolj1A
                 thisvar.hexContent = counter.toString(16).padStart(16, '0')
             } else if (thisvar.type === 'array') {
@@ -1197,7 +1198,7 @@ function shapeProgram (tokenAST: TOKEN[]): AST {
     }
 
     // Returns the API functions object
-    function createAPItable (): AST_FUNCTION[] {
+    function createAPItable (): SC_FUNCTION[] {
         return [
             {
                 argsMemObj: [],
