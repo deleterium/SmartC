@@ -400,6 +400,17 @@ function parse(preTokens) {
     }
     // Use to detect if a token at some position is Binary or Unary
     function isBinaryOperator(position) {
+        if (position >= 2) {
+            if ((preTokens[position - 1].type === 'plus' && preTokens[position - 2].type === 'plus') ||
+                (preTokens[position - 1].type === 'minus' && preTokens[position - 2].type === 'minus')) {
+                return true;
+            }
+            if ((preTokens[position - 1].type === 'variable' &&
+                preTokens[position - 2].type === 'keyword') &&
+                preTokens[position - 2].value === 'struct') {
+                return false;
+            }
+        }
         if (position >= 1) {
             if (preTokens[position - 1].type === 'variable' ||
                 preTokens[position - 1].type === 'numberDec' ||
@@ -407,12 +418,6 @@ function parse(preTokens) {
                 preTokens[position - 1].type === 'string' ||
                 preTokens[position - 1].value === ']' ||
                 preTokens[position - 1].value === ')') {
-                return true;
-            }
-        }
-        if (position >= 2) {
-            if ((preTokens[position - 1].type === 'plus' && preTokens[position - 2].type === 'plus') ||
-                (preTokens[position - 1].type === 'minus' && preTokens[position - 2].type === 'minus')) {
                 return true;
             }
         }

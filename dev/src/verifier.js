@@ -13,7 +13,7 @@
 function verify(tokenTrain) {
     const tokenRules = [
         { Current: 'Variable', Next: 'Variable', Possible: 'y' },
-        { Current: 'Variable', Next: 'UnaryOperator', Possible: 'n' },
+        { Current: 'Variable', Next: 'UnaryOperator', Possible: 'y' },
         { Current: 'Variable', Next: 'SetUnaryOperator', Possible: 'y' },
         { Current: 'Variable', Next: 'SetOperator', Possible: 'y' },
         { Current: 'Variable', Next: 'Operator', Possible: 'y' },
@@ -324,7 +324,7 @@ function verify(tokenTrain) {
         { Current: 'Function', Next: 'Macro', Possible: 'n' },
         { Current: 'Function', Next: 'Member', Possible: 'n' },
         { Current: 'Function', Next: 'Function', Possible: 'n' },
-        { Current: 'Variable', Next: 'Function', Possible: 'n' },
+        { Current: 'Variable', Next: 'Function', Possible: 'y' },
         { Current: 'UnaryOperator', Next: 'Function', Possible: 'y' },
         { Current: 'SetUnaryOperator', Next: 'Function', Possible: 'n' },
         { Current: 'SetOperator', Next: 'Function', Possible: 'y' },

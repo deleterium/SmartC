@@ -152,7 +152,7 @@ function syntaxProcess(Program) {
         }
         else if (tokenArray[currentIdx].type === 'UnaryOperator' && currentIdx === 0) {
             if (tokenArray[currentIdx].value === '*' && tokenArray.length > currentIdx) {
-                if (tokenArray[currentIdx + 1].type !== 'Variable' && tokenArray[currentIdx + 1].type !== 'CodeCave') {
+                if (tokenArray[currentIdx + 1].type !== 'Variable' && tokenArray[currentIdx + 1].type !== 'CodeCave' && tokenArray[currentIdx + 1].type !== 'SetUnaryOperator') {
                     throw new SyntaxError(`At line: ${tokenArray[currentIdx + 1].line}. Invalid lvalue for pointer operation. Can not have type '${tokenArray[currentIdx + 1].type}'.`);
                 }
             }
