@@ -468,6 +468,7 @@ var keywords_tests = [
     [ "while (a) { a++; if (a==5) break; b++; }", false, "__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nSET @r0 #0000000000000005\nBNE $a $r0 :__if2_endif\n__if2_start:\nJMP :__loop1_break\n__if2_endif:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nFIN\n" ],
     [ "while (a) { a++; if (a==5) continue; b++; }", false, "__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nSET @r0 #0000000000000005\nBNE $a $r0 :__if2_endif\n__if2_start:\nJMP :__loop1_continue\n__if2_endif:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nFIN\n" ],
     [ "a++; goto alabel; b++; alabel: c++;", false, "INC @a\nJMP :alabel\nINC @b\nalabel:\nINC @c\nFIN\n" ],
+    [ "temp = 2; if (temp>0) goto label1; if (temp==0) goto label2; goto label3; label1: temp++; label2: temp++; label3: temp++;", false, "SET @temp #0000000000000002\nCLR @r0\nBLE $temp $r0 :__if1_endif\n__if1_start:\nJMP :label1\n__if1_endif:\nBNZ $temp :__if2_endif\n__if2_start:\nJMP :label2\n__if2_endif:\nJMP :label3\nlabel1:\nINC @temp\nlabel2:\nINC @temp\nlabel3:\nINC @temp\nFIN\n" ],
     [ "a++; asm { PSH @a\nPOP @b } b++;", false, "INC @a\nPSH @a\nPOP @b\nINC @b\nFIN\n" ],
     [ "a++; sleep 1;", false, "INC @a\nSET @r0 #0000000000000001\nSLP $r0\nFIN\n" ],
     [ "exit; a++; ", false, "FIN\nINC @a\nFIN\n" ],

@@ -696,7 +696,6 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
         }
 
         if (phraseCode[0].type === 'Keyword' && phraseCode[0].value === 'label') {
-            // TODO testcase with 2 labels
             const labelID = phraseCode[0].extValue
             if (labelID === undefined || labelID === '') {
                 throw new TypeError(`At line: ${phraseCode[0].line}. Found a label without id.`)
