@@ -1413,6 +1413,9 @@ function generate(bc_Big_ast){
             let vname = SeekObj.name;
 
             if (ast_code.type === 'endASN' /*ast_code.Operation === undefined*/ ) { //end object
+                if (ast_code.Token === undefined){
+                    return true;
+                }
                 if (ast_code.Token.type === 'Variable'){
                     if (ast_code.Token.value == vname) {
                         return false;

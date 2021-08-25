@@ -320,62 +320,74 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
         Program.Global.code = []
 
         for (AuxVars.currentToken = 0; AuxVars.currentToken < tokenAST.length; AuxVars.currentToken++) {
-            if (AuxVars.currentToken + 2 < tokenAST.length && tokenAST[AuxVars.currentToken].type === 'Function' && tokenAST[AuxVars.currentToken + 1].type === 'CodeCave' && tokenAST[AuxVars.currentToken + 2].type === 'CodeDomain') {
-                // Function definition found
-                if (AuxVars.currentToken > 0 && tokenAST[AuxVars.currentToken - 1].type === 'Keyword') {
-                    // Function does not return pointer
-                    Program.Global.code.pop()
-                    Program.functions.push({
+            if (AuxVars.currentToken + 3 < tokenAST.length &&
+                tokenAST[AuxVars.currentToken].type === 'Keyword' &&
+                tokenAST[AuxVars.currentToken + 1].type === 'Function' &&
+                tokenAST[AuxVars.currentToken + 2].type === 'CodeCave' &&
+                tokenAST[AuxVars.currentToken + 3].type === 'CodeDomain') {
+                // Function found. Does not return pointer
+                Program.functions.push({
+                    argsMemObj: [],
+                    sentences: [],
+                    declaration: tokenAST[AuxVars.currentToken].value as DECLARATION_TYPES,
+                    line: tokenAST[AuxVars.currentToken + 1].line,
+                    name: tokenAST[AuxVars.currentToken + 1].value,
+                    arguments: tokenAST[AuxVars.currentToken + 2].params,
+                    code: tokenAST[AuxVars.currentToken + 3].params
+                })
+                AuxVars.currentToken += 3
+                continue
+            }
+            if (AuxVars.currentToken + 4 < tokenAST.length &&
+                tokenAST[AuxVars.currentToken].type === 'Keyword' &&
+                tokenAST[AuxVars.currentToken + 1].type === 'UnaryOperator' &&
+                tokenAST[AuxVars.currentToken + 1].value === '*' &&
+                tokenAST[AuxVars.currentToken + 2].type === 'Function' &&
+                tokenAST[AuxVars.currentToken + 3].type === 'CodeCave' &&
+                tokenAST[AuxVars.currentToken + 4].type === 'CodeDomain') {
+                // Function found. Does return pointer
+                Program.functions.push(
+                    {
                         argsMemObj: [],
                         sentences: [],
-                        declaration: tokenAST[AuxVars.currentToken - 1].value as DECLARATION_TYPES,
-                        line: tokenAST[AuxVars.currentToken].line,
-                        name: tokenAST[AuxVars.currentToken].value,
-                        arguments: tokenAST[AuxVars.currentToken + 1].params,
-                        code: tokenAST[AuxVars.currentToken + 2].params
+                        declaration: (tokenAST[AuxVars.currentToken].value + '_ptr') as DECLARATION_TYPES,
+                        line: tokenAST[AuxVars.currentToken + 2].line,
+                        name: tokenAST[AuxVars.currentToken + 2].value,
+                        arguments: tokenAST[AuxVars.currentToken + 3].params,
+                        code: tokenAST[AuxVars.currentToken + 4].params
                     })
-                    AuxVars.currentToken += 2
-                    continue
-                }
-                if (AuxVars.currentToken > 1 && tokenAST[AuxVars.currentToken - 2].type === 'Keyword' && tokenAST[AuxVars.currentToken - 1].type === 'UnaryOperator' && tokenAST[AuxVars.currentToken - 1].value === '*') {
-                    // Function returns a pointer
-                    Program.Global.code.pop()
-                    Program.Global.code.pop()
-                    Program.functions.push(
-                        {
-                            argsMemObj: [],
-                            sentences: [],
-                            // TODO testcase for function returning pointer
-                            declaration: (tokenAST[AuxVars.currentToken - 2].value + '_ptr') as DECLARATION_TYPES,
-                            line: tokenAST[AuxVars.currentToken].line,
-                            name: tokenAST[AuxVars.currentToken].value,
-                            arguments: tokenAST[AuxVars.currentToken + 1].params,
-                            code: tokenAST[AuxVars.currentToken + 2].params
-                        })
-                    AuxVars.currentToken += 2
-                    continue
-                }
-                // TODO TESTCASE
-                if (AuxVars.currentToken > 1 && tokenAST[AuxVars.currentToken - 2].type === 'Keyword' && tokenAST[AuxVars.currentToken - 2].value === 'struct' &&
-                    tokenAST[AuxVars.currentToken - 1].type === 'Variable') {
-                    // Function returns a struct
-                    throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct currently not implemented.`)
-                }
-                // TODO TESTCASE
-                if (AuxVars.currentToken > 2 && tokenAST[AuxVars.currentToken - 3].type === 'Keyword' && tokenAST[AuxVars.currentToken - 3].value === 'struct' &&
-                    tokenAST[AuxVars.currentToken - 2].type === 'Variable' &&
-                    tokenAST[AuxVars.currentToken - 1].type === 'UnaryOperator' && tokenAST[AuxVars.currentToken - 1].value === '*') {
-                    // Function returns a struct pointer
-                    throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct pointer currently not implemented.`)
-                }
+                AuxVars.currentToken += 4
+                continue
             }
-
+            if (AuxVars.currentToken + 4 < tokenAST.length &&
+                tokenAST[AuxVars.currentToken].type === 'Keyword' &&
+                tokenAST[AuxVars.currentToken].value === 'struct' &&
+                tokenAST[AuxVars.currentToken + 1].type === 'Variable' &&
+                tokenAST[AuxVars.currentToken + 2].type === 'Function' &&
+                tokenAST[AuxVars.currentToken + 3].type === 'CodeCave' &&
+                tokenAST[AuxVars.currentToken + 4].type === 'CodeDomain') {
+                // Function found. Returns a struct
+                // AuxVars.currentToken += 4
+                throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct currently not implemented.`)
+            }
+            if (AuxVars.currentToken + 5 < tokenAST.length &&
+                tokenAST[AuxVars.currentToken].type === 'Keyword' &&
+                tokenAST[AuxVars.currentToken].value === 'struct' &&
+                tokenAST[AuxVars.currentToken + 1].type === 'Variable' &&
+                tokenAST[AuxVars.currentToken + 2].type === 'UnaryOperator' &&
+                tokenAST[AuxVars.currentToken + 2].value === '*' &&
+                tokenAST[AuxVars.currentToken + 3].type === 'Function' &&
+                tokenAST[AuxVars.currentToken + 4].type === 'CodeCave' &&
+                tokenAST[AuxVars.currentToken + 5].type === 'CodeDomain') {
+                // Function found. Returns a struct pointer
+                // AuxVars.currentToken += 5
+                throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct pointer currently not implemented.`)
+            }
             if (tokenAST[AuxVars.currentToken].type === 'Macro') {
                 const fields = tokenAST[AuxVars.currentToken].value.replace(/\s\s+/g, ' ').split(' ')
                 Program.Global.macros.push({ type: fields[0], property: fields[1], value: fields.slice(2).join(' '), line: tokenAST[AuxVars.currentToken].line })
                 continue
             }
-
             // Not function neither macro, so it is global statement
             Program.Global.code.push(tokenAST[AuxVars.currentToken])
         }

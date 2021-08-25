@@ -801,6 +801,7 @@ if (a<=pcar->collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2
     [ "long a[3];", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^const SET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n\nFIN\n" ],
     [ "long a[3]; a[0]=9;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^const SET @a #0000000000000006\n^declare a_0\n^declare a_1\n^declare a_2\n\nSET @a_0 #0000000000000009\nFIN\n" ],
     [ "long a[3]; a=9;", true, "" ],
+    [ "Functions", "div" ],
     [ "long a; void main(void) { a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\n" ],
     [ "long a; void main(void) { a++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\n" ],
     [ "long a; void main(void) { a++; return; a++; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\nINC @a\nFIN\n" ],
@@ -815,6 +816,12 @@ if (a<=pcar->collector) { b--; }",  false,"^declare r0\n^declare r1\n^declare r2
     [ "long a=0; void main(void){ a++; test2(a); exit; } void test2(long b) { b++; return; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test2_b\n\nCLR @a\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nPSH $a\nJSR :__fn_test2\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nRET\n" ],
     [ "#include APIFunctions\nlong a;Set_A1(a);", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nFUN set_A1 $a\nFIN\n" ],
     [ "#include APIFunctions\nSet_A1();", true, "" ],
+    [ "long *a; a=test(); long *test(void) { long b; return &b; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n^declare test_b\n\nJSR :__fn_test\nPOP @a\nFIN\n\n__fn_test:\nSET @r0 #0000000000000006\nPSH $r0\nRET\n" ],
+    [ "long a; a=test(); long *test(void) { long b; return &b; }", true, "" ],
+    [ "long *a; a=test(); long *test(void) { long b; return b; }", true, "" ],
+    [ "struct KOMBI { long driver; long collector; long passenger; } car, *pcar; pcar = teste(); struct KOMBI * teste(void){ return &car; }", true, "" ],
+    [ "struct KOMBI { long driver; long collector; long passenger; } car, car2; car = teste(); struct KOMBI teste(void){ return car; }", true, "" ],
+    [ "Declarations", "div" ],
     [ "long ,b;", true, "" ],
 
 //globalOptimization
