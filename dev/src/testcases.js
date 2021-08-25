@@ -136,9 +136,10 @@ function runTestCases() {
     [ "a=*b<<*c;",  false,  undefined, true, "SET @a $($b)\nSET @r0 $($c)\nSHL @a $r0\nFIN\n" ],
     [ "a=~*b;",  false,  undefined, true, "SET @a $($b)\nNOT @a\nFIN\n" ],
     [ "a=-*b;",  false,  undefined, true, "SET @a $($b)\nCLR @r0\nSUB @r0 $a\nSET @a $r0\nFIN\n" ],
+    [ "a=*--b;",  false,  undefined, true, "DEC @b\nSET @a $($b)\nFIN\n" ],
+    [ "a=*b--;",  false,  undefined, true, "SET @a $($b)\nDEC @b\nFIN\n" ],
 
     [ "a=*~b;",  true,  undefined, true, "" ],
-    [ "a=*b--;",  true,  undefined, true, "" ],
     [ "a=++*b;",  true,  undefined, true, "" ],
     [ "a=**b;",  true,  undefined, true, "" ],
 
