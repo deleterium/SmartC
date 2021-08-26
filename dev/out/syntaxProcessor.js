@@ -54,24 +54,6 @@ function syntaxProcess(Program) {
         }
         if (end === false) {
             // he have only precedente == 0: variable, constant, array, member)
-            if (tokenArray[0].type === 'Constant') {
-                if (tokenArray.length === 1) {
-                    return { type: 'endASN', Token: tokenArray[0] };
-                }
-            }
-            if (tokenArray[0].type === 'Keyword') {
-                if (tokenArray.length === 1) {
-                    return { type: 'endASN', Token: tokenArray[0] };
-                }
-                else {
-                    return {
-                        type: 'binaryASN',
-                        Left: { type: 'endASN', Token: tokenArray[0] },
-                        Operation: tokenArray[0],
-                        Right: createSyntacticTree(tokenArray.slice(1))
-                    };
-                }
-            }
             if (tokenArray[0].type === 'Variable' && tokenArray.length === 1) {
                 return { type: 'endASN', Token: tokenArray[0] };
             }
@@ -110,6 +92,24 @@ function syntaxProcess(Program) {
                 }
                 return retNode;
             }
+            if (tokenArray[0].type === 'Constant') {
+                if (tokenArray.length === 1) {
+                    return { type: 'endASN', Token: tokenArray[0] };
+                }
+            }
+            if (tokenArray[0].type === 'Keyword') {
+                if (tokenArray.length === 1) {
+                    return { type: 'endASN', Token: tokenArray[0] };
+                }
+                else {
+                    return {
+                        type: 'binaryASN',
+                        Left: { type: 'endASN', Token: tokenArray[0] },
+                        Operation: tokenArray[0],
+                        Right: createSyntacticTree(tokenArray.slice(1))
+                    };
+                }
+            }
             throw new SyntaxError(`At line: ${tokenArray[0].line}. Unknown token sequence: '${tokenArray[0].type}' with value: '${tokenArray[0].value}'.`);
             // Here we start to process operations tokens (precedente >= 1)
         }
@@ -135,7 +135,7 @@ function syntaxProcess(Program) {
             const newAST = createSyntacticTree(tokenArray[currentIdx].params);
             delete tokenArray[currentIdx].params;
             if (tokenArray.length !== 1) {
-                throw new SyntaxError(`At line: ${tokenArray[0].line}. Modifiers not implemented on '${tokenArray[currentIdx].type}'.`);
+                throw new SyntaxError(`At line: ${tokenArray[currentIdx].line}. Modifiers not implemented on '${tokenArray[currentIdx].type}'.`);
             }
             return {
                 type: 'unaryASN',
@@ -148,7 +148,7 @@ function syntaxProcess(Program) {
                 throw new SyntaxError(`At line: ${tokenArray[0].line}. Missing function name.`);
             }
             if (tokenArray.length !== 2) {
-                throw new SyntaxError(`At line: ${tokenArray[0].line}. Modifiers on functions not implemented.`);
+                throw new SyntaxError(`At line: ${tokenArray[currentIdx].line}. Modifiers on functions not implemented.`);
             }
             const newAST = createSyntacticTree(tokenArray[currentIdx].params);
             delete tokenArray[currentIdx].params;
@@ -161,10 +161,10 @@ function syntaxProcess(Program) {
         }
         else if (tokenArray[currentIdx].type === 'Keyword') {
             if (tokenArray.length === 1) {
-                return { type: 'endASN', Token: tokenArray[0] };
+                return { type: 'endASN', Token: tokenArray[currentIdx] };
             }
             if (currentIdx !== 0) {
-                throw new SyntaxError(`At line: ${tokenArray[0].line}. Sentence not starting with keyword... Missing ';'?`);
+                throw new SyntaxError(`At line: ${tokenArray[currentIdx].line}. Sentence not starting with keyword... Missing ';'?`);
             }
             return {
                 type: 'binaryASN',
@@ -175,7 +175,7 @@ function syntaxProcess(Program) {
         }
         else if (tokenArray[currentIdx].type === 'UnaryOperator' && currentIdx === 0) {
             if (tokenArray.length === 1) {
-                throw new SyntaxError(`At line: ${tokenArray[0].line}. Missing value to apply unary operator '${tokenArray[0].value}'.`);
+                throw new SyntaxError(`At line: ${tokenArray[currentIdx].line}. Missing value to apply unary operator '${tokenArray[currentIdx].value}'.`);
             }
             if (tokenArray[currentIdx].value === '*' && tokenArray.length > currentIdx) {
                 if (tokenArray[currentIdx + 1].type !== 'Variable' && tokenArray[currentIdx + 1].type !== 'CodeCave' && tokenArray[currentIdx + 1].type !== 'SetUnaryOperator') {

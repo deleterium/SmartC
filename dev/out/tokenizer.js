@@ -158,7 +158,7 @@ function tokenize(input) {
                     return true; // breaks find function
                 }
                 if (ruleN.tokenType === 'STRUCT') {
-                    let structParts = /^(struct\s+(\w+))/.exec(remainingText);
+                    const structParts = /^(struct\s+(\w+))/.exec(remainingText);
                     if (structParts === null) {
                         throw new TypeError(`At line: ${currentLine}. 'struct' keyword must be followed by a type name`);
                     }
