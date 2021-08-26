@@ -826,6 +826,9 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                     let valid = true
                     while (idx < phraseCode.length) {
                         if (phraseCode[idx].type === 'Delimiter') {
+                            if (keywordIndex + 1 === idx) {
+                                throw new TypeError(`At line: ${phraseCode[idx].line}. Delimiter ',' not expected.`)
+                            }
                             idx++
                             valid = true
                             continue

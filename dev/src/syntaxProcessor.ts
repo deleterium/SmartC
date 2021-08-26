@@ -165,12 +165,18 @@ function syntaxProcess (Program: CONTRACT) {
 
             throw new SyntaxError(`At line: ${tokenArray[0].line}. Unknown token sequence: '${tokenArray[0].type}' with value: '${tokenArray[0].value}'.`)
 
-        // Here we start to process operations tokens (precedente >= 2)
+        // Here we start to process operations tokens (precedente >= 1)
         } else if (tokenArray[currentIdx].type === 'Operator' ||
             tokenArray[currentIdx].type === 'Assignment' ||
             tokenArray[currentIdx].type === 'SetOperator' ||
             tokenArray[currentIdx].type === 'Comparision' ||
             tokenArray[currentIdx].type === 'Delimiter') {
+            if (currentIdx === 0) {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. Missing left value for binary operator '${tokenArray[currentIdx].value}'.`)
+            }
+            if (currentIdx === tokenArray.length - 1) {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. Missing right value for binary operator '${tokenArray[currentIdx].value}'.`)
+            }
             return {
                 type: 'binaryASN',
                 Left: createSyntacticTree(tokenArray.slice(0, currentIdx)),
@@ -205,10 +211,10 @@ function syntaxProcess (Program: CONTRACT) {
             }
         } else if (tokenArray[currentIdx].type === 'Keyword') {
             if (tokenArray.length === 1) {
-                return { type: 'endASN', Token: tokenArray[0] }
+                return { type: 'endASN', Token: tokenArray[currentIdx] }
             }
             if (currentIdx !== 0) {
-                throw new SyntaxError(`At line: ${tokenArray[0].line}. Sentence not starting with keyword... Missing ';'?`)
+                throw new SyntaxError(`At line: ${tokenArray[currentIdx].line}. Sentence not starting with keyword... Missing ';'?`)
             }
             return {
                 type: 'binaryASN',
@@ -217,6 +223,9 @@ function syntaxProcess (Program: CONTRACT) {
                 Right: createSyntacticTree(tokenArray.slice(currentIdx + 1))
             }
         } else if (tokenArray[currentIdx].type === 'UnaryOperator' && currentIdx === 0) {
+            if (tokenArray.length === 1) {
+                throw new SyntaxError(`At line: ${tokenArray[currentIdx].line}. Missing value to apply unary operator '${tokenArray[currentIdx].value}'.`)
+            }
             if (tokenArray[currentIdx].value === '*' && tokenArray.length > currentIdx) {
                 if (tokenArray[currentIdx + 1].type !== 'Variable' && tokenArray[currentIdx + 1].type !== 'CodeCave' && tokenArray[currentIdx + 1].type !== 'SetUnaryOperator') {
                     throw new SyntaxError(`At line: ${tokenArray[currentIdx + 1].line}. Invalid lvalue for pointer operation. Can not have type '${tokenArray[currentIdx + 1].type}'.`)
@@ -227,7 +236,13 @@ function syntaxProcess (Program: CONTRACT) {
                 Center: createSyntacticTree(tokenArray.slice(currentIdx + 1)),
                 Operation: tokenArray[currentIdx]
             }
-        } else if (tokenArray[0].type === 'SetUnaryOperator' && tokenArray[1].type === 'Variable') {
+        } else if (tokenArray[0].type === 'SetUnaryOperator') {
+            if (tokenArray.length === 1) {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. Missing value to apply 'SetUnaryOperator' '${tokenArray[0].value}'.`)
+            }
+            if (tokenArray[1].type !== 'Variable') {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. 'SetUnaryOperator' '${tokenArray[0].value}' expecting a variable, got a '${tokenArray[1].type}'.`)
+            }
             for (let j = 1; j < tokenArray.length; j++) {
                 if (tokenArray[j].type === 'Variable' || tokenArray[j].type === 'Member') {
                     continue

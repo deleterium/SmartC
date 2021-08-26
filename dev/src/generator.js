@@ -890,7 +890,7 @@ function generate(bc_Big_ast){
                             if (CGenObj.MemObj.declaration.lastIndexOf("_ptr") != CGenObj.MemObj.declaration.length - 4) {
                                 if ( !auxVars.isTemp(CGenObj.MemObj.address) ) { // do not care about temp variables
                                     if (bc_Big_ast.Config.warningToError) {
-                                        throw new TypeError("At line: "+objTree.Operation.line+". Trying to read content of Variable '"+objTree.Center.value+"' that is not declared as pointer.");
+                                        throw new TypeError("At line: "+objTree.Operation.line+". Trying to read content of Variable '"+objTree.Center.Token.value+"' that is not declared as pointer.");
                                     }
                                 }
                             } else {
@@ -1006,6 +1006,10 @@ function generate(bc_Big_ast){
                         throw new SyntaxError("At line: "+objTree.Operation.line+". Can not use SetUnaryOperator (++ or --) during logical operations with branches");
                     if (gc_jumpFalse !== undefined)
                         throw new SyntaxError("At line: "+objTree.Operation.line+". Can not use SetUnaryOperator (++ or --) during logical operations with branches");
+
+                    if (auxVars.left_side_of_assignment) {
+                        throw new SyntaxError(`At line: ${objTree.Operation.line}. Can not use SetUnaryOperator '${objTree.Operation.value}' on left side or assignment.`);
+                    }
 
                     if( objTree.Left !== undefined) {
                         LGenObj = genCode(objTree.Left, false, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
