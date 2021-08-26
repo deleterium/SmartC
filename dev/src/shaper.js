@@ -93,10 +93,13 @@ function shape(tokenAST) {
         for (AuxVars.currentToken = 0; AuxVars.currentToken < tokenAST.length; AuxVars.currentToken++) {
             if (AuxVars.currentToken + 3 < tokenAST.length &&
                 tokenAST[AuxVars.currentToken].type === 'Keyword' &&
-                tokenAST[AuxVars.currentToken + 1].type === 'Function' &&
-                tokenAST[AuxVars.currentToken + 2].type === 'CodeCave' &&
+                tokenAST[AuxVars.currentToken + 1].type === 'Variable' &&
+                tokenAST[AuxVars.currentToken + 2].type === 'Function' &&
                 tokenAST[AuxVars.currentToken + 3].type === 'CodeDomain') {
                 // Function found. Does not return pointer
+                if (tokenAST[AuxVars.currentToken].value === 'struct') {
+                    throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct currently not implemented.`);
+                }
                 Program.functions.push({
                     argsMemObj: [],
                     sentences: [],
@@ -113,10 +116,13 @@ function shape(tokenAST) {
                 tokenAST[AuxVars.currentToken].type === 'Keyword' &&
                 tokenAST[AuxVars.currentToken + 1].type === 'UnaryOperator' &&
                 tokenAST[AuxVars.currentToken + 1].value === '*' &&
-                tokenAST[AuxVars.currentToken + 2].type === 'Function' &&
-                tokenAST[AuxVars.currentToken + 3].type === 'CodeCave' &&
+                tokenAST[AuxVars.currentToken + 2].type === 'Variable' &&
+                tokenAST[AuxVars.currentToken + 3].type === 'Function' &&
                 tokenAST[AuxVars.currentToken + 4].type === 'CodeDomain') {
                 // Function found. Does return pointer
+                if (tokenAST[AuxVars.currentToken].value === 'struct') {
+                    throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct currently not implemented.`);
+                }
                 Program.functions.push({
                     argsMemObj: [],
                     sentences: [],
@@ -128,30 +134,6 @@ function shape(tokenAST) {
                 });
                 AuxVars.currentToken += 4;
                 continue;
-            }
-            if (AuxVars.currentToken + 4 < tokenAST.length &&
-                tokenAST[AuxVars.currentToken].type === 'Keyword' &&
-                tokenAST[AuxVars.currentToken].value === 'struct' &&
-                tokenAST[AuxVars.currentToken + 1].type === 'Variable' &&
-                tokenAST[AuxVars.currentToken + 2].type === 'Function' &&
-                tokenAST[AuxVars.currentToken + 3].type === 'CodeCave' &&
-                tokenAST[AuxVars.currentToken + 4].type === 'CodeDomain') {
-                // Function found. Returns a struct
-                // AuxVars.currentToken += 4
-                throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct currently not implemented.`);
-            }
-            if (AuxVars.currentToken + 5 < tokenAST.length &&
-                tokenAST[AuxVars.currentToken].type === 'Keyword' &&
-                tokenAST[AuxVars.currentToken].value === 'struct' &&
-                tokenAST[AuxVars.currentToken + 1].type === 'Variable' &&
-                tokenAST[AuxVars.currentToken + 2].type === 'UnaryOperator' &&
-                tokenAST[AuxVars.currentToken + 2].value === '*' &&
-                tokenAST[AuxVars.currentToken + 3].type === 'Function' &&
-                tokenAST[AuxVars.currentToken + 4].type === 'CodeCave' &&
-                tokenAST[AuxVars.currentToken + 5].type === 'CodeDomain') {
-                // Function found. Returns a struct pointer
-                // AuxVars.currentToken += 5
-                throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct pointer currently not implemented.`);
             }
             if (tokenAST[AuxVars.currentToken].type === 'Macro') {
                 const fields = tokenAST[AuxVars.currentToken].value.replace(/\s\s+/g, ' ').split(' ');
@@ -314,22 +296,23 @@ function shape(tokenAST) {
                         }];
                 }
                 if (codetrain[AuxVars.currentToken].value === 'struct') {
-                    if (AuxVars.currentToken + 2 >= codetrain.length) {
-                        throw new SyntaxError('At line: ' + codetrain[AuxVars.currentToken].line + ". Missing arguments for 'struct' sentence.");
+                    if (AuxVars.currentToken + 1 >= codetrain.length) {
+                        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Missing arguments for 'struct' sentence.`);
                     }
-                    if (codetrain[AuxVars.currentToken + 1].type !== 'Variable') {
-                        throw new SyntaxError('At line: ' + codetrain[AuxVars.currentToken].line + ". Missing 'name' for  'struct' sentence ");
-                    }
-                    if (codetrain[AuxVars.currentToken + 2].type === 'CodeDomain') {
-                        AuxVars.currentToken += 2;
+                    if (codetrain[AuxVars.currentToken + 1].type === 'CodeDomain') {
+                        const structName = codetrain[AuxVars.currentToken].extValue;
+                        if (structName === undefined || structName === '') {
+                            throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Missing struct type name.`);
+                        }
+                        AuxVars.currentToken++;
                         const Node = {
                             type: 'struct',
-                            line: codetrain[AuxVars.currentToken - 2].line,
-                            name: codetrain[AuxVars.currentToken - 1].value,
+                            line: codetrain[AuxVars.currentToken - 1].line,
+                            name: structName,
                             members: code2sentence(codetrain),
                             Phrase: { type: 'phrase' }
                         };
-                        Node.Phrase.code = [codetrain[AuxVars.currentToken - 2], codetrain[AuxVars.currentToken - 1]];
+                        Node.Phrase.code = [codetrain[AuxVars.currentToken - 1]];
                         AuxVars.currentToken++;
                         while (AuxVars.currentToken < codetrain.length) {
                             if (codetrain[AuxVars.currentToken].type === 'Terminator') {
@@ -463,18 +446,18 @@ function shape(tokenAST) {
             while (end === false) {
                 end = true;
                 if (phraseCode[keywordIndex].value === 'struct') {
-                    if (keywordIndex + 3 > phraseCode.length) {
+                    if (keywordIndex + 2 > phraseCode.length) {
                         return;
                     }
-                    const structNameDef = phraseCode[keywordIndex + 1].value;
+                    const structNameDef = phraseCode[keywordIndex].extValue;
                     let search = Program.typesDefinitions.find(obj => obj.name === structNameDef && obj.type === 'struct');
                     if (search === undefined && AuxVars.currentPrefix.length > 0) {
                         search = Program.typesDefinitions.find(obj => obj.name === AuxVars.currentPrefix + structNameDef && obj.type === 'struct');
                     }
                     if (search === undefined) {
-                        throw new TypeError('At line: ' + phraseCode[keywordIndex + 1].line + ". Could not find type definition for 'struct' '" + phraseCode[keywordIndex + 1].value);
+                        throw new TypeError(`At line: ${phraseCode[keywordIndex].line}. Could not find type definition for 'struct' '${phraseCode[keywordIndex].extValue}'.`);
                     }
-                    let idx = keywordIndex + 2;
+                    let idx = keywordIndex + 1;
                     while (idx < phraseCode.length) {
                         const dimensions = [];
                         const MemTemplate = JSON.parse(JSON.stringify(search.MemoryTemplate));
@@ -491,6 +474,9 @@ function shape(tokenAST) {
                             ispointer = true;
                             MemTemplate.declaration += '_ptr';
                             idx++;
+                        }
+                        else {
+                            ispointer = false;
                         }
                         MemTemplate.name = phraseCode[idx].value;
                         MemTemplate.asmName = AuxVars.currentPrefix + phraseCode[idx].value;
@@ -519,7 +505,7 @@ function shape(tokenAST) {
                                 ret.push(MemTemplate);
                                 for (let x = 0, i = 0; x < dimensions.length; x++) {
                                     for (let y = 0; y < dimensions[x]; y++) {
-                                        ret = ret.concat(assignStructVariable(phraseCode[1].value, phraseCode[idx - dimensions.length].value + '_' + i, ispointer));
+                                        ret = ret.concat(assignStructVariable(phraseCode[0].extValue, phraseCode[idx - dimensions.length].value + '_' + i, ispointer));
                                         i++;
                                     }
                                 }
@@ -548,7 +534,7 @@ function shape(tokenAST) {
                                     ret = ret.concat(MemTemplate);
                                 }
                                 else {
-                                    ret = ret.concat(assignStructVariable(phraseCode[1].value, phraseCode[idx].value, ispointer));
+                                    ret = ret.concat(assignStructVariable(phraseCode[0].extValue, phraseCode[idx].value, ispointer));
                                 }
                             }
                             idx++;
@@ -569,6 +555,9 @@ function shape(tokenAST) {
                     let valid = true;
                     while (idx < phraseCode.length) {
                         if (phraseCode[idx].type === 'Delimiter') {
+                            if (keywordIndex + 1 === idx) {
+                                throw new TypeError(`At line: ${phraseCode[idx].line}. Delimiter ',' not expected.`);
+                            }
                             idx++;
                             valid = true;
                             continue;
@@ -581,6 +570,9 @@ function shape(tokenAST) {
                         if (valid === true && phraseCode[idx].value === '*' && idx + 1 < phraseCode.length && phraseCode[idx + 1].type === 'Variable') {
                             ispointer = true;
                             idx++;
+                        }
+                        else {
+                            ispointer = false;
                         }
                         if (valid === true) {
                             const dimensions = [];
@@ -650,7 +642,6 @@ function shape(tokenAST) {
                                 }
                             }
                             valid = false;
-                            ispointer = false;
                         }
                         idx++;
                     }
@@ -663,7 +654,7 @@ function shape(tokenAST) {
         }
         return ret;
     }
-    function assignStructVariable(structName, varName, ispointer) {
+    function assignStructVariable(structName = '', varName, ispointer) {
         let search = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === structName);
         if (search === undefined && AuxVars.currentPrefix.length > 0) {
             search = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === AuxVars.currentPrefix + structName);

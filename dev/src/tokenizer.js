@@ -60,13 +60,18 @@ function tokenize(input) {
             addLength: 2
         },
         {
-            start: /^(break|const|continue|do|else|exit|for|goto|halt|if|long|return|sleep|struct|void|while)/,
+            start: /^(break|const|continue|do|else|exit|for|goto|halt|if|long|return|sleep|void|while)/,
             tokenType: 'keyword',
             addLength: 0
         },
         {
             start: /^(asm)/,
-            tokenType: 'SPECIAL',
+            tokenType: 'ASM',
+            addLength: 0
+        },
+        {
+            start: /^(struct)/,
+            tokenType: 'STRUCT',
             addLength: 0
         },
         {
@@ -142,15 +147,24 @@ function tokenize(input) {
                     current += startParts[1].length + ruleN.addLength;
                     return true; // breaks find function
                 }
-                if (ruleN.tokenType === 'SPECIAL') {
-                    // handle asm case
+                if (ruleN.tokenType === 'ASM') {
                     const asmParts = /^(asm[^\w]*\{([\s\S]*?)\})/.exec(remainingText);
                     if (asmParts === null) {
                         throw new TypeError('At line:' + currentLine + ' Error parsing `asm { ... }` keyword');
                     }
-                    preTokens.push({ type: 'keyword', value: 'asm', line: currentLine, asmText: asmParts[2] });
+                    preTokens.push({ type: 'keyword', value: 'asm', line: currentLine, extValue: asmParts[2] });
                     currentLine += (asmParts[1].match(/\n/g) || '').length;
                     current += asmParts[1].length;
+                    return true; // breaks find function
+                }
+                if (ruleN.tokenType === 'STRUCT') {
+                    let structParts = /^(struct\s+(\w+))/.exec(remainingText);
+                    if (structParts === null) {
+                        throw new TypeError(`At line: ${currentLine}. 'struct' keyword must be followed by a type name`);
+                    }
+                    preTokens.push({ type: 'keyword', value: 'struct', line: currentLine, extValue: structParts[2] });
+                    currentLine += (structParts[1].match(/\n/g) || '').length;
+                    current += structParts[1].length;
                     return true; // breaks find function
                 }
                 preTokens.push({ type: ruleN.tokenType, value: startParts[1], line: currentLine });

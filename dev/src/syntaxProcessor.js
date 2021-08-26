@@ -29,7 +29,7 @@ function syntaxProcess(Program) {
         // precedente evaluation loop
         let currentIdx = 0;
         let end = false;
-        for (let precedenceHeight = 12; precedenceHeight > 1 && end === false; precedenceHeight--) {
+        for (let precedenceHeight = 12; precedenceHeight > 0 && end === false; precedenceHeight--) {
             if (precedenceHeight === 12 || precedenceHeight === 10 || precedenceHeight === 2) {
                 // Right to left associativity for
                 // 12) Terminator, semi, keywords
@@ -44,7 +44,7 @@ function syntaxProcess(Program) {
             }
             else {
                 // Left to right associativity for others
-                for (currentIdx = tokenArray.length - 1; currentIdx > 0; currentIdx--) {
+                for (currentIdx = tokenArray.length - 1; currentIdx >= 0; currentIdx--) {
                     if (tokenArray[currentIdx].precedence === precedenceHeight) {
                         end = true;
                         break;
@@ -53,39 +53,7 @@ function syntaxProcess(Program) {
             }
         }
         if (end === false) {
-            // he have only precedente <= 1: variable, constant, codecave, array, codedomain, member)
-            if (tokenArray[0].type === 'Variable') {
-                if (tokenArray.length === 1) {
-                    return { type: 'endASN', Token: tokenArray[0] };
-                }
-                const Node = tokenArray[0];
-                Node.variableModifier = [];
-                for (currentIdx = 1; currentIdx < tokenArray.length; currentIdx++) {
-                    if (tokenArray[currentIdx].type === 'Arr') {
-                        Node.variableModifier.push({
-                            type: 'Arr',
-                            content: createSyntacticTree(tokenArray[currentIdx].params)
-                        });
-                    }
-                    else if (tokenArray[currentIdx].type === 'Member') {
-                        Node.variableModifier.push({
-                            type: `Member${tokenArray[currentIdx].value}`,
-                            content: tokenArray[currentIdx + 1]
-                        });
-                        currentIdx++;
-                    }
-                    else if (tokenArray[currentIdx].type === 'Variable') {
-                        Node.variableModifier.push({
-                            type: 'Variable',
-                            content: tokenArray[currentIdx]
-                        });
-                    }
-                    else {
-                        throw new TypeError(`At line: ${tokenArray[currentIdx].line}. Invalid type of variable modifier: '${tokenArray[currentIdx].type}'.`);
-                    }
-                }
-                return { type: 'endASN', Token: Node };
-            }
+            // he have only precedente == 0: variable, constant, array, member)
             if (tokenArray[0].type === 'Constant') {
                 if (tokenArray.length === 1) {
                     return { type: 'endASN', Token: tokenArray[0] };
@@ -104,36 +72,91 @@ function syntaxProcess(Program) {
                     };
                 }
             }
-            if (tokenArray[0].type === 'CodeCave' || tokenArray[0].type === 'CodeDomain') {
-                if (tokenArray.length === 1 && tokenArray[0].params !== undefined) {
-                    return createSyntacticTree(tokenArray[0].params);
-                }
-                // if (tokenArray.length > 1) {
-                throw new SyntaxError(`At line: ${tokenArray[0].line}. Modifiers for ${tokenArray[0].type} not implemented.`);
+            if (tokenArray[0].type === 'Variable' && tokenArray.length === 1) {
+                return { type: 'endASN', Token: tokenArray[0] };
             }
-            if (tokenArray[0].type === 'Function' && tokenArray.length === 2) {
-                if (tokenArray[1].type === 'CodeCave' && tokenArray[1].params !== undefined) {
-                    return {
-                        type: 'binaryASN',
-                        Left: { type: 'endASN', Token: tokenArray[0] },
-                        Operation: tokenArray[0],
-                        Right: createSyntacticTree(tokenArray[1].params)
-                    };
+            if (tokenArray[0].type === 'Variable') {
+                // We have a combination for structs and/or arrays.
+                const retNode = {
+                    type: 'lookupASN',
+                    Token: tokenArray[0],
+                    modifiers: []
+                };
+                for (currentIdx = 1; currentIdx < tokenArray.length; currentIdx++) {
+                    if (tokenArray[currentIdx].type === 'Arr') {
+                        retNode.modifiers.push({
+                            type: 'Array',
+                            Center: createSyntacticTree(tokenArray[currentIdx].params)
+                        });
+                    }
+                    else if (tokenArray[currentIdx].type === 'Member') {
+                        if (tokenArray[currentIdx].value === '.') {
+                            retNode.modifiers.push({
+                                type: 'MemberByVal',
+                                Center: tokenArray[currentIdx + 1]
+                            });
+                        }
+                        else {
+                            retNode.modifiers.push({
+                                type: 'MemberByRef',
+                                Center: tokenArray[currentIdx + 1]
+                            });
+                        }
+                        currentIdx++;
+                    }
+                    else {
+                        throw new TypeError(`At line: ${tokenArray[currentIdx].line}. Invalid type of variable modifier: '${tokenArray[currentIdx].type}'.`);
+                    }
                 }
+                return retNode;
             }
             throw new SyntaxError(`At line: ${tokenArray[0].line}. Unknown token sequence: '${tokenArray[0].type}' with value: '${tokenArray[0].value}'.`);
-            // Here we start to process operations tokens (precedente >= 2)
+            // Here we start to process operations tokens (precedente >= 1)
         }
         else if (tokenArray[currentIdx].type === 'Operator' ||
             tokenArray[currentIdx].type === 'Assignment' ||
             tokenArray[currentIdx].type === 'SetOperator' ||
             tokenArray[currentIdx].type === 'Comparision' ||
             tokenArray[currentIdx].type === 'Delimiter') {
+            if (currentIdx === 0) {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. Missing left value for binary operator '${tokenArray[currentIdx].value}'.`);
+            }
+            if (currentIdx === tokenArray.length - 1) {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. Missing right value for binary operator '${tokenArray[currentIdx].value}'.`);
+            }
             return {
                 type: 'binaryASN',
                 Left: createSyntacticTree(tokenArray.slice(0, currentIdx)),
                 Operation: tokenArray[currentIdx],
                 Right: createSyntacticTree(tokenArray.slice(currentIdx + 1))
+            };
+        }
+        else if (tokenArray[currentIdx].type === 'CodeDomain' || tokenArray[currentIdx].type === 'CodeCave') {
+            const newAST = createSyntacticTree(tokenArray[currentIdx].params);
+            delete tokenArray[currentIdx].params;
+            if (tokenArray.length !== 1) {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. Modifiers not implemented on '${tokenArray[currentIdx].type}'.`);
+            }
+            return {
+                type: 'unaryASN',
+                Operation: tokenArray[currentIdx],
+                Center: newAST
+            };
+        }
+        else if (tokenArray[currentIdx].type === 'Function') {
+            if (currentIdx === 0) {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. Missing function name.`);
+            }
+            if (tokenArray.length !== 2) {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. Modifiers on functions not implemented.`);
+            }
+            const newAST = createSyntacticTree(tokenArray[currentIdx].params);
+            delete tokenArray[currentIdx].params;
+            return {
+                type: 'binaryASN',
+                Left: createSyntacticTree(tokenArray.slice(0, currentIdx)),
+                Operation: tokenArray[currentIdx],
+                Right: newAST
             };
         }
         else if (tokenArray[currentIdx].type === 'Keyword') {
@@ -151,6 +174,9 @@ function syntaxProcess(Program) {
             };
         }
         else if (tokenArray[currentIdx].type === 'UnaryOperator' && currentIdx === 0) {
+            if (tokenArray.length === 1) {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. Missing value to apply unary operator '${tokenArray[0].value}'.`);
+            }
             if (tokenArray[currentIdx].value === '*' && tokenArray.length > currentIdx) {
                 if (tokenArray[currentIdx + 1].type !== 'Variable' && tokenArray[currentIdx + 1].type !== 'CodeCave' && tokenArray[currentIdx + 1].type !== 'SetUnaryOperator') {
                     throw new SyntaxError(`At line: ${tokenArray[currentIdx + 1].line}. Invalid lvalue for pointer operation. Can not have type '${tokenArray[currentIdx + 1].type}'.`);
@@ -162,7 +188,13 @@ function syntaxProcess(Program) {
                 Operation: tokenArray[currentIdx]
             };
         }
-        else if (tokenArray[0].type === 'SetUnaryOperator' && tokenArray[1].type === 'Variable') {
+        else if (tokenArray[0].type === 'SetUnaryOperator') {
+            if (tokenArray.length === 1) {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. Missing value to apply 'SetUnaryOperator' '${tokenArray[0].value}'.`);
+            }
+            if (tokenArray[1].type !== 'Variable') {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. 'SetUnaryOperator' '${tokenArray[0].value}' expecting a variable, got a '${tokenArray[1].type}'.`);
+            }
             for (let j = 1; j < tokenArray.length; j++) {
                 if (tokenArray[j].type === 'Variable' || tokenArray[j].type === 'Member') {
                     continue;

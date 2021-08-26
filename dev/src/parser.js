@@ -55,8 +55,8 @@ function parse(preTokens) {
             sequence: ['keyword'],
             action(tokenID) {
                 const node = { type: 'Keyword', precedence: 12, value: preTokens[tokenID].value, line: preTokens[tokenID].line };
-                if (preTokens[tokenID].value === 'asm') {
-                    node.extValue = preTokens[tokenID].asmText;
+                if (preTokens[tokenID].value === 'asm' || preTokens[tokenID].value === 'struct') {
+                    node.extValue = preTokens[tokenID].extValue;
                 }
                 return node;
             }
@@ -230,9 +230,6 @@ function parse(preTokens) {
         {
             sequence: ['variable'],
             action(tokenID) {
-                if (preTokens[tokenID + 1] !== undefined && preTokens[tokenID + 1].value === '(') {
-                    return { type: 'Function', precedence: 0, value: preTokens[tokenID].value, line: preTokens[tokenID].line };
-                }
                 return { type: 'Variable', precedence: 0, value: preTokens[tokenID].value, line: preTokens[tokenID].line };
             }
         },
@@ -292,6 +289,7 @@ function parse(preTokens) {
         {
             sequence: ['minus', 'greater'],
             action(tokenID) {
+                // TODO DOCUMENTATION
                 return { type: 'Member', precedence: 0, value: '->', line: preTokens[tokenID].line };
             }
         },
@@ -348,7 +346,7 @@ function parse(preTokens) {
             case '}':
                 throw new SyntaxError(`At line: ${currentPreToken.line}. Unmatched closing '${currentPreToken.value}'.`);
             case '[':
-                retToken = { type: 'Arr', value: '', precedence: 1, line: currentPreToken.line };
+                retToken = { type: 'Arr', value: '', precedence: 0, line: currentPreToken.line };
                 mainLoopIndex++;
                 retToken.params = [];
                 while (preTokens[mainLoopIndex].value !== ']') {
@@ -362,14 +360,19 @@ function parse(preTokens) {
                 mainLoopIndex++;
                 return retToken;
             case '(':
-                retToken = { type: 'CodeCave', value: '', precedence: 1, line: currentPreToken.line };
+                if (mainLoopIndex > 0 && preTokens[mainLoopIndex - 1].type === 'variable') {
+                    retToken = { type: 'Function', value: '', precedence: 1, line: currentPreToken.line };
+                }
+                else {
+                    retToken = { type: 'CodeCave', value: '', precedence: 1, line: currentPreToken.line };
+                }
                 mainLoopIndex++;
                 retToken.params = [];
                 while (preTokens[mainLoopIndex].value !== ')') {
                     retToken.params.push(getNextToken());
                     // getNextToken will increase mainLoopIndex for loop
                     if (preTokens[mainLoopIndex] === undefined) {
-                        throw new SyntaxError(`At end of file. Missing closing ')' for CodeCave started at line: ${retToken.line}.`);
+                        throw new SyntaxError(`At end of file. Missing closing ')' for ${retToken.type} started at line: ${retToken.line}.`);
                     }
                 }
                 mainLoopIndex++;
@@ -404,11 +407,6 @@ function parse(preTokens) {
             if ((preTokens[position - 1].type === 'plus' && preTokens[position - 2].type === 'plus') ||
                 (preTokens[position - 1].type === 'minus' && preTokens[position - 2].type === 'minus')) {
                 return true;
-            }
-            if ((preTokens[position - 1].type === 'variable' &&
-                preTokens[position - 2].type === 'keyword') &&
-                preTokens[position - 2].value === 'struct') {
-                return false;
             }
         }
         if (position >= 1) {
