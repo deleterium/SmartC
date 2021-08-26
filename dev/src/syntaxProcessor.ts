@@ -70,7 +70,7 @@ function syntaxProcess (Program: CONTRACT) {
         // precedente evaluation loop
         let currentIdx = 0
         let end = false
-        for (let precedenceHeight = 12; precedenceHeight > 1 && end === false; precedenceHeight--) {
+        for (let precedenceHeight = 12; precedenceHeight > 0 && end === false; precedenceHeight--) {
             if (precedenceHeight === 12 || precedenceHeight === 10 || precedenceHeight === 2) {
                 // Right to left associativity for
                 // 12) Terminator, semi, keywords
@@ -84,7 +84,7 @@ function syntaxProcess (Program: CONTRACT) {
                 }
             } else {
                 // Left to right associativity for others
-                for (currentIdx = tokenArray.length - 1; currentIdx > 0; currentIdx--) {
+                for (currentIdx = tokenArray.length - 1; currentIdx >= 0; currentIdx--) {
                     if (tokenArray[currentIdx].precedence === precedenceHeight) {
                         end = true
                         break

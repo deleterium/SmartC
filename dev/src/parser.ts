@@ -331,6 +331,7 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
         {
             sequence: ['minus', 'greater'],
             action (tokenID): TOKEN {
+                // TODO DOCUMENTATION
                 return { type: 'Member', precedence: 0, value: '->', line: preTokens[tokenID].line }
             }
         },
@@ -390,7 +391,7 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
             throw new SyntaxError(`At line: ${currentPreToken.line}. Unmatched closing '${currentPreToken.value}'.`)
 
         case '[':
-            retToken = { type: 'Arr', value: '', precedence: 1, line: currentPreToken.line }
+            retToken = { type: 'Arr', value: '', precedence: 0, line: currentPreToken.line }
             mainLoopIndex++
             retToken.params = []
             while (preTokens[mainLoopIndex].value !== ']') {
