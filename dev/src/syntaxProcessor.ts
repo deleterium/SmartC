@@ -5,7 +5,7 @@
 /* global TOKEN CONTRACT SENTENCES */
 
 // eslint-disable-next-line no-use-before-define
-type AST = UNARY_ASN | BINARY_ASN | END_ASN | EXCEPTION_ASN
+type AST = UNARY_ASN | BINARY_ASN | END_ASN | LOOKUP_ASN | EXCEPTION_ASN
 
 interface UNARY_ASN {
     /** Unary Abstract Syntax Node */
@@ -22,14 +22,25 @@ interface BINARY_ASN {
     Operation: TOKEN
     /** Left side AST */
     Left: AST
-    /** Left side AST */
+    /** Right side AST */
     Right: AST
 }
+
 interface END_ASN {
     /** End Abstract Syntax Node */
     type: 'endASN'
     /** End token. May be undefined, but most of times this situation leads to error. */
     Token?: TOKEN
+}
+type TOKEN_MODIFIER = {type: 'Array', Center: AST} | {type: 'MemberByVal', Center: TOKEN} | {type: 'MemberByRef', Center: TOKEN}
+
+interface LOOKUP_ASN {
+    /** Abstract Syntax Node for variables with modifiers to be evaluated in chain  */
+    type: 'lookupASN'
+    /** End token with type == 'Variable'. */
+    Token: TOKEN
+    /** Value modifiers like Arr or Members */
+    modifiers: TOKEN_MODIFIER[]
 }
 interface EXCEPTION_ASN {
     /** exception Abstract Syntax Node. Used for SetUnaryOperator */
@@ -94,36 +105,43 @@ function syntaxProcess (Program: CONTRACT) {
         }
 
         if (end === false) {
-        // he have only precedente <= 1: variable, constant, codecave, array, codedomain, member)
+        // he have only precedente == 0: variable, constant, array, member)
+
+            if (tokenArray[0].type === 'Variable' && tokenArray.length === 1) {
+                return { type: 'endASN', Token: tokenArray[0] }
+            }
 
             if (tokenArray[0].type === 'Variable') {
-                if (tokenArray.length === 1) {
-                    return { type: 'endASN', Token: tokenArray[0] }
+            // We have a combination for structs and/or arrays.
+                const retNode: LOOKUP_ASN = {
+                    type: 'lookupASN',
+                    Token: tokenArray[0],
+                    modifiers: []
                 }
-                const Node = tokenArray[0]
-                Node.variableModifier = []
                 for (currentIdx = 1; currentIdx < tokenArray.length; currentIdx++) {
                     if (tokenArray[currentIdx].type === 'Arr') {
-                        Node.variableModifier.push({
-                            type: 'Arr',
-                            content: createSyntacticTree(tokenArray[currentIdx].params)
+                        retNode.modifiers.push({
+                            type: 'Array',
+                            Center: createSyntacticTree(tokenArray[currentIdx].params)
                         })
                     } else if (tokenArray[currentIdx].type === 'Member') {
-                        Node.variableModifier.push({
-                            type: `Member${tokenArray[currentIdx].value}`,
-                            content: tokenArray[currentIdx + 1]
-                        })
+                        if (tokenArray[currentIdx].value === '.') {
+                            retNode.modifiers.push({
+                                type: 'MemberByVal',
+                                Center: tokenArray[currentIdx + 1]
+                            })
+                        } else {
+                            retNode.modifiers.push({
+                                type: 'MemberByRef',
+                                Center: tokenArray[currentIdx + 1]
+                            })
+                        }
                         currentIdx++
-                    } else if (tokenArray[currentIdx].type === 'Variable') {
-                        Node.variableModifier.push({
-                            type: 'Variable',
-                            content: tokenArray[currentIdx]
-                        })
                     } else {
                         throw new TypeError(`At line: ${tokenArray[currentIdx].line}. Invalid type of variable modifier: '${tokenArray[currentIdx].type}'.`)
                     }
                 }
-                return { type: 'endASN', Token: Node }
+                return retNode
             }
 
             if (tokenArray[0].type === 'Constant') {

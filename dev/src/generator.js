@@ -350,274 +350,6 @@ function generate(bc_Big_ast){
                                 M_Obj.type+="_ptr";
                             }
                         }
-                        if (objTree.Token.variableModifier !== undefined) {
-                            let array_idx=-1;
-                            for (let idx=0; idx < objTree.Token.variableModifier.length; idx++){
-
-                                if (objTree.Token.variableModifier[idx].type === "Member->") {
-                                    let TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="struct" && obj.name===M_Obj.typeDefinition );
-                                    if (TypeD === undefined) {
-                                        throw new TypeError("At line: "+objTree.Token.line+". Array type definition not found...");
-                                    }
-                                    if (objTree.Token.variableModifier[idx].content.type !== "Variable") {
-                                        throw new TypeError("At line: "+objTree.Token.line+". Can not use variables as struct members.");
-                                    }
-                                    if (M_Obj.declaration !== "struct_ptr") {
-                                        throw new TypeError("At line: "+objTree.Token.line+". Variable '"+M_Obj.name+"' not defined as struct pointer.");
-                                    }
-                                    let member_name = objTree.Token.variableModifier[idx].content.value;
-                                    let member_id = -1;
-                                    for (let i=0; i< TypeD.structAccumulatedSize.length; i++) {
-                                        if (TypeD.structAccumulatedSize[i][0] === member_name) {
-                                            member_id = i;
-                                            break;
-                                        }
-                                    }
-                                    if (member_id == -1) {
-                                        throw new TypeError("At line: "+objTree.Token.line+". Member '"+member_name+"' not found on struct type definition.");
-                                    }
-
-                                    let TmpMemObj;
-                                    if (M_Obj.offset_type === undefined) {
-                                        let adder=0;
-                                        if (TypeD.structMembers[member_id].type === "array") {
-                                            adder = 1;
-                                        }
-                                        M_Obj.declaration=TypeD.structMembers[member_id].declaration;
-                                        M_Obj.name=TypeD.structMembers[member_id].name;
-                                        M_Obj.typeDefinition=TypeD.structMembers[member_id].typeDefinition;
-                                        if (TypeD.structMembers[member_id].type === "array"){
-                                            M_Obj.type=TypeD.structMembers[member_id].type;
-                                        }
-                                        array_idx=-1;
-                                        M_Obj.offset_type = "constant";
-                                        M_Obj.offset_value = addHexContents(adder, TypeD.structAccumulatedSize[member_id][1]);
-
-                                    } else if (M_Obj.offset_type === "constant") {
-                                        throw new TypeError("At line: "+objTree.Token.line+". Inspection needed.");
-
-                                    } else /* if (M_Obj.offset_type === "variable")*/ {
-                                        throw new TypeError("At line: "+objTree.Token.line+". Inspection needed.");
-                                    }
-                                }
-
-                                if (objTree.Token.variableModifier[idx].type === "Member.") {
-                                    let TypeD;
-                                    if (M_Obj.arrayItemType === "struct") { // array of struct
-                                        TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="struct" && obj.name===M_Obj.arrayItemTypeDefinition );
-                                    } else { //regular case
-                                        TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="struct" && obj.name===M_Obj.typeDefinition );
-                                    }
-                                    if (TypeD === undefined) {
-                                        throw new TypeError("At line: "+objTree.Token.line+". Array type definition not found...");
-                                    }
-                                    if (objTree.Token.variableModifier[idx].content.type !== "Variable") {
-                                        throw new TypeError("At line: "+objTree.Token.line+". Can not use variables as struct members.");
-                                    }
-                                    if (M_Obj.declaration === "struct_ptr") {
-                                        throw new TypeError("At line: "+objTree.Token.line+". Using wrong member notation. Try to use '->' instead.");
-                                    }
-                                    let member_name = objTree.Token.variableModifier[idx].content.value;
-                                    let member_id = -1;
-                                    for (let i=0; i< TypeD.structAccumulatedSize.length; i++) {
-                                        if (TypeD.structAccumulatedSize[i][0] === member_name) {
-                                            member_id = i;
-                                            break;
-                                        }
-                                    }
-                                    if (member_id == -1) {
-                                        throw new TypeError("At line: "+objTree.Token.line+". Member '"+member_name+"' not found on struct type definition.");
-                                    }
-
-                                    if (M_Obj.offset_type === undefined) {
-                                        M_Obj = getMemoryObjectByLocation(addHexContents(M_Obj.hexContent, TypeD.structAccumulatedSize[member_id][1] ));
-                                        array_idx=-1;
-
-                                    } else if (M_Obj.offset_type === "constant") {
-                                        let adder = addHexContents(M_Obj.offset_value, M_Obj.hexContent);
-                                        M_Obj = getMemoryObjectByLocation(addHexContents(adder, TypeD.structAccumulatedSize[member_id][1] ));
-                                        array_idx=-1;
-
-                                    } else /* if (M_Obj.offset_type === "variable")*/ {
-                                        let adder=0;
-                                        if (TypeD.structMembers[member_id].type === "array") {
-                                            adder = 1;
-                                        }
-                                        instructionstrain += createInstruction(genAddToken(objTree.Token.line),
-                                                             getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line),
-                                                             createConstantMemObj( addHexContents(adder, TypeD.structAccumulatedSize[member_id][1]) ));
-                                        M_Obj.declaration=TypeD.structMembers[member_id].declaration;
-                                        M_Obj.name=TypeD.structMembers[member_id].name;
-                                        M_Obj.typeDefinition=TypeD.structMembers[member_id].typeDefinition;
-                                        array_idx=-1;
-                                    }
-                                }
-
-                                if (objTree.Token.variableModifier[idx].type === "Arr") {
-                                    if (bc_Big_ast.Config.useVariableDeclaration === false){
-                                        throw new TypeError ("At line: "+objTree.Token.line+". Can not use arrays if 'useVariableDefinition' is 'false'");
-                                    }
-                                    array_idx++;
-                                    let TmpMemObj;
-                                    let pointer_operation = false;
-                                    let TypeD; // = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.name===objTree.Token.value );
-                                    if (M_Obj.typeDefinition === undefined) {//array of structs
-                                        TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.name===M_Obj.name );
-                                    } else if (objTree.Token.value === M_Obj.name) { //array simple
-                                        TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.name===M_Obj.typeDefinition );
-                                    } else { // array inside struct
-                                        TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.name.indexOf("_"+M_Obj.typeDefinition) > 0 );
-                                    }
-                                    if (TypeD === undefined) {
-                                        if (M_Obj.declaration.indexOf("_ptr") == -1) {
-                                            throw new TypeError("At line: "+objTree.Token.line+". Array type definition not found. Is '"+M_Obj.name+"' declared as array or pointer?");
-                                        }
-                                        pointer_operation = true; //allow use of array notation on pointer variables.
-                                    }
-                                    if (M_Obj.type !== "array" && M_Obj.type !== "struct" && M_Obj.offset_type !== undefined){
-                                        throw new TypeError("At line: "+objTree.Token.line+". Can not use array notation on regular variables.");
-                                    }
-                                    let Param_Obj = genCode(objTree.Token.variableModifier[idx].content, false, false); // gc_revLogic, gc_jumpFalse, gc_jumpTrue);
-                                    instructionstrain+=Param_Obj.instructionset;
-
-                                    if (M_Obj.declaration.indexOf("_ptr") > 0) {
-                                        M_Obj.declaration = M_Obj.declaration.slice(0,-4);
-                                    }
-
-                                    if (Param_Obj.MemObj === undefined) { //special case for text assignment
-                                        return {MemObj: M_Obj, instructionset: instructionstrain }
-                                    }
-                                    //big decision tree depending on M_Obj.offset_value and Param_Obj.address
-                                    let mobj_offvalue = M_Obj.offset_value; // undefined if does not exist, "constant", or variable address that can be temp or not (will be checked!)
-                                    if (typeof(M_Obj.offset_value) === "string") {
-                                        mobj_offvalue = -1; //only if offset_type is constant 
-                                    }
-                                    let param_loc = Param_Obj.MemObj.address; //-1 if it is constant, other value represents a variable that can be temp or not (will be checked!)
-
-                                    if (mobj_offvalue === undefined) {
-                                        if (param_loc == -1 ) {
-                                            if (pointer_operation) {
-                                                TmpMemObj = auxVars.getNewRegister();
-                                                instructionstrain += createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
-                                                M_Obj.type = "array";
-                                                M_Obj.offset_type = "variable";
-                                                M_Obj.offset_value = TmpMemObj.address;
-                                            } else {
-                                                M_Obj.offset_type = "constant";
-                                                M_Obj.offset_value = mulHexContents(Param_Obj.MemObj.hexContent, TypeD.arrayMultiplierDim[array_idx]);
-                                            }
-                                        } else if (auxVars.isTemp(param_loc)) {
-                                            if (pointer_operation) {
-                                                M_Obj.type = "array";
-                                            } else {
-                                                instructionstrain += createInstruction(genMulToken(objTree.Token.line), Param_Obj.MemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
-                                            }
-                                            M_Obj.offset_type = "variable";
-                                            M_Obj.offset_value = Param_Obj.MemObj.address;
-
-                                        } else /* if ( param_loc is variable ) */ {
-                                            M_Obj.offset_type = "variable";
-                                            if (pointer_operation || TypeD.arrayMultiplierDim[array_idx] == 1) {
-                                                if (pointer_operation) {
-                                                    M_Obj.type = "array";
-                                                }
-                                                M_Obj.offset_value = Param_Obj.MemObj.address;
-                                            } else {
-                                                TmpMemObj = auxVars.getNewRegister();
-                                                instructionstrain += createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
-                                                M_Obj.offset_value = TmpMemObj.address;
-                                                instructionstrain += createInstruction(genMulToken(objTree.Token.line), TmpMemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
-                                            }
-                                        }
-
-                                    } else if (mobj_offvalue === -1 ) {
-                                        if (param_loc == -1) {
-                                            M_Obj.offset_value = addHexContents(M_Obj.offset_value, mulHexContents(Param_Obj.MemObj.hexContent, TypeD.arrayMultiplierDim[array_idx]));
-
-                                        } else if (auxVars.isTemp(param_loc)) {
-                                            instructionstrain += createInstruction(genMulToken(objTree.Token.line), Param_Obj.MemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
-                                            instructionstrain += createInstruction(genAddToken(objTree.Token.line), Param_Obj.MemObj, createConstantMemObj(M_Obj.offset_value));
-                                            M_Obj.offset_type = "variable";
-                                            M_Obj.offset_value = Param_Obj.MemObj.address;
-
-                                        } else /* if ( param_loc is variable  ) */ {
-                                            if (TypeD.arrayMultiplierDim[array_idx] == 1 && M_Obj.offset_value === "0000000000000000") {
-                                                M_Obj.offset_type = "variable";
-                                                M_Obj.offset_value = Param_Obj.MemObj.address;
-                                            } else {
-                                                TmpMemObj = auxVars.getNewRegister();
-                                                instructionstrain += createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
-                                                instructionstrain += createInstruction(genMulToken(objTree.Token.line), TmpMemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
-                                                instructionstrain += createInstruction(genAddToken(objTree.Token.line), TmpMemObj, createConstantMemObj(M_Obj.offset_value));
-                                                M_Obj.offset_type = "variable";
-                                                M_Obj.offset_value = TmpMemObj.address;
-                                            }
-                                        }
-
-                                    } else if (auxVars.isTemp(mobj_offvalue)) {
-                                        if (param_loc == -1 ) {
-                                            let adder = mulHexContents(Param_Obj.MemObj.hexContent, TypeD.arrayMultiplierDim[array_idx]);
-                                            instructionstrain += createInstruction(genAddToken(objTree.Token.line), getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line), createConstantMemObj(  adder  ));
-
-                                        } else if (auxVars.isTemp(param_loc)) {
-                                            instructionstrain+=createInstruction(genMulToken(objTree.Token.line), Param_Obj.MemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
-                                            instructionstrain+=createInstruction(genAddToken(objTree.Token.line), getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line), Param_Obj.MemObj);
-                                            auxVars.freeRegister(Param_Obj.MemObj.address);
-
-                                        } else /* if (param_loc is variable ) */ {
-                                            if (TypeD.arrayMultiplierDim[array_idx] == 1) {
-                                                instructionstrain+=createInstruction(genAddToken(objTree.Token.line), getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line), Param_Obj.MemObj);
-                                            } else {
-                                                TmpMemObj = auxVars.getNewRegister();
-                                                instructionstrain+=createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
-                                                instructionstrain+=createInstruction(genMulToken(objTree.Token.line), TmpMemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
-                                                instructionstrain+=createInstruction(genAddToken(objTree.Token.line), getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line), TmpMemObj);
-                                                auxVars.freeRegister(TmpMemObj.address);
-                                            }
-                                        }
-
-                                    } else /* if ( mobj_offvalue is variable ) */ {
-                                        if (param_loc == -1 ) {
-                                            if (Param_Obj.MemObj.hexContent !== "0000000000000000") {
-                                                TmpMemObj = auxVars.getNewRegister();
-                                                instructionstrain+=createInstruction(genAssignmentToken(), TmpMemObj,  createConstantMemObj(Param_Obj.MemObj.hexContent));
-                                                if (!pointer_operation){
-                                                    instructionstrain+=createInstruction(genMulToken(objTree.Token.line), TmpMemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
-                                                }
-                                                instructionstrain+=createInstruction(genAddToken(objTree.Token.line), TmpMemObj, getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line));
-                                                M_Obj.offset_value= TmpMemObj.address;
-                                            }
-
-                                        } else if (auxVars.isTemp(param_loc)) {
-                                            if (!pointer_operation){
-                                                instructionstrain+=createInstruction(genMulToken(objTree.Token.line), Param_Obj.MemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
-                                            }
-                                            instructionstrain+=createInstruction(genAddToken(objTree.Token.line), Param_Obj.MemObj, getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line));
-                                            M_Obj.offset_value = Param_Obj.MemObj.address;
-
-                                        } else /* if (param_loc is variable )) */ {
-                                            TmpMemObj = auxVars.getNewRegister();
-                                            instructionstrain+=createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
-                                            if (!pointer_operation){
-                                                instructionstrain+=createInstruction(genMulToken(objTree.Token.line), TmpMemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
-                                            }
-                                            instructionstrain+=createInstruction(genAddToken(objTree.Token.line), TmpMemObj, getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line));
-                                            M_Obj.offset_value = TmpMemObj.address;
-                                        }
-                                    }
-                                }
-                            }
-
-                            //Fix special case where struct pointer with array member with constant index has incomplete information.
-                            // This does not allow constants on struct: code Yyx_sSkA
-                            if (M_Obj.hexContent === undefined && M_Obj.offset_type === "constant") {
-                                let TmpMemObj = auxVars.getNewRegister();
-                                instructionstrain+=createInstruction(genAssignmentToken(), TmpMemObj, createConstantMemObj(M_Obj.offset_value));
-                                M_Obj.offset_type = "variable";
-                                M_Obj.offset_value = TmpMemObj.address;
-                            }
-                        }
-
                         return {MemObj: M_Obj, instructionset: instructionstrain }
                     }
 
@@ -667,6 +399,298 @@ function generate(bc_Big_ast){
                     throw new TypeError("At line:"+objTree.Token.line+". End object not implemented: "+objTree.Token.type+" "+objTree.Token.name);
                     //return { instructionset: "" };
                 }
+
+            } else if (objTree.type === 'lookupASN') {
+
+
+                if (objTree.Token.type !== 'Variable') {
+                    throw new TypeError(`At line: ${objTree.Token.line}. Modifiers implemented only for variables`);
+                }
+                M_Obj = getMemoryObjectByName(objTree.Token.value, objTree.Token.line, auxVars.declaring);
+
+                    let array_idx=-1;
+                    //for (let idx=0; idx < objTree.Token.variableModifier.length; idx++){
+                    objTree.modifiers.forEach( CurrentModifier => {
+
+                        if (CurrentModifier.type === "MemberByRef") {
+                            let TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="struct" && obj.name===M_Obj.typeDefinition );
+                            if (TypeD === undefined) {
+                                throw new TypeError("At line: "+objTree.Token.line+". Array type definition not found...");
+                            }
+                            if (CurrentModifier.Center.type !== "Variable") {
+                                throw new TypeError("At line: "+objTree.Token.line+". Can not use variables as struct members.");
+                            }
+                            if (M_Obj.declaration !== "struct_ptr") {
+                                throw new TypeError("At line: "+objTree.Token.line+". Variable '"+M_Obj.name+"' not defined as struct pointer.");
+                            }
+                            let member_name = CurrentModifier.Center.value;
+                            let member_id = -1;
+                            for (let i=0; i< TypeD.structAccumulatedSize.length; i++) {
+                                if (TypeD.structAccumulatedSize[i][0] === member_name) {
+                                    member_id = i;
+                                    break;
+                                }
+                            }
+                            if (member_id == -1) {
+                                throw new TypeError("At line: "+objTree.Token.line+". Member '"+member_name+"' not found on struct type definition.");
+                            }
+
+                            let TmpMemObj;
+                            if (M_Obj.offset_type === undefined) {
+                                let adder=0;
+                                if (TypeD.structMembers[member_id].type === "array") {
+                                    adder = 1;
+                                }
+                                M_Obj.declaration=TypeD.structMembers[member_id].declaration;
+                                M_Obj.name=TypeD.structMembers[member_id].name;
+                                M_Obj.typeDefinition=TypeD.structMembers[member_id].typeDefinition;
+                                if (TypeD.structMembers[member_id].type === "array"){
+                                    M_Obj.type=TypeD.structMembers[member_id].type;
+                                }
+                                array_idx=-1;
+                                M_Obj.offset_type = "constant";
+                                M_Obj.offset_value = addHexContents(adder, TypeD.structAccumulatedSize[member_id][1]);
+
+                            } else if (M_Obj.offset_type === "constant") {
+                                throw new TypeError("At line: "+objTree.Token.line+". Inspection needed.");
+
+                            } else /* if (M_Obj.offset_type === "variable")*/ {
+                                throw new TypeError("At line: "+objTree.Token.line+". Inspection needed.");
+                            }
+                        }
+
+                        if (CurrentModifier.type === "MemberByVal") {
+                            let TypeD;
+                            if (M_Obj.arrayItemType === "struct") { // array of struct
+                                TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="struct" && obj.name===M_Obj.arrayItemTypeDefinition );
+                            } else { //regular case
+                                TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="struct" && obj.name===M_Obj.typeDefinition );
+                            }
+                            if (TypeD === undefined) {
+                                throw new TypeError("At line: "+objTree.Token.line+". Array type definition not found...");
+                            }
+                            if (CurrentModifier.Center.type !== "Variable") {
+                                throw new TypeError("At line: "+objTree.Token.line+". Can not use variables as struct members.");
+                            }
+                            if (M_Obj.declaration === "struct_ptr") {
+                                throw new TypeError("At line: "+objTree.Token.line+". Using wrong member notation. Try to use '->' instead.");
+                            }
+                            let member_name = CurrentModifier.Center.value;
+                            let member_id = -1;
+                            for (let i=0; i< TypeD.structAccumulatedSize.length; i++) {
+                                if (TypeD.structAccumulatedSize[i][0] === member_name) {
+                                    member_id = i;
+                                    break;
+                                }
+                            }
+                            if (member_id == -1) {
+                                throw new TypeError("At line: "+objTree.Token.line+". Member '"+member_name+"' not found on struct type definition.");
+                            }
+
+                            if (M_Obj.offset_type === undefined) {
+                                M_Obj = getMemoryObjectByLocation(addHexContents(M_Obj.hexContent, TypeD.structAccumulatedSize[member_id][1] ));
+                                array_idx=-1;
+
+                            } else if (M_Obj.offset_type === "constant") {
+                                let adder = addHexContents(M_Obj.offset_value, M_Obj.hexContent);
+                                M_Obj = getMemoryObjectByLocation(addHexContents(adder, TypeD.structAccumulatedSize[member_id][1] ));
+                                array_idx=-1;
+
+                            } else /* if (M_Obj.offset_type === "variable")*/ {
+                                let adder=0;
+                                if (TypeD.structMembers[member_id].type === "array") {
+                                    adder = 1;
+                                }
+                                instructionstrain += createInstruction(genAddToken(objTree.Token.line),
+                                                     getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line),
+                                                     createConstantMemObj( addHexContents(adder, TypeD.structAccumulatedSize[member_id][1]) ));
+                                M_Obj.declaration=TypeD.structMembers[member_id].declaration;
+                                M_Obj.name=TypeD.structMembers[member_id].name;
+                                M_Obj.typeDefinition=TypeD.structMembers[member_id].typeDefinition;
+                                array_idx=-1;
+                            }
+                        }
+
+                        if (CurrentModifier.type === "Array") {
+                            if (bc_Big_ast.Config.useVariableDeclaration === false){
+                                throw new TypeError ("At line: "+objTree.Token.line+". Can not use arrays if 'useVariableDefinition' is 'false'");
+                            }
+                            array_idx++;
+                            let TmpMemObj;
+                            let pointer_operation = false;
+                            let TypeD; // = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.name===objTree.Token.value );
+                            if (M_Obj.typeDefinition === undefined) {//array of structs
+                                TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.name===M_Obj.name );
+                            } else if (objTree.Token.value === M_Obj.name) { //array simple
+                                TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.name===M_Obj.typeDefinition );
+                            } else { // array inside struct
+                                TypeD = bc_Big_ast.typesDefinitions.find( obj => obj.type==="array" && obj.name.indexOf("_"+M_Obj.typeDefinition) > 0 );
+                            }
+                            if (TypeD === undefined) {
+                                if (M_Obj.declaration.indexOf("_ptr") == -1) {
+                                    throw new TypeError("At line: "+objTree.Token.line+". Array type definition not found. Is '"+M_Obj.name+"' declared as array or pointer?");
+                                }
+                                pointer_operation = true; //allow use of array notation on pointer variables.
+                            }
+                            if (M_Obj.type !== "array" && M_Obj.type !== "struct" && M_Obj.offset_type !== undefined){
+                                throw new TypeError("At line: "+objTree.Token.line+". Can not use array notation on regular variables.");
+                            }
+
+                            // allow some paranauê
+                            let oldLeftState = auxVars.left_side_of_assignment;
+                            auxVars.left_side_of_assignment = false;
+
+                            let Param_Obj = genCode(CurrentModifier.Center, false, false); // gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                            instructionstrain+=Param_Obj.instructionset;
+
+                            // undo paranauê
+                            auxVars.left_side_of_assignment = oldLeftState;
+
+                            if (M_Obj.declaration.indexOf("_ptr") > 0) {
+                                M_Obj.declaration = M_Obj.declaration.slice(0,-4);
+                            }
+
+                            if (Param_Obj.MemObj === undefined) { //special case for text assignment
+                                return {MemObj: M_Obj, instructionset: instructionstrain }
+                            }
+                            //big decision tree depending on M_Obj.offset_value and Param_Obj.address
+                            let mobj_offvalue = M_Obj.offset_value; // undefined if does not exist, "constant", or variable address that can be temp or not (will be checked!)
+                            if (typeof(M_Obj.offset_value) === "string") {
+                                mobj_offvalue = -1; //only if offset_type is constant 
+                            }
+                            let param_loc = Param_Obj.MemObj.address; //-1 if it is constant, other value represents a variable that can be temp or not (will be checked!)
+
+                            if (mobj_offvalue === undefined) {
+                                if (param_loc == -1 ) {
+                                    if (pointer_operation) {
+                                        TmpMemObj = auxVars.getNewRegister();
+                                        instructionstrain += createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
+                                        M_Obj.type = "array";
+                                        M_Obj.offset_type = "variable";
+                                        M_Obj.offset_value = TmpMemObj.address;
+                                    } else {
+                                        M_Obj.offset_type = "constant";
+                                        M_Obj.offset_value = mulHexContents(Param_Obj.MemObj.hexContent, TypeD.arrayMultiplierDim[array_idx]);
+                                    }
+                                } else if (auxVars.isTemp(param_loc)) {
+                                    if (pointer_operation) {
+                                        M_Obj.type = "array";
+                                    } else {
+                                        instructionstrain += createInstruction(genMulToken(objTree.Token.line), Param_Obj.MemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
+                                    }
+                                    M_Obj.offset_type = "variable";
+                                    M_Obj.offset_value = Param_Obj.MemObj.address;
+
+                                } else /* if ( param_loc is variable ) */ {
+                                    M_Obj.offset_type = "variable";
+                                    if (pointer_operation || TypeD.arrayMultiplierDim[array_idx] == 1) {
+                                        if (pointer_operation) {
+                                            M_Obj.type = "array";
+                                        }
+                                        M_Obj.offset_value = Param_Obj.MemObj.address;
+                                    } else {
+                                        TmpMemObj = auxVars.getNewRegister();
+                                        instructionstrain += createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
+                                        M_Obj.offset_value = TmpMemObj.address;
+                                        instructionstrain += createInstruction(genMulToken(objTree.Token.line), TmpMemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
+                                    }
+                                }
+
+                            } else if (mobj_offvalue === -1 ) {
+                                if (param_loc == -1) {
+                                    M_Obj.offset_value = addHexContents(M_Obj.offset_value, mulHexContents(Param_Obj.MemObj.hexContent, TypeD.arrayMultiplierDim[array_idx]));
+
+                                } else if (auxVars.isTemp(param_loc)) {
+                                    instructionstrain += createInstruction(genMulToken(objTree.Token.line), Param_Obj.MemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
+                                    instructionstrain += createInstruction(genAddToken(objTree.Token.line), Param_Obj.MemObj, createConstantMemObj(M_Obj.offset_value));
+                                    M_Obj.offset_type = "variable";
+                                    M_Obj.offset_value = Param_Obj.MemObj.address;
+
+                                } else /* if ( param_loc is variable  ) */ {
+                                    if (TypeD.arrayMultiplierDim[array_idx] == 1 && M_Obj.offset_value === "0000000000000000") {
+                                        M_Obj.offset_type = "variable";
+                                        M_Obj.offset_value = Param_Obj.MemObj.address;
+                                    } else {
+                                        TmpMemObj = auxVars.getNewRegister();
+                                        instructionstrain += createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
+                                        instructionstrain += createInstruction(genMulToken(objTree.Token.line), TmpMemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
+                                        instructionstrain += createInstruction(genAddToken(objTree.Token.line), TmpMemObj, createConstantMemObj(M_Obj.offset_value));
+                                        M_Obj.offset_type = "variable";
+                                        M_Obj.offset_value = TmpMemObj.address;
+                                    }
+                                }
+
+                            } else if (auxVars.isTemp(mobj_offvalue)) {
+                                if (param_loc == -1 ) {
+                                    let adder = mulHexContents(Param_Obj.MemObj.hexContent, TypeD.arrayMultiplierDim[array_idx]);
+                                    instructionstrain += createInstruction(genAddToken(objTree.Token.line), getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line), createConstantMemObj(  adder  ));
+
+                                } else if (auxVars.isTemp(param_loc)) {
+                                    instructionstrain+=createInstruction(genMulToken(objTree.Token.line), Param_Obj.MemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
+                                    instructionstrain+=createInstruction(genAddToken(objTree.Token.line), getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line), Param_Obj.MemObj);
+                                    auxVars.freeRegister(Param_Obj.MemObj.address);
+
+                                } else /* if (param_loc is variable ) */ {
+                                    if (TypeD.arrayMultiplierDim[array_idx] == 1) {
+                                        instructionstrain+=createInstruction(genAddToken(objTree.Token.line), getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line), Param_Obj.MemObj);
+                                    } else {
+                                        TmpMemObj = auxVars.getNewRegister();
+                                        instructionstrain+=createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
+                                        instructionstrain+=createInstruction(genMulToken(objTree.Token.line), TmpMemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
+                                        instructionstrain+=createInstruction(genAddToken(objTree.Token.line), getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line), TmpMemObj);
+                                        auxVars.freeRegister(TmpMemObj.address);
+                                    }
+                                }
+
+                            } else /* if ( mobj_offvalue is variable ) */ {
+                                if (param_loc == -1 ) {
+                                    if (Param_Obj.MemObj.hexContent !== "0000000000000000") {
+                                        TmpMemObj = auxVars.getNewRegister();
+                                        instructionstrain+=createInstruction(genAssignmentToken(), TmpMemObj,  createConstantMemObj(Param_Obj.MemObj.hexContent));
+                                        if (!pointer_operation){
+                                            instructionstrain+=createInstruction(genMulToken(objTree.Token.line), TmpMemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
+                                        }
+                                        instructionstrain+=createInstruction(genAddToken(objTree.Token.line), TmpMemObj, getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line));
+                                        M_Obj.offset_value= TmpMemObj.address;
+                                    }
+
+                                } else if (auxVars.isTemp(param_loc)) {
+                                    if (!pointer_operation){
+                                        instructionstrain+=createInstruction(genMulToken(objTree.Token.line), Param_Obj.MemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
+                                    }
+                                    instructionstrain+=createInstruction(genAddToken(objTree.Token.line), Param_Obj.MemObj, getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line));
+                                    M_Obj.offset_value = Param_Obj.MemObj.address;
+
+                                } else /* if (param_loc is variable )) */ {
+                                    TmpMemObj = auxVars.getNewRegister();
+                                    instructionstrain+=createInstruction(genAssignmentToken(), TmpMemObj, Param_Obj.MemObj);
+                                    if (!pointer_operation){
+                                        instructionstrain+=createInstruction(genMulToken(objTree.Token.line), TmpMemObj, createConstantMemObj(TypeD.arrayMultiplierDim[array_idx]));
+                                    }
+                                    instructionstrain+=createInstruction(genAddToken(objTree.Token.line), TmpMemObj, getMemoryObjectByLocation(M_Obj.offset_value, objTree.Token.line));
+                                    M_Obj.offset_value = TmpMemObj.address;
+                                }
+                            }
+                        }
+                    })
+
+                    //Fix special case where struct pointer with array member with constant index has incomplete information.
+                    // This does not allow constants on struct: code Yyx_sSkA
+                    if (M_Obj.hexContent === undefined && M_Obj.offset_type === "constant") {
+                        let TmpMemObj = auxVars.getNewRegister();
+                        instructionstrain+=createInstruction(genAssignmentToken(), TmpMemObj, createConstantMemObj(M_Obj.offset_value));
+                        M_Obj.offset_type = "variable";
+                        M_Obj.offset_value = TmpMemObj.address;
+                    }
+
+                    if (logicalOp === true) {
+                        instructionstrain+=createInstruction(genNotEqualToken() ,M_Obj, createConstantMemObj(0), gc_revLogic, gc_jumpFalse, gc_jumpTrue);
+                        auxVars.freeRegister(M_Obj.offset_value);
+                        auxVars.freeRegister(M_Obj.address);
+                        return { instructionset: instructionstrain };
+                    }
+
+                    return {MemObj: M_Obj, instructionset: instructionstrain }
 
             } else { //operation object
 
@@ -1429,14 +1453,6 @@ function generate(bc_Big_ast){
                     if (ast_code.Token.value == vname) {
                         return false;
                     } else {
-                        if (ast_code.Token.variableModifier !== undefined){
-                            for (let i=0; i< ast_code.Token.variableModifier.length; i++){
-                                if (CanReuseAssignedVar(loc,  ast_code.Token.variableModifier[i].content) === false){
-                                    return false;
-                                }
-                            }
-                            return true;
-                        }
                         return true;
                     }
                 }
@@ -1446,6 +1462,17 @@ function generate(bc_Big_ast){
                     return true;
                 if (ast_code.content === undefined /* isEmpty(ast_code)*/ )
                     return true;
+            } else if (ast_code.type === 'lookupASN' ) {
+            
+                let canreuse = ast_code.modifiers.find( CurrentModifier => {
+                    if (CurrentModifier.type === "Array") {
+                        if (CanReuseAssignedVar(loc,  CurrentModifier.Center) === false){
+                            return true;
+                        }
+                    }
+                })
+                if (canreuse === undefined) return true
+                return false
             } else {
                 if (ast_code.Center !== undefined)
                     if (CanReuseAssignedVar(loc, ast_code.Center))
@@ -2155,11 +2182,11 @@ function generate(bc_Big_ast){
             var ret=[];
 
             function recursiveSplit(phrs) {
-                if (phrs.type === "endASN"/* phrs.Operation === undefined*/) {
+                if (phrs.type === "endASN" || phrs.type === "lookupASN"/* phrs.Operation === undefined*/) {
                     ret.push(phrs);
                     return;
                 }
-                if (phrs.Operation.type === "Delimiter") {
+                if (phrs.type === 'binaryASN' && phrs.Operation.type === "Delimiter") {
                     recursiveSplit(phrs.Left);
                     recursiveSplit(phrs.Right);
                     return;
