@@ -699,10 +699,14 @@ function generate(bc_Big_ast){
                         }
 
                         sub_sentences = splitSubSentences(objTree.Right);
+                        if (sub_sentences[0].type === "endASN" && sub_sentences[0].Token === undefined) {
+                            sub_sentences.pop();
+                        }
                         if (sub_sentences.length != search.argsMemObj.length){
                             throw new TypeError("At line: "+objTree.Left.Token.line+". Wrong number of arguments for function '"+search.name+"'. It must have '"+search.argsMemObj.length+"' args.");
                         }
-                        sub_sentences.forEach( function (stnc) {
+                        
+                        sub_sentences.forEach( stnc => {
                             RGenObj=genCode(stnc, false, false );
                             instructionstrain+=RGenObj.instructionset;
                             if (bc_Big_ast.Config.useVariableDeclaration){
@@ -988,6 +992,11 @@ function generate(bc_Big_ast){
                         auxVars.postOperations+=createInstruction(objTree.Operation, RGenObj.MemObj);
                         return { MemObj: RGenObj.MemObj, instructionset: "" };
                     }
+                }
+
+                if (objTree.Operation.type === 'CodeCave') {
+
+                    return genCode(objTree.Center, logicalOp, gc_revLogic, gc_jumpFalse, gc_jumpTrue);
                 }
 
                 if (objTree.Operation.type === "Comparision") {

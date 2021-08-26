@@ -322,8 +322,8 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
         for (AuxVars.currentToken = 0; AuxVars.currentToken < tokenAST.length; AuxVars.currentToken++) {
             if (AuxVars.currentToken + 3 < tokenAST.length &&
                 tokenAST[AuxVars.currentToken].type === 'Keyword' &&
-                tokenAST[AuxVars.currentToken + 1].type === 'Function' &&
-                tokenAST[AuxVars.currentToken + 2].type === 'CodeCave' &&
+                tokenAST[AuxVars.currentToken + 1].type === 'Variable' &&
+                tokenAST[AuxVars.currentToken + 2].type === 'Function' &&
                 tokenAST[AuxVars.currentToken + 3].type === 'CodeDomain') {
                 // Function found. Does not return pointer
                 if (tokenAST[AuxVars.currentToken].value === 'struct') {
@@ -346,8 +346,8 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                 tokenAST[AuxVars.currentToken].type === 'Keyword' &&
                 tokenAST[AuxVars.currentToken + 1].type === 'UnaryOperator' &&
                 tokenAST[AuxVars.currentToken + 1].value === '*' &&
-                tokenAST[AuxVars.currentToken + 2].type === 'Function' &&
-                tokenAST[AuxVars.currentToken + 3].type === 'CodeCave' &&
+                tokenAST[AuxVars.currentToken + 2].type === 'Variable' &&
+                tokenAST[AuxVars.currentToken + 3].type === 'Function' &&
                 tokenAST[AuxVars.currentToken + 4].type === 'CodeDomain') {
                 // Function found. Does return pointer
                 if (tokenAST[AuxVars.currentToken].value === 'struct') {
@@ -365,30 +365,6 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                     })
                 AuxVars.currentToken += 4
                 continue
-            }
-            if (AuxVars.currentToken + 4 < tokenAST.length &&
-                tokenAST[AuxVars.currentToken].type === 'Keyword' &&
-                tokenAST[AuxVars.currentToken].value === 'struct' &&
-                tokenAST[AuxVars.currentToken + 1].type === 'Variable' &&
-                tokenAST[AuxVars.currentToken + 2].type === 'Function' &&
-                tokenAST[AuxVars.currentToken + 3].type === 'CodeCave' &&
-                tokenAST[AuxVars.currentToken + 4].type === 'CodeDomain') {
-                // Function found. Returns a struct
-                // AuxVars.currentToken += 4
-                throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct currently not implemented.`)
-            }
-            if (AuxVars.currentToken + 5 < tokenAST.length &&
-                tokenAST[AuxVars.currentToken].type === 'Keyword' &&
-                tokenAST[AuxVars.currentToken].value === 'struct' &&
-                tokenAST[AuxVars.currentToken + 1].type === 'Variable' &&
-                tokenAST[AuxVars.currentToken + 2].type === 'UnaryOperator' &&
-                tokenAST[AuxVars.currentToken + 2].value === '*' &&
-                tokenAST[AuxVars.currentToken + 3].type === 'Function' &&
-                tokenAST[AuxVars.currentToken + 4].type === 'CodeCave' &&
-                tokenAST[AuxVars.currentToken + 5].type === 'CodeDomain') {
-                // Function found. Returns a struct pointer
-                // AuxVars.currentToken += 5
-                throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct pointer currently not implemented.`)
             }
             if (tokenAST[AuxVars.currentToken].type === 'Macro') {
                 const fields = tokenAST[AuxVars.currentToken].value.replace(/\s\s+/g, ' ').split(' ')

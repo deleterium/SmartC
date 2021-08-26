@@ -270,9 +270,6 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
         {
             sequence: ['variable'],
             action (tokenID): TOKEN {
-                if (preTokens[tokenID + 1] !== undefined && preTokens[tokenID + 1].value === '(') {
-                    return { type: 'Function', precedence: 0, value: preTokens[tokenID].value, line: preTokens[tokenID].line }
-                }
                 return { type: 'Variable', precedence: 0, value: preTokens[tokenID].value, line: preTokens[tokenID].line }
             }
         },
@@ -406,14 +403,18 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
             return retToken
 
         case '(':
-            retToken = { type: 'CodeCave', value: '', precedence: 1, line: currentPreToken.line }
+            if (mainLoopIndex > 0 && preTokens[mainLoopIndex - 1].type === 'variable') {
+                retToken = { type: 'Function', value: '', precedence: 1, line: currentPreToken.line }
+            } else {
+                retToken = { type: 'CodeCave', value: '', precedence: 1, line: currentPreToken.line }
+            }
             mainLoopIndex++
             retToken.params = []
             while (preTokens[mainLoopIndex].value !== ')') {
                 retToken.params.push(getNextToken())
                 // getNextToken will increase mainLoopIndex for loop
                 if (preTokens[mainLoopIndex] === undefined) {
-                    throw new SyntaxError(`At end of file. Missing closing ')' for CodeCave started at line: ${retToken.line}.`)
+                    throw new SyntaxError(`At end of file. Missing closing ')' for ${retToken.type} started at line: ${retToken.line}.`)
                 }
             }
             mainLoopIndex++

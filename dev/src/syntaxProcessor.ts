@@ -145,25 +145,6 @@ function syntaxProcess (Program: CONTRACT) {
                 }
             }
 
-            if (tokenArray[0].type === 'CodeCave' || tokenArray[0].type === 'CodeDomain') {
-                if (tokenArray.length === 1 && tokenArray[0].params !== undefined) {
-                    return createSyntacticTree(tokenArray[0].params)
-                }
-                // if (tokenArray.length > 1) {
-                throw new SyntaxError(`At line: ${tokenArray[0].line}. Modifiers for ${tokenArray[0].type} not implemented.`)
-            }
-
-            if (tokenArray[0].type === 'Function' && tokenArray.length === 2) {
-                if (tokenArray[1].type === 'CodeCave' && tokenArray[1].params !== undefined) {
-                    return {
-                        type: 'binaryASN',
-                        Left: { type: 'endASN', Token: tokenArray[0] },
-                        Operation: tokenArray[0],
-                        Right: createSyntacticTree(tokenArray[1].params)
-                    }
-                }
-            }
-
             throw new SyntaxError(`At line: ${tokenArray[0].line}. Unknown token sequence: '${tokenArray[0].type}' with value: '${tokenArray[0].value}'.`)
 
         // Here we start to process operations tokens (precedente >= 2)
@@ -177,6 +158,32 @@ function syntaxProcess (Program: CONTRACT) {
                 Left: createSyntacticTree(tokenArray.slice(0, currentIdx)),
                 Operation: tokenArray[currentIdx],
                 Right: createSyntacticTree(tokenArray.slice(currentIdx + 1))
+            }
+        } else if (tokenArray[currentIdx].type === 'CodeDomain' || tokenArray[currentIdx].type === 'CodeCave') {
+            const newAST = createSyntacticTree(tokenArray[currentIdx].params)
+            delete tokenArray[currentIdx].params
+            if (tokenArray.length !== 1) {
+                throw new SyntaxError(`At line: ${tokenArray[currentIdx].line}. Modifiers not implemented on '${tokenArray[currentIdx].type}'.`)
+            }
+            return {
+                type: 'unaryASN',
+                Operation: tokenArray[currentIdx],
+                Center: newAST
+            }
+        } else if (tokenArray[currentIdx].type === 'Function') {
+            if (currentIdx === 0) {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. Missing function name.`)
+            }
+            if (tokenArray.length !== 2) {
+                throw new SyntaxError(`At line: ${tokenArray[currentIdx].line}. Modifiers on functions not implemented.`)
+            }
+            const newAST = createSyntacticTree(tokenArray[currentIdx].params)
+            delete tokenArray[currentIdx].params
+            return {
+                type: 'binaryASN',
+                Left: createSyntacticTree(tokenArray.slice(0, currentIdx)),
+                Operation: tokenArray[currentIdx],
+                Right: newAST
             }
         } else if (tokenArray[currentIdx].type === 'Keyword') {
             if (tokenArray.length === 1) {
