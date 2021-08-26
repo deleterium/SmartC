@@ -28,9 +28,7 @@ interface TOKEN {
     value: string
     /** Only applicable to Arr, CodeCave, CodeDomain, Variable with modifier */
     params?: TOKEN[]
-    /** Only applicable to variable with modifier like array or struct */
-    variableModifier?: { type: string, content: any }[]
-    /** Only applicable to types: asm, break, continue or label */
+    /** Only applicable to types: asm, break, continue, struct or label */
     extValue?: string
 }
 
@@ -97,8 +95,8 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
             sequence: ['keyword'],
             action (tokenID): TOKEN {
                 const node: TOKEN = { type: 'Keyword', precedence: 12, value: preTokens[tokenID].value, line: preTokens[tokenID].line }
-                if (preTokens[tokenID].value === 'asm') {
-                    node.extValue = preTokens[tokenID].asmText
+                if (preTokens[tokenID].value === 'asm' || preTokens[tokenID].value === 'struct') {
+                    node.extValue = preTokens[tokenID].extValue
                 }
                 return node
             }
@@ -451,11 +449,6 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
             if ((preTokens[position - 1].type === 'plus' && preTokens[position - 2].type === 'plus') ||
                 (preTokens[position - 1].type === 'minus' && preTokens[position - 2].type === 'minus')) {
                 return true
-            }
-            if ((preTokens[position - 1].type === 'variable' &&
-                preTokens[position - 2].type === 'keyword') &&
-                preTokens[position - 2].value === 'struct') {
-                return false
             }
         }
         if (position >= 1) {
