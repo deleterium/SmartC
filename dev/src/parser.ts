@@ -328,7 +328,6 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
         {
             sequence: ['minus', 'greater'],
             action (tokenID): TOKEN {
-                // TODO DOCUMENTATION
                 return { type: 'Member', precedence: 0, value: '->', line: preTokens[tokenID].line }
             }
         },

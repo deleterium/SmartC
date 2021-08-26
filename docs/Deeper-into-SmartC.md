@@ -5,7 +5,8 @@ Following table presents operators precedence order that are [based on C](https:
 
 | Order | Symbol | Description | Associativity |
 | --- | --- | --- | --- |
-| 1 | `()`   `[]`   `{}` `.` `->` | Scope, array, statements group, members selection | Left-to-right |
+| 0 | Variable, Constant, `[]` `.` `->` | Variables, constants, arrays, members | Left-to-right |
+| 1 | `()`   `{}`  | Scope, function call, statements group | Left-to-right |
 | 2 | `!`   `~`   `-`   `+`   `*`   `&`   `++`   `--` | Unary operators | Right-to-left* |
 | 3 | `*`   `/`   `%` | Multiplication, division, modulo | Left-to-right |
 | 4 | `+`   `-` | Addition and subtraction | Left-to-right |
@@ -40,7 +41,7 @@ Tokens are divided in groups and later on checked if their combinations are synt
 | CodeDomain | `{expr...}` | Surrounding expressions to indicate that it is a group of expressions |
 | Delimiter | `,` | Use if you want to write two expressions on same statement |
 | Terminator | `;` | Indicating the end of one statement |
-| Macro | `#` | Preprocessor statement, ends at a newline `\\n` character. |
+| Macro | `#` | Preprocessor statement, ends at a newline character. |
 | Member | `.`    `->` | Used to select a struct member. |
 
 ### Internal object structure
