@@ -760,6 +760,8 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                             ispointer = true
                             MemTemplate.declaration += '_ptr'
                             idx++
+                        } else {
+                            ispointer = false
                         }
                         MemTemplate.name = phraseCode[idx].value
                         MemTemplate.asmName = AuxVars.currentPrefix + phraseCode[idx].value
@@ -853,6 +855,8 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                         if (valid === true && phraseCode[idx].value === '*' && idx + 1 < phraseCode.length && phraseCode[idx + 1].type === 'Variable') {
                             ispointer = true
                             idx++
+                        } else {
+                            ispointer = false
                         }
 
                         if (valid === true) {
@@ -926,7 +930,6 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                                 }
                             }
                             valid = false
-                            ispointer = false
                         }
                         idx++
                     }

@@ -983,6 +983,8 @@ void teste(struct KOMBI * value) { value->driver = 'Zé'; }", false, "^declare r
     [ "#pragma globalOptimization\nlong _idx, uCount; _idx = ~(_idx+uCount); uCount = _idx; _idx++;", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare _idx\n^declare uCount\n\nSET @r0 $_idx\nADD @r0 $uCount\nNOT @r0\nSET @_idx $r0\nSET @uCount $_idx\nINC @_idx\nFIN\n" ],
     //bug 20 Fixes some wrong translation of RS-accounts
     [ "long a='S-D3HS-T6ML-SJHU-2R5R2';", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nSET @a #005c77c9272585f8\nFIN\n" ],
+    //bug 21 Memory was not assigned when declaring struct after a struct pointer
+    [ "struct KOMBI { long driver; long collector; long passenger; }; void teste(void) { struct KOMBI tt2, *stru, tt, *stru2; }", false, "^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare teste_tt2_driver\n^declare teste_tt2_collector\n^declare teste_tt2_passenger\n^declare teste_stru\n^declare teste_tt_driver\n^declare teste_tt_collector\n^declare teste_tt_passenger\n^declare teste_stru2\n\nFIN\n\n__fn_teste:\nRET\n" ],
 //    [ "", false, "" ],
     
 
