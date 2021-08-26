@@ -1067,7 +1067,7 @@ var bytecode_tests = [
             code = bytecode(bytecode_tests[i][0]);
             if (bytecode_tests[i][1] === false) {
                 if (code.ByteCode === bytecode_tests[i][2] && code.ByteData === bytecode_tests[i][3]) {
-                    result+="Pass! (run OK) Code: <span style='color:blue'>\n"+encodedStr(bytecode_tests[i][0])+"</span>";
+                    result+="Pass! (run OK)";
                     itemPass++;
                 } else {
                     result+="<span style='color:red'>Fail...</span> (run OK) Code: <span style='color:blue'>\n"+encodedStr(bytecode_tests[i][0])+"</span>\n\
@@ -1098,7 +1098,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
                 continue;
             }
             result+="<br>Test "+i+" ";
-            code = generate(syntaxProcess(shape(verify(parse(tokenize(preprocess(full_tests[i][0])))))));
+            code = generate(syntaxProcess(shape(parse(tokenize(preprocess(full_tests[i][0]))))));
             if (full_tests[i][1] === false) {
                 if (code === full_tests[i][2]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(full_tests[i][0])+"</span>";
@@ -1113,7 +1113,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
             }
         } catch (e) {
             if (full_tests[i][1] === true) {
-                result+="Pass! (failed) Code: <span style='color:purple'>"+encodedStr(full_tests[i][0])+"</span>";
+                result+="Pass! (failed) Code: <span style='color:purple'>"+encodedStr(full_tests[i][0])+"</span><br><span style='color:green'>"+e+"</span>";
                 itemPass++;
             } else {
                 result+="<span style='color:red'>Fail...</span> (failed) Code: <span style='color:purple'>"+encodedStr(full_tests[i][0])+"</span>   GOT\n"+e;
@@ -1130,7 +1130,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
                 continue;
             }
             result+="<br>Test "+i+" ";
-            code = generate(syntaxProcess(shape(verify(parse(tokenize(preprocess("#pragma useVariableDeclaration false\n"+keywords_tests[i][0])))))));
+            code = generate(syntaxProcess(shape(parse(tokenize(preprocess("#pragma useVariableDeclaration false\n"+keywords_tests[i][0]))))));
             if (keywords_tests[i][1] === false) {
                 if (code === keywords_tests[i][2]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(keywords_tests[i][0])+"</span>";
@@ -1145,7 +1145,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
             }
         } catch (e) {
             if (keywords_tests[i][1] === true) {
-                result+="Pass! (failed) Code: <span style='color:purple'>"+encodedStr(keywords_tests[i][0])+"</span>";
+                result+="Pass! (failed) Code: <span style='color:purple'>"+encodedStr(keywords_tests[i][0])+"</span>"+"</span><br><span style='color:green'>"+e+"</span>";
                 itemPass++;
             } else {
                 result+="<span style='color:red'>Fail...</span> (failed) Code: <span style='color:purple'>"+encodedStr(keywords_tests[i][0])+"</span>   GOT\n"+e;
@@ -1162,7 +1162,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
                 continue;
             }
             result+="<br>Test "+i+" ";
-            code = generate(syntaxProcess(shape(verify(parse(tokenize(preprocess("#pragma useVariableDeclaration false\n"+logical_tests[i][0])))))));
+            code = generate(syntaxProcess(shape(parse(tokenize(preprocess("#pragma useVariableDeclaration false\n"+logical_tests[i][0]))))));
             if (logical_tests[i][1] === false) {
                 if (code === logical_tests[i][4]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(logical_tests[i][0])+"</span>";
@@ -1177,7 +1177,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
             }
         } catch (e) {
             if (logical_tests[i][1] === true) {
-                result+="Pass! (failed) Code: <span style='color:purple'>"+encodedStr(logical_tests[i][0])+"</span>";
+                result+="Pass! (failed) Code: <span style='color:purple'>"+encodedStr(logical_tests[i][0])+"</span>"+"</span><br><span style='color:green'>"+e+"</span>";
                 itemPass++;
             } else {
                 result+="<span style='color:red'>Fail...</span> (failed) Code: <span style='color:purple'>"+encodedStr(logical_tests[i][0])+"</span>   GOT\n"+e;
@@ -1194,7 +1194,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
                 continue;
             }
             result+="<br>Test "+i+" ";
-            code = generate(syntaxProcess(shape(verify(parse(tokenize(preprocess("#pragma useVariableDeclaration false\n"+tests[i][0])))))));
+            code = generate(syntaxProcess(shape(parse(tokenize(preprocess("#pragma useVariableDeclaration false\n"+tests[i][0]))))));
             if (tests[i][1] === false) {
                 if (code === tests[i][4]) {
                     result+="Pass! (run OK) Code: <span style='color:blue'>"+encodedStr(tests[i][0])+"</span>";
@@ -1209,7 +1209,7 @@ GOT Bytecode: "+code.ByteCode+"\nGOT ByteData: "+code.ByteData;
             }
         } catch (e) {
             if (tests[i][1] === true) {
-                result+="Pass! (failed) Code: <span style='color:purple'>"+encodedStr(tests[i][0])+"</span>";
+                result+="Pass! (failed) Code: <span style='color:purple'>"+encodedStr(tests[i][0])+"</span>"+"</span><br><span style='color:green'>"+e+"</span>";
                 itemPass++;
             } else {
                 result+="<span style='color:red'>Fail...</span> (failed) Code: <span style='color:purple'>"+encodedStr(tests[i][0])+"</span>   GOT\n"+e;

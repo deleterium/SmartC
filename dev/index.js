@@ -43,8 +43,7 @@ function compileCode(){
             preprocessor_output = preprocess(codeString);
             token_output = tokenize(preprocessor_output);
             parser_output = parse(token_output);
-            ver_output = verify(parser_output);
-            big_ast = shape(ver_output);
+            big_ast = shape(parser_output);
             big_ast_opTree = syntaxProcess(big_ast);
             asmCode = generate(big_ast_opTree);
         } else {
