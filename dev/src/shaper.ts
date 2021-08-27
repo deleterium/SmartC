@@ -45,10 +45,10 @@ interface SC_MACRO {
     line: number
 }
 
-type MEMORY_BASE_TYPES = 'register' | 'long' | 'struct' | 'array'
+type MEMORY_BASE_TYPES = 'register' | 'long' | 'constant' | 'struct' | 'array' | 'label' | 'void'
 
 interface MEMORY_SLOT {
-    /** Variable base types: 'register' | 'long' | 'struct' | 'array' */
+    /** Variable base types: 'register' | 'long' | 'constant' | 'struct' | 'array' | 'label' | 'void' */
     type: MEMORY_BASE_TYPES
     /** Variable name in assembly code */
     asmName?: string
@@ -189,7 +189,7 @@ interface SC_GLOBAL {
     /** Temporary, holding tokens objects */
     code?: TOKEN[]
     /** Definitive structure for compilation */
-    sentences?: SENTENCES[]
+    sentences: SENTENCES[]
 }
 
 interface CONTRACT {
@@ -218,7 +218,8 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
     const Program: CONTRACT = {
         Global: {
             APIFunctions: [],
-            macros: []
+            macros: [],
+            sentences: []
         },
         functions: [],
         memory: [],
