@@ -124,7 +124,7 @@ interface SENTENCE_FOR {
     type: 'for'
     id: string
     line: number
-    threeSentences: SENTENCES[]
+    threeSentences: SENTENCE_PHRASE[]
     trueBlock: SENTENCES[]
 }
 interface SENTENCE_STRUCT {
@@ -495,7 +495,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                         type: 'for',
                         id: id,
                         line: line,
-                        threeSentences: threeSentences,
+                        threeSentences: threeSentences as SENTENCE_PHRASE[],
                         trueBlock: trueBlock
                     }]
                 }
