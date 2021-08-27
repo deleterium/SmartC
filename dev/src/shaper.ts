@@ -45,7 +45,7 @@ interface SC_MACRO {
     line: number
 }
 
-type MEMORY_BASE_TYPES = 'register' | 'long' | 'constant' | 'struct' | 'array' | 'label' | 'void'
+type MEMORY_BASE_TYPES = 'register' | 'long' | 'constant' | 'struct' | 'array' | 'label' | 'void' | 'register_ptr' | 'long_ptr'
 
 interface MEMORY_SLOT {
     /** Variable base types: 'register' | 'long' | 'constant' | 'struct' | 'array' | 'label' | 'void' */

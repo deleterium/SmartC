@@ -5,7 +5,7 @@
 /* global TOKEN CONTRACT SENTENCES */
 
 // eslint-disable-next-line no-use-before-define
-type AST = UNARY_ASN | BINARY_ASN | END_ASN | LOOKUP_ASN | EXCEPTION_ASN
+type AST = UNARY_ASN | BINARY_ASN | NULL_ASN | END_ASN | LOOKUP_ASN | EXCEPTION_ASN
 
 interface UNARY_ASN {
     /** Unary Abstract Syntax Node */
@@ -26,11 +26,16 @@ interface BINARY_ASN {
     Right: AST
 }
 
+interface NULL_ASN {
+    /** End Abstract Syntax Node */
+    type: 'nullASN'
+}
+
 interface END_ASN {
     /** End Abstract Syntax Node */
     type: 'endASN'
     /** End token. May be undefined, but most of times this situation leads to error. */
-    Token?: TOKEN
+    Token: TOKEN
 }
 type TOKEN_MODIFIER = {type: 'Array', Center: AST} | {type: 'MemberByVal', Center: TOKEN} | {type: 'MemberByRef', Center: TOKEN}
 
@@ -75,7 +80,7 @@ function syntaxProcess (Program: CONTRACT) {
             throw new SyntaxError('Undefined AST to create syntactic tree')
         }
         if (tokenArray.length === 0) {
-            return { type: 'endASN' }
+            return { type: 'nullASN' }
         }
 
         // precedente evaluation loop

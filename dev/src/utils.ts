@@ -20,7 +20,6 @@ const utils = {
         } else {
             throw new TypeError('Unknow value arrived at createConstantMemObj().')
         }
-
         return {
             address: -1,
             name: '',
@@ -67,7 +66,16 @@ const utils = {
     genNotEqualToken (): TOKEN {
         return { type: 'Comparision', precedence: 6, value: '!=', line: -1 }
     },
-    mulHexContents (param1: number|string, param2: number|string) {
+    genAPICallToken (line: number, name?: string): TOKEN {
+        if (name === undefined) {
+            throw new TypeError('Wrong APICall name in genAPICallToken')
+        }
+        return { type: 'APICall', precedence: 0, value: name, line: line }
+    },
+    genPushToken (line: number): TOKEN {
+        return { type: 'Push', precedence: 12, value: '', line: line }
+    },
+    mulHexContents (param1?: number|string, param2?: number|string) {
         let n1: bigint, n2: bigint
         if (typeof (param1) === 'number') {
             n1 = BigInt(param1)
@@ -83,7 +91,7 @@ const utils = {
 
         return (n1 * n2).toString(16).padStart(16, '0').slice(-16)
     },
-    divHexContents (param1: number|string, param2: number|string) {
+    divHexContents (param1?: number|string, param2?: number|string) {
         let n1: bigint, n2: bigint
         if (typeof (param1) === 'number') {
             n1 = BigInt(param1)
@@ -115,7 +123,7 @@ const utils = {
 
         return (n1 + n2).toString(16).padStart(16, '0').slice(-16)
     },
-    subHexContents (param1: number|string, param2: number|string) {
+    subHexContents (param1?: number|string, param2?: number|string) {
         let n1: bigint, n2: bigint
         if (typeof (param1) === 'number') {
             n1 = BigInt(param1)

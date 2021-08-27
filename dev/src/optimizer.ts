@@ -1,10 +1,9 @@
-/* eslint-disable camelcase */
 // Author: Rui Deleterium
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
 /**
- * Optimize assembly code globally with peep hole strategy.
+ * Optimize assembly code globally with peephole strategy.
  * @param assemblySourceCode
  * @returns Optimized source code
  */
@@ -17,13 +16,13 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
     let jmpto: RegExpExecArray|null, lbl: RegExpExecArray|null
     let setdat: RegExpExecArray|null, opdat: RegExpExecArray|null, clrdat: RegExpExecArray|null, popdat: RegExpExecArray|null
     let branchdat: RegExpExecArray|null
-    let psh_slp_dat: RegExpExecArray|null
+    let pshslpdat: RegExpExecArray|null
     let notdat: RegExpExecArray|null, setdat2: RegExpExecArray|null
-    let optimized_lines: number
+    let optimizedLines: number
 
     do {
         jumpToLabels = []
-        optimized_lines = 0
+        optimizedLines = 0
 
         // Collect jumps information
         codeLines.forEach(function (value) {
@@ -41,12 +40,12 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                 if (jumpToLabels.indexOf(lbl[1]) !== -1) {
                     return true
                 } else {
-                    optimized_lines++
+                    optimizedLines++
                     return false
                 }
             }
             if (value === 'DELETE') {
-                optimized_lines++
+                optimizedLines++
                 return false
             }
             return true
@@ -69,7 +68,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                     const val = parseInt(setdat[2], 16)
                     if (val <= maxConstVars && setdat[1] !== 'n' + val) {
                         array[index] = 'SET @' + setdat[1] + ' $n' + val
-                        optimized_lines++
+                        optimizedLines++
                     }
                 }
             }
@@ -88,12 +87,12 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                         dest = getLabeldestination(jmpto[1])
                         if (/^\s*RET\s*$/.exec(dest) !== null) {
                             array[index + 1] = 'RET' // if jump to return, just return from here
-                            optimized_lines++
+                            optimizedLines++
                             return
                         }
                         if (/^\s*FIN\s*$/.exec(dest) !== null) {
                             array[index + 1] = 'FIN' // if jump to exit, just exit from here
-                            optimized_lines++
+                            optimizedLines++
                             return
                         }
 
@@ -106,7 +105,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                         else instr = 'BEQ'
                         array[index] = instr + ' $' + branchdat[2] + ' $' + branchdat[3] + ' :' + jmpto[1]
                         array[index + 1] = 'DELETE'
-                        optimized_lines++
+                        optimizedLines++
                         return
                     }
                 }
@@ -126,12 +125,12 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                         dest = getLabeldestination(jmpto[1])
                         if (/^\s*RET\s*$/.exec(dest) !== null) {
                             array[index + 1] = 'RET' // if jump to return, just return from here
-                            optimized_lines++
+                            optimizedLines++
                             return
                         }
                         if (/^\s*FIN\s*$/.exec(dest) !== null) {
                             array[index + 1] = 'FIN' // if jump to exit, just exit from here
-                            optimized_lines++
+                            optimizedLines++
                             return
                         }
 
@@ -140,7 +139,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                         else instr = 'BZR'
                         array[index] = instr + ' $' + branchdat[2] + ' :' + jmpto[1]
                         array[index + 1] = 'DELETE'
-                        optimized_lines++
+                        optimizedLines++
                         return
                     }
                 }
@@ -158,7 +157,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                             continue
                         }
                         array[i] = 'DELETE'
-                        optimized_lines++
+                        optimizedLines++
                         continue
                     }
                     break
@@ -175,7 +174,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                     }
                     if (jmpto[1] === lbl[1]) {
                         array[index] = 'DELETE'
-                        optimized_lines++
+                        optimizedLines++
                         return
                     }
                 }
@@ -183,18 +182,18 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                 dest = getLabeldestination(jmpto[1])
                 if (/^\s*RET\s*$/.exec(dest) !== null) {
                     array[index] = 'RET' // if jump to return, just return from here
-                    optimized_lines++
+                    optimizedLines++
                     return
                 }
                 if (/^\s*FIN\s*$/.exec(dest) !== null) {
                     array[index] = 'FIN' // if jump to exit, just exit from here
-                    optimized_lines++
+                    optimizedLines++
                     return
                 }
                 lbl = /^\s*(\w+):\s*$/.exec(dest)
                 if (lbl !== null) {
                     array[index] = 'JMP :' + lbl[1] // if jump to other jump, just jump over there
-                    optimized_lines++
+                    optimizedLines++
                     return
                 }
             }
@@ -211,7 +210,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                             continue
                         }
                         array[i] = 'DELETE'
-                        optimized_lines++
+                        optimizedLines++
                         continue
                     }
                     break
@@ -233,7 +232,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                     }
                     if (jmpto[1] === lbl[1]) {
                         array[index] = 'DELETE'
-                        optimized_lines++
+                        optimizedLines++
                         return
                     }
                 }
@@ -242,7 +241,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                 lbl = /^\s*(\w+):\s*$/.exec(dest)
                 if (lbl !== null) {
                     array[index] = jmpto[0].replace(jmpto[1], lbl[1]) // if branch to other jump, just branch over there
-                    optimized_lines++
+                    optimizedLines++
                     return
                 }
             }
@@ -257,7 +256,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                     if (opdat[1] === 'ADD' || opdat[1] === 'MUL' || opdat[1] === 'AND' || opdat[1] === 'XOR' || opdat[1] === 'BOR') {
                         array[index] = opdat[1] + ' @' + opdat[3] + ' $' + opdat[2]
                         array[index + 1] = 'DELETE'
-                        optimized_lines++
+                        optimizedLines++
                         return
                     }
                 }
@@ -275,25 +274,25 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                         opdat[1] === 'MOD' || opdat[1] === 'SHL' || opdat[1] === 'SHR') {
                         array[index] = opdat[1] + ' @' + opdat[2] + ' $' + setdat[2]
                         array[index + 1] = 'DELETE'
-                        optimized_lines++
+                        optimizedLines++
                         return
                     }
                 }
                 if (setdat[1] === setdat[2]) { // SET @a_1 $a_1 turns delete
                     array[index] = 'DELETE'
-                    optimized_lines++
+                    optimizedLines++
                     return
                 }
 
                 // SET @r0 $a
                 // PSH $r0 / SLP $r0
                 // turns PSH $a / SLP $a
-                psh_slp_dat = /^\s*(PSH|SLP)\s+\$(\w+)\s*$/.exec(array[index + 1])
-                if (psh_slp_dat !== null && isRegister(setdat[1])) {
-                    if (psh_slp_dat[2] === setdat[1]) {
+                pshslpdat = /^\s*(PSH|SLP)\s+\$(\w+)\s*$/.exec(array[index + 1])
+                if (pshslpdat !== null && isRegister(setdat[1])) {
+                    if (pshslpdat[2] === setdat[1]) {
                         array[index] = 'DELETE'
-                        array[index + 1] = psh_slp_dat[1] + ' $' + setdat[2]
-                        optimized_lines++
+                        array[index + 1] = pshslpdat[1] + ' $' + setdat[2]
+                        optimizedLines++
                         return
                     }
                 }
@@ -320,7 +319,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                         if (setdat2 !== null && setdat[1] === setdat2[3]) {
                             array[index] = 'DELETE'
                             array[i] = 'SET @' + setdat2[1] + ' $($' + setdat2[2] + ' + $' + setdat[2] + ')'
-                            optimized_lines++
+                            optimizedLines++
                             continue
                         }
                         // SET @r0 $a
@@ -330,7 +329,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                         if (setdat2 !== null && setdat[1] === setdat2[2]) {
                             array[index] = 'DELETE'
                             array[i] = 'SET @($' + setdat2[1] + ' + $' + setdat[2] + ') $' + setdat2[3]
-                            optimized_lines++
+                            optimizedLines++
                             continue
                         }
                         // SET @r0 $a
@@ -339,7 +338,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                         if (setdat2 !== null && setdat[1] === setdat2[3]) {
                             array[index] = 'DELETE'
                             array[i] = 'SET @($' + setdat2[1] + ' + $' + setdat2[2] + ') $' + setdat[2]
-                            optimized_lines++
+                            optimizedLines++
                             continue
                         }
                         break
@@ -353,7 +352,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                 if (branchdat !== null && branchdat[3] === setdat[1] && isRegister(setdat[1]) && /^n\d$/.exec(setdat[2]) !== null) {
                     array[index] = branchdat[1] + ' $' + branchdat[2] + ' $' + setdat[2] + ' :' + branchdat[4]
                     array[index + 1] = 'DELETE'
-                    optimized_lines++
+                    optimizedLines++
                     return
                 }
 
@@ -368,7 +367,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                         array[index] = 'NOT @' + setdat[2]
                         array[index + 1] = 'DELETE'
                         array[index + 2] = 'DELETE'
-                        optimized_lines++
+                        optimizedLines++
                         return
                     }
                 }
@@ -383,19 +382,19 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                 if (setdat !== null && setdat[2] === popdat[1]) {
                     array[index] = 'POP @' + setdat[1]
                     array[index + 1] = 'DELETE'
-                    optimized_lines++
+                    optimizedLines++
                     return
                 }
 
                 // POP @r0
                 // PSH $r0
                 // turns nothing (safe for registers)
-                psh_slp_dat = /^\s*(PSH|SLP)\s+\$(r\d+)\s*$/.exec(array[index + 1])
-                if (psh_slp_dat !== null) {
-                    if (psh_slp_dat[2] === popdat[1]) {
+                pshslpdat = /^\s*(PSH|SLP)\s+\$(r\d+)\s*$/.exec(array[index + 1])
+                if (pshslpdat !== null) {
+                    if (pshslpdat[2] === popdat[1]) {
                         array[index] = 'DELETE'
                         array[index + 1] = 'DELETE'
-                        optimized_lines++
+                        optimizedLines++
                         return
                     }
                 }
@@ -423,14 +422,14 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                         if (setdat !== null && clrdat[1] === setdat[3]) {
                             array[index] = 'DELETE'
                             array[i] = 'SET @' + setdat[1] + ' $($' + setdat[2] + ')'
-                            optimized_lines++
+                            optimizedLines++
                             continue
                         }
                         setdat = /^\s*SET\s+@\(\$(\w+)\s*\+\s*\$(\w+)\)\s+\$(\w+)\s*$/.exec(array[i])
                         if (setdat !== null && clrdat[1] === setdat[2]) {
                             array[index] = 'DELETE'
                             array[i] = 'SET @($' + setdat[1] + ') $' + setdat[3]
-                            optimized_lines++
+                            optimizedLines++
                             continue
                         }
                         break
@@ -438,7 +437,7 @@ function optimize (assemblySourceCode: string, maxConstVars: number) {
                 }
             }
         })
-    } while (optimized_lines !== 0)
+    } while (optimizedLines !== 0)
 
     function getLabeldestination (label: string) {
         let lbl, jmpdest
