@@ -13,7 +13,8 @@ function shape(tokenAST) {
     const Program = {
         Global: {
             APIFunctions: [],
-            macros: []
+            macros: [],
+            sentences: []
         },
         functions: [],
         memory: [],

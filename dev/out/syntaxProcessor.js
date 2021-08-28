@@ -24,7 +24,7 @@ function syntaxProcess(Program) {
             throw new SyntaxError('Undefined AST to create syntactic tree');
         }
         if (tokenArray.length === 0) {
-            return { type: 'endASN' };
+            return { type: 'nullASN' };
         }
         // precedente evaluation loop
         let currentIdx = 0;
@@ -97,19 +97,6 @@ function syntaxProcess(Program) {
                     return { type: 'endASN', Token: tokenArray[0] };
                 }
             }
-            if (tokenArray[0].type === 'Keyword') {
-                if (tokenArray.length === 1) {
-                    return { type: 'endASN', Token: tokenArray[0] };
-                }
-                else {
-                    return {
-                        type: 'binaryASN',
-                        Left: { type: 'endASN', Token: tokenArray[0] },
-                        Operation: tokenArray[0],
-                        Right: createSyntacticTree(tokenArray.slice(1))
-                    };
-                }
-            }
             throw new SyntaxError(`At line: ${tokenArray[0].line}. Unknown token sequence: '${tokenArray[0].type}' with value: '${tokenArray[0].value}'.`);
             // Here we start to process operations tokens (precedente >= 1)
         }
@@ -161,17 +148,24 @@ function syntaxProcess(Program) {
         }
         else if (tokenArray[currentIdx].type === 'Keyword') {
             if (tokenArray.length === 1) {
-                return { type: 'endASN', Token: tokenArray[currentIdx] };
+                if (tokenArray[0].value === 'sleep' || tokenArray[0].value === 'goto' || tokenArray[0].value === 'const') {
+                    throw new TypeError(`At line: ${tokenArray[0].line}. Missing arguments for keyword '${tokenArray[0].value}'.`);
+                }
+                return { type: 'endASN', Token: tokenArray[0] };
             }
-            if (currentIdx !== 0) {
-                throw new SyntaxError(`At line: ${tokenArray[currentIdx].line}. Sentence not starting with keyword... Missing ';'?`);
+            else {
+                if (currentIdx !== 0) {
+                    throw new SyntaxError(`At line: ${tokenArray[currentIdx].line}. Probable missing ';' before keyword ${tokenArray[currentIdx].value}.`);
+                }
+                if (tokenArray[0].value === 'exit' || tokenArray[0].value === 'halt' || tokenArray[0].value === 'break' || tokenArray[0].value === 'continue') {
+                    throw new TypeError(`At line: ${tokenArray[0].line}. Keyword '${tokenArray[0].value}' does not accept arguments.`);
+                }
+                return {
+                    type: 'unaryASN',
+                    Operation: tokenArray[0],
+                    Center: createSyntacticTree(tokenArray.slice(1))
+                };
             }
-            return {
-                type: 'binaryASN',
-                Left: createSyntacticTree(tokenArray.slice(0, currentIdx + 1)),
-                Operation: tokenArray[currentIdx],
-                Right: createSyntacticTree(tokenArray.slice(currentIdx + 1))
-            };
         }
         else if (tokenArray[currentIdx].type === 'UnaryOperator' && currentIdx === 0) {
             if (tokenArray.length === 1) {
