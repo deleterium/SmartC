@@ -53,10 +53,8 @@ function generate (Program: CONTRACT) {
         configDeclarationGenerator()
 
         // add variables declaration
-        if (Program.Config.useVariableDeclaration) {
-            Program.memory.forEach(assemblerDeclarationGenerator)
-            writeAsmLine('') // blank line to be nice to debugger!
-        }
+        Program.memory.forEach(assemblerDeclarationGenerator)
+        writeAsmLine('') // blank line to be nice to debugger!
 
         // Add code for global sentences
         generateUtils.currFunctionIndex = -1
@@ -269,11 +267,6 @@ function generate (Program: CONTRACT) {
                 } else {
                     if (objTree.Token.type === 'Variable') {
                         retMemObj = getMemoryObjectByName(objTree.Token.value, objTree.Token.line, auxVars.declaring)
-                        if (Program.Config.useVariableDeclaration === false) {
-                            if (auxVars.pointerCodecave) {
-                                retMemObj.type += '_ptr'
-                            }
-                        }
                         return { MemObj: retMemObj, instructionset: instructionstrain }
                     }
 
@@ -420,9 +413,6 @@ function generate (Program: CONTRACT) {
                     }
 
                     if (CurrentModifier.type === 'Array') {
-                        if (Program.Config.useVariableDeclaration === false) {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Can not use arrays if 'useVariableDefinition' is 'false'.`)
-                        }
                         arrayIndex++
                         let TmpMemObj: MEMORY_SLOT
                         let isPointerOp = false
@@ -667,20 +657,19 @@ function generate (Program: CONTRACT) {
                             return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain }
                         }
 
-                        if (Program.Config.useVariableDeclaration) {
-                            if (CGenObj.MemObj.declaration.indexOf('_ptr') === -1) {
-                                if (!auxVars.isTemp(CGenObj.MemObj.address)) { // do not care about temp variables
-                                    if (Program.Config.warningToError) {
-                                        if (objTree.Center.type === 'endASN' || objTree.Center.type === 'lookupASN') {
-                                            throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of variable ${objTree.Center.Token.value} that is not declared as pointer.`)
-                                        }
-                                        throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of a value that is not declared as pointer.`)
+                        if (CGenObj.MemObj.declaration.indexOf('_ptr') === -1) {
+                            if (!auxVars.isTemp(CGenObj.MemObj.address)) { // do not care about temp variables
+                                if (Program.Config.warningToError) {
+                                    if (objTree.Center.type === 'endASN' || objTree.Center.type === 'lookupASN') {
+                                        throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of variable ${objTree.Center.Token.value} that is not declared as pointer.`)
                                     }
+                                    throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of a value that is not declared as pointer.`)
                                 }
-                            } else {
-                                CGenObj.MemObj.declaration = CGenObj.MemObj.declaration.slice(0, -4) as DECLARATION_TYPES
                             }
+                        } else {
+                            CGenObj.MemObj.declaration = CGenObj.MemObj.declaration.slice(0, -4) as DECLARATION_TYPES
                         }
+
                         CGenObj.MemObj.type += '_ptr'
 
                         if (!auxVars.isLeftSideOfAssignment) {
@@ -780,9 +769,7 @@ function generate (Program: CONTRACT) {
                             throw new TypeError(`At line: ${objTree.Operation.line}. Trying to get address of a Label`)
                         }
 
-                        if (Program.Config.useVariableDeclaration) {
-                            TmpMemObj.declaration += '_ptr'
-                        }
+                        TmpMemObj.declaration += '_ptr'
                         return { MemObj: TmpMemObj, instructionset: instructionstrain }
                     }
 
@@ -922,11 +909,9 @@ function generate (Program: CONTRACT) {
                         subSentences.forEach(stnc => {
                             const RGenObj = genCode(stnc, false, false)
                             instructionstrain += RGenObj.instructionset
-                            if (Program.Config.useVariableDeclaration) {
-                                if (RGenObj.MemObj.declaration.indexOf('_ptr') !== -1) {
-                                    if (Program.Config.warningToError) {
-                                        throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". API Function parameter type is different from variable: 'long' and '" + RGenObj.MemObj.declaration + "'.")
-                                    }
+                            if (RGenObj.MemObj.declaration.indexOf('_ptr') !== -1) {
+                                if (Program.Config.warningToError) {
+                                    throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". API Function parameter type is different from variable: 'long' and '" + RGenObj.MemObj.declaration + "'.")
                                 }
                             }
                             APIargs.push(RGenObj.MemObj)
@@ -971,14 +956,12 @@ function generate (Program: CONTRACT) {
                         for (let i = subSentences.length - 1; i >= 0; i--) {
                             const RGenObj = genCode(subSentences[i], false, false)
 
-                            if (Program.Config.useVariableDeclaration) {
-                                if (!auxVars.isTemp(RGenObj.MemObj.address)) {
-                                    const fnArg = search.argsMemObj[i]
-                                    if (fnArg.declaration !== RGenObj.MemObj.declaration) {
-                                        if (fnArg.declaration.indexOf('_ptr') === -1 || RGenObj.MemObj.declaration.indexOf('_ptr') === -1) { // skipt check if both sides are pointers
-                                            if (Program.Config.warningToError) {
-                                                throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Function parameter type is different from variable: '" + fnArg.declaration + "' and '" + RGenObj.MemObj.declaration + "'.")
-                                            }
+                            if (!auxVars.isTemp(RGenObj.MemObj.address)) {
+                                const fnArg = search.argsMemObj[i]
+                                if (fnArg.declaration !== RGenObj.MemObj.declaration) {
+                                    if (fnArg.declaration.indexOf('_ptr') === -1 || RGenObj.MemObj.declaration.indexOf('_ptr') === -1) { // skipt check if both sides are pointers
+                                        if (Program.Config.warningToError) {
+                                            throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Function parameter type is different from variable: '" + fnArg.declaration + "' and '" + RGenObj.MemObj.declaration + "'.")
                                         }
                                     }
                                 }
@@ -1202,15 +1185,13 @@ function generate (Program: CONTRACT) {
                     }
 
                     // Pointer verifications
-                    if (Program.Config.useVariableDeclaration) {
-                        if (RGenObj.MemObj.declaration.indexOf('_ptr') !== -1 && TmpMemObj.declaration.indexOf('_ptr') === -1) {
-                            // Case when adding numbers to pointers
-                            TmpMemObj.declaration += '_ptr'
-                        }
-                        if (TmpMemObj.declaration.indexOf('_ptr') !== -1) {
-                            if (objTree.Operation.value !== '+' && objTree.Operation.value !== '-') {
-                                throw new TypeError('At line: ' + objTree.Operation.line + ". Operation not allowed on pointers. Only '+', '-', '++' and '--' are.")
-                            }
+                    if (RGenObj.MemObj.declaration.indexOf('_ptr') !== -1 && TmpMemObj.declaration.indexOf('_ptr') === -1) {
+                        // Case when adding numbers to pointers
+                        TmpMemObj.declaration += '_ptr'
+                    }
+                    if (TmpMemObj.declaration.indexOf('_ptr') !== -1) {
+                        if (objTree.Operation.value !== '+' && objTree.Operation.value !== '-') {
+                            throw new TypeError('At line: ' + objTree.Operation.line + ". Operation not allowed on pointers. Only '+', '-', '++' and '--' are.")
                         }
                     }
 
@@ -1284,25 +1265,21 @@ function generate (Program: CONTRACT) {
                         throw new TypeError('At line: ' + objTree.Operation.line + '. Invalid left value for ' + objTree.Operation.type + '. Can not reassign an array.')
                     }
                     // Pointer verifications
-                    if (Program.Config.useVariableDeclaration) {
-                        if (LGenObj.MemObj.declaration.indexOf('_ptr') !== -1 &&
-                            objTree.Operation.type === 'SetOperator' &&
-                            RGenObj.MemObj.declaration.indexOf('_ptr') === -1) {
-                            // Case when adding numbers to pointers
-                            RGenObj.MemObj.declaration += '_ptr'
-                            if (objTree.Operation.value !== '+=' && objTree.Operation.value !== '-=') {
-                                throw new TypeError('At line: ' + objTree.Operation.line + ". Operation not allowed on pointers. Only '+', '-', '++' and '--' are.")
-                            }
+                    if (LGenObj.MemObj.declaration.indexOf('_ptr') !== -1 &&
+                        objTree.Operation.type === 'SetOperator' &&
+                        RGenObj.MemObj.declaration.indexOf('_ptr') === -1) {
+                        // Case when adding numbers to pointers
+                        RGenObj.MemObj.declaration += '_ptr'
+                        if (objTree.Operation.value !== '+=' && objTree.Operation.value !== '-=') {
+                            throw new TypeError('At line: ' + objTree.Operation.line + ". Operation not allowed on pointers. Only '+', '-', '++' and '--' are.")
                         }
                     }
 
-                    if (Program.Config.useVariableDeclaration) {
-                        if (!auxVars.isTemp(RGenObj.MemObj.address)) {
-                            if (LGenObj.MemObj.declaration !== RGenObj.MemObj.declaration) {
-                                if (LGenObj.MemObj.declaration.indexOf('_ptr') === -1 || RGenObj.MemObj.declaration.indexOf('_ptr') === -1) { // skipt check if both sides are pointers
-                                    if (Program.Config.warningToError) {
-                                        throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Left and right values does not match. Values are: '" + LGenObj.MemObj.declaration + "' and '" + RGenObj.MemObj.declaration + "'.")
-                                    }
+                    if (!auxVars.isTemp(RGenObj.MemObj.address)) {
+                        if (LGenObj.MemObj.declaration !== RGenObj.MemObj.declaration) {
+                            if (LGenObj.MemObj.declaration.indexOf('_ptr') === -1 || RGenObj.MemObj.declaration.indexOf('_ptr') === -1) { // skipt check if both sides are pointers
+                                if (Program.Config.warningToError) {
+                                    throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Left and right values does not match. Values are: '" + LGenObj.MemObj.declaration + "' and '" + RGenObj.MemObj.declaration + "'.")
                                 }
                             }
                         }
@@ -1532,9 +1509,6 @@ function generate (Program: CONTRACT) {
                     retIsNew = true
                 }
             } else if (ParamMemObj.type === 'struct') {
-                if (Program.Config.useVariableDeclaration === false) {
-                    throw new TypeError('At line: ' + line + ". Can not use struct if 'useVariableDeclaration' is false.")
-                }
                 if (ParamMemObj.Offset === undefined) {
                     RetObj = ParamMemObj
                 } else if (ParamMemObj.Offset.type === 'constant') {
@@ -2059,24 +2033,6 @@ function generate (Program: CONTRACT) {
         if (search === undefined) {
             // do a global scope search
             search = Program.memory.find(obj => obj.name === varName && obj.scope === '')
-        }
-
-        if (Program.Config.useVariableDeclaration === false) {
-            if (search === undefined) {
-                const fakevar: MEMORY_SLOT = {
-                    address: Program.memory.length,
-                    name: varName,
-                    asmName: varName,
-                    type: 'long',
-                    declaration: varDeclaration,
-                    scope: '',
-                    size: 1,
-                    isDeclared: true
-                }
-                Program.memory.push(fakevar)
-                return JSON.parse(JSON.stringify(fakevar))
-            }
-            return JSON.parse(JSON.stringify(search))
         }
 
         // Checks to allow use:

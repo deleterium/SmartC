@@ -19,8 +19,6 @@ interface SC_CONFIG {
     maxConstVars: number,
     /** Try to reuse variable at left side of assigment: #pragma reuseAssignedVar */
     reuseAssignedVar: boolean,
-    /** Enforces declaration of variables: #pragma useVariableDeclaration */
-    useVariableDeclaration: boolean,
     /** Compiler version asked by program: #pragma version */
     version: string,
     /** Warning to error: #pragma warningToError */
@@ -242,7 +240,6 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
             maxAuxVars: 5,
             maxConstVars: 0,
             reuseAssignedVar: true,
-            useVariableDeclaration: true,
             version: 'dev',
             warningToError: true,
             APIFunctions: false,
@@ -1022,10 +1019,6 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                 Program.Config.globalOptimization = boolVal
                 return
             }
-            if (Token.property === 'useVariableDeclaration' && boolVal !== undefined) {
-                Program.Config.useVariableDeclaration = boolVal
-                return
-            }
             if (Token.property === 'version') {
                 Program.Config.version = Token.value
                 if (Program.Config.version !== undefined) {
@@ -1075,33 +1068,29 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
     }
 
     function addRegistersInMemory () {
-        if (Program.Config.useVariableDeclaration) {
-            const search = Program.typesDefinitions.find(obj => obj.type === 'register') as (REGISTER_TYPE_DEFINITION | undefined)
-            if (search === undefined) {
-                throw new TypeError("Not found type 'register' at types definitions.")
-            }
-            for (let i = 0; i < Program.Config.maxAuxVars; i++) {
-                const MemTemplate: MEMORY_SLOT = JSON.parse(JSON.stringify(search.MemoryTemplate))
-                MemTemplate.name = `r${i}`
-                MemTemplate.asmName = `r${i}`
-                Program.memory.push(MemTemplate)
-            }
+        const search = Program.typesDefinitions.find(obj => obj.type === 'register') as (REGISTER_TYPE_DEFINITION | undefined)
+        if (search === undefined) {
+            throw new TypeError("Not found type 'register' at types definitions.")
+        }
+        for (let i = 0; i < Program.Config.maxAuxVars; i++) {
+            const MemTemplate: MEMORY_SLOT = JSON.parse(JSON.stringify(search.MemoryTemplate))
+            MemTemplate.name = `r${i}`
+            MemTemplate.asmName = `r${i}`
+            Program.memory.push(MemTemplate)
         }
     }
 
     function addConstantsInMemory () {
-        if (Program.Config.useVariableDeclaration) {
-            const search = Program.typesDefinitions.find(obj => obj.type === 'register') as (REGISTER_TYPE_DEFINITION | undefined)
-            if (search === undefined) {
-                throw new TypeError("Not found type 'register' at types definitions.")
-            }
-            for (let i = 1; i <= Program.Config.maxConstVars; i++) {
-                const MemTemplate: MEMORY_SLOT = JSON.parse(JSON.stringify(search.MemoryTemplate))
-                MemTemplate.name = `n${i}`
-                MemTemplate.asmName = `n${i}`
-                MemTemplate.hexContent = i.toString(16).padStart(16, '0')
-                Program.memory.push(MemTemplate)
-            }
+        const search = Program.typesDefinitions.find(obj => obj.type === 'register') as (REGISTER_TYPE_DEFINITION | undefined)
+        if (search === undefined) {
+            throw new TypeError("Not found type 'register' at types definitions.")
+        }
+        for (let i = 1; i <= Program.Config.maxConstVars; i++) {
+            const MemTemplate: MEMORY_SLOT = JSON.parse(JSON.stringify(search.MemoryTemplate))
+            MemTemplate.name = `n${i}`
+            MemTemplate.asmName = `n${i}`
+            MemTemplate.hexContent = i.toString(16).padStart(16, '0')
+            Program.memory.push(MemTemplate)
         }
     }
 
@@ -1144,9 +1133,6 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
 
     function checkDoublesDefinitions () {
         let i, j
-        if (Program.Config.useVariableDeclaration === false) {
-            return
-        }
         for (i = 0; i < Program.memory.length - 1; i++) {
             for (j = i + 1; j < Program.memory.length; j++) {
                 if (Program.memory[i].asmName === Program.memory[j].asmName) {
