@@ -47,6 +47,9 @@ interface SC_MACRO {
 
 type MEMORY_BASE_TYPES = 'register' | 'long' | 'constant' | 'struct' | 'array' | 'label' | 'void' | 'register_ptr' | 'long_ptr'
 
+/** If constant, it is the number to shift. If variable, it is the address containing the value to shift */
+type OFFSET_MODIFIER = { type: 'constant', value: number } | {type: 'variable', addr: number }
+
 interface MEMORY_SLOT {
     /** Variable base types: 'register' | 'long' | 'constant' | 'struct' | 'array' | 'label' | 'void' */
     type: MEMORY_BASE_TYPES
@@ -68,12 +71,17 @@ interface MEMORY_SLOT {
     typeDefinition?: string
     /** For constants: content */
     hexContent?: string
-    /** Array only property: base type */
-    arrayItemType?: string
-    /** Array only property: type definition of vase type (could be structs!) */
-    arrayItemTypeDefinition?: string
-    /** Total size of array. (is the same as size???) */
-    arrayTotalSize?: number
+    /** Info about items of array. */
+    arrItem?: {
+        /** item base type */
+        type: MEMORY_BASE_TYPES,
+        /** Item type definion (for structs) */
+        typeDefinition: string,
+        /** Item total size */
+        totalSize: number
+    }
+    /** Indicates to apply a shift to this memory address. Applicable to arrays, structs and pointer operations */
+    Offset?: OFFSET_MODIFIER
 }
 
 // eslint-disable-next-line no-use-before-define
@@ -767,10 +775,13 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                                 MemTemplate.type = 'array'
                                 MemTemplate.typeDefinition = MemTemplate.asmName
                                 MemTemplate.asmName = AuxVars.currentPrefix + MemTemplate.name
-                                MemTemplate.arrayItemType = search.type
-                                MemTemplate.arrayItemTypeDefinition = search.name
+                                MemTemplate.arrItem = {
+                                    type: search.type,
+                                    typeDefinition: search.name,
+                                    totalSize: 0
+                                }
                                 MemTemplate.declaration += '_ptr'
-                                MemTemplate.arrayTotalSize = 1 + dimensions.reduce(function (total, num) {
+                                MemTemplate.arrItem.totalSize = 1 + dimensions.reduce(function (total, num) {
                                     return total * num
                                 }, search.MemoryTemplate.size)
 
@@ -879,9 +890,14 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                                 // fill more information in memory template
                                 MemTemplate.type = 'array'
                                 MemTemplate.typeDefinition = MemTemplate.asmName
-                                MemTemplate.arrayItemType = search.type
+                                MemTemplate.arrItem = {
+                                    type: search.type,
+                                    typeDefinition: '',
+                                    totalSize: 0
+                                }
+                                // CHECK22
                                 MemTemplate.declaration += '_ptr'
-                                MemTemplate.arrayTotalSize = 1 + dimensions.reduce(function (total, num) {
+                                MemTemplate.arrItem.totalSize = 1 + dimensions.reduce(function (total, num) {
                                     return total * num
                                 }, 1)
 
@@ -889,7 +905,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                                 ret.push(MemTemplate)
 
                                 // Create array items in memory_template
-                                for (let i = 1; i < MemTemplate.arrayTotalSize; i++) {
+                                for (let i = 1; i < MemTemplate.arrItem.totalSize; i++) {
                                     const Mem2: MEMORY_SLOT = JSON.parse(JSON.stringify(search.MemoryTemplate))
                                     Mem2.name = `${MemTemplate.name}_${i - 1}`
                                     Mem2.asmName = `${MemTemplate.asmName}_${i - 1}`
@@ -898,7 +914,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                                 }
 
                                 // create array type definition
-                                if (MemTemplate.arrayTotalSize > 1) {
+                                if (MemTemplate.arrItem.totalSize > 1) {
                                     const TypeD: ARRAY_TYPE_DEFINITION = {
                                         name: structName + MemTemplate.asmName,
                                         type: 'array',

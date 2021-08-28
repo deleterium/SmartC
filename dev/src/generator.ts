@@ -170,12 +170,8 @@ function generate (Program: CONTRACT) {
             }
         }
 
-        interface GENCODE_RETURN_MEMORY extends MEMORY_SLOT {
-            offset_type?: 'constant' | 'variable'
-            offset_value?: string
-        }
         interface GENCODE_RETURN_OBJECT {
-            MemObj: GENCODE_RETURN_MEMORY
+            MemObj: MEMORY_SLOT
             instructionset: string
         }
         interface MOLD_OBJECT {
@@ -241,7 +237,7 @@ function generate (Program: CONTRACT) {
          * @returns Object with currently variable returned and the string with assembly code for the remaining AST evaluated
          */
         function genCode (objTree: AST, logicalOp: boolean, revLogic: boolean, jumpFalse?: string, jumpTrue?: string): GENCODE_RETURN_OBJECT {
-            let retMemObj: GENCODE_RETURN_MEMORY
+            let retMemObj: MEMORY_SLOT
             let instructionstrain = ''
             let arrayIndex = -1
 
@@ -349,7 +345,7 @@ function generate (Program: CONTRACT) {
                             throw new TypeError(`At line: ${objTree.Token.line}. Member '${memberName}' not found on struct type definition.`)
                         }
 
-                        if (retMemObj.offset_type === undefined) {
+                        if (retMemObj.Offset === undefined) {
                             let adder = 0
                             if (TypeD.structMembers[memberIdx].type === 'array') {
                                 adder = 1
@@ -361,19 +357,22 @@ function generate (Program: CONTRACT) {
                                 retMemObj.type = TypeD.structMembers[memberIdx].type
                             }
                             arrayIndex = -1
-                            retMemObj.offset_type = 'constant'
-                            retMemObj.offset_value = utils.addHexContents(adder, TypeD.structAccumulatedSize[memberIdx][1])
-                        } else if (retMemObj.offset_type === 'constant') {
+                            retMemObj.Offset = {
+                                type: 'constant',
+                                value: adder + TypeD.structAccumulatedSize[memberIdx][1]
+                            }
+                        } else if (retMemObj.Offset.type === 'constant') {
                             throw new TypeError(`At line: ${objTree.Token.line}. Inspection needed.`)
-                        } else /* if (retMemObj.offset_type === "variable") */ {
+                        } else /* if (retMemObj.Modifier.type === "variable") */ {
                             throw new TypeError(`At line: ${objTree.Token.line}. Inspection needed.`)
                         }
                     }
 
                     if (CurrentModifier.type === 'MemberByVal') {
                         let TypeD: STRUCT_TYPE_DEFINITION | undefined
-                        if (retMemObj.arrayItemType === 'struct') { // array of struct
-                            TypeD = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === retMemObj.arrayItemTypeDefinition) as STRUCT_TYPE_DEFINITION
+                        if (retMemObj.arrItem?.type === 'struct') { // array of struct
+                            const typeName = retMemObj.arrItem.typeDefinition
+                            TypeD = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === typeName) as STRUCT_TYPE_DEFINITION
                         } else { // regular case
                             TypeD = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === retMemObj.typeDefinition) as STRUCT_TYPE_DEFINITION
                         }
@@ -398,11 +397,11 @@ function generate (Program: CONTRACT) {
                             throw new TypeError(`At line: ${objTree.Token.line}. Member '${memberName}' not found on struct type definition.`)
                         }
 
-                        if (retMemObj.offset_type === undefined) {
+                        if (retMemObj.Offset === undefined) {
                             retMemObj = getMemoryObjectByLocation(utils.addHexContents(retMemObj.hexContent, TypeD.structAccumulatedSize[memberIdx][1]))
                             arrayIndex = -1
-                        } else if (retMemObj.offset_type === 'constant') {
-                            const adder = utils.addHexContents(retMemObj.offset_value, retMemObj.hexContent)
+                        } else if (retMemObj.Offset.type === 'constant') {
+                            const adder = utils.addHexContents(retMemObj.Offset.value, retMemObj.hexContent)
                             retMemObj = getMemoryObjectByLocation(utils.addHexContents(adder, TypeD.structAccumulatedSize[memberIdx][1]))
                             arrayIndex = -1
                         } else /* if (retMemObj.offset_type === "variable") */ {
@@ -411,7 +410,7 @@ function generate (Program: CONTRACT) {
                                 adder = 1
                             }
                             instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line),
-                                getMemoryObjectByLocation(retMemObj.offset_value, objTree.Token.line),
+                                getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line),
                                 utils.createConstantMemObj(utils.addHexContents(adder, TypeD.structAccumulatedSize[memberIdx][1])))
                             retMemObj.declaration = TypeD.structMembers[memberIdx].declaration
                             retMemObj.name = TypeD.structMembers[memberIdx].name
@@ -441,7 +440,7 @@ function generate (Program: CONTRACT) {
                             }
                             isPointerOp = true // allow use of array notation on pointer variables.
                         }
-                        if (retMemObj.type !== 'array' && retMemObj.type !== 'struct' && retMemObj.offset_type !== undefined) {
+                        if (retMemObj.type !== 'array' && retMemObj.type !== 'struct' && retMemObj.Offset !== undefined) {
                             throw new TypeError(`At line: ${objTree.Token.line}. Can not use array notation on regular variables.`)
                         }
 
@@ -462,24 +461,28 @@ function generate (Program: CONTRACT) {
                         if (ParamMemObj.MemObj.type === 'void') { // special case for text assignment
                             return { MemObj: retMemObj, instructionset: instructionstrain }
                         }
-                        // big decision tree depending on retMemObj.offset_value and ParamMemObj.address
-                        let mobj_offvalue = retMemObj.offset_value // undefined if does not exist, "constant", or variable address that can be temp or not (will be checked!)
-                        if (typeof (retMemObj.offset_value) === 'string') {
-                            mobj_offvalue = -1 // only if offset_type is constant
-                        }
+                        // big decision tree depending on retMemObj.Offset.value and ParamMemObj.address
+                        // let mobj_offvalue = retMemObj.Offset.value // undefined if does not exist, "constant", or variable address that can be temp or not (will be checked!)
+                        // if (typeof (retMemObj.Offset.value) === 'string') {
+                        //    mobj_offvalue = -1 // only if offset_type is constant
+                        // }
                         const paramAddress = ParamMemObj.MemObj.address // -1 if it is constant, other value represents a variable that can be temp or not (will be checked!)
 
-                        if (mobj_offvalue === undefined) {
+                        if (retMemObj.Offset === undefined) {
                             if (paramAddress === -1) {
                                 if (isPointerOp) {
                                     TmpMemObj = auxVars.getNewRegister()
                                     instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, ParamMemObj.MemObj)
                                     retMemObj.type = 'array'
-                                    retMemObj.offset_type = 'variable'
-                                    retMemObj.offset_value = TmpMemObj.address
+                                    retMemObj.Offset = {
+                                        type: 'variable',
+                                        addr: TmpMemObj.address
+                                    }
                                 } else {
-                                    retMemObj.offset_type = 'constant'
-                                    retMemObj.offset_value = utils.mulHexContents(ParamMemObj.MemObj.hexContent, TypeD.arrayMultiplierDim[arrayIndex])
+                                    retMemObj.Offset = {
+                                        type: 'constant',
+                                        value: Number(`0x${ParamMemObj.MemObj.hexContent}`) * TypeD.arrayMultiplierDim[arrayIndex]
+                                    }
                                 }
                             } else if (auxVars.isTemp(paramAddress)) {
                                 if (isPointerOp) {
@@ -487,63 +490,76 @@ function generate (Program: CONTRACT) {
                                 } else {
                                     instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
                                 }
-                                retMemObj.offset_type = 'variable'
-                                retMemObj.offset_value = ParamMemObj.MemObj.address
+                                retMemObj.Offset = {
+                                    type: 'variable',
+                                    addr: ParamMemObj.MemObj.address
+                                }
                             } else /* if ( paramAddress is variable ) */ {
-                                retMemObj.offset_type = 'variable'
                                 if (isPointerOp || TypeD.arrayMultiplierDim[arrayIndex] === 1) {
                                     if (isPointerOp) {
                                         retMemObj.type = 'array'
                                     }
-                                    retMemObj.offset_value = ParamMemObj.MemObj.address
+                                    retMemObj.Offset = {
+                                        type: 'variable',
+                                        addr: ParamMemObj.MemObj.address
+                                    }
                                 } else {
                                     TmpMemObj = auxVars.getNewRegister()
                                     instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, ParamMemObj.MemObj)
-                                    retMemObj.offset_value = TmpMemObj.address
+                                    retMemObj.Offset = {
+                                        type: 'variable',
+                                        addr: TmpMemObj.address
+                                    }
                                     instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
                                 }
                             }
-                        } else if (mobj_offvalue === -1) {
+                        } else if (retMemObj.Offset.type === 'constant') {
                             if (paramAddress === -1) {
-                                retMemObj.offset_value = utils.addHexContents(retMemObj.offset_value, utils.mulHexContents(ParamMemObj.MemObj.hexContent, TypeD.arrayMultiplierDim[arrayIndex]))
+                                retMemObj.Offset.value = retMemObj.Offset.value + Number(`0x${ParamMemObj.MemObj.hexContent}`) * TypeD.arrayMultiplierDim[arrayIndex]
                             } else if (auxVars.isTemp(paramAddress)) {
                                 instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
-                                instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(retMemObj.offset_value))
-                                retMemObj.offset_type = 'variable'
-                                retMemObj.offset_value = ParamMemObj.MemObj.address
+                                instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(retMemObj.Offset.value))
+                                retMemObj.Offset = {
+                                    type: 'variable',
+                                    addr: ParamMemObj.MemObj.address
+                                }
                             } else /* if ( paramAddress is variable  ) */ {
-                                if (TypeD.arrayMultiplierDim[arrayIndex] === 1 && retMemObj.offset_value === '0000000000000000') {
-                                    retMemObj.offset_type = 'variable'
-                                    retMemObj.offset_value = ParamMemObj.MemObj.address
+                                if (TypeD.arrayMultiplierDim[arrayIndex] === 1 && retMemObj.Offset.value === 0) {
+                                    retMemObj.Offset = {
+                                        type: 'variable',
+                                        addr: ParamMemObj.MemObj.address
+                                    }
                                 } else {
                                     TmpMemObj = auxVars.getNewRegister()
                                     instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, ParamMemObj.MemObj)
                                     instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
-                                    instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(retMemObj.offset_value))
-                                    retMemObj.offset_type = 'variable'
-                                    retMemObj.offset_value = TmpMemObj.address
+                                    instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(retMemObj.Offset.value))
+                                    retMemObj.Offset = {
+                                        type: 'variable',
+                                        addr: TmpMemObj.address
+                                    }
                                 }
                             }
-                        } else if (auxVars.isTemp(mobj_offvalue)) {
+                        } else if (auxVars.isTemp(retMemObj.Offset.addr)) {
                             if (paramAddress === -1) {
                                 const adder = utils.mulHexContents(ParamMemObj.MemObj.hexContent, TypeD.arrayMultiplierDim[arrayIndex])
-                                instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), getMemoryObjectByLocation(retMemObj.offset_value, objTree.Token.line), utils.createConstantMemObj(adder))
+                                instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line), utils.createConstantMemObj(adder))
                             } else if (auxVars.isTemp(paramAddress)) {
                                 instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
-                                instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), getMemoryObjectByLocation(retMemObj.offset_value, objTree.Token.line), ParamMemObj.MemObj)
+                                instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line), ParamMemObj.MemObj)
                                 auxVars.freeRegister(ParamMemObj.MemObj.address)
                             } else /* if (paramAddress is variable ) */ {
                                 if (TypeD.arrayMultiplierDim[arrayIndex] === 1) {
-                                    instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), getMemoryObjectByLocation(retMemObj.offset_value, objTree.Token.line), ParamMemObj.MemObj)
+                                    instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line), ParamMemObj.MemObj)
                                 } else {
                                     TmpMemObj = auxVars.getNewRegister()
                                     instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, ParamMemObj.MemObj)
                                     instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
-                                    instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), getMemoryObjectByLocation(retMemObj.offset_value, objTree.Token.line), TmpMemObj)
+                                    instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line), TmpMemObj)
                                     auxVars.freeRegister(TmpMemObj.address)
                                 }
                             }
-                        } else /* if ( mobj_offvalue is variable ) */ {
+                        } else /* if ( retMemObj.Offset.addr is variable not temp ) */ {
                             if (paramAddress === -1) {
                                 if (ParamMemObj.MemObj.hexContent !== '0000000000000000') {
                                     TmpMemObj = auxVars.getNewRegister()
@@ -551,23 +567,23 @@ function generate (Program: CONTRACT) {
                                     if (!isPointerOp) {
                                         instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
                                     }
-                                    instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), TmpMemObj, getMemoryObjectByLocation(retMemObj.offset_value, objTree.Token.line))
-                                    retMemObj.offset_value = TmpMemObj.address
+                                    instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), TmpMemObj, getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line))
+                                    retMemObj.Offset.addr = TmpMemObj.address
                                 }
                             } else if (auxVars.isTemp(paramAddress)) {
                                 if (!isPointerOp) {
                                     instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
                                 }
-                                instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), ParamMemObj.MemObj, getMemoryObjectByLocation(retMemObj.offset_value, objTree.Token.line))
-                                retMemObj.offset_value = ParamMemObj.MemObj.address
+                                instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), ParamMemObj.MemObj, getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line))
+                                retMemObj.Offset.addr = ParamMemObj.MemObj.address
                             } else /* if (paramAddress is variable )) */ {
                                 TmpMemObj = auxVars.getNewRegister()
                                 instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, ParamMemObj.MemObj)
                                 if (!isPointerOp) {
                                     instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
                                 }
-                                instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), TmpMemObj, getMemoryObjectByLocation(retMemObj.offset_value, objTree.Token.line))
-                                retMemObj.offset_value = TmpMemObj.address
+                                instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), TmpMemObj, getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line))
+                                retMemObj.Offset.addr = TmpMemObj.address
                             }
                         }
                     }
@@ -575,16 +591,20 @@ function generate (Program: CONTRACT) {
 
                 // Fix special case where struct pointer with array member with constant index has incomplete information.
                 // This does not allow constants on struct: code Yyx_sSkA
-                if (retMemObj.hexContent === undefined && retMemObj.offset_type === 'constant') {
+                if (retMemObj.hexContent === undefined && retMemObj.Offset !== undefined && retMemObj.Offset.type === 'constant') {
                     const TmpMemObj = auxVars.getNewRegister()
-                    instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(retMemObj.offset_value))
-                    retMemObj.offset_type = 'variable'
-                    retMemObj.offset_value = TmpMemObj.address
+                    instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(retMemObj.Offset.value))
+                    retMemObj.Offset = {
+                        type: 'variable',
+                        addr: TmpMemObj.address
+                    }
                 }
 
                 if (logicalOp === true) {
                     instructionstrain += createInstruction(utils.genNotEqualToken(), retMemObj, utils.createConstantMemObj(0), revLogic, jumpFalse, jumpTrue)
-                    auxVars.freeRegister(retMemObj.offset_value)
+                    if (retMemObj.Offset !== undefined && retMemObj.Offset.type === 'variable') {
+                        auxVars.freeRegister(retMemObj.Offset.addr)
+                    }
                     auxVars.freeRegister(retMemObj.address)
                     return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain }
                 }
@@ -696,7 +716,7 @@ function generate (Program: CONTRACT) {
                         const CGenObj = genCode(objTree.Center, false, revLogic, jumpFalse, jumpTrue)
                         instructionstrain += CGenObj.instructionset
 
-                        let TmpMemObj: GENCODE_RETURN_MEMORY
+                        let TmpMemObj: MEMORY_SLOT
                         if (!auxVars.isTemp(CGenObj.MemObj.address)) {
                             TmpMemObj = auxVars.getNewRegister()
                             instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, CGenObj.MemObj)
@@ -739,16 +759,15 @@ function generate (Program: CONTRACT) {
                         } else if (CGenObj.MemObj.type === 'constant') {
                             throw new TypeError(`At line: ${objTree.Operation.line}. Trying to get address of a constant value.`)
                         } else if (CGenObj.MemObj.type === 'array') {
-                            if (CGenObj.MemObj.offset_type !== undefined) {
-                                if (CGenObj.MemObj.offset_type === 'constant') {
-                                    TmpMemObj = utils.createConstantMemObj(utils.addHexContents(CGenObj.MemObj.hexContent, CGenObj.MemObj.offset_value))
+                            if (CGenObj.MemObj.Offset !== undefined) {
+                                if (CGenObj.MemObj.Offset.type === 'constant') {
+                                    TmpMemObj = utils.createConstantMemObj(utils.addHexContents(CGenObj.MemObj.hexContent, CGenObj.MemObj.Offset.value))
                                 } else {
                                     const Copyvar = JSON.parse(JSON.stringify(CGenObj.MemObj))
-                                    delete Copyvar.offset_type
-                                    delete Copyvar.offset_value
+                                    delete Copyvar.Offset
                                     TmpMemObj = auxVars.getNewRegister()
                                     instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, Copyvar)
-                                    instructionstrain += createInstruction(utils.genAddToken(), TmpMemObj, getMemoryObjectByLocation(CGenObj.MemObj.offset_value))
+                                    instructionstrain += createInstruction(utils.genAddToken(), TmpMemObj, getMemoryObjectByLocation(CGenObj.MemObj.Offset.addr))
                                 }
                             } else {
                                 TmpMemObj = utils.createConstantMemObj(CGenObj.MemObj.address)
@@ -1172,7 +1191,7 @@ function generate (Program: CONTRACT) {
                             }
                         }
                     }
-                    let TmpMemObj: GENCODE_RETURN_MEMORY
+                    let TmpMemObj: MEMORY_SLOT
                     if (!auxVars.isTemp(LGenObj.MemObj.address)) {
                         TmpMemObj = auxVars.getNewRegister()
                         TmpMemObj.declaration = LGenObj.MemObj.declaration
@@ -1234,8 +1253,8 @@ function generate (Program: CONTRACT) {
                         auxVars.declaring = ''
                     }
 
-                    if (LGenObj.MemObj.type === 'array' && LGenObj.MemObj.offset_type === 'constant') { // if it is an array item we know, change to the item (and do optimizations)
-                        LGenObj.MemObj = getMemoryObjectByLocation(utils.addHexContents(LGenObj.MemObj.hexContent, LGenObj.MemObj.offset_value))
+                    if (LGenObj.MemObj.type === 'array' && LGenObj.MemObj.Offset !== undefined && LGenObj.MemObj.Offset.type === 'constant') { // if it is an array item we know, change to the item (and do optimizations)
+                        LGenObj.MemObj = getMemoryObjectByLocation(utils.addHexContents(LGenObj.MemObj.hexContent, LGenObj.MemObj.Offset.value))
                     }
                     // check if we can reuse variables used on assignment
                     // then add it to auxVars.tmpvars
@@ -1243,7 +1262,7 @@ function generate (Program: CONTRACT) {
                     if (objTree.Operation.type === 'Assignment' &&
                         Program.Config.reuseAssignedVar === true &&
                         LGenObj.MemObj.type === 'long' &&
-                        LGenObj.MemObj.offset_type === undefined &&
+                        LGenObj.MemObj.Offset === undefined &&
                         CanReuseAssignedVar(LGenObj.MemObj.address, objTree.Right)) {
                         auxVars.tmpvars.unshift(LGenObj.MemObj.name)
                         auxVars.status.unshift(false)
@@ -1487,7 +1506,7 @@ function generate (Program: CONTRACT) {
          * Returns also instructions maybe needed for conversion and an boolean to indicate if it is
          * a new object (that must be free later on)
         */
-        function moldMemory (ParamMemObj: GENCODE_RETURN_MEMORY, line: number): MOLD_OBJECT {
+        function moldMemory (ParamMemObj: MEMORY_SLOT, line: number): MOLD_OBJECT {
             let RetObj: MEMORY_SLOT
             let retInstructions = ''
             let retIsNew = false
@@ -1503,10 +1522,10 @@ function generate (Program: CONTRACT) {
                 retInstructions += createInstruction(utils.genAssignmentToken(), RetObj, ParamMemObj)
                 retIsNew = true
             } else if (ParamMemObj.type === 'array') {
-                if (ParamMemObj.offset_type === undefined) { // Pointer operation
+                if (ParamMemObj.Offset === undefined) { // Pointer operation
                     RetObj = ParamMemObj
-                } else if (ParamMemObj.offset_type === 'constant') { // Looks like an array but can be converted to regular variable
-                    RetObj = getMemoryObjectByLocation(utils.addHexContents(ParamMemObj.hexContent, ParamMemObj.offset_value), line)
+                } else if (ParamMemObj.Offset.type === 'constant') { // Looks like an array but can be converted to regular variable
+                    RetObj = getMemoryObjectByLocation(utils.addHexContents(ParamMemObj.hexContent, ParamMemObj.Offset.value), line)
                 } else {
                     RetObj = auxVars.getNewRegister()
                     retInstructions += createInstruction(utils.genAssignmentToken(), RetObj, ParamMemObj)
@@ -1516,11 +1535,11 @@ function generate (Program: CONTRACT) {
                 if (Program.Config.useVariableDeclaration === false) {
                     throw new TypeError('At line: ' + line + ". Can not use struct if 'useVariableDeclaration' is false.")
                 }
-                if (ParamMemObj.offset_type === undefined) {
+                if (ParamMemObj.Offset === undefined) {
                     RetObj = ParamMemObj
-                } else if (ParamMemObj.offset_type === 'constant') {
+                } else if (ParamMemObj.Offset.type === 'constant') {
                     RetObj = auxVars.getNewRegister()
-                    retInstructions += createInstruction(utils.genAssignmentToken(), RetObj, utils.createConstantMemObj(ParamMemObj.offset_value))
+                    retInstructions += createInstruction(utils.genAssignmentToken(), RetObj, utils.createConstantMemObj(ParamMemObj.Offset.value))
                     retIsNew = true
                 } else {
                     RetObj = auxVars.getNewRegister()
@@ -1535,7 +1554,7 @@ function generate (Program: CONTRACT) {
         }
 
         // Translate one single instruction from ast to assembly code
-        function createInstruction (objoperator: TOKEN, param1?: GENCODE_RETURN_MEMORY, param2?: GENCODE_RETURN_MEMORY, rLogic?:boolean, jpFalse?: string, jpTrue?:string) : string {
+        function createInstruction (objoperator: TOKEN, param1?: MEMORY_SLOT, param2?: MEMORY_SLOT, rLogic?:boolean, jpFalse?: string, jpTrue?:string) : string {
             let retinstr = ''
 
             if (objoperator.type === 'Assignment') {
@@ -1553,12 +1572,11 @@ function generate (Program: CONTRACT) {
                         }
                         if (param2.hexContent === '0000000000000000') {
                             return 'CLR @' + param1.asmName + '\n'
-                        } else {
-                            if (param2.hexContent.length > 17) {
-                                throw new RangeError('At line: ' + objoperator.line + '.Overflow on long value assignment (value bigger than 64 bits)')
-                            }
-                            return 'SET @' + param1.asmName + ' #' + param2.hexContent + '\n'
                         }
+                        if (param2.hexContent.length > 17) {
+                            throw new RangeError('At line: ' + objoperator.line + '.Overflow on long value assignment (value bigger than 64 bits)')
+                        }
+                        return 'SET @' + param1.asmName + ' #' + param2.hexContent + '\n'
                     } else if (param2.type === 'register' || param2.type === 'long') { // Can use SET_DAT
                         if (param1.address === param2.address) return ''
                         else return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n'
@@ -1567,21 +1585,20 @@ function generate (Program: CONTRACT) {
                     // } else if (param2.type === 'constant_ptr') {
                     //     return 'SET @' + param1.asmName + ' $($' + getMemoryObjectByLocation(param2.hexContent, objoperator.line).asmName + ')\n'
                     } else if (param2.type === 'array' || param2.type === 'struct') {
-                        if (param2.offset_type === undefined) {
+                        if (param2.Offset === undefined) {
                             return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n'
-                        }
-                        if (param2.offset_type === 'constant') {
+                        } else if (param2.Offset.type === 'constant') {
                             if (param2.type === 'array') {
-                                return 'SET @' + param1.asmName + ' $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.offset_value), objoperator.line).asmName + '\n'
+                                return 'SET @' + param1.asmName + ' $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.Offset.value), objoperator.line).asmName + '\n'
                             } else { // param2.type === "struct"
                                 const TmpMemObj = auxVars.getNewRegister()
-                                retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.offset_value))
+                                retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.Offset.value))
                                 retinstr += 'SET @' + param1.asmName + ' $($' + param2.asmName + ' + $' + TmpMemObj.asmName + ')\n'
                                 auxVars.freeRegister(TmpMemObj.address)
                                 return retinstr
                             }
                         } else {
-                            return 'SET @' + param1.asmName + ' $($' + param2.asmName + ' + $' + getMemoryObjectByLocation(param2.offset_value, objoperator.line).asmName + ')\n'
+                            return 'SET @' + param1.asmName + ' $($' + param2.asmName + ' + $' + getMemoryObjectByLocation(param2.Offset.addr, objoperator.line).asmName + ')\n'
                         }
                     }
                     throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.")
@@ -1609,12 +1626,14 @@ function generate (Program: CONTRACT) {
                     // } else if (param2.type === 'constant_ptr') {
                     //     return 'SET @' + param1.asmName + ' #' + param2.hexContent + '\n'
                     } else if (param2.type === 'array' || param2.type === 'struct') {
-                        if (param2.offset_type === 'constant') {
+                        if (param2.Offset === undefined) {
+                            throw new TypeError(`At line: ${objoperator.line}. Undefined offset in array/struct! BugReport please.`)
+                        } else if (param2.Offset.type === 'constant') {
                             if (param2.type === 'array') {
-                                return 'SET @($' + param1.asmName + ') $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.offset_value), objoperator.line).asmName + '\n'
+                                return 'SET @($' + param1.asmName + ') $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.Offset.value), objoperator.line).asmName + '\n'
                             } else { // param2.type === "struct"
                                 const TmpMemObj = auxVars.getNewRegister()
-                                retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.offset_value))
+                                retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.Offset.value))
                                 retinstr += 'SET @' + TmpMemObj.asmName + ' $($' + param2.asmName + ' + $' + TmpMemObj.asmName + ')\n'
                                 retinstr += 'SET @($' + param1.asmName + ') $' + TmpMemObj.asmName + '\n'
                                 auxVars.freeRegister(TmpMemObj.address)
@@ -1630,15 +1649,13 @@ function generate (Program: CONTRACT) {
                     }
                     throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.")
                 } else if (param1.type === 'array') {
-                    if (param1.offset_type === 'constant') {
-                        return createInstruction(objoperator, getMemoryObjectByLocation(utils.addHexContents(param1.hexContent, param1.offset_value), objoperator.line), param2)
-                    }
-                    if (param2.type === 'constant') {
-                        if (param2.hexContent === undefined) {
-                            throw new TypeError(`At line: ${objoperator.line}. Missing hexContent parameter. BugReport please.`)
-                        }
-                        if (param1.offset_type === undefined) { // special case for multi-long text assignment
-                            const arraySize = param1.arrayTotalSize - 1
+                    if (param1.Offset === undefined) {
+                        if (param2.type === 'constant') {
+                            // special case for multi-long text assignment
+                            if (param1.arrItem === undefined || param2.hexContent === undefined) {
+                                throw new RangeError(`At line: ${objoperator.line}. Anomaly detected. BugReport please.`)
+                            }
+                            const arraySize = param1.arrItem.totalSize - 1
                             if (param2.size > arraySize) {
                                 throw new RangeError('At line: ' + objoperator.line + '. Overflow on array value assignment (value bigger than array size).')
                             }
@@ -1651,54 +1668,67 @@ function generate (Program: CONTRACT) {
                             }
                             return retinstr
                         }
-                        if (param2.hexContent.length > 16) {
-                            throw new RangeError('At line: ' + objoperator.line + '. Overflow on long value assignment (value bigger than 64 bits)')
-                        }
-                        const TmpMemObj = auxVars.getNewRegister()
-                        retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
-                        retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.offset_value, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
-                        auxVars.freeRegister(TmpMemObj.address)
-                        return retinstr
-                    } else if (param2.type === 'register' || param2.type === 'long') {
-                        return 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.offset_value, objoperator.line).asmName + ') $' + param2.asmName + '\n'
-                    } else if (param2.type === 'register_ptr' || param2.type === 'long_ptr') {
-                        const TmpMemObj = auxVars.getNewRegister()
-                        retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
-                        retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.offset_value, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
-                        auxVars.freeRegister(TmpMemObj.address)
-                        return retinstr
-                    } else if (param2.type === 'array' || param2.type === 'struct') {
-                        if (param2.offset_type === 'constant') {
-                            if (param2.type === 'array') {
-                                return 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.offset_value, objoperator.line).asmName + ') $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.offset_value), objoperator.line).asmName + '\n'
-                            } else { // param2.type === "struct"
+                    } else if (param1.Offset.type === 'constant') {
+                        return createInstruction(objoperator, getMemoryObjectByLocation(utils.addHexContents(param1.hexContent, param1.Offset.value), objoperator.line), param2)
+                    } else {
+                        if (param2.type === 'constant') {
+                            if (param2.hexContent === undefined) {
+                                throw new TypeError(`At line: ${objoperator.line}. Missing hexContent parameter. BugReport please.`)
+                            }
+                            if (param2.hexContent.length > 16) {
+                                throw new RangeError('At line: ' + objoperator.line + '. Overflow on long value assignment (value bigger than 64 bits)')
+                            }
+                            const TmpMemObj = auxVars.getNewRegister()
+                            retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
+                            retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
+                            auxVars.freeRegister(TmpMemObj.address)
+                            return retinstr
+                        } else if (param2.type === 'register' || param2.type === 'long') {
+                            return 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + param2.asmName + '\n'
+                        } else if (param2.type === 'register_ptr' || param2.type === 'long_ptr') {
+                            const TmpMemObj = auxVars.getNewRegister()
+                            retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
+                            retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
+                            auxVars.freeRegister(TmpMemObj.address)
+                            return retinstr
+                        } else if (param2.type === 'array' || param2.type === 'struct') {
+                            if (param2.Offset === undefined) {
+                                throw new TypeError(`At line: ${objoperator.line}. Undefined offset in array/struct! BugReport please.`)
+                            } else if (param2.Offset.type === 'constant') {
+                                if (param2.type === 'array') {
+                                    return 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.Offset.value), objoperator.line).asmName + '\n'
+                                } else { // param2.type === "struct"
+                                    const TmpMemObj = auxVars.getNewRegister()
+                                    retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.Offset.value))
+                                    retinstr += 'SET @' + TmpMemObj.asmName + ' $($' + param2.asmName + ' + $' + TmpMemObj.asmName + ')\n'
+                                    retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
+                                    auxVars.freeRegister(TmpMemObj.address)
+                                    return retinstr
+                                }
+                            } else {
                                 const TmpMemObj = auxVars.getNewRegister()
-                                retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.offset_value))
-                                retinstr += 'SET @' + TmpMemObj.asmName + ' $($' + param2.asmName + ' + $' + TmpMemObj.asmName + ')\n'
-                                retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.offset_value, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
+                                retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
+                                retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
                                 auxVars.freeRegister(TmpMemObj.address)
                                 return retinstr
                             }
-                        } else {
-                            const TmpMemObj = auxVars.getNewRegister()
-                            retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
-                            retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.offset_value, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
-                            auxVars.freeRegister(TmpMemObj.address)
-                            return retinstr
                         }
                     }
                     throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.")
                 } else if (param1.type === 'struct') {
-                    if (param1.offset_type === undefined && param1.declaration === 'struct_ptr') {
-                        if (param2.type === 'constant') {
-                            return 'SET @' + param1.asmName + ' #' + param2.hexContent + '\n'
+                    if (param1.Offset === undefined) {
+                        if (param1.declaration === 'struct_ptr') {
+                            if (param2.type === 'constant') {
+                                return 'SET @' + param1.asmName + ' #' + param2.hexContent + '\n'
+                            }
+                            if (param2.type === 'register') {
+                                return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n'
+                            }
                         }
-                        if (param2.type === 'register') {
-                            return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n'
-                        }
-                    } else if (param1.offset_type === 'constant') {
+                        throw new TypeError(`At line: ${objoperator.line}. Not implemented param1 struct. BugReport Please.`)
+                    } else if (param1.Offset.type === 'constant') {
                         /* Code not allowed by condition Yyx_sSkA */
-                    } else /* if (param1.offset_type === "variable" ) */ {
+                    } else /* if (param1.Offset.type === "variable" ) */ {
                         if (param2.type === 'constant') {
                             if (param2.hexContent === undefined) {
                                 throw new TypeError(`At line: ${objoperator.line}. Missing hexContent parameter. BugReport please.`)
@@ -1708,26 +1738,28 @@ function generate (Program: CONTRACT) {
                             }
                             const TmpMemObj = auxVars.getNewRegister()
                             retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
-                            retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.offset_value, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
+                            retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
                             auxVars.freeRegister(TmpMemObj.address)
                             return retinstr
                         } else if (param2.type === 'register' || param2.type === 'long') {
-                            return 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.offset_value, objoperator.line).asmName + ') $' + param2.asmName + '\n'
+                            return 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + param2.asmName + '\n'
                         } else if (param2.type === 'array' || param2.type === 'struct') {
-                            if (param2.offset_type === 'constant') {
+                            if (param2.Offset === undefined) {
+                                throw new TypeError(`At line: ${objoperator.line}. Undefined offset in array/struct! BugReport please.`)
+                            } else if (param2.Offset.type === 'constant') {
                                 if (param2.type === 'array') {
-                                    return 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.offset_value, objoperator.line).asmName + ') $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.offset_value), objoperator.line).asmName + '\n'
+                                    return 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.Offset.value), objoperator.line).asmName + '\n'
                                 } else { // param2.type === "struct"
                                     const TmpMemObj = auxVars.getNewRegister()
-                                    retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.offset_value))
-                                    retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.offset_value, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
+                                    retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.Offset.value))
+                                    retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
                                     auxVars.freeRegister(TmpMemObj.address)
                                     return retinstr
                                 }
                             } else {
                                 const TmpMemObj = auxVars.getNewRegister()
                                 retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
-                                retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.offset_value, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
+                                retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
                                 auxVars.freeRegister(TmpMemObj.address)
                                 return retinstr
                             }
