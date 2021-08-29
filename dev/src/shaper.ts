@@ -237,7 +237,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
             enableRandom: false,
             enableLineLabels: false,
             globalOptimization: false,
-            maxAuxVars: 5,
+            maxAuxVars: 3,
             maxConstVars: 0,
             reuseAssignedVar: true,
             version: 'dev',
