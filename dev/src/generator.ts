@@ -426,7 +426,7 @@ function generate (Program: CONTRACT) {
                         }
                         if (TypeD === undefined) {
                             if (retMemObj.declaration.indexOf('_ptr') === -1) {
-                                throw new TypeError(`At line: ${objTree.Token.line}. Array type definition not found. Is '" + retMemObj.name + "' declared as array or pointer?`)
+                                throw new TypeError(`At line: ${objTree.Token.line}. Array type definition not found. Is '${retMemObj.name}' declared as array or pointer?`)
                             }
                             isPointerOp = true // allow use of array notation on pointer variables.
                         }
