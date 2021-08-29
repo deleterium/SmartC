@@ -88,7 +88,7 @@ const utils = {
         if (typeof (param2) === 'number') {
             n2 = BigInt(param2);
         }
-        else if (typeof (param1) === 'string') {
+        else if (typeof (param2) === 'string') {
             n2 = BigInt('0x' + param2);
         }
         else
@@ -108,7 +108,7 @@ const utils = {
         if (typeof (param2) === 'number') {
             n2 = BigInt(param2);
         }
-        else if (typeof (param1) === 'string') {
+        else if (typeof (param2) === 'string') {
             n2 = BigInt('0x' + param2);
         }
         else
@@ -128,7 +128,7 @@ const utils = {
         if (typeof (param2) === 'number') {
             n2 = BigInt(param2);
         }
-        else if (typeof (param1) === 'string') {
+        else if (typeof (param2) === 'string') {
             n2 = BigInt('0x' + param2);
         }
         else
@@ -148,7 +148,7 @@ const utils = {
         if (typeof (param2) === 'number') {
             n2 = BigInt(param2);
         }
-        else if (typeof (param1) === 'string') {
+        else if (typeof (param2) === 'string') {
             n2 = BigInt('0x' + param2);
         }
         else

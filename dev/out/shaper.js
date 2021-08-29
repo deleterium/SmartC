@@ -26,10 +26,9 @@ function shape(tokenAST) {
             enableRandom: false,
             enableLineLabels: false,
             globalOptimization: false,
-            maxAuxVars: 5,
+            maxAuxVars: 3,
             maxConstVars: 0,
             reuseAssignedVar: true,
-            useVariableDeclaration: true,
             version: 'dev',
             warningToError: true,
             APIFunctions: false,
@@ -497,10 +496,13 @@ function shape(tokenAST) {
                                 MemTemplate.type = 'array';
                                 MemTemplate.typeDefinition = MemTemplate.asmName;
                                 MemTemplate.asmName = AuxVars.currentPrefix + MemTemplate.name;
-                                MemTemplate.arrayItemType = search.type;
-                                MemTemplate.arrayItemTypeDefinition = search.name;
+                                MemTemplate.arrItem = {
+                                    type: search.type,
+                                    typeDefinition: search.name,
+                                    totalSize: 0
+                                };
                                 MemTemplate.declaration += '_ptr';
-                                MemTemplate.arrayTotalSize = 1 + dimensions.reduce(function (total, num) {
+                                MemTemplate.arrItem.totalSize = 1 + dimensions.reduce(function (total, num) {
                                     return total * num;
                                 }, search.MemoryTemplate.size);
                                 ret.push(MemTemplate);
@@ -607,15 +609,20 @@ function shape(tokenAST) {
                                 // fill more information in memory template
                                 MemTemplate.type = 'array';
                                 MemTemplate.typeDefinition = MemTemplate.asmName;
-                                MemTemplate.arrayItemType = search.type;
+                                MemTemplate.arrItem = {
+                                    type: search.type,
+                                    typeDefinition: '',
+                                    totalSize: 0
+                                };
+                                // CHECK22
                                 MemTemplate.declaration += '_ptr';
-                                MemTemplate.arrayTotalSize = 1 + dimensions.reduce(function (total, num) {
+                                MemTemplate.arrItem.totalSize = 1 + dimensions.reduce(function (total, num) {
                                     return total * num;
                                 }, 1);
                                 // Create item in memory_template
                                 ret.push(MemTemplate);
                                 // Create array items in memory_template
-                                for (let i = 1; i < MemTemplate.arrayTotalSize; i++) {
+                                for (let i = 1; i < MemTemplate.arrItem.totalSize; i++) {
                                     const Mem2 = JSON.parse(JSON.stringify(search.MemoryTemplate));
                                     Mem2.name = `${MemTemplate.name}_${i - 1}`;
                                     Mem2.asmName = `${MemTemplate.asmName}_${i - 1}`;
@@ -623,7 +630,7 @@ function shape(tokenAST) {
                                     ret.push(Mem2);
                                 }
                                 // create array type definition
-                                if (MemTemplate.arrayTotalSize > 1) {
+                                if (MemTemplate.arrItem.totalSize > 1) {
                                     const TypeD = {
                                         name: structName + MemTemplate.asmName,
                                         type: 'array',
@@ -728,10 +735,6 @@ function shape(tokenAST) {
                 Program.Config.globalOptimization = boolVal;
                 return;
             }
-            if (Token.property === 'useVariableDeclaration' && boolVal !== undefined) {
-                Program.Config.useVariableDeclaration = boolVal;
-                return;
-            }
             if (Token.property === 'version') {
                 Program.Config.version = Token.value;
                 if (Program.Config.version !== undefined) {
@@ -777,32 +780,28 @@ function shape(tokenAST) {
         throw new TypeError(`At line: ${Token.line}. Unknow macro property and/or value: '#${Token.type} ${Token.property} ${Token.value}'. Please check valid values on Help page`);
     }
     function addRegistersInMemory() {
-        if (Program.Config.useVariableDeclaration) {
-            const search = Program.typesDefinitions.find(obj => obj.type === 'register');
-            if (search === undefined) {
-                throw new TypeError("Not found type 'register' at types definitions.");
-            }
-            for (let i = 0; i < Program.Config.maxAuxVars; i++) {
-                const MemTemplate = JSON.parse(JSON.stringify(search.MemoryTemplate));
-                MemTemplate.name = `r${i}`;
-                MemTemplate.asmName = `r${i}`;
-                Program.memory.push(MemTemplate);
-            }
+        const search = Program.typesDefinitions.find(obj => obj.type === 'register');
+        if (search === undefined) {
+            throw new TypeError("Not found type 'register' at types definitions.");
+        }
+        for (let i = 0; i < Program.Config.maxAuxVars; i++) {
+            const MemTemplate = JSON.parse(JSON.stringify(search.MemoryTemplate));
+            MemTemplate.name = `r${i}`;
+            MemTemplate.asmName = `r${i}`;
+            Program.memory.push(MemTemplate);
         }
     }
     function addConstantsInMemory() {
-        if (Program.Config.useVariableDeclaration) {
-            const search = Program.typesDefinitions.find(obj => obj.type === 'register');
-            if (search === undefined) {
-                throw new TypeError("Not found type 'register' at types definitions.");
-            }
-            for (let i = 1; i <= Program.Config.maxConstVars; i++) {
-                const MemTemplate = JSON.parse(JSON.stringify(search.MemoryTemplate));
-                MemTemplate.name = `n${i}`;
-                MemTemplate.asmName = `n${i}`;
-                MemTemplate.hexContent = i.toString(16).padStart(16, '0');
-                Program.memory.push(MemTemplate);
-            }
+        const search = Program.typesDefinitions.find(obj => obj.type === 'register');
+        if (search === undefined) {
+            throw new TypeError("Not found type 'register' at types definitions.");
+        }
+        for (let i = 1; i <= Program.Config.maxConstVars; i++) {
+            const MemTemplate = JSON.parse(JSON.stringify(search.MemoryTemplate));
+            MemTemplate.name = `n${i}`;
+            MemTemplate.asmName = `n${i}`;
+            MemTemplate.hexContent = i.toString(16).padStart(16, '0');
+            Program.memory.push(MemTemplate);
         }
     }
     /** Process/checks function arguments and code, transforming them into argsMemObj and sentences properties  */
@@ -844,9 +843,6 @@ function shape(tokenAST) {
     }
     function checkDoublesDefinitions() {
         let i, j;
-        if (Program.Config.useVariableDeclaration === false) {
-            return;
-        }
         for (i = 0; i < Program.memory.length - 1; i++) {
             for (j = i + 1; j < Program.memory.length; j++) {
                 if (Program.memory[i].asmName === Program.memory[j].asmName) {
