@@ -100,8 +100,7 @@ function generate (Program: CONTRACT) {
     */
     function codeGenerator (cgAST?: AST, jumpTarget?: string, jumpNotTarget?:string, isReversedLogic?: boolean) {
         const auxVars: {
-            tmpvars: string[]
-            status: boolean[]
+            registerInfo: { inUse: boolean, Template: MEMORY_SLOT }[]
             postOperations: string
             funcArgs: []
             declaring: DECLARATION_TYPES
@@ -114,8 +113,7 @@ function generate (Program: CONTRACT) {
             createTmpVarsTable(): void
             getPostOperations(): string
         } = {
-            tmpvars: [],
-            status: [],
+            registerInfo: [],
             postOperations: '',
             funcArgs: [],
             declaring: '',
@@ -125,40 +123,39 @@ function generate (Program: CONTRACT) {
 
             isTemp (loc) {
                 if (loc === -1) return false
-                const MemObj = getMemoryObjectByLocation(loc)
-                const id = this.tmpvars.indexOf(MemObj.name)
-                if (id >= 0) {
-                    if (this.status[id] === true) {
-                        return true
-                    }
+                const id = this.registerInfo.find(OBJ => OBJ.Template.address === loc)
+                if (id?.inUse === true) {
+                    return true
                 }
                 return false
             },
 
             getNewRegister () {
-                const id = this.status.indexOf(false)
-                if (id === -1) {
+                const id = this.registerInfo.find(OBJ => OBJ.inUse === false)
+                if (id === undefined) {
                     throw new RangeError("No more registers available. Try to reduce nested operations or increase 'max_auxVars'")
                 }
-                this.status[id] = true
-                return getMemoryObjectByName(this.tmpvars[id])
+                id.inUse = true
+                return JSON.parse(JSON.stringify(id.Template))
             },
 
             freeRegister (loc) {
                 if (loc === undefined || loc === -1) {
                     return
                 }
-                const MemObj = getMemoryObjectByLocation(loc)
-                const id = this.tmpvars.indexOf(MemObj.name)
-                if (id === -1) return
-                this.status[id] = false
+                const id = this.registerInfo.find(OBJ => OBJ.Template.address === loc)
+                if (id === undefined) return
+                id.inUse = false
             },
 
             createTmpVarsTable () {
-                for (let i = 0; i < Program.Config.maxAuxVars; i++) {
-                    this.tmpvars.push('r' + i)
-                    this.status.push(false)
-                }
+                const regs = Program.memory.filter(OBJ => OBJ.type === 'register')
+                regs.forEach(MEM => {
+                    this.registerInfo.push({
+                        inUse: false,
+                        Template: MEM
+                    })
+                })
             },
 
             getPostOperations () {
@@ -938,13 +935,10 @@ function generate (Program: CONTRACT) {
                         }
 
                         // Save registers currently in use in stack. Function execution will overwrite them
-                        const registerStack: number[] = []
-                        for (let i = auxVars.status.length - 1; i >= 0; i--) {
-                            if (auxVars.status[i] === true) {
-                                instructionstrain += createSimpleInstruction('Push', auxVars.tmpvars[i])
-                                registerStack.push(i)
-                            }
-                        }
+                        const registerStack = auxVars.registerInfo.filter(OBJ => OBJ.inUse === true).reverse()
+                        registerStack.forEach(OBJ => {
+                            instructionstrain += createSimpleInstruction('Push', OBJ.Template.asmName)
+                        })
 
                         subSentences = utils.splitASTOnDelimiters(objTree.Right)
                         if (subSentences[0].type === 'nullASN') {
@@ -983,11 +977,9 @@ function generate (Program: CONTRACT) {
                         }
 
                         // Load registers again
-                        while (true) {
-                            const id = registerStack.pop()
-                            if (id === undefined) break
-                            instructionstrain += createSimpleInstruction('Pop', auxVars.tmpvars[id])
-                        }
+                        registerStack.reverse().forEach(OBJ => {
+                            instructionstrain += createSimpleInstruction('Pop', OBJ.Template.asmName)
+                        })
 
                         if (search.declaration === 'void') {
                             return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain }
@@ -1245,11 +1237,12 @@ function generate (Program: CONTRACT) {
                         LGenObj.MemObj.type === 'long' &&
                         LGenObj.MemObj.Offset === undefined &&
                         CanReuseAssignedVar(LGenObj.MemObj.address, objTree.Right)) {
-                        auxVars.tmpvars.unshift(LGenObj.MemObj.name)
-                        auxVars.status.unshift(false)
+                        auxVars.registerInfo.unshift({
+                            inUse: false,
+                            Template: LGenObj.MemObj
+                        })
                         RGenObj = genCode(objTree.Right, false, revLogic, jumpFalse, jumpTrue)
-                        auxVars.tmpvars.shift()
-                        auxVars.status.shift()
+                        auxVars.registerInfo.shift()
                     } else {
                         RGenObj = genCode(objTree.Right, false, revLogic, jumpFalse, jumpTrue)
                     }
