@@ -357,10 +357,6 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                 tokenAST[AuxVars.currentToken + 2].type === 'Variable' &&
                 tokenAST[AuxVars.currentToken + 3].type === 'Function' &&
                 tokenAST[AuxVars.currentToken + 4].type === 'CodeDomain') {
-                // Function found. Does return pointer
-                if (tokenAST[AuxVars.currentToken].value === 'struct') {
-                    throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct currently not implemented.`)
-                }
                 Program.functions.push(
                     {
                         argsMemObj: [],

@@ -805,10 +805,23 @@ if (a<=pcar->collector) { b--; }`, false, '^declare r0\n^declare r1\n^declare r2
         ['long *a; a=test(); long *test(void) { long b; return &b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test_b\n\nJSR :__fn_test\nPOP @a\nFIN\n\n__fn_test:\nSET @r0 #0000000000000004\nPSH $r0\nRET\n'],
         ['long a; a=test(); long *test(void) { long b; return &b; }', true, ''],
         ['long *a; a=test(); long *test(void) { long b; return b; }', true, ''],
-        ['struct KOMBI { long driver; long collector; long passenger; } car, *pcar; pcar = teste(); struct KOMBI * teste(void){ return &car; }', true, ''],
         ['struct KOMBI { long driver; long collector; long passenger; } car, car2; car = teste(); struct KOMBI teste(void){ return car; }', true, ''],
         ['Declarations', null, 'div'],
         ['long ,b;', true, ''],
+
+        ['Improvements v0.3', null, ''],
+        [
+            // Function returning struct pointer
+            'struct KOMBI { long driver, collector, passenger; } *val; val = teste(); val = test2(); struct KOMBI *teste(void) { struct KOMBI tt2; return &tt2; } struct KOMBI *test2(void) { struct KOMBI *stt2; return stt2; }',
+            false,
+            '^declare r0\n^declare r1\n^declare r2\n^declare val\n^declare teste_tt2_driver\n^declare teste_tt2_collector\n^declare teste_tt2_passenger\n^declare test2_stt2\n\nJSR :__fn_teste\nPOP @r0\nSET @val $r0\nJSR :__fn_test2\nPOP @r0\nSET @val $r0\nFIN\n\n__fn_teste:\nSET @r0 #0000000000000004\nPSH $r0\nRET\n\n__fn_test2:\nPSH $test2_stt2\nRET\n'
+        ],
+        [
+            // Error check Function return pointer
+            'struct KOMBI { long driver, collector, passenger; } *val; val = teste(); struct KOMBI *teste(void) { struct KOMBI tt2; return tt2; }',
+            true,
+            ''
+        ],
 
         // globalOptimization
         ['globalOptimization', null, 'div'],
