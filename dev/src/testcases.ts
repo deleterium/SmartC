@@ -92,8 +92,8 @@ function runTestCases () {
         ['long a, b, c; a=~--b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nDEC @b\nSET @a $b\nNOT @a\nFIN\n'],
         ['long a, b, c; a+=~b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @r0 $b\nNOT @r0\nADD @a $r0\nINC @b\nFIN\n'],
         ['long a, b, c; a=~b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $b\nNOT @a\nINC @b\nFIN\n'],
+        ['long a; a++=2;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @a #0000000000000002\nINC @a\nFIN\n'],
 
-        ['long a; a++=2;', true, ''],
         ['long a; a=2++;', true, ''],
         ['--;', true, ''],
         ['2++;', true, ''],
@@ -196,8 +196,10 @@ function runTestCases () {
         ['long a, b; a*=(b);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nMUL @a $b\nFIN\n'],
         ['long a; a=(2);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @a #0000000000000002\nFIN\n'],
         ['long a, *b, c, d; a=*(b);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @a $($b)\nFIN\n'],
-        ['long a, b, c, d; a=*(b+c);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @a $b\nADD @a $c\nSET @r0 $($a)\nSET @a $r0\nFIN\n'],
-        ['long a, b, c, d; *(a+1)=b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @r0 $a\nINC @r0\nSET @($r0) $b\nFIN\n'],
+        ['long a, *b, c, d; a=*(b+c);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @a $b\nADD @a $c\nSET @r0 $($a)\nSET @a $r0\nFIN\n'],
+        ['long a, b, *c, d; a=*(b+c);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @a $b\nADD @a $c\nSET @r0 $($a)\nSET @a $r0\nFIN\n'],
+        ['long a, b, *c, d; a=*(5+c);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @a #0000000000000005\nADD @a $c\nSET @r0 $($a)\nSET @a $r0\nFIN\n'],
+        ['long *a, b, c, d; *(a+1)=b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @r0 $a\nINC @r0\nSET @($r0) $b\nFIN\n'],
         ['long a, b, c, d; a=(b*c)*d;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @a $b\nMUL @a $c\nMUL @a $d\nFIN\n'],
         ['long a, b, c, d; a=(b/c)/d;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @a $b\nDIV @a $c\nDIV @a $d\nFIN\n'],
         ['long a, b, c, d; a=~(0xFF<<8);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @a #00000000000000ff\nSET @r0 #0000000000000008\nSHL @a $r0\nNOT @a\nFIN\n'],
@@ -211,6 +213,10 @@ function runTestCases () {
         ['long a, b, c, d; a=--(b);', true, ''],
         ['long a, b, c, d; a=(b+c)++;', true, ''],
         ['long a, b, c, d; a=(b)[c];', true, ''],
+        ['long a, b, c, d; *(a+1)=b;', true, ''],
+        ['long a, b, c, d; *(a+c)=b;', true, ''],
+        ['long a, b, c, d; a=*(b+1);', true, ''],
+        ['long a, b, c, d; a=*(b+c);', true, ''],
 
         // Arithmetic + comparisions
         ['Arithmetic + comparisions;', null, 'div'],
@@ -263,7 +269,7 @@ function runTestCases () {
         ['long a, b, c, d, e; a=b+c/d-e;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nSET @a $c\nDIV @a $d\nADD @a $b\nSUB @a $e\nFIN\n'],
         ['long a, b, c, d, e; a=b<<c+d<<e;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nSET @a $c\nADD @a $d\nSET @r0 $b\nSHL @r0 $a\nSHL @r0 $e\nSET @a $r0\nFIN\n'],
         ['long a, b, c, d, e; a=b&c<<d^e;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nSET @a $c\nSHL @a $d\nAND @a $b\nXOR @a $e\nFIN\n'],
-        ['long a, b, c; *(a+1)=b; *(a+30)=b; *(a+c)=b; b=*(a+1); b=*(a+30); b=*(a+c);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @r0 $a\nINC @r0\nSET @($r0) $b\nSET @r0 #000000000000001e\nADD @r0 $a\nSET @($r0) $b\nSET @r0 $a\nADD @r0 $c\nSET @($r0) $b\nSET @b $a\nINC @b\nSET @r0 $($b)\nSET @b $r0\nSET @b #000000000000001e\nADD @b $a\nSET @r0 $($b)\nSET @b $r0\nSET @b $a\nADD @b $c\nSET @r0 $($b)\nSET @b $r0\nFIN\n'],
+        ['long *a, b, c; *(a+1)=b; *(a+30)=b; *(a+c)=b; b=*(a+1); b=*(a+30); b=*(a+c);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @r0 $a\nINC @r0\nSET @($r0) $b\nSET @r0 #000000000000001e\nADD @r0 $a\nSET @($r0) $b\nSET @r0 $a\nADD @r0 $c\nSET @($r0) $b\nSET @b $a\nINC @b\nSET @r0 $($b)\nSET @b $r0\nSET @b #000000000000001e\nADD @b $a\nSET @r0 $($b)\nSET @b $r0\nSET @b $a\nADD @b $c\nSET @r0 $($b)\nSET @b $r0\nFIN\n'],
 
         ['long a, b, c; a=b%(1+*b[c]);', true, ''],
 
@@ -479,6 +485,8 @@ pa = pb; pa = &pb; pa = &vb; *pa= vb;
  pa=vb; pa=*pb; *pa=pb; *pa=&pb; *pa=&vb; va=pb; va=&pb; va=&vb;`, false, '^declare r0\n^declare r1\n^declare r2\n^declare pa\n^declare pb\n^declare va\n^declare vb\n\nSET @pa $vb\nSET @pa $($pb)\nSET @($pa) $pb\nSET @r0 #0000000000000004\nSET @($pa) $r0\nSET @r0 #0000000000000006\nSET @($pa) $r0\nSET @va $pb\nSET @va #0000000000000004\nSET @va #0000000000000006\nFIN\n'],
         ['long *pa, *pb, va, vb; va=*vb;', true, ''],
         ['long *pa, *pb, va, vb; *va=vb;', true, ''],
+        ['long *a, *a+1=0;', true, ''],
+        ['long *a, *(a*3)=0;', true, ''],
 
         ['Pointer/Array Assignment;', null, 'div'],
         ['long a[4], *b, c; *b=a[0]; a[0]=*b; b=a; *b=a[c]; a[c]=*b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\n\nSET @($b) $a_0\nSET @a_0 $($b)\nSET @b $a\nSET @r0 $($a + $c)\nSET @($b) $r0\nSET @r0 $($b)\nSET @($a + $c) $r0\nFIN\n'],
@@ -1089,7 +1097,7 @@ ${code}`
                 result += `Pass! (failed) Code: <span style='color:purple'>${encodedStr(currentTest[0])}</span><br><span style='color:green'>${e}</span>`
                 itemPass++
             } else {
-                result += `<span style='color:red'>Fail...</span> (failed) Code: <span style='color:purple'>${encodedStr(currentTest[0])}'</span><br>GOT<br>${e}`
+                result += `<span style='color:red'>Fail...</span> (failed) Code: <span style='color:purple'>${encodedStr(currentTest[0])}</span><br>GOT<br>${e}`
                 itemFail++
             }
         }
