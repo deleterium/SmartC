@@ -959,9 +959,11 @@ a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;
         ['struct KOMBI { long driver; long collector; long passenger; }; void teste(void) { struct KOMBI tt2, *stru, tt, *stru2; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare teste_tt2_driver\n^declare teste_tt2_collector\n^declare teste_tt2_passenger\n^declare teste_stru\n^declare teste_tt_driver\n^declare teste_tt_collector\n^declare teste_tt_passenger\n^declare teste_stru2\n\nFIN\n\n__fn_teste:\nRET\n'],
         // bug 22 Function/API Functions on conditional not being evaluated
         ['long a=0; if (test2(a)){ a++; } long test2(long b) { b++; return b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n'],
-        ['#include APIFunctions\n long a=0; if (Get_A1()){ a++;} ', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @a\nFUN @r0 get_A1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n']
+        ['#include APIFunctions\n long a=0; if (Get_A1()){ a++;} ', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @a\nFUN @r0 get_A1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+        // bug 23 Parser trying to get property of undefined variable
+        ['long a, b; *a + 1 = b', true, ''],
         //    [ "", false, "" ],
-
+        ['End of tests!', null, '']
     ]
 
     // params:  asmcode, expect error?, bytecode, bytedata

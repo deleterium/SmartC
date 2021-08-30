@@ -438,7 +438,7 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
 
     function matchRule (ruleN: TOKEN_SPEC) {
         for (let i = 0; i < ruleN.sequence.length; i++) {
-            if (preTokens[mainLoopIndex + i].type === ruleN.sequence[i]) continue
+            if (preTokens[mainLoopIndex + i]?.type === ruleN.sequence[i]) continue
             return false // proceed to next rule
         }
         return true // all sequence matched!
