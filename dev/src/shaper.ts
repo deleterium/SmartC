@@ -43,7 +43,7 @@ interface SC_MACRO {
     line: number
 }
 
-type MEMORY_BASE_TYPES = 'register' | 'long' | 'constant' | 'struct' | 'array' | 'label' | 'void' | 'register_ptr' | 'long_ptr'
+type MEMORY_BASE_TYPES = 'register' | 'long' | 'constant' | 'struct' | 'array' | 'label' | 'void'
 
 /** If constant, it is the number to shift. If variable, it is the address containing the value to shift */
 type OFFSET_MODIFIER = { type: 'constant', value: number } | {type: 'variable', addr: number }
@@ -80,6 +80,8 @@ interface MEMORY_SLOT {
     }
     /** Indicates to apply a shift to this memory address. Applicable to arrays, structs and pointer operations */
     Offset?: OFFSET_MODIFIER
+    /** Used only for left side of assignment */
+    delayedDeference?: boolean
 }
 
 // eslint-disable-next-line no-use-before-define
