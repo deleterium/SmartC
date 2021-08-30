@@ -79,49 +79,46 @@ function generate(Program) {
     */
     function codeGenerator(cgAST, jumpTarget, jumpNotTarget, isReversedLogic) {
         const auxVars = {
-            tmpvars: [],
-            status: [],
+            registerInfo: [],
             postOperations: '',
             funcArgs: [],
             declaring: '',
-            pointerCodecave: false,
             isLeftSideOfAssignment: false,
             isConstSentence: false,
             isTemp(loc) {
                 if (loc === -1)
                     return false;
-                const MemObj = getMemoryObjectByLocation(loc);
-                const id = this.tmpvars.indexOf(MemObj.name);
-                if (id >= 0) {
-                    if (this.status[id] === true) {
-                        return true;
-                    }
+                const id = this.registerInfo.find(OBJ => OBJ.Template.address === loc);
+                if (id?.inUse === true) {
+                    return true;
                 }
                 return false;
             },
             getNewRegister() {
-                const id = this.status.indexOf(false);
-                if (id === -1) {
+                const id = this.registerInfo.find(OBJ => OBJ.inUse === false);
+                if (id === undefined) {
                     throw new RangeError("No more registers available. Try to reduce nested operations or increase 'max_auxVars'");
                 }
-                this.status[id] = true;
-                return getMemoryObjectByName(this.tmpvars[id]);
+                id.inUse = true;
+                return JSON.parse(JSON.stringify(id.Template));
             },
             freeRegister(loc) {
                 if (loc === undefined || loc === -1) {
                     return;
                 }
-                const MemObj = getMemoryObjectByLocation(loc);
-                const id = this.tmpvars.indexOf(MemObj.name);
-                if (id === -1)
+                const id = this.registerInfo.find(OBJ => OBJ.Template.address === loc);
+                if (id === undefined)
                     return;
-                this.status[id] = false;
+                id.inUse = false;
             },
             createTmpVarsTable() {
-                for (let i = 0; i < Program.Config.maxAuxVars; i++) {
-                    this.tmpvars.push('r' + i);
-                    this.status.push(false);
-                }
+                const regs = Program.memory.filter(OBJ => OBJ.type === 'register');
+                regs.forEach(MEM => {
+                    this.registerInfo.push({
+                        inUse: false,
+                        Template: MEM
+                    });
+                });
             },
             getPostOperations() {
                 const ret = this.postOperations;
@@ -139,7 +136,7 @@ function generate(Program) {
         }
         if (jumpTarget === undefined) {
             code = genCode(cgAST, false, isReversedLogic, jumpTarget, jumpNotTarget);
-            if (code.MemObj.type !== 'void' && auxVars.isTemp(code.MemObj.address) && code.MemObj.type.indexOf('_ptr') === -1) {
+            if (code.MemObj.type === 'register' && code.MemObj.delayedDeference !== true) {
                 if (Program.Config.warningToError) {
                     if (cgAST.type === 'endASN') {
                         throw new TypeError(`At line: ${cgAST.Token.line}. Warning: Value ${cgAST.Token.value} not being used.`);
@@ -239,9 +236,6 @@ function generate(Program) {
                             retMemObj = utils.createConstantMemObj();
                             retMemObj.size = objTree.Token.value.length / 16;
                             retMemObj.hexContent = objTree.Token.value;
-                            if (auxVars.pointerCodecave === true) {
-                                retMemObj.type += '_ptr';
-                            }
                             return { MemObj: retMemObj, instructionset: '' };
                         }
                         throw new TypeError('At line:' + objTree.Token.line + '. End object not implemented: ' + objTree.Token.type + ' ' + objTree.Token);
@@ -372,13 +366,8 @@ function generate(Program) {
                             if (retMemObj.type !== 'array' && retMemObj.type !== 'struct' && retMemObj.Offset !== undefined) {
                                 throw new TypeError(`At line: ${objTree.Token.line}. Can not use array notation on regular variables.`);
                             }
-                            // allow some paranauê
-                            const oldLeftState = auxVars.isLeftSideOfAssignment;
-                            auxVars.isLeftSideOfAssignment = false;
                             const ParamMemObj = genCode(CurrentModifier.Center, false, false);
                             instructionstrain += ParamMemObj.instructionset;
-                            // undo paranauê
-                            auxVars.isLeftSideOfAssignment = oldLeftState;
                             if (retMemObj.declaration.indexOf('_ptr') > 0) {
                                 retMemObj.declaration = retMemObj.declaration.slice(0, -4);
                             }
@@ -586,35 +575,30 @@ function generate(Program) {
                             }
                             const CGenObj = genCode(objTree.Center, false, revLogic, jumpFalse, jumpTrue);
                             instructionstrain += CGenObj.instructionset;
-                            if (logicalOp === true) {
-                                CGenObj.MemObj.type += '_ptr';
-                                instructionstrain += createInstruction(utils.genNotEqualToken(), CGenObj.MemObj, utils.createConstantMemObj(0), revLogic, jumpFalse, jumpTrue);
-                                auxVars.freeRegister(CGenObj.MemObj.address);
-                                return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain };
-                            }
                             if (CGenObj.MemObj.declaration.indexOf('_ptr') === -1) {
-                                if (!auxVars.isTemp(CGenObj.MemObj.address)) { // do not care about temp variables
-                                    if (Program.Config.warningToError) {
-                                        if (objTree.Center.type === 'endASN' || objTree.Center.type === 'lookupASN') {
-                                            throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of variable ${objTree.Center.Token.value} that is not declared as pointer.`);
-                                        }
-                                        throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of a value that is not declared as pointer.`);
+                                if (Program.Config.warningToError) {
+                                    if (objTree.Center.type === 'endASN' || objTree.Center.type === 'lookupASN') {
+                                        throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of variable ${objTree.Center.Token.value} that is not declared as pointer.`);
                                     }
+                                    throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of a value that is not declared as pointer.`);
                                 }
+                                CGenObj.MemObj.declaration = (CGenObj.MemObj.declaration + '_ptr');
                             }
-                            else {
+                            if (auxVars.isLeftSideOfAssignment) {
+                                CGenObj.MemObj.delayedDeference = true;
                                 CGenObj.MemObj.declaration = CGenObj.MemObj.declaration.slice(0, -4);
-                            }
-                            CGenObj.MemObj.type += '_ptr';
-                            if (!auxVars.isLeftSideOfAssignment) {
-                                const TmpMemObj = auxVars.getNewRegister();
-                                instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, CGenObj.MemObj);
-                                auxVars.freeRegister(CGenObj.MemObj.address);
-                                return { MemObj: TmpMemObj, instructionset: instructionstrain };
-                            }
-                            else {
                                 return { MemObj: CGenObj.MemObj, instructionset: instructionstrain };
                             }
+                            const TmpMemObj = auxVars.getNewRegister();
+                            instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, CGenObj.MemObj);
+                            if (logicalOp === true) {
+                                instructionstrain += createInstruction(utils.genNotEqualToken(), TmpMemObj, utils.createConstantMemObj(0), revLogic, jumpFalse, jumpTrue);
+                                auxVars.freeRegister(CGenObj.MemObj.address);
+                                auxVars.freeRegister(TmpMemObj.address);
+                                return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain };
+                            }
+                            auxVars.freeRegister(CGenObj.MemObj.address);
+                            return { MemObj: TmpMemObj, instructionset: instructionstrain };
                         }
                         if (objTree.Operation.value === '-') {
                             const CGenObj = genCode(objTree.Center, false, revLogic, jumpFalse, jumpTrue);
@@ -678,11 +662,13 @@ function generate(Program) {
                                 if (CGenObj.MemObj.Offset !== undefined) {
                                     if (CGenObj.MemObj.Offset.type === 'constant') {
                                         TmpMemObj = utils.createConstantMemObj(utils.addHexContents(CGenObj.MemObj.hexContent, CGenObj.MemObj.Offset.value));
+                                        TmpMemObj.declaration = CGenObj.MemObj.declaration;
                                     }
                                     else {
                                         const Copyvar = JSON.parse(JSON.stringify(CGenObj.MemObj));
                                         delete Copyvar.Offset;
                                         TmpMemObj = auxVars.getNewRegister();
+                                        TmpMemObj.declaration = CGenObj.MemObj.declaration;
                                         instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, Copyvar);
                                         instructionstrain += createInstruction(utils.genAddToken(), TmpMemObj, getMemoryObjectByLocation(CGenObj.MemObj.Offset.addr));
                                     }
@@ -693,9 +679,11 @@ function generate(Program) {
                             }
                             else if (CGenObj.MemObj.type === 'struct') {
                                 TmpMemObj = utils.createConstantMemObj(CGenObj.MemObj.hexContent);
+                                TmpMemObj.declaration = 'struct';
                             }
                             else if (CGenObj.MemObj.type === 'long' /* || CGenObj.MemObj.type === 'long_ptr' || CGenObj.MemObj.type === 'struct_ptr' */) {
                                 TmpMemObj = utils.createConstantMemObj(CGenObj.MemObj.address);
+                                TmpMemObj.declaration = 'long';
                             }
                             else {
                                 throw new TypeError(`At line: ${objTree.Operation.line}. Trying to get address of a Label`);
@@ -763,9 +751,6 @@ function generate(Program) {
                         }
                         if (jumpFalse !== undefined) {
                             throw new SyntaxError('At line: ' + objTree.Operation.line + '. Can not use SetUnaryOperator (++ or --) during logical operations with branches');
-                        }
-                        if (auxVars.isLeftSideOfAssignment) {
-                            throw new SyntaxError(`At line: ${objTree.Operation.line}. Can not use SetUnaryOperator '${objTree.Operation.value}' on left side or assignment.`);
                         }
                         if (objTree.Left !== undefined) {
                             const LGenObj = genCode(objTree.Left, false, revLogic, jumpFalse, jumpTrue);
@@ -848,13 +833,10 @@ function generate(Program) {
                                 throw new TypeError('At line: ' + fnName + '. Recursive functions not allowed.');
                             }
                             // Save registers currently in use in stack. Function execution will overwrite them
-                            const registerStack = [];
-                            for (let i = auxVars.status.length - 1; i >= 0; i--) {
-                                if (auxVars.status[i] === true) {
-                                    instructionstrain += createSimpleInstruction('Push', auxVars.tmpvars[i]);
-                                    registerStack.push(i);
-                                }
-                            }
+                            const registerStack = auxVars.registerInfo.filter(OBJ => OBJ.inUse === true).reverse();
+                            registerStack.forEach(OBJ => {
+                                instructionstrain += createSimpleInstruction('Push', OBJ.Template.asmName);
+                            });
                             subSentences = utils.splitASTOnDelimiters(objTree.Right);
                             if (subSentences[0].type === 'nullASN') {
                                 subSentences.pop();
@@ -888,12 +870,9 @@ function generate(Program) {
                                 TmpMemObj = utils.createVoidMemObj();
                             }
                             // Load registers again
-                            while (true) {
-                                const id = registerStack.pop();
-                                if (id === undefined)
-                                    break;
-                                instructionstrain += createSimpleInstruction('Pop', auxVars.tmpvars[id]);
-                            }
+                            registerStack.reverse().forEach(OBJ => {
+                                instructionstrain += createSimpleInstruction('Pop', OBJ.Template.asmName);
+                            });
                             if (search.declaration === 'void') {
                                 return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain };
                             }
@@ -1006,6 +985,9 @@ function generate(Program) {
                         if (LGenObj.MemObj.type === 'void' || RGenObj.MemObj.type === 'void') {
                             throw new TypeError('At line: ' + objTree.Operation.line + '. Trying to make operations with undefined variables');
                         }
+                        if (LGenObj.MemObj.delayedDeference === true || RGenObj.MemObj.delayedDeference === true) {
+                            throw new TypeError(`At line: ${objTree.Operation.line}. Invalid left value for assignment. Operation on deferenced pointer.`);
+                        }
                         // optimization on constant codes:
                         if (LGenObj.MemObj.type === 'constant' && RGenObj.MemObj.type === 'constant') {
                             let TmpMemObj;
@@ -1098,9 +1080,6 @@ function generate(Program) {
                         if (LGenObj.MemObj.address === -1) {
                             throw new TypeError('At line: ' + objTree.Operation.line + '. Invalid left value for ' + objTree.Operation.type);
                         }
-                        if (auxVars.isTemp(LGenObj.MemObj.address) && LGenObj.MemObj.type.lastIndexOf('_ptr') !== LGenObj.MemObj.type.length - 4) {
-                            throw new TypeError('At line: ' + objTree.Operation.line + '. Invalid left value for ' + objTree.Operation.type);
-                        }
                         let savedDeclaration = '';
                         if (auxVars.declaring.length !== 0) {
                             savedDeclaration = auxVars.declaring;
@@ -1116,12 +1095,17 @@ function generate(Program) {
                             Program.Config.reuseAssignedVar === true &&
                             LGenObj.MemObj.type === 'long' &&
                             LGenObj.MemObj.Offset === undefined &&
+                            LGenObj.MemObj.delayedDeference !== true &&
                             CanReuseAssignedVar(LGenObj.MemObj.address, objTree.Right)) {
-                            auxVars.tmpvars.unshift(LGenObj.MemObj.name);
-                            auxVars.status.unshift(false);
+                            const newRegister = JSON.parse(JSON.stringify(LGenObj.MemObj));
+                            newRegister.type = 'register';
+                            newRegister.declaration = 'long';
+                            auxVars.registerInfo.unshift({
+                                inUse: false,
+                                Template: newRegister
+                            });
                             RGenObj = genCode(objTree.Right, false, revLogic, jumpFalse, jumpTrue);
-                            auxVars.tmpvars.shift();
-                            auxVars.status.shift();
+                            auxVars.registerInfo.shift();
                         }
                         else {
                             RGenObj = genCode(objTree.Right, false, revLogic, jumpFalse, jumpTrue);
@@ -1146,14 +1130,12 @@ function generate(Program) {
                                 throw new TypeError('At line: ' + objTree.Operation.line + ". Operation not allowed on pointers. Only '+', '-', '++' and '--' are.");
                             }
                         }
-                        if (!auxVars.isTemp(RGenObj.MemObj.address)) {
-                            if (LGenObj.MemObj.declaration !== RGenObj.MemObj.declaration) {
-                                if (LGenObj.MemObj.declaration.indexOf('_ptr') === -1 || RGenObj.MemObj.declaration.indexOf('_ptr') === -1) { // skipt check if both sides are pointers
-                                    if (Program.Config.warningToError) {
-                                        throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Left and right values does not match. Values are: '" + LGenObj.MemObj.declaration + "' and '" + RGenObj.MemObj.declaration + "'.");
-                                    }
-                                }
+                        if (LGenObj.MemObj.declaration !== RGenObj.MemObj.declaration) {
+                            if (Program.Config.warningToError) {
+                                throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Left and right values does not match. Values are: '" + LGenObj.MemObj.declaration + "' and '" + RGenObj.MemObj.declaration + "'.");
                             }
+                            // Override declaration protection rules
+                            LGenObj.MemObj.declaration = RGenObj.MemObj.declaration;
                         }
                         instructionstrain += createInstruction(objTree.Operation, LGenObj.MemObj, RGenObj.MemObj);
                         if (auxVars.isConstSentence === true) {
@@ -1164,7 +1146,6 @@ function generate(Program) {
                             instructionstrain = setConstAsmCode(instructionstrain, objTree.Operation.line);
                             return { MemObj: LGenObj.MemObj, instructionset: instructionstrain };
                         }
-                        auxVars.freeRegister(RGenObj.MemObj.address);
                         auxVars.freeRegister(RGenObj.MemObj.address);
                         return { MemObj: LGenObj.MemObj, instructionset: instructionstrain };
                     }
@@ -1364,6 +1345,9 @@ function generate(Program) {
             let RetObj;
             let retInstructions = '';
             let retIsNew = false;
+            if (ParamMemObj.delayedDeference === true) {
+                throw new TypeError(`At line: ${line}. Operation on delayedDeference variable. BugReport Please.`);
+            }
             if (ParamMemObj.type === 'constant') {
                 RetObj = auxVars.getNewRegister();
                 retInstructions += createInstruction(utils.genAssignmentToken(), RetObj, ParamMemObj);
@@ -1371,11 +1355,6 @@ function generate(Program) {
             }
             else if (ParamMemObj.type === 'register' || ParamMemObj.type === 'long') {
                 RetObj = ParamMemObj;
-            }
-            else if (ParamMemObj.type === 'register_ptr' || ParamMemObj.type === 'long_ptr') {
-                RetObj = auxVars.getNewRegister();
-                retInstructions += createInstruction(utils.genAssignmentToken(), RetObj, ParamMemObj);
-                retIsNew = true;
             }
             else if (ParamMemObj.type === 'array') {
                 if (ParamMemObj.Offset === undefined) { // Pointer operation
@@ -1421,52 +1400,59 @@ function generate(Program) {
                     throw new TypeError('At line: ' + objoperator.line + '.Invalid left side for assigment.');
                 }
                 if (param1.type === 'register' || param1.type === 'long') { // param 1 can be direct assigned
-                    if (param2.type === 'constant') { // Can use SET_VAL or CLR_DAT
-                        if (param2.hexContent === undefined) {
-                            throw new TypeError(`At line: ${objoperator.line}. Missing hexContent parameter. BugReport please.`);
-                        }
-                        if (param2.hexContent === '0000000000000000') {
-                            return 'CLR @' + param1.asmName + '\n';
-                        }
-                        if (param2.hexContent.length > 17) {
-                            throw new RangeError('At line: ' + objoperator.line + '.Overflow on long value assignment (value bigger than 64 bits)');
-                        }
-                        return 'SET @' + param1.asmName + ' #' + param2.hexContent + '\n';
-                    }
-                    else if (param2.type === 'register' || param2.type === 'long') { // Can use SET_DAT
-                        if (param1.address === param2.address)
-                            return '';
-                        else
-                            return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n';
-                    }
-                    else if (param2.type === 'register_ptr' || param2.type === 'long_ptr') {
-                        return 'SET @' + param1.asmName + ' $($' + param2.asmName + ')\n';
-                        // } else if (param2.type === 'constant_ptr') {
-                        //     return 'SET @' + param1.asmName + ' $($' + getMemoryObjectByLocation(param2.hexContent, objoperator.line).asmName + ')\n'
-                    }
-                    else if (param2.type === 'array' || param2.type === 'struct') {
-                        if (param2.Offset === undefined) {
-                            return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n';
-                        }
-                        else if (param2.Offset.type === 'constant') {
-                            if (param2.type === 'array') {
-                                return 'SET @' + param1.asmName + ' $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.Offset.value), objoperator.line).asmName + '\n';
+                    if (param1.delayedDeference === undefined || param1.delayedDeference === false) {
+                        if (param2.type === 'constant') { // Can use SET_VAL or CLR_DAT
+                            if (param2.hexContent === undefined) {
+                                throw new TypeError(`At line: ${objoperator.line}. Missing hexContent parameter. BugReport please.`);
                             }
-                            else { // param2.type === "struct"
-                                const TmpMemObj = auxVars.getNewRegister();
-                                retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.Offset.value));
-                                retinstr += 'SET @' + param1.asmName + ' $($' + param2.asmName + ' + $' + TmpMemObj.asmName + ')\n';
-                                auxVars.freeRegister(TmpMemObj.address);
-                                return retinstr;
+                            if (param2.hexContent === '0000000000000000') {
+                                return 'CLR @' + param1.asmName + '\n';
+                            }
+                            if (param2.hexContent.length > 17) {
+                                throw new RangeError('At line: ' + objoperator.line + '.Overflow on long value assignment (value bigger than 64 bits)');
+                            }
+                            return 'SET @' + param1.asmName + ' #' + param2.hexContent + '\n';
+                        }
+                        else if (param2.type === 'register' || param2.type === 'long') {
+                            if (param1.declaration === param2.declaration) {
+                                if (param1.address === param2.address)
+                                    return '';
+                                else
+                                    return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n';
+                            }
+                            else {
+                                if (param1.declaration === 'long' && param2.declaration === 'long_ptr') {
+                                    return `SET @${param1.asmName} $($${param2.asmName})\n`;
+                                }
+                                if (param1.declaration === 'long_ptr' && param2.declaration === 'long') {
+                                    return `SET @($${param1.asmName}) $${param2.asmName}\n`;
+                                }
+                                throw new RangeError(`At line: ${objoperator.line}. Strange param declaration. BugReport Please.`);
                             }
                         }
-                        else {
-                            return 'SET @' + param1.asmName + ' $($' + param2.asmName + ' + $' + getMemoryObjectByLocation(param2.Offset.addr, objoperator.line).asmName + ')\n';
+                        else if (param2.type === 'array' || param2.type === 'struct') {
+                            if (param2.Offset === undefined) {
+                                return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n';
+                            }
+                            else if (param2.Offset.type === 'constant') {
+                                if (param2.type === 'array') {
+                                    return 'SET @' + param1.asmName + ' $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.Offset.value), objoperator.line).asmName + '\n';
+                                }
+                                else { // param2.type === "struct"
+                                    const TmpMemObj = auxVars.getNewRegister();
+                                    retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.Offset.value));
+                                    retinstr += 'SET @' + param1.asmName + ' $($' + param2.asmName + ' + $' + TmpMemObj.asmName + ')\n';
+                                    auxVars.freeRegister(TmpMemObj.address);
+                                    return retinstr;
+                                }
+                            }
+                            else {
+                                return 'SET @' + param1.asmName + ' $($' + param2.asmName + ' + $' + getMemoryObjectByLocation(param2.Offset.addr, objoperator.line).asmName + ')\n';
+                            }
                         }
+                        throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.");
                     }
-                    throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.");
-                }
-                else if (param1.type === 'register_ptr' || param1.type === 'long_ptr') {
+                    // else param1.delayedDeference === true
                     if (param2.type === 'constant') { // Can use SET_VAL or CLR_DAT
                         if (param2.hexContent === undefined) {
                             throw new TypeError(`At line: ${objoperator.line}. Missing hexContent parameter. BugReport please.`);
@@ -1482,15 +1468,6 @@ function generate(Program) {
                     }
                     else if (param2.type === 'register' || param2.type === 'long') { // Can use SET_DAT
                         return 'SET @($' + param1.asmName + ') $' + param2.asmName + '\n';
-                    }
-                    else if (param2.type === 'register_ptr' || param2.type === 'long_ptr') {
-                        const TmpMemObj = auxVars.getNewRegister();
-                        retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2);
-                        retinstr += 'SET @($' + param1.asmName + ') $' + TmpMemObj.asmName + '\n';
-                        auxVars.freeRegister(TmpMemObj.address);
-                        return retinstr;
-                        // } else if (param2.type === 'constant_ptr') {
-                        //     return 'SET @' + param1.asmName + ' #' + param2.hexContent + '\n'
                     }
                     else if (param2.type === 'array' || param2.type === 'struct') {
                         if (param2.Offset === undefined) {
@@ -1520,6 +1497,9 @@ function generate(Program) {
                     throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.");
                 }
                 else if (param1.type === 'array') {
+                    if (param1.delayedDeference === true) {
+                        throw new TypeError(`At line: ${objoperator.line}. Can not deference an array. BugReport please`);
+                    }
                     if (param1.Offset === undefined) {
                         if (param2.type === 'constant') {
                             // special case for multi-long text assignment
@@ -1557,13 +1537,6 @@ function generate(Program) {
                         else if (param2.type === 'register' || param2.type === 'long') {
                             return 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + param2.asmName + '\n';
                         }
-                        else if (param2.type === 'register_ptr' || param2.type === 'long_ptr') {
-                            const TmpMemObj = auxVars.getNewRegister();
-                            retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2);
-                            retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n';
-                            auxVars.freeRegister(TmpMemObj.address);
-                            return retinstr;
-                        }
                         else if (param2.type === 'array' || param2.type === 'struct') {
                             if (param2.Offset === undefined) {
                                 throw new TypeError(`At line: ${objoperator.line}. Undefined offset in array/struct! BugReport please.`);
@@ -1593,6 +1566,9 @@ function generate(Program) {
                     throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.");
                 }
                 else if (param1.type === 'struct') {
+                    if (param1.delayedDeference === true) {
+                        throw new TypeError(`At line: ${objoperator.line}. Can not deference a struct. BugReport please`);
+                    }
                     if (param1.Offset === undefined) {
                         if (param1.declaration === 'struct_ptr') {
                             if (param2.type === 'constant') {
@@ -1674,6 +1650,7 @@ function generate(Program) {
                             const codes = retinstr.split('\n');
                             codes.pop();
                             codes.pop();
+                            codes.push('');
                             retinstr = codes.join('\n');
                         }
                     }

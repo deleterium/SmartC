@@ -394,7 +394,7 @@ function parse(preTokens) {
     }
     function matchRule(ruleN) {
         for (let i = 0; i < ruleN.sequence.length; i++) {
-            if (preTokens[mainLoopIndex + i].type === ruleN.sequence[i])
+            if (preTokens[mainLoopIndex + i]?.type === ruleN.sequence[i])
                 continue;
             return false; // proceed to next rule
         }
