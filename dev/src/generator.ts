@@ -193,7 +193,9 @@ function generate (Program: CONTRACT) {
                         throw new TypeError(`At line: ${cgAST.Token.line}. Warning: Value ${cgAST.Token.value} not being used.`)
                     }
                     if (cgAST.type === 'lookupASN') {
-                        throw new TypeError(`At line: ${cgAST.Token.line}. Warning: Value ${cgAST.Token.value} not being used.`)
+                        if (cgAST.Token.type !== 'Function') {
+                            throw new TypeError(`At line: ${cgAST.Token.line}. Warning: Value ${cgAST.Token.value} not being used.`)
+                        }
                     }
                     if (cgAST.type === 'unaryASN' || cgAST.type === 'binaryASN') {
                         if (cgAST.Operation.type !== 'Function') {
@@ -301,16 +303,127 @@ function generate (Program: CONTRACT) {
                 }
 
             case 'lookupASN':
-                if (objTree.Token.type !== 'Variable') {
-                    throw new TypeError(`At line: ${objTree.Token.line}. Modifiers implemented only for variables.`)
-                }
-                retMemObj = getMemoryObjectByName(objTree.Token.value, objTree.Token.line, auxVars.declaring)
+                if (objTree.Token.type === 'Variable') {
+                    retMemObj = getMemoryObjectByName(objTree.Token.value, objTree.Token.line, auxVars.declaring)
+                } else if (objTree.Token.type === 'Function') {
+                    let isAPI = false
+                    const APIargs: MEMORY_SLOT[] = []
+                    let subSentences: AST[]
 
+                    if (objTree.FunctionArgs === undefined) {
+                        throw new TypeError(`At line: ${objTree.Token.line}. Missing function arguments. BugReport please.`)
+                    }
+                    if (objTree.Token.extValue === undefined) {
+                        throw new TypeError(`At line: ${objTree.Token.line}. Invalid function structure. BugReport please.`)
+                    }
+                    const fnName = objTree.Token.extValue
+
+                    let search = Program.functions.find(val => val.name === fnName)
+                    if (search === undefined) {
+                        if (Program.Config.APIFunctions) {
+                            search = Program.Global.APIFunctions.find(val => val.name === fnName)
+                            if (search === undefined) {
+                                throw new TypeError(`At line: ${objTree.Token.line}. Function '${fnName}' not declared.`)
+                            }
+                            isAPI = true
+                        } else {
+                            throw new TypeError(`At line: ${objTree.Token.line}. Function '${fnName}' not declared.`)
+                        }
+                    }
+
+                    if (isAPI) {
+                        if (search.declaration === 'void') {
+                            retMemObj = utils.createVoidMemObj()
+                        } else {
+                            retMemObj = auxVars.getNewRegister() // reserve tempvar for return type
+                        }
+
+                        subSentences = utils.splitASTOnDelimiters(objTree.FunctionArgs)
+                        if (subSentences[0].type === 'nullASN') {
+                            subSentences.pop()
+                        }
+                        if (subSentences.length !== search.argsMemObj.length) {
+                            throw new TypeError(`At line: ${objTree.Token.line}. Wrong number of arguments for function '${fnName}'. It must have '${search.argsMemObj.length}' args.`)
+                        }
+
+                        subSentences.forEach(stnc => {
+                            const RGenObj = genCode(stnc, false, false)
+                            instructionstrain += RGenObj.instructionset
+                            if (RGenObj.MemObj.declaration.indexOf('_ptr') !== -1) {
+                                if (Program.Config.warningToError) {
+                                    throw new TypeError(`WARNING: At line: ${objTree.Token.line}. API Function parameter type is different from variable: 'long' and '${RGenObj.MemObj.declaration}'.`)
+                                }
+                            }
+                            APIargs.push(RGenObj.MemObj)
+                        })
+
+                        instructionstrain += createAPICallInstruction(utils.genAPICallToken(objTree.Token.line, search.asmName), retMemObj, APIargs)
+                        APIargs.forEach(varnm => auxVars.freeRegister(varnm.address))
+                    } else { // if is regular function call
+                        if (generateUtils.currFunctionIndex >= 0 && search.name === Program.functions[generateUtils.currFunctionIndex].name) {
+                            throw new TypeError(`At line: ${objTree.Token.line}. Recursive functions not allowed.`)
+                        }
+
+                        // Save registers currently in use in stack. Function execution will overwrite them
+                        const registerStack = auxVars.registerInfo.filter(OBJ => OBJ.inUse === true).reverse()
+                        registerStack.forEach(OBJ => {
+                            instructionstrain += createSimpleInstruction('Push', OBJ.Template.asmName)
+                        })
+
+                        // Check function arguments
+                        subSentences = utils.splitASTOnDelimiters(objTree.FunctionArgs)
+                        if (subSentences[0].type === 'nullASN') {
+                            subSentences.pop()
+                        }
+                        if (subSentences.length !== search.argsMemObj.length) {
+                            throw new TypeError(`At line: ${objTree.Token.line}. Wrong number of arguments for function '${fnName}'. It must have '${search.argsMemObj.length}' args.`)
+                        }
+
+                        // Push arguments into stack
+                        for (let i = subSentences.length - 1; i >= 0; i--) {
+                            const RGenObj = genCode(subSentences[i], false, false)
+
+                            const fnArg = search.argsMemObj[i]
+                            if (fnArg.declaration !== RGenObj.MemObj.declaration) {
+                                if (Program.Config.warningToError) {
+                                    throw new TypeError(`WARNING: At line: ${objTree.Token.line}. Function parameter type is different from variable: '${fnArg.declaration}' and '${RGenObj.MemObj.declaration}'.`)
+                                }
+                            }
+
+                            instructionstrain += RGenObj.instructionset
+                            instructionstrain += createInstruction(utils.genPushToken(objTree.Token.line), RGenObj.MemObj)
+                            auxVars.freeRegister(RGenObj.MemObj.address)
+                        }
+
+                        instructionstrain += createSimpleInstruction('Function', fnName)
+
+                        // Pop return value from stack
+                        if (search.declaration === 'void') {
+                            retMemObj = utils.createVoidMemObj()
+                        } else {
+                            retMemObj = auxVars.getNewRegister()
+                            retMemObj.declaration = search.declaration
+                            retMemObj.typeDefinition = search.typeDefinition
+                            instructionstrain += createSimpleInstruction('Pop', retMemObj.asmName)
+                        }
+
+                        // Load registers again
+                        registerStack.reverse().forEach(OBJ => {
+                            instructionstrain += createSimpleInstruction('Pop', OBJ.Template.asmName)
+                        })
+                    }
+                } else {
+                    throw new TypeError(`At line: ${objTree.Token.line}. Function returning void value can not have modifiers.`)
+                }
+
+                if (objTree.modifiers.length !== 0 && retMemObj.type === 'void') {
+                    throw new TypeError(`At line: ${objTree.Token.line}. Function returning void value can not have modifiers.`)
+                }
                 objTree.modifiers.forEach(CurrentModifier => {
                     if (CurrentModifier.type === 'MemberByRef') {
                         const TypeD = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === retMemObj.typeDefinition) as STRUCT_TYPE_DEFINITION
                         if (TypeD === undefined) {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Array type definition not found...`)
+                            throw new TypeError(`At line: ${objTree.Token.line}. Struct type definition not found...`)
                         }
                         if (CurrentModifier.Center.type !== 'Variable') {
                             throw new TypeError(`At line: ${objTree.Token.line}. Can not use variables as struct members.`)
@@ -338,16 +451,21 @@ function generate (Program: CONTRACT) {
                             retMemObj.declaration = TypeD.structMembers[memberIdx].declaration
                             retMemObj.name = TypeD.structMembers[memberIdx].name
                             retMemObj.typeDefinition = TypeD.structMembers[memberIdx].typeDefinition
-                            if (TypeD.structMembers[memberIdx].type === 'array') {
-                                retMemObj.type = TypeD.structMembers[memberIdx].type
-                            }
                             arrayIndex = -1
                             retMemObj.Offset = {
                                 type: 'constant',
                                 value: adder + TypeD.structAccumulatedSize[memberIdx][1]
                             }
                         } else if (retMemObj.Offset.type === 'constant') {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Inspection needed.`)
+                            let adder = 0
+                            if (TypeD.structMembers[memberIdx].type === 'array') {
+                                adder = 1
+                            }
+                            retMemObj.declaration = TypeD.structMembers[memberIdx].declaration
+                            retMemObj.name = TypeD.structMembers[memberIdx].name
+                            retMemObj.typeDefinition = TypeD.structMembers[memberIdx].typeDefinition
+                            arrayIndex = -1
+                            retMemObj.Offset.value += adder + TypeD.structAccumulatedSize[memberIdx][1]
                         } else /* if (retMemObj.Modifier.type === "variable") */ {
                             throw new TypeError(`At line: ${objTree.Token.line}. Inspection needed.`)
                         }
@@ -362,7 +480,7 @@ function generate (Program: CONTRACT) {
                             TypeD = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === retMemObj.typeDefinition) as STRUCT_TYPE_DEFINITION
                         }
                         if (TypeD === undefined) {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Array type definition not found...`)
+                            throw new TypeError(`At line: ${objTree.Token.line}. Struct type definition not found...`)
                         }
                         if (CurrentModifier.Center.type !== 'Variable') {
                             throw new TypeError(`At line: ${objTree.Token.line}. Can not use variables as struct members.`)
@@ -422,7 +540,7 @@ function generate (Program: CONTRACT) {
                             }
                             isPointerOp = true // allow use of array notation on pointer variables.
                         }
-                        if (retMemObj.type !== 'array' && retMemObj.type !== 'struct' && retMemObj.Offset !== undefined) {
+                        if (retMemObj.type !== 'array' && retMemObj.type !== 'struct' && retMemObj.type !== 'structRef' && retMemObj.Offset !== undefined) {
                             throw new TypeError(`At line: ${objTree.Token.line}. Can not use array notation on regular variables.`)
                         }
 
@@ -564,22 +682,11 @@ function generate (Program: CONTRACT) {
                     }
                 })
 
-                // Fix special case where struct pointer with array member with constant index has incomplete information.
-                // This does not allow constants on struct: code Yyx_sSkA
-                if (retMemObj.hexContent === undefined && retMemObj.Offset !== undefined && retMemObj.Offset.type === 'constant') {
-                    const TmpMemObj = auxVars.getNewRegister()
-                    instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(retMemObj.Offset.value))
-                    retMemObj.Offset = {
-                        type: 'variable',
-                        addr: TmpMemObj.address
-                    }
-                }
-
                 if (logicalOp === true) {
-                    instructionstrain += createInstruction(utils.genNotEqualToken(), retMemObj, utils.createConstantMemObj(0), revLogic, jumpFalse, jumpTrue)
-                    if (retMemObj.Offset !== undefined && retMemObj.Offset.type === 'variable') {
-                        auxVars.freeRegister(retMemObj.Offset.addr)
+                    if (retMemObj.type === 'void') {
+                        throw new TypeError(`At line: ${objTree.Token.line}. Function returning void value can not be used in conditionals decision.`)
                     }
+                    instructionstrain += createInstruction(utils.genNotEqualToken(), retMemObj, utils.createConstantMemObj(0), revLogic, jumpFalse, jumpTrue)
                     auxVars.freeRegister(retMemObj.address)
                     return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain }
                 }
@@ -848,138 +955,6 @@ function generate (Program: CONTRACT) {
                 break
 
             case 'binaryASN':
-                if (objTree.Operation.type === 'Function') {
-                    let isAPI = false
-                    const APIargs: MEMORY_SLOT[] = []
-                    let subSentences: AST[]
-                    let TmpMemObj: MEMORY_SLOT|undefined
-
-                    let fnName: string
-                    if (objTree.Left.type === 'endASN') {
-                        fnName = objTree.Left.Token.value
-                    } else {
-                        throw new TypeError(`At line: ${objTree.Operation.line}. Invalid Function structure.`)
-                    }
-
-                    let search = Program.functions.find(val => val.name === fnName)
-                    if (search === undefined) {
-                        if (Program.Config.APIFunctions) {
-                            search = Program.Global.APIFunctions.find(val => val.name === fnName)
-                            if (search === undefined) {
-                                throw new TypeError('At line: ' + objTree.Operation.line + ". Function '" + fnName + "' not declared.")
-                            }
-                            isAPI = true
-                        } else {
-                            throw new TypeError('At line: ' + objTree.Operation.line + ". Function '" + fnName + "' not declared.")
-                        }
-                    }
-
-                    if (isAPI) {
-                        if (search.declaration === 'void') {
-                            TmpMemObj = utils.createVoidMemObj()
-                        } else {
-                            TmpMemObj = auxVars.getNewRegister() // reserve tempvar for return type
-                        }
-
-                        subSentences = utils.splitASTOnDelimiters(objTree.Right)
-                        if (subSentences[0].type === 'nullASN') {
-                            subSentences.pop()
-                        }
-                        if (subSentences.length !== search.argsMemObj.length) {
-                            throw new TypeError('At line: ' + objTree.Operation.line + ". Wrong number of arguments for function '" + search.name + "'. It must have '" + search.argsMemObj.length + "' args.")
-                        }
-
-                        subSentences.forEach(stnc => {
-                            const RGenObj = genCode(stnc, false, false)
-                            instructionstrain += RGenObj.instructionset
-                            if (RGenObj.MemObj.declaration.indexOf('_ptr') !== -1) {
-                                if (Program.Config.warningToError) {
-                                    throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". API Function parameter type is different from variable: 'long' and '" + RGenObj.MemObj.declaration + "'.")
-                                }
-                            }
-                            APIargs.push(RGenObj.MemObj)
-                        })
-
-                        instructionstrain += createAPICallInstruction(utils.genAPICallToken(objTree.Operation.line, search.asmName), TmpMemObj, APIargs)
-                        // instructionstrain += createInstruction(utils.genAPICallToken(objTree.Operation.line, search.asmName), TmpMemObj, APIargs)
-                        APIargs.forEach(varnm => auxVars.freeRegister(varnm.address))
-
-                        if (search.declaration === 'void') {
-                            return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain }
-                        }
-
-                        if (TmpMemObj.type !== 'void' && logicalOp === true) { // maybe logical operation was requested
-                            instructionstrain += createInstruction(utils.genNotEqualToken(), TmpMemObj, utils.createConstantMemObj(0), revLogic, jumpFalse, jumpTrue)
-                            auxVars.freeRegister(TmpMemObj.address)
-                            return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain }
-                        }
-
-                        return { MemObj: TmpMemObj, instructionset: instructionstrain }
-                    } else { // if is regular function call
-                        if (generateUtils.currFunctionIndex >= 0 && search.name === Program.functions[generateUtils.currFunctionIndex].name) {
-                            throw new TypeError('At line: ' + fnName + '. Recursive functions not allowed.')
-                        }
-
-                        // Save registers currently in use in stack. Function execution will overwrite them
-                        const registerStack = auxVars.registerInfo.filter(OBJ => OBJ.inUse === true).reverse()
-                        registerStack.forEach(OBJ => {
-                            instructionstrain += createSimpleInstruction('Push', OBJ.Template.asmName)
-                        })
-
-                        subSentences = utils.splitASTOnDelimiters(objTree.Right)
-                        if (subSentences[0].type === 'nullASN') {
-                            subSentences.pop()
-                        }
-                        if (subSentences.length !== search.argsMemObj.length) {
-                            throw new TypeError('At line: ' + fnName + ". Wrong number of arguments for function '" + search.name + "'. It must have '" + search.argsMemObj.length + "' args.")
-                        }
-                        for (let i = subSentences.length - 1; i >= 0; i--) {
-                            const RGenObj = genCode(subSentences[i], false, false)
-
-                            if (!auxVars.isTemp(RGenObj.MemObj.address)) {
-                                const fnArg = search.argsMemObj[i]
-                                if (fnArg.declaration !== RGenObj.MemObj.declaration) {
-                                    if (fnArg.declaration.indexOf('_ptr') === -1 || RGenObj.MemObj.declaration.indexOf('_ptr') === -1) { // skipt check if both sides are pointers
-                                        if (Program.Config.warningToError) {
-                                            throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Function parameter type is different from variable: '" + fnArg.declaration + "' and '" + RGenObj.MemObj.declaration + "'.")
-                                        }
-                                    }
-                                }
-                            }
-
-                            instructionstrain += RGenObj.instructionset
-                            instructionstrain += createInstruction(utils.genPushToken(objTree.Operation.line), RGenObj.MemObj)
-                            auxVars.freeRegister(RGenObj.MemObj.address)
-                        }
-
-                        instructionstrain += createSimpleInstruction('Function', fnName)
-
-                        if (search.declaration !== 'void') {
-                            TmpMemObj = auxVars.getNewRegister()
-                            TmpMemObj.declaration = search.declaration
-                            instructionstrain += createSimpleInstruction('Pop', TmpMemObj.asmName)
-                        } else {
-                            TmpMemObj = utils.createVoidMemObj()
-                        }
-
-                        // Load registers again
-                        registerStack.reverse().forEach(OBJ => {
-                            instructionstrain += createSimpleInstruction('Pop', OBJ.Template.asmName)
-                        })
-
-                        if (search.declaration === 'void') {
-                            return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain }
-                        }
-
-                        if (TmpMemObj.type !== 'void' && logicalOp === true) { // maybe logical operation was requested
-                            instructionstrain += createInstruction(utils.genNotEqualToken(), TmpMemObj, utils.createConstantMemObj(0), revLogic, jumpFalse, jumpTrue)
-                            auxVars.freeRegister(TmpMemObj.address)
-                            return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain }
-                        }
-
-                        return { MemObj: TmpMemObj, instructionset: instructionstrain }
-                    }
-                }
 
                 if (objTree.Operation.type === 'Comparision') {
                     if (logicalOp === false && jumpFalse === undefined) { // need to transform arithmetic to logical
@@ -1365,7 +1340,12 @@ function generate (Program: CONTRACT) {
                     }
                     return false
                 })
-                if (canreuse === undefined) return true
+                if (canreuse === undefined) {
+                    if (ObjAST.Token.type === 'Function' && ObjAST.FunctionArgs !== undefined) {
+                        return CanReuseAssignedVar(loc, ObjAST.FunctionArgs)
+                    }
+                    return true
+                }
                 return false
             case 'unaryASN':
                 return CanReuseAssignedVar(loc, ObjAST.Center)
@@ -1440,7 +1420,7 @@ function generate (Program: CONTRACT) {
             const tempvar: MOLD_OBJECT[] = []
 
             param2.forEach((varObj) => {
-                const Temp = moldMemory(varObj, -1)
+                const Temp = flattenMemory(varObj, -1)
                 retinstr += Temp.instructionset
                 tempvar.push(Temp)
             })
@@ -1460,11 +1440,11 @@ function generate (Program: CONTRACT) {
         }
 
         /**
-         * From ParamMemObj create an memory object suitable for assembly operations, except assignment.
-         * Returns also instructions maybe needed for conversion and an boolean to indicate if it is
-         * a new object (that must be free later on)
+         * From ParamMemObj create an memory object suitable for assembly operations (a regular long variable). Do do rely in createInstruction,
+         * all hardwork done internally. Returns also instructions maybe needed for conversion and a boolean to indicate if it is
+         * a new object (that must be free later on).
         */
-        function moldMemory (ParamMemObj: MEMORY_SLOT, line: number): MOLD_OBJECT {
+        function flattenMemory (ParamMemObj: MEMORY_SLOT, line: number): MOLD_OBJECT {
             let RetObj: MEMORY_SLOT
             let retInstructions = ''
             let retIsNew = false
@@ -1474,35 +1454,58 @@ function generate (Program: CONTRACT) {
             }
 
             if (ParamMemObj.type === 'constant') {
+                if (ParamMemObj.hexContent === undefined) {
+                    throw new TypeError(`At line: ${line}. Missing hexContent parameter. BugReport please.`)
+                }
+                if (ParamMemObj.hexContent.length > 17) {
+                    throw new RangeError(`At line: ${line}. Overflow on long value assignment. Value bigger than 64 bits).`)
+                }
                 RetObj = auxVars.getNewRegister()
-                retInstructions += createInstruction(utils.genAssignmentToken(), RetObj, ParamMemObj)
+                if (ParamMemObj.hexContent === '0000000000000000') {
+                    retInstructions += `CLR @${RetObj.asmName}\n`
+                // } else if (Number(ParamMemObj.hexContent) <= Program.Config.maxConstVars) {
+                //     retInstructions += `SET @${RetObj.asmName} $n${(Number(ParamMemObj.hexContent))}\n`
+                } else {
+                    retInstructions += `SET @${RetObj.asmName} #${ParamMemObj.hexContent}\n`
+                }
                 retIsNew = true
             } else if (ParamMemObj.type === 'register' || ParamMemObj.type === 'long') {
-                RetObj = ParamMemObj
+                if (ParamMemObj.Offset === undefined) {
+                    RetObj = ParamMemObj
+                } else {
+                    throw new TypeError('TODO')
+                }
             } else if (ParamMemObj.type === 'array') {
-                if (ParamMemObj.Offset === undefined) { // Pointer operation
+                if (ParamMemObj.Offset === undefined) {
                     RetObj = ParamMemObj
                 } else if (ParamMemObj.Offset.type === 'constant') { // Looks like an array but can be converted to regular variable
                     RetObj = getMemoryObjectByLocation(utils.addHexContents(ParamMemObj.hexContent, ParamMemObj.Offset.value), line)
-                } else {
+                    auxVars.freeRegister(ParamMemObj.address)
+                } else { // ParamMemObj.Offset.type === 'variable'
                     RetObj = auxVars.getNewRegister()
-                    retInstructions += createInstruction(utils.genAssignmentToken(), RetObj, ParamMemObj)
+                    retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${getMemoryObjectByLocation(ParamMemObj.Offset.addr, line).asmName})\n`
                     retIsNew = true
                 }
             } else if (ParamMemObj.type === 'struct') {
+                // Impossible condition because struct variables have their type changed during LOOKUP_ASN processing
+                throw new Error(`At line: ${line}. Strange error. BugReport please.`)
+            } else if (ParamMemObj.type === 'structRef') {
                 if (ParamMemObj.Offset === undefined) {
                     RetObj = ParamMemObj
                 } else if (ParamMemObj.Offset.type === 'constant') {
                     RetObj = auxVars.getNewRegister()
-                    retInstructions += createInstruction(utils.genAssignmentToken(), RetObj, utils.createConstantMemObj(ParamMemObj.Offset.value))
+                    const FlatConstant = flattenMemory(utils.createConstantMemObj(ParamMemObj.Offset.value), line)
+                    retInstructions += FlatConstant.instructionset
+                    retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${FlatConstant.MoldedObj.asmName})\n`
+                    if (FlatConstant.isNew) auxVars.freeRegister(FlatConstant.MoldedObj.address)
                     retIsNew = true
-                } else {
+                } else { // ParamMemObj.Offset.type === 'variable') {
                     RetObj = auxVars.getNewRegister()
-                    retInstructions += createInstruction(utils.genAssignmentToken(), RetObj, ParamMemObj)
+                    retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${getMemoryObjectByLocation(ParamMemObj.Offset.addr, line).asmName})\n`
                     retIsNew = true
                 }
             } else {
-                throw new TypeError('At line: ' + line + ". Not implemented type in moldMemory(): ParamMemObj.type = '" + ParamMemObj.type + "'.")
+                throw new TypeError(`At line: ${line}. Not implemented type in flattenMemory(): ParamMemObj.type = '${ParamMemObj.type}'.`)
             }
 
             return { MoldedObj: RetObj, instructionset: retInstructions, isNew: retIsNew }
@@ -1516,13 +1519,14 @@ function generate (Program: CONTRACT) {
                 if (param1 === undefined || param2 === undefined) {
                     throw new TypeError(`At line: ${objoperator.line}. Missing parameters. BugReport please.`)
                 }
-
-                if (param1.type === 'constant' /* || param1.type === 'constant_ptr' */) {
-                    throw new TypeError('At line: ' + objoperator.line + '.Invalid left side for assigment.')
-                }
-                if (param1.type === 'register' || param1.type === 'long') { // param 1 can be direct assigned
+                switch (param1.type) {
+                case 'constant':
+                    throw new TypeError(`At line: ${objoperator.line}. Invalid left side for assigment.`)
+                case 'register':
+                case 'long':
                     if (param1.delayedDeference === undefined || param1.delayedDeference === false) {
-                        if (param2.type === 'constant') { // Can use SET_VAL or CLR_DAT
+                        switch (param2.type) {
+                        case 'constant':
                             if (param2.hexContent === undefined) {
                                 throw new TypeError(`At line: ${objoperator.line}. Missing hexContent parameter. BugReport please.`)
                             }
@@ -1533,7 +1537,8 @@ function generate (Program: CONTRACT) {
                                 throw new RangeError('At line: ' + objoperator.line + '.Overflow on long value assignment (value bigger than 64 bits)')
                             }
                             return 'SET @' + param1.asmName + ' #' + param2.hexContent + '\n'
-                        } else if (param2.type === 'register' || param2.type === 'long') {
+                        case 'register':
+                        case 'long':
                             if (param1.declaration === param2.declaration) {
                                 if (param1.address === param2.address) return ''
                                 else return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n'
@@ -1544,66 +1549,42 @@ function generate (Program: CONTRACT) {
                                 if (param1.declaration === 'long_ptr' && param2.declaration === 'long') {
                                     return `SET @($${param1.asmName}) $${param2.asmName}\n`
                                 }
-                                throw new RangeError(`At line: ${objoperator.line}. Strange param declaration. BugReport Please.`)
                             }
-                        } else if (param2.type === 'array' || param2.type === 'struct') {
+                            throw new RangeError(`At line: ${objoperator.line}. Strange param declaration. BugReport Please.`)
+                        case 'array':
                             if (param2.Offset === undefined) {
                                 return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n'
                             } else if (param2.Offset.type === 'constant') {
-                                if (param2.type === 'array') {
-                                    return 'SET @' + param1.asmName + ' $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.Offset.value), objoperator.line).asmName + '\n'
-                                } else { // param2.type === "struct"
-                                    const TmpMemObj = auxVars.getNewRegister()
-                                    retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.Offset.value))
-                                    retinstr += 'SET @' + param1.asmName + ' $($' + param2.asmName + ' + $' + TmpMemObj.asmName + ')\n'
-                                    auxVars.freeRegister(TmpMemObj.address)
-                                    return retinstr
-                                }
-                            } else {
+                                return 'SET @' + param1.asmName + ' $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.Offset.value), objoperator.line).asmName + '\n'
+                            } else { // param2.Offset.type === 'variable'
                                 return 'SET @' + param1.asmName + ' $($' + param2.asmName + ' + $' + getMemoryObjectByLocation(param2.Offset.addr, objoperator.line).asmName + ')\n'
+                            }
+                        case 'struct':
+                            // Impossible condition because struct variables have their type changed during LOOKUP_ASN processing
+                            throw new Error(`At line: ${objoperator.line}. Strange error. BugReport please.`)
+                        case 'structRef':
+                            if (param2.Offset === undefined) {
+                                throw new TypeError(`At line: ${objoperator.line}. Missing offset on structRef. BugReport please.`)
+                            } else if (param2.Offset.type === 'constant') {
+                                const FlatConstant = flattenMemory(utils.createConstantMemObj(param2.Offset.value), objoperator.line)
+                                retinstr += FlatConstant.instructionset
+                                retinstr += `SET @${param1.asmName} $($${param2.asmName} + $${FlatConstant.MoldedObj.asmName})\n`
+                                if (FlatConstant.isNew) auxVars.freeRegister(FlatConstant.MoldedObj.address)
+                                return retinstr
+                            } else { // param2.Offset.type === 'variable'
+                                retinstr += `SET @${param1.asmName} $($${param2.asmName} + $${getMemoryObjectByLocation(param2.Offset.addr, objoperator.line).asmName})\n`
+                                return retinstr
                             }
                         }
                         throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.")
-                    }
-                    // else param1.delayedDeference === true
-                    if (param2.type === 'constant') { // Can use SET_VAL or CLR_DAT
-                        if (param2.hexContent === undefined) {
-                            throw new TypeError(`At line: ${objoperator.line}. Missing hexContent parameter. BugReport please.`)
-                        }
-                        if (param2.hexContent.length > 17) {
-                            throw new RangeError('At line: ' + objoperator.line + '.Overflow on long value assignment (value bigger than 64 bits)')
-                        }
-                        const TmpMemObj = auxVars.getNewRegister()
-                        retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
-                        retinstr += 'SET @($' + param1.asmName + ') $' + TmpMemObj.asmName + '\n'
-                        auxVars.freeRegister(TmpMemObj.address)
+                    } else { // param1.delayedDeference === true
+                        const FlatMem = flattenMemory(param2, objoperator.line)
+                        retinstr += FlatMem.instructionset
+                        retinstr += `SET @($${param1.asmName}) $${FlatMem.MoldedObj.asmName}\n`
+                        if (FlatMem.isNew) auxVars.freeRegister(FlatMem.MoldedObj.address)
                         return retinstr
-                    } else if (param2.type === 'register' || param2.type === 'long') { // Can use SET_DAT
-                        return 'SET @($' + param1.asmName + ') $' + param2.asmName + '\n'
-                    } else if (param2.type === 'array' || param2.type === 'struct') {
-                        if (param2.Offset === undefined) {
-                            throw new TypeError(`At line: ${objoperator.line}. Undefined offset in array/struct! BugReport please.`)
-                        } else if (param2.Offset.type === 'constant') {
-                            if (param2.type === 'array') {
-                                return 'SET @($' + param1.asmName + ') $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.Offset.value), objoperator.line).asmName + '\n'
-                            } else { // param2.type === "struct"
-                                const TmpMemObj = auxVars.getNewRegister()
-                                retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.Offset.value))
-                                retinstr += 'SET @' + TmpMemObj.asmName + ' $($' + param2.asmName + ' + $' + TmpMemObj.asmName + ')\n'
-                                retinstr += 'SET @($' + param1.asmName + ') $' + TmpMemObj.asmName + '\n'
-                                auxVars.freeRegister(TmpMemObj.address)
-                                return retinstr
-                            }
-                        } else {
-                            const TmpMemObj = auxVars.getNewRegister()
-                            retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
-                            retinstr += 'SET @($' + param1.asmName + ') $' + TmpMemObj.asmName + '\n'
-                            auxVars.freeRegister(TmpMemObj.address)
-                            return retinstr
-                        }
                     }
-                    throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.")
-                } else if (param1.type === 'array') {
+                case 'array':
                     if (param1.delayedDeference === true) {
                         throw new TypeError(`At line: ${objoperator.line}. Can not deference an array. BugReport please`)
                     }
@@ -1628,62 +1609,21 @@ function generate (Program: CONTRACT) {
                         }
                     } else if (param1.Offset.type === 'constant') {
                         return createInstruction(objoperator, getMemoryObjectByLocation(utils.addHexContents(param1.hexContent, param1.Offset.value), objoperator.line), param2)
-                    } else {
-                        if (param2.type === 'constant') {
-                            if (param2.hexContent === undefined) {
-                                throw new TypeError(`At line: ${objoperator.line}. Missing hexContent parameter. BugReport please.`)
-                            }
-                            if (param2.hexContent.length > 16) {
-                                throw new RangeError('At line: ' + objoperator.line + '. Overflow on long value assignment (value bigger than 64 bits)')
-                            }
-                            const TmpMemObj = auxVars.getNewRegister()
-                            retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
-                            retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
-                            auxVars.freeRegister(TmpMemObj.address)
-                            return retinstr
-                        } else if (param2.type === 'register' || param2.type === 'long') {
-                            return 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + param2.asmName + '\n'
-                        } else if (param2.type === 'array' || param2.type === 'struct') {
-                            if (param2.Offset === undefined) {
-                                throw new TypeError(`At line: ${objoperator.line}. Undefined offset in array/struct! BugReport please.`)
-                            } else if (param2.Offset.type === 'constant') {
-                                if (param2.type === 'array') {
-                                    return 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.Offset.value), objoperator.line).asmName + '\n'
-                                } else { // param2.type === "struct"
-                                    const TmpMemObj = auxVars.getNewRegister()
-                                    retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.Offset.value))
-                                    retinstr += 'SET @' + TmpMemObj.asmName + ' $($' + param2.asmName + ' + $' + TmpMemObj.asmName + ')\n'
-                                    retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
-                                    auxVars.freeRegister(TmpMemObj.address)
-                                    return retinstr
-                                }
-                            } else {
-                                const TmpMemObj = auxVars.getNewRegister()
-                                retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
-                                retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
-                                auxVars.freeRegister(TmpMemObj.address)
-                                return retinstr
-                            }
-                        }
+                    } else { // param1.Offset.type === 'variable'
+                        const FlatMem = flattenMemory(param2, objoperator.line)
+                        retinstr += FlatMem.instructionset
+                        // retinstr += `SET @($${param1.asmName}) $${FlatMem.MoldedObj.asmName}\n`
+                        retinstr += `SET @($${param1.asmName} + $${getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName}) $${FlatMem.MoldedObj.asmName}\n`
+                        if (FlatMem.isNew) auxVars.freeRegister(FlatMem.MoldedObj.address)
+                        return retinstr
                     }
                     throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.")
-                } else if (param1.type === 'struct') {
-                    if (param1.delayedDeference === true) {
-                        throw new TypeError(`At line: ${objoperator.line}. Can not deference a struct. BugReport please`)
-                    }
+                case 'struct':
+                    // Impossible condition because struct variables have their type changed during LOOKUP_ASN processing
+                    throw new Error(`At line: ${objoperator.line}. Strange error. BugReport please.`)
+                case 'structRef':
                     if (param1.Offset === undefined) {
-                        if (param1.declaration === 'struct_ptr') {
-                            if (param2.type === 'constant') {
-                                return 'SET @' + param1.asmName + ' #' + param2.hexContent + '\n'
-                            }
-                            if (param2.type === 'register') {
-                                return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n'
-                            }
-                        }
-                        throw new TypeError(`At line: ${objoperator.line}. Not implemented param1 struct. BugReport Please.`)
-                    } else if (param1.Offset.type === 'constant') {
-                        /* Code not allowed by condition Yyx_sSkA */
-                    } else /* if (param1.Offset.type === "variable" ) */ {
+                        // no modifier
                         if (param2.type === 'constant') {
                             if (param2.hexContent === undefined) {
                                 throw new TypeError(`At line: ${objoperator.line}. Missing hexContent parameter. BugReport please.`)
@@ -1691,37 +1631,42 @@ function generate (Program: CONTRACT) {
                             if (param2.hexContent.length > 17) {
                                 throw new RangeError('At line: ' + objoperator.line + '. Overflow on long value assignment (value bigger than 64 bits)')
                             }
-                            const TmpMemObj = auxVars.getNewRegister()
-                            retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
-                            retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
-                            auxVars.freeRegister(TmpMemObj.address)
-                            return retinstr
-                        } else if (param2.type === 'register' || param2.type === 'long') {
-                            return 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + param2.asmName + '\n'
-                        } else if (param2.type === 'array' || param2.type === 'struct') {
-                            if (param2.Offset === undefined) {
-                                throw new TypeError(`At line: ${objoperator.line}. Undefined offset in array/struct! BugReport please.`)
-                            } else if (param2.Offset.type === 'constant') {
-                                if (param2.type === 'array') {
-                                    return 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + getMemoryObjectByLocation(utils.addHexContents(param2.hexContent, param2.Offset.value), objoperator.line).asmName + '\n'
-                                } else { // param2.type === "struct"
-                                    const TmpMemObj = auxVars.getNewRegister()
-                                    retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(param2.Offset.value))
-                                    retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
-                                    auxVars.freeRegister(TmpMemObj.address)
-                                    return retinstr
-                                }
+                            if (param2.hexContent === '0000000000000000') {
+                                retinstr += `CLR @${param1.asmName}\n`
+                            // } else if (Number(ParamMemObj.hexContent) <= Program.Config.maxConstVars) {
+                            //     retInstructions += `SET @${RetObj.asmName} $n${(Number(ParamMemObj.hexContent))}\n`
                             } else {
-                                const TmpMemObj = auxVars.getNewRegister()
-                                retinstr += createInstruction(utils.genAssignmentToken(), TmpMemObj, param2)
-                                retinstr += 'SET @($' + param1.asmName + ' + $' + getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName + ') $' + TmpMemObj.asmName + '\n'
-                                auxVars.freeRegister(TmpMemObj.address)
-                                return retinstr
+                                retinstr += `SET @${param1.asmName} #${param2.hexContent}\n`
+                            }
+                            return retinstr
+                        } else if (param2.type === 'register') {
+                            return `SET @${param1.asmName} $${param2.asmName}\n`
+                        }
+                        throw new TypeError(`TODO 556`)
+                    } else if (param1.Offset.type === 'constant') {
+                        const FlatP2 = flattenMemory(param2, objoperator.line)
+                        retinstr += FlatP2.instructionset
+                        if (FlatP2.isNew) {
+                            auxVars.freeRegister(param2.address)
+                            if (param2.Offset?.type === 'variable') {
+                                auxVars.freeRegister(param2.Offset.addr)
                             }
                         }
+                        const FlatOffset = flattenMemory(utils.createConstantMemObj(param1.Offset.value), objoperator.line)
+                        retinstr += FlatOffset.instructionset
+                        retinstr += `SET @($${param1.asmName} + $${FlatOffset.MoldedObj.asmName}) $${FlatP2.MoldedObj.asmName}\n`
+                        if (FlatOffset.isNew) auxVars.freeRegister(FlatOffset.MoldedObj.address)
+                        if (FlatP2.isNew) auxVars.freeRegister(FlatP2.MoldedObj.address)
+                        return retinstr
+                    } else { // param1.Offset.type === 'variable'
+                        const FlatP2 = flattenMemory(param2, objoperator.line)
+                        retinstr += FlatP2.instructionset
+                        retinstr += `SET @($${param1.asmName} + $${getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName}) $${FlatP2.MoldedObj.asmName}\n`
+                        return retinstr
                     }
+                default:
+                    throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.")
                 }
-                throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.")
             }
 
             if (objoperator.type === 'Operator' || objoperator.type === 'SetOperator') {
@@ -1735,13 +1680,13 @@ function generate (Program: CONTRACT) {
                 if (param1.type === 'constant') {
                     throw new TypeError(`At line: ${objoperator.line}. Can not createInstruction. BugReport please.`)
                 }
-                const TmpMemObj1 = moldMemory(param1, objoperator.line)
+                const TmpMemObj1 = flattenMemory(param1, objoperator.line)
                 retinstr += TmpMemObj1.instructionset
 
                 if (param2.type === 'constant') {
                     allowOptimization = true
                 }
-                const TmpMemObj2 = moldMemory(param2, objoperator.line)
+                const TmpMemObj2 = flattenMemory(param2, objoperator.line)
                 retinstr += TmpMemObj2.instructionset
 
                 if (allowOptimization === true) {
@@ -1872,8 +1817,14 @@ function generate (Program: CONTRACT) {
                     jump = jpTrue
                 }
 
-                const TmpMemObj1 = moldMemory(param1, objoperator.line)
+                const TmpMemObj1 = flattenMemory(param1, objoperator.line)
                 retinstr += TmpMemObj1.instructionset
+                if (TmpMemObj1.isNew) {
+                    if (param1.Offset?.type === 'variable') {
+                        auxVars.freeRegister(param1.Offset.addr)
+                    }
+                    auxVars.freeRegister(param1.address)
+                }
 
                 if (param2.type === 'constant' && param2.hexContent === '0000000000000000' && (objoperator.value === '!=' || objoperator.value === '==')) {
                     retinstr += chooseBranch(objoperator.value, true, rLogic)
@@ -1884,7 +1835,7 @@ function generate (Program: CONTRACT) {
                     return retinstr
                 }
 
-                const TmpMemObj2 = moldMemory(param2, objoperator.line)
+                const TmpMemObj2 = flattenMemory(param2, objoperator.line)
                 retinstr += TmpMemObj2.instructionset
                 retinstr += chooseBranch(objoperator.value, false, rLogic)
                 retinstr += ' $' + TmpMemObj1.MoldedObj.asmName + ' $' + TmpMemObj2.MoldedObj.asmName + ' :' + jump + '\n'
@@ -1904,7 +1855,7 @@ function generate (Program: CONTRACT) {
                     throw new TypeError(`At line: ${objoperator.line}. Missing parameter for PSH. BugReport please.`)
                 }
 
-                const TmpMemObj = moldMemory(param1, objoperator.line)
+                const TmpMemObj = flattenMemory(param1, objoperator.line)
                 retinstr += TmpMemObj.instructionset
                 retinstr += 'PSH $' + TmpMemObj.MoldedObj.asmName + '\n'
 
@@ -1942,7 +1893,7 @@ function generate (Program: CONTRACT) {
                     }
 
                     let retinstr = ''
-                    const TmpMemObj = moldMemory(param1, objoperator.line)
+                    const TmpMemObj = flattenMemory(param1, objoperator.line)
                     retinstr += TmpMemObj.instructionset
 
                     if (objoperator.value === 'return') {

@@ -42,8 +42,10 @@ type TOKEN_MODIFIER = {type: 'Array', Center: AST} | {type: 'MemberByVal', Cente
 interface LOOKUP_ASN {
     /** Abstract Syntax Node for variables with modifiers to be evaluated in chain  */
     type: 'lookupASN'
-    /** End token with type == 'Variable'. */
+    /** End token with type == 'Variable' or 'Function' */
     Token: TOKEN
+    /** Function arguments AST */
+    FunctionArgs?: AST
     /** Value modifiers like Arr or Members */
     modifiers: TOKEN_MODIFIER[]
 }
@@ -110,7 +112,7 @@ function syntaxProcess (Program: CONTRACT) {
         }
 
         if (end === false) {
-        // he have only precedente == 0: variable, constant, array, member)
+        // he have only precedente == 0: variable, constant, array, member, function)
 
             if (tokenArray[0].type === 'Variable' && tokenArray.length === 1) {
                 return { type: 'endASN', Token: tokenArray[0] }
@@ -118,12 +120,23 @@ function syntaxProcess (Program: CONTRACT) {
 
             if (tokenArray[0].type === 'Variable') {
             // We have a combination for structs and/or arrays.
+                currentIdx = 1
+                if (tokenArray[1].type === 'Function') {
+                    // Stores function name at extValue
+                    tokenArray[1].extValue = tokenArray[0].value
+                    currentIdx++
+                }
                 const retNode: LOOKUP_ASN = {
                     type: 'lookupASN',
-                    Token: tokenArray[0],
+                    Token: tokenArray[currentIdx - 1],
                     modifiers: []
                 }
-                for (currentIdx = 1; currentIdx < tokenArray.length; currentIdx++) {
+                if (retNode.Token.type === 'Function') {
+                    retNode.FunctionArgs = createSyntacticTree(retNode.Token.params)
+                    delete retNode.Token.params
+                }
+
+                for (; currentIdx < tokenArray.length; currentIdx++) {
                     if (tokenArray[currentIdx].type === 'Arr') {
                         retNode.modifiers.push({
                             type: 'Array',
@@ -185,21 +198,6 @@ function syntaxProcess (Program: CONTRACT) {
                 type: 'unaryASN',
                 Operation: tokenArray[currentIdx],
                 Center: newAST
-            }
-        } else if (tokenArray[currentIdx].type === 'Function') {
-            if (currentIdx === 0) {
-                throw new SyntaxError(`At line: ${tokenArray[0].line}. Missing function name.`)
-            }
-            if (tokenArray.length !== 2) {
-                throw new SyntaxError(`At line: ${tokenArray[currentIdx].line}. Modifiers on functions not implemented.`)
-            }
-            const newAST = createSyntacticTree(tokenArray[currentIdx].params)
-            delete tokenArray[currentIdx].params
-            return {
-                type: 'binaryASN',
-                Left: createSyntacticTree(tokenArray.slice(0, currentIdx)),
-                Operation: tokenArray[currentIdx],
-                Right: newAST
             }
         } else if (tokenArray[currentIdx].type === 'Keyword') {
             if (tokenArray.length === 1) {

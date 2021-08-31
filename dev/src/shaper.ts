@@ -43,13 +43,13 @@ interface SC_MACRO {
     line: number
 }
 
-type MEMORY_BASE_TYPES = 'register' | 'long' | 'constant' | 'struct' | 'array' | 'label' | 'void'
+type MEMORY_BASE_TYPES = 'register' | 'long' | 'constant' | 'struct' | 'structRef' | 'array' | 'label' | 'void'
 
 /** If constant, it is the number to shift. If variable, it is the address containing the value to shift */
 type OFFSET_MODIFIER = { type: 'constant', value: number } | {type: 'variable', addr: number }
 
 interface MEMORY_SLOT {
-    /** Variable base types: 'register' | 'long' | 'constant' | 'struct' | 'array' | 'label' | 'void' */
+    /** Variable base types: 'register' | 'long' | 'constant' | 'struct' | 'structRef' | 'array' | 'label' | 'void' */
     type: MEMORY_BASE_TYPES
     /** Variable name in assembly code */
     asmName?: string
@@ -173,6 +173,8 @@ type TYPE_DEFINITIONS = STRUCT_TYPE_DEFINITION | ARRAY_TYPE_DEFINITION | REGISTE
 interface SC_FUNCTION {
     /** type of function declaration */
     declaration: DECLARATION_TYPES
+    /** type definition if is a struct function */
+    typeDefinition?: string
     /** Function name */
     name: string
     /** Temporary, holding function arguments tokens */
@@ -362,6 +364,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                         argsMemObj: [],
                         sentences: [],
                         declaration: (tokenAST[AuxVars.currentToken].value + '_ptr') as DECLARATION_TYPES,
+                        typeDefinition: tokenAST[AuxVars.currentToken].extValue,
                         line: tokenAST[AuxVars.currentToken + 2].line,
                         name: tokenAST[AuxVars.currentToken + 2].value,
                         arguments: tokenAST[AuxVars.currentToken + 3].params,
@@ -657,7 +660,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
         let accumulatedSize = 0
         StructTypeD.structMembers.forEach(function (memb) {
             StructTypeD.structAccumulatedSize.push([memb.name, accumulatedSize])
-            if (memb.type !== 'struct' || memb.declaration.indexOf('_ptr') !== -1) { // Remeber to change here code yolj1A
+            if (memb.type !== 'struct') { // Remeber to change here code yolj1A
                 accumulatedSize++
             }
         })
@@ -747,6 +750,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                         if (phraseCode[idx].value === '*' && idx + 1 < phraseCode.length && phraseCode[idx + 1].type === 'Variable') {
                             ispointer = true
                             MemTemplate.declaration += '_ptr'
+                            MemTemplate.type = 'structRef'
                             idx++
                         } else {
                             ispointer = false
@@ -1159,7 +1163,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
     function consolidateMemory () {
         let counter = 0
         Program.memory.forEach(function (thisvar) {
-            if (thisvar.type === 'struct' && thisvar.declaration.indexOf('_ptr') === -1) { // Remeber to change here code yolj1A
+            if (thisvar.type === 'struct') { // Remeber to change here code yolj1A
                 thisvar.hexContent = counter.toString(16).padStart(16, '0')
             } else if (thisvar.type === 'array') {
                 thisvar.address = counter
