@@ -360,8 +360,13 @@ function generate (Program: CONTRACT) {
                         instructionstrain += createAPICallInstruction(utils.genAPICallToken(objTree.Token.line, search.asmName), retMemObj, APIargs)
                         APIargs.forEach(varnm => auxVars.freeRegister(varnm.address))
                     } else { // if is regular function call
+                        let isRecursive = false
                         if (generateUtils.currFunctionIndex >= 0 && search.name === Program.functions[generateUtils.currFunctionIndex].name) {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Recursive functions not allowed.`)
+                            isRecursive = true
+                            // stack current scope variables
+                            Program.memory.filter(OBJ => OBJ.scope === fnName && OBJ.address > 0).reverse().forEach(MEM => {
+                                instructionstrain += createSimpleInstruction('Push', MEM.asmName)
+                            })
                         }
 
                         // Save registers currently in use in stack. Function execution will overwrite them
@@ -411,6 +416,13 @@ function generate (Program: CONTRACT) {
                         registerStack.reverse().forEach(OBJ => {
                             instructionstrain += createSimpleInstruction('Pop', OBJ.Template.asmName)
                         })
+
+                        if (isRecursive) {
+                            // unstack current scope variables
+                            Program.memory.filter(OBJ => OBJ.scope === fnName && OBJ.address > 0).forEach(MEM => {
+                                instructionstrain += createSimpleInstruction('Pop', MEM.asmName)
+                            })
+                        }
                     }
                 } else {
                     throw new TypeError(`At line: ${objTree.Token.line}. Function returning void value can not have modifiers.`)
