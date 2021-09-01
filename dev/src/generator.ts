@@ -513,11 +513,11 @@ function generate (Program: CONTRACT) {
                         }
 
                         if (retMemObj.Offset === undefined) {
-                            retMemObj = getMemoryObjectByLocation(utils.addHexContents(retMemObj.hexContent, TypeD.structAccumulatedSize[memberIdx][1]))
+                            retMemObj = getMemoryObjectByLocation(Number('0x' + retMemObj.hexContent) + TypeD.structAccumulatedSize[memberIdx][1])
                             arrayIndex = -1
                         } else if (retMemObj.Offset.type === 'constant') {
-                            const adder = utils.addHexContents(retMemObj.Offset.value, retMemObj.hexContent)
-                            retMemObj = getMemoryObjectByLocation(utils.addHexContents(adder, TypeD.structAccumulatedSize[memberIdx][1]))
+                            const adder = retMemObj.Offset.value + Number('0x' + retMemObj.hexContent)
+                            retMemObj = getMemoryObjectByLocation(adder + TypeD.structAccumulatedSize[memberIdx][1])
                             arrayIndex = -1
                         } else /* if (retMemObj.offset_type === "variable") */ {
                             let adder = 0
@@ -526,7 +526,7 @@ function generate (Program: CONTRACT) {
                             }
                             instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line),
                                 getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line),
-                                utils.createConstantMemObj(utils.addHexContents(adder, TypeD.structAccumulatedSize[memberIdx][1])))
+                                utils.createConstantMemObj(adder + TypeD.structAccumulatedSize[memberIdx][1]))
                             retMemObj.declaration = TypeD.structMembers[memberIdx].declaration
                             retMemObj.name = TypeD.structMembers[memberIdx].name
                             retMemObj.typeDefinition = TypeD.structMembers[memberIdx].typeDefinition
@@ -566,13 +566,9 @@ function generate (Program: CONTRACT) {
                         if (ParamMemObj.MemObj.type === 'void') { // special case for text assignment
                             return { MemObj: retMemObj, instructionset: instructionstrain }
                         }
-                        // big decision tree depending on retMemObj.Offset.value and ParamMemObj.address
-                        // let mobj_offvalue = retMemObj.Offset.value // undefined if does not exist, "constant", or variable address that can be temp or not (will be checked!)
-                        // if (typeof (retMemObj.Offset.value) === 'string') {
-                        //    mobj_offvalue = -1 // only if offset_type is constant
-                        // }
-                        const paramAddress = ParamMemObj.MemObj.address // -1 if it is constant, other value represents a variable that can be temp or not (will be checked!)
 
+                        // big decision tree depending on retMemObj.Offset.value and ParamMemObj.address
+                        const paramAddress = ParamMemObj.MemObj.address
                         if (retMemObj.Offset === undefined) {
                             if (paramAddress === -1) {
                                 if (isPointerOp) {
@@ -610,12 +606,12 @@ function generate (Program: CONTRACT) {
                                     }
                                 } else {
                                     TmpMemObj = auxVars.getNewRegister()
-                                    instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, ParamMemObj.MemObj)
+                                    instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
+                                    instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, ParamMemObj.MemObj)
                                     retMemObj.Offset = {
                                         type: 'variable',
                                         addr: TmpMemObj.address
                                     }
-                                    instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
                                 }
                             }
                         } else if (retMemObj.Offset.type === 'constant') {
@@ -647,7 +643,7 @@ function generate (Program: CONTRACT) {
                             }
                         } else if (auxVars.isTemp(retMemObj.Offset.addr)) {
                             if (paramAddress === -1) {
-                                const adder = utils.mulHexContents(ParamMemObj.MemObj.hexContent, TypeD.arrayMultiplierDim[arrayIndex])
+                                const adder = Number('0x' + ParamMemObj.MemObj.hexContent) * TypeD.arrayMultiplierDim[arrayIndex]
                                 instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line), utils.createConstantMemObj(adder))
                             } else if (auxVars.isTemp(paramAddress)) {
                                 instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
