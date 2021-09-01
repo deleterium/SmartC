@@ -708,11 +708,8 @@ function generate (Program: CONTRACT) {
                             const CGenObj = genCode(objTree.Center, true, !revLogic, IDNotST, IDNotSF)
                             instructionstrain += CGenObj.instructionset
 
-                            if (auxVars.isTemp(CGenObj.MemObj.address)) { // maybe it was an arithmetic operation
-                                instructionstrain += createInstruction(utils.genNotEqualToken(), CGenObj.MemObj, utils.createConstantMemObj(0), !revLogic, jumpFalse, jumpTrue)
-                            }
-
                             const TmpMemObj = auxVars.getNewRegister()
+                            // Logical return is long value!
                             instructionstrain += createSimpleInstruction('Label', IDNotST)
                             instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(1))
                             instructionstrain += createSimpleInstruction('Jump', IDEnd)
@@ -759,6 +756,7 @@ function generate (Program: CONTRACT) {
                         }
 
                         const TmpMemObj = auxVars.getNewRegister()
+                        TmpMemObj.declaration = CGenObj.MemObj.declaration.slice(0, -4) as DECLARATION_TYPES
                         instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, CGenObj.MemObj)
 
                         if (logicalOp === true) {
@@ -776,6 +774,7 @@ function generate (Program: CONTRACT) {
                         const CGenObj = genCode(objTree.Center, false, revLogic, jumpFalse, jumpTrue)
                         instructionstrain += CGenObj.instructionset
                         const TmpMemObj = auxVars.getNewRegister()
+                        TmpMemObj.declaration = CGenObj.MemObj.declaration
                         instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(0))
                         instructionstrain += createInstruction(utils.genSubToken(objTree.Operation.line), TmpMemObj, CGenObj.MemObj)
                         auxVars.freeRegister(CGenObj.MemObj.address)
@@ -798,6 +797,7 @@ function generate (Program: CONTRACT) {
                         let TmpMemObj: MEMORY_SLOT
                         if (!auxVars.isTemp(CGenObj.MemObj.address)) {
                             TmpMemObj = auxVars.getNewRegister()
+                            TmpMemObj.declaration = CGenObj.MemObj.declaration
                             instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, CGenObj.MemObj)
                             clearVar = true
                         } else {
@@ -969,6 +969,7 @@ function generate (Program: CONTRACT) {
                             ret = genCode(objTree, true, true, IDCompSF, IDCompST) // do it again, now with jump defined
                             instructionstrain += ret.instructionset
                             TmpMemObj = auxVars.getNewRegister()
+                            // Logical return is long value!
                             instructionstrain += createSimpleInstruction('Label', IDCompSF)
                             instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(0))
                             instructionstrain += createSimpleInstruction('Jump', IDEnd)
@@ -980,6 +981,7 @@ function generate (Program: CONTRACT) {
                             ret = genCode(objTree, true, false, IDCompSF, IDCompST) // do it again, now with jump defined
                             instructionstrain += ret.instructionset
                             TmpMemObj = auxVars.getNewRegister()
+                            // Logical return is long value!
                             instructionstrain += createSimpleInstruction('Label', IDCompST)
                             instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(1))
                             instructionstrain += createSimpleInstruction('Jump', IDEnd)
@@ -1461,6 +1463,7 @@ function generate (Program: CONTRACT) {
                     throw new RangeError(`At line: ${line}. Overflow on long value assignment. Value bigger than 64 bits).`)
                 }
                 RetObj = auxVars.getNewRegister()
+                RetObj.declaration = ParamMemObj.declaration
                 if (ParamMemObj.hexContent === '0000000000000000') {
                     retInstructions += `CLR @${RetObj.asmName}\n`
                 // } else if (Number(ParamMemObj.hexContent) <= Program.Config.maxConstVars) {
@@ -1481,8 +1484,10 @@ function generate (Program: CONTRACT) {
                 } else if (ParamMemObj.Offset.type === 'constant') { // Looks like an array but can be converted to regular variable
                     RetObj = getMemoryObjectByLocation(utils.addHexContents(ParamMemObj.hexContent, ParamMemObj.Offset.value), line)
                     auxVars.freeRegister(ParamMemObj.address)
+                    retIsNew = true
                 } else { // ParamMemObj.Offset.type === 'variable'
                     RetObj = auxVars.getNewRegister()
+                    RetObj.declaration = ParamMemObj.declaration
                     retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${getMemoryObjectByLocation(ParamMemObj.Offset.addr, line).asmName})\n`
                     retIsNew = true
                 }
@@ -1494,6 +1499,7 @@ function generate (Program: CONTRACT) {
                     RetObj = ParamMemObj
                 } else if (ParamMemObj.Offset.type === 'constant') {
                     RetObj = auxVars.getNewRegister()
+                    RetObj.declaration = ParamMemObj.declaration
                     const FlatConstant = flattenMemory(utils.createConstantMemObj(ParamMemObj.Offset.value), line)
                     retInstructions += FlatConstant.instructionset
                     retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${FlatConstant.MoldedObj.asmName})\n`
@@ -1501,6 +1507,7 @@ function generate (Program: CONTRACT) {
                     retIsNew = true
                 } else { // ParamMemObj.Offset.type === 'variable') {
                     RetObj = auxVars.getNewRegister()
+                    RetObj.declaration = ParamMemObj.declaration
                     retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${getMemoryObjectByLocation(ParamMemObj.Offset.addr, line).asmName})\n`
                     retIsNew = true
                 }
