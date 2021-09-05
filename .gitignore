@@ -1,1 +1,2 @@
 dev/node_modules/*
+dev/out/*.map
