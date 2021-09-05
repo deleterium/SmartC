@@ -14,6 +14,9 @@ const utils = {
     createConstantMemObj (value: number|string = ''): MEMORY_SLOT {
         let param: string
         if (typeof (value) === 'number') {
+            if (value % 1 !== 0) {
+                throw new TypeError('Only integer numbers in createConstantMemObj().')
+            }
             param = value.toString(16).padStart(16, '0').slice(-16)
         } else if (typeof (value) === 'string') {
             param = value.padStart(16, '0').slice(-16)

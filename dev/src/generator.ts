@@ -428,6 +428,28 @@ function generate (Program: CONTRACT) {
                         }
                         const memberName = CurrentModifier.Center.value
 
+                        if (memberName === 'length' && CurrentModifier.type === 'MemberByVal') {
+                            // Special array property
+                            let typeDef: string | undefined
+                            // precedence 1: type definition in offset property
+                            if (retMemObj.Offset) typeDef = retMemObj.Offset?.typeDefinition
+                            // precedence 2: base memory type definition
+                            else typeDef = retMemObj.typeDefinition
+                            const TypeD = Program.typesDefinitions.find(obj => obj.type === 'array' && obj.name === typeDef) as ARRAY_TYPE_DEFINITION | undefined
+                            if (TypeD === undefined) {
+                                throw new TypeError(`At line: ${objTree.Token.line}. Array type definition not found for variable '${retMemObj.name}'.`)
+                            }
+                            const len = TypeD.MemoryTemplate.arrItem?.totalSize
+                            if (len === undefined) {
+                                throw new TypeError(`At line: ${objTree.Token.line}. Array total size not found for '${retMemObj.name}'.`)
+                            }
+                            if (retMemObj.Offset?.type === 'variable') auxVars.freeRegister(retMemObj.Offset.addr)
+                            auxVars.freeRegister(retMemObj.address)
+                            retMemObj = utils.createConstantMemObj((len - 1) / TypeD.MemoryTemplate.size)
+                            instructionstrain = ''
+                            return
+                        }
+
                         let typeName: string | undefined
                         if (retMemObj.Offset?.declaration === 'struct') {
                             // Precedence 1: Info on Offset
