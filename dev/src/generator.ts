@@ -106,6 +106,7 @@ function generate (Program: CONTRACT) {
             declaring: DECLARATION_TYPES
             isLeftSideOfAssignment: boolean
             isConstSentence: boolean
+            hasVoidArray: boolean
             isTemp(loc: number): boolean
             getNewRegister(): MEMORY_SLOT
             freeRegister(loc: number|undefined): void
@@ -118,6 +119,7 @@ function generate (Program: CONTRACT) {
             declaring: '',
             isLeftSideOfAssignment: false,
             isConstSentence: false,
+            hasVoidArray: false,
 
             isTemp (loc) {
                 if (loc === -1) return false
@@ -179,33 +181,16 @@ function generate (Program: CONTRACT) {
 
         auxVars.createTmpVarsTable()
 
-        let code: GENCODE_RETURN_OBJECT
-
         if (isReversedLogic === undefined) {
             isReversedLogic = false
         }
 
-        if (jumpTarget === undefined) {
-            code = genCode(cgAST, false, isReversedLogic, jumpTarget, jumpNotTarget)
-            if (code.MemObj.type === 'register' && code.MemObj.delayedDeference !== true) {
-                if (Program.Config.warningToError) {
-                    if (cgAST.type === 'endASN') {
-                        throw new TypeError(`At line: ${cgAST.Token.line}. Warning: Value ${cgAST.Token.value} not being used.`)
-                    }
-                    if (cgAST.type === 'lookupASN') {
-                        if (cgAST.Token.type !== 'Function') {
-                            throw new TypeError(`At line: ${cgAST.Token.line}. Warning: Value ${cgAST.Token.value} not being used.`)
-                        }
-                    }
-                    if (cgAST.type === 'unaryASN' || cgAST.type === 'binaryASN') {
-                        if (cgAST.Operation.type !== 'Function') {
-                            throw new TypeError(`At line: ${cgAST.Operation.line}. Warning: Operation returning a value that is not being used.`)
-                        }
-                    }
-                }
+        const code = genCode(cgAST, jumpTarget !== undefined, isReversedLogic, jumpTarget, jumpNotTarget)
+        if (Program.Config.warningToError && jumpTarget === undefined && code.MemObj.type === 'register') {
+            if ((cgAST.type === 'unaryASN' && cgAST.Operation.value !== '*') ||
+                (cgAST.type === 'binaryASN' && (cgAST.Operation.type === 'Comparision' || cgAST.Operation.type === 'Operator'))) {
+                throw new TypeError(`At line: ${cgAST.Operation.line}. Warning: Operation returning a value that is not being used.`)
             }
-        } else {
-            code = genCode(cgAST, true, isReversedLogic, jumpTarget, jumpNotTarget)
         }
 
         code.instructionset += auxVars.postOperations
@@ -349,10 +334,12 @@ function generate (Program: CONTRACT) {
                         subSentences.forEach(stnc => {
                             const RGenObj = genCode(stnc, false, false)
                             instructionstrain += RGenObj.instructionset
-                            if (RGenObj.MemObj.declaration.indexOf('_ptr') !== -1) {
+                            if (utils.getDeclarationFromMemory(RGenObj.MemObj) !== 'long') {
                                 if (Program.Config.warningToError) {
                                     throw new TypeError(`WARNING: At line: ${objTree.Token.line}. API Function parameter type is different from variable: 'long' and '${RGenObj.MemObj.declaration}'.`)
                                 }
+                                // Override declaration protection rules
+                                utils.setMemoryDeclaration(RGenObj.MemObj, 'long')
                             }
                             APIargs.push(RGenObj.MemObj)
                         })
@@ -389,10 +376,12 @@ function generate (Program: CONTRACT) {
                             const RGenObj = genCode(subSentences[i], false, false)
 
                             const fnArg = search.argsMemObj[i]
-                            if (fnArg.declaration !== RGenObj.MemObj.declaration) {
+                            if (utils.isNotValidDeclarationOp(fnArg.declaration, RGenObj.MemObj)) {
                                 if (Program.Config.warningToError) {
                                     throw new TypeError(`WARNING: At line: ${objTree.Token.line}. Function parameter type is different from variable: '${fnArg.declaration}' and '${RGenObj.MemObj.declaration}'.`)
                                 }
+                                // Override declaration protection rules
+                                utils.setMemoryDeclaration(RGenObj.MemObj, fnArg.declaration)
                             }
 
                             instructionstrain += RGenObj.instructionset
@@ -432,18 +421,26 @@ function generate (Program: CONTRACT) {
                     throw new TypeError(`At line: ${objTree.Token.line}. Function returning void value can not have modifiers.`)
                 }
                 objTree.modifiers.forEach(CurrentModifier => {
-                    if (CurrentModifier.type === 'MemberByRef') {
-                        const TypeD = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === retMemObj.typeDefinition) as STRUCT_TYPE_DEFINITION
-                        if (TypeD === undefined) {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Struct type definition not found...`)
-                        }
+                    if (CurrentModifier.type.includes('Member')) {
+                        // Commom part for MemberByVal and MemberByRef
                         if (CurrentModifier.Center.type !== 'Variable') {
                             throw new TypeError(`At line: ${objTree.Token.line}. Can not use variables as struct members.`)
                         }
-                        if (retMemObj.declaration !== 'struct_ptr') {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Variable '${retMemObj.name}' not defined as struct pointer.`)
-                        }
                         const memberName = CurrentModifier.Center.value
+
+                        let typeName: string | undefined
+                        if (retMemObj.Offset?.declaration === 'struct') {
+                            // Precedence 1: Info on Offset
+                            typeName = retMemObj.Offset.typeDefinition
+                        } else {
+                            // Precedence 2: regular case
+                            typeName = retMemObj.typeDefinition
+                        }
+
+                        const TypeD = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === typeName) as STRUCT_TYPE_DEFINITION | undefined
+                        if (TypeD === undefined) {
+                            throw new TypeError(`At line: ${objTree.Token.line}. Type definition '${typeName}' not found.`)
+                        }
                         let memberIdx = -1
                         for (let i = 0; i < TypeD.structAccumulatedSize.length; i++) {
                             if (TypeD.structAccumulatedSize[i][0] === memberName) {
@@ -454,116 +451,120 @@ function generate (Program: CONTRACT) {
                         if (memberIdx === -1) {
                             throw new TypeError(`At line: ${objTree.Token.line}. Member '${memberName}' not found on struct type definition.`)
                         }
+                        let adder = 0
+                        const MembersDefinitions = TypeD.structMembers[memberIdx]
+                        if (MembersDefinitions.arrItem) {
+                            // Update arrItem information
+                            retMemObj.arrItem = {
+                                declaration: MembersDefinitions.arrItem.declaration,
+                                totalSize: MembersDefinitions.arrItem.totalSize,
+                                type: MembersDefinitions.arrItem.type,
+                                typeDefinition: MembersDefinitions.arrItem.typeDefinition
+                            }
+                            adder++
+                        }
+                        arrayIndex = -1
 
-                        if (retMemObj.Offset === undefined) {
-                            let adder = 0
-                            if (TypeD.structMembers[memberIdx].type === 'array') {
-                                adder = 1
+                        if (CurrentModifier.type === 'MemberByRef') {
+                            if (utils.getDeclarationFromMemory(retMemObj) !== 'struct_ptr') {
+                                throw new TypeError(`At line: ${objTree.Token.line}. Variable '${retMemObj.name}' not defined as struct pointer.`)
                             }
-                            retMemObj.declaration = TypeD.structMembers[memberIdx].declaration
-                            retMemObj.name = TypeD.structMembers[memberIdx].name
-                            retMemObj.typeDefinition = TypeD.structMembers[memberIdx].typeDefinition
-                            arrayIndex = -1
-                            retMemObj.Offset = {
-                                type: 'constant',
-                                value: adder + TypeD.structAccumulatedSize[memberIdx][1]
-                            }
-                        } else if (retMemObj.Offset.type === 'constant') {
-                            let adder = 0
-                            if (TypeD.structMembers[memberIdx].type === 'array') {
-                                adder = 1
-                            }
-                            retMemObj.declaration = TypeD.structMembers[memberIdx].declaration
-                            retMemObj.name = TypeD.structMembers[memberIdx].name
-                            retMemObj.typeDefinition = TypeD.structMembers[memberIdx].typeDefinition
-                            arrayIndex = -1
-                            retMemObj.Offset.value += adder + TypeD.structAccumulatedSize[memberIdx][1]
-                        } else /* if (retMemObj.Modifier.type === "variable") */ {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Inspection needed.`)
-                        }
-                    }
 
-                    if (CurrentModifier.type === 'MemberByVal') {
-                        let TypeD: STRUCT_TYPE_DEFINITION | undefined
-                        if (retMemObj.arrItem?.type === 'struct') { // array of struct
-                            const typeName = retMemObj.arrItem.typeDefinition
-                            TypeD = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === typeName) as STRUCT_TYPE_DEFINITION
-                        } else { // regular case
-                            TypeD = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === retMemObj.typeDefinition) as STRUCT_TYPE_DEFINITION
-                        }
-                        if (TypeD === undefined) {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Struct type definition not found...`)
-                        }
-                        if (CurrentModifier.Center.type !== 'Variable') {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Can not use variables as struct members.`)
-                        }
-                        if (retMemObj.declaration === 'struct_ptr') {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Using wrong member notation. Try to use '->' instead.`)
-                        }
-                        const memberName = CurrentModifier.Center.value
-                        let memberIdx = -1
-                        for (let i = 0; i < TypeD.structAccumulatedSize.length; i++) {
-                            if (TypeD.structAccumulatedSize[i][0] === memberName) {
-                                memberIdx = i
-                                break
+                            if (retMemObj.Offset === undefined) {
+                                retMemObj.Offset = {
+                                    type: 'constant',
+                                    value: adder + TypeD.structAccumulatedSize[memberIdx][1],
+                                    declaration: MembersDefinitions.declaration,
+                                    typeDefinition: MembersDefinitions.typeDefinition
+                                }
+                            } else if (retMemObj.Offset.type === 'constant') {
+                                if (utils.getDeclarationFromMemory(retMemObj) === 'struct_ptr') {
+                                    // Deference location and continue
+                                    const TmpMemObj = auxVars.getNewRegister()
+                                    TmpMemObj.declaration = retMemObj.Offset.declaration
+                                    TmpMemObj.typeDefinition = retMemObj.Offset.typeDefinition
+                                    instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, retMemObj)
+                                    TmpMemObj.Offset = {
+                                        type: 'constant',
+                                        value: TypeD.structAccumulatedSize[memberIdx][1],
+                                        declaration: MembersDefinitions.declaration,
+                                        typeDefinition: MembersDefinitions.typeDefinition
+                                    }
+                                    retMemObj = TmpMemObj
+                                } else {
+                                    retMemObj.Offset.value += adder + TypeD.structAccumulatedSize[memberIdx][1]
+                                    retMemObj.Offset.declaration = MembersDefinitions.declaration
+                                    retMemObj.Offset.typeDefinition = MembersDefinitions.typeDefinition
+                                }
+                            } else /* if (retMemObj.Modifier.type === "variable") */ {
+                                throw new TypeError(`At line: ${objTree.Token.line}. Inspection needed.`)
+                            }
+                        } else if (CurrentModifier.type === 'MemberByVal') {
+                            if (utils.getDeclarationFromMemory(retMemObj) === 'struct_ptr') {
+                                throw new TypeError(`At line: ${objTree.Token.line}. Using wrong member notation. Try to use '->' instead.`)
+                            }
+
+                            if (retMemObj.Offset === undefined) {
+                                retMemObj = getMemoryObjectByLocation(Number('0x' + retMemObj.hexContent) + TypeD.structAccumulatedSize[memberIdx][1])
+                                // retMemObj = getMemoryObjectByName(retMemObj.asmName + '_' + MembersDefinitions.asmName)
+                            } else if (retMemObj.Offset.type === 'constant') {
+                                const newLoc = retMemObj.Offset.value + Number('0x' + retMemObj.hexContent)
+                                retMemObj = getMemoryObjectByLocation(newLoc + TypeD.structAccumulatedSize[memberIdx][1])
+                            } else /* if (retMemObj.offset_type === "variable") */ {
+                                instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line),
+                                    getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line),
+                                    utils.createConstantMemObj(adder + TypeD.structAccumulatedSize[memberIdx][1]))
+                                retMemObj.Offset.declaration = MembersDefinitions.declaration
+                                retMemObj.Offset.typeDefinition = MembersDefinitions.typeDefinition
                             }
                         }
-                        if (memberIdx === -1) {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Member '${memberName}' not found on struct type definition.`)
-                        }
-
-                        if (retMemObj.Offset === undefined) {
-                            retMemObj = getMemoryObjectByLocation(Number('0x' + retMemObj.hexContent) + TypeD.structAccumulatedSize[memberIdx][1])
-                            arrayIndex = -1
-                        } else if (retMemObj.Offset.type === 'constant') {
-                            const adder = retMemObj.Offset.value + Number('0x' + retMemObj.hexContent)
-                            retMemObj = getMemoryObjectByLocation(adder + TypeD.structAccumulatedSize[memberIdx][1])
-                            arrayIndex = -1
-                        } else /* if (retMemObj.offset_type === "variable") */ {
-                            let adder = 0
-                            if (TypeD.structMembers[memberIdx].type === 'array') {
-                                adder = 1
-                            }
-                            instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line),
-                                getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line),
-                                utils.createConstantMemObj(adder + TypeD.structAccumulatedSize[memberIdx][1]))
-                            retMemObj.declaration = TypeD.structMembers[memberIdx].declaration
-                            retMemObj.name = TypeD.structMembers[memberIdx].name
-                            retMemObj.typeDefinition = TypeD.structMembers[memberIdx].typeDefinition
-                            arrayIndex = -1
-                        }
-                    }
-
-                    if (CurrentModifier.type === 'Array') {
+                    } else if (CurrentModifier.type === 'Array') {
                         arrayIndex++
                         let TmpMemObj: MEMORY_SLOT
-                        let isPointerOp = false
-                        let TypeD: ARRAY_TYPE_DEFINITION // = Program.typesDefinitions.find( obj => obj.type==="array" && obj.name===objTree.Token.value );
-                        if (retMemObj.typeDefinition === undefined) { // array of structs
-                            TypeD = Program.typesDefinitions.find(obj => obj.type === 'array' && obj.name === retMemObj.name) as ARRAY_TYPE_DEFINITION
-                        } else if (objTree.Token.value === retMemObj.name) { // array simple
-                            TypeD = Program.typesDefinitions.find(obj => obj.type === 'array' && obj.name === retMemObj.typeDefinition) as ARRAY_TYPE_DEFINITION
-                        } else { // array inside struct
-                            TypeD = Program.typesDefinitions.find(obj => obj.type === 'array' && obj.name.indexOf('_' + retMemObj.typeDefinition) > 0) as ARRAY_TYPE_DEFINITION
-                        }
+                        let multiplier: number
+                        let typeDef: string | undefined
+
+                        // precedence 1: type definition in offset property
+                        if (retMemObj.Offset) typeDef = retMemObj.Offset?.typeDefinition
+                        // precedence 2: base memory type definition
+                        else typeDef = retMemObj.typeDefinition
+
+                        const TypeD = Program.typesDefinitions.find(obj => obj.type === 'array' && obj.name === typeDef) as ARRAY_TYPE_DEFINITION | undefined
                         if (TypeD === undefined) {
-                            if (retMemObj.declaration.indexOf('_ptr') === -1) {
+                            if (utils.getDeclarationFromMemory(retMemObj).includes('_ptr') === false) {
                                 throw new TypeError(`At line: ${objTree.Token.line}. Array type definition not found. Is '${retMemObj.name}' declared as array or pointer?`)
                             }
-                            isPointerOp = true // allow use of array notation on pointer variables.
+                            multiplier = 1 // allow use of array notation on pointer variables.
+                        } else {
+                            multiplier = TypeD.arrayMultiplierDim[arrayIndex]
                         }
-                        if (retMemObj.type !== 'array' && retMemObj.type !== 'struct' && retMemObj.type !== 'structRef' && retMemObj.Offset !== undefined) {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Can not use array notation on regular variables.`)
+
+                        if (retMemObj.arrItem === undefined) {
+                            // pointer operation.
+                            if (retMemObj.Offset === undefined) {
+                                // Create generic array definition
+                                retMemObj.arrItem = {
+                                    type: retMemObj.type,
+                                    declaration: retMemObj.declaration === 'void_ptr' ? 'long' : retMemObj.declaration.slice(0, -4) as DECLARATION_TYPES,
+                                    typeDefinition: '',
+                                    totalSize: 0
+                                }
+                            } else {
+                                // Copy information from Offset
+                                retMemObj.arrItem = {
+                                    type: 'long',
+                                    declaration: retMemObj.Offset.declaration === 'void_ptr' ? 'long' : retMemObj.Offset.declaration.slice(0, -4) as DECLARATION_TYPES,
+                                    typeDefinition: retMemObj.Offset.typeDefinition,
+                                    totalSize: 0
+                                }
+                            }
                         }
 
                         const ParamMemObj = genCode(CurrentModifier.Center, false, false)
                         instructionstrain += ParamMemObj.instructionset
 
-                        if (retMemObj.declaration.indexOf('_ptr') > 0) {
-                            retMemObj.declaration = retMemObj.declaration.slice(0, -4) as DECLARATION_TYPES
-                        }
-
                         if (ParamMemObj.MemObj.type === 'void') { // special case for text assignment
+                            auxVars.hasVoidArray = true
                             return { MemObj: retMemObj, instructionset: instructionstrain }
                         }
 
@@ -571,122 +572,122 @@ function generate (Program: CONTRACT) {
                         const paramAddress = ParamMemObj.MemObj.address
                         if (retMemObj.Offset === undefined) {
                             if (paramAddress === -1) {
-                                if (isPointerOp) {
-                                    TmpMemObj = auxVars.getNewRegister()
-                                    instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, ParamMemObj.MemObj)
-                                    retMemObj.type = 'array'
-                                    retMemObj.Offset = {
-                                        type: 'variable',
-                                        addr: TmpMemObj.address
-                                    }
-                                } else {
-                                    retMemObj.Offset = {
-                                        type: 'constant',
-                                        value: Number(`0x${ParamMemObj.MemObj.hexContent}`) * TypeD.arrayMultiplierDim[arrayIndex]
-                                    }
+                                retMemObj.Offset = {
+                                    type: 'constant',
+                                    value: Number(`0x${ParamMemObj.MemObj.hexContent}`) * multiplier,
+                                    declaration: retMemObj.arrItem.declaration,
+                                    typeDefinition: retMemObj.arrItem.typeDefinition
                                 }
                             } else if (auxVars.isTemp(paramAddress)) {
-                                if (isPointerOp) {
-                                    retMemObj.type = 'array'
-                                } else {
-                                    instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
-                                }
                                 retMemObj.Offset = {
                                     type: 'variable',
-                                    addr: ParamMemObj.MemObj.address
+                                    addr: ParamMemObj.MemObj.address,
+                                    declaration: retMemObj.arrItem.declaration,
+                                    typeDefinition: retMemObj.arrItem.typeDefinition
+
                                 }
+                                instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(multiplier))
                             } else /* if ( paramAddress is variable ) */ {
-                                if (isPointerOp || TypeD.arrayMultiplierDim[arrayIndex] === 1) {
-                                    if (isPointerOp) {
-                                        retMemObj.type = 'array'
-                                    }
+                                if (multiplier === 1) {
                                     retMemObj.Offset = {
                                         type: 'variable',
-                                        addr: ParamMemObj.MemObj.address
+                                        addr: ParamMemObj.MemObj.address,
+                                        declaration: retMemObj.arrItem.declaration,
+                                        typeDefinition: retMemObj.arrItem.typeDefinition
                                     }
                                 } else {
                                     TmpMemObj = auxVars.getNewRegister()
-                                    instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
+                                    instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(multiplier))
                                     instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, ParamMemObj.MemObj)
                                     retMemObj.Offset = {
                                         type: 'variable',
-                                        addr: TmpMemObj.address
+                                        addr: TmpMemObj.address,
+                                        declaration: retMemObj.arrItem.declaration,
+                                        typeDefinition: retMemObj.arrItem.typeDefinition
                                     }
                                 }
                             }
                         } else if (retMemObj.Offset.type === 'constant') {
                             if (paramAddress === -1) {
-                                retMemObj.Offset.value = retMemObj.Offset.value + Number(`0x${ParamMemObj.MemObj.hexContent}`) * TypeD.arrayMultiplierDim[arrayIndex]
+                                retMemObj.Offset.value += Number(`0x${ParamMemObj.MemObj.hexContent}`) * multiplier
+                                retMemObj.Offset.declaration = retMemObj.arrItem.declaration
+                                retMemObj.Offset.typeDefinition = retMemObj.arrItem.typeDefinition
                             } else if (auxVars.isTemp(paramAddress)) {
-                                instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
+                                instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(multiplier))
                                 instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(retMemObj.Offset.value))
                                 retMemObj.Offset = {
                                     type: 'variable',
-                                    addr: ParamMemObj.MemObj.address
+                                    addr: ParamMemObj.MemObj.address,
+                                    declaration: retMemObj.arrItem.declaration,
+                                    typeDefinition: retMemObj.arrItem.typeDefinition
                                 }
                             } else /* if ( paramAddress is variable  ) */ {
-                                if (TypeD.arrayMultiplierDim[arrayIndex] === 1 && retMemObj.Offset.value === 0) {
+                                if (multiplier === 1 && retMemObj.Offset.value === 0) {
                                     retMemObj.Offset = {
                                         type: 'variable',
-                                        addr: ParamMemObj.MemObj.address
+                                        addr: ParamMemObj.MemObj.address,
+                                        declaration: retMemObj.arrItem.declaration,
+                                        typeDefinition: retMemObj.arrItem.typeDefinition
                                     }
                                 } else {
                                     TmpMemObj = auxVars.getNewRegister()
                                     instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, ParamMemObj.MemObj)
-                                    instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
+                                    instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(multiplier))
                                     instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(retMemObj.Offset.value))
                                     retMemObj.Offset = {
                                         type: 'variable',
-                                        addr: TmpMemObj.address
+                                        addr: TmpMemObj.address,
+                                        declaration: retMemObj.arrItem.declaration,
+                                        typeDefinition: retMemObj.arrItem.typeDefinition
                                     }
                                 }
                             }
                         } else if (auxVars.isTemp(retMemObj.Offset.addr)) {
+                            retMemObj.Offset.declaration = retMemObj.arrItem.declaration
+                            retMemObj.Offset.typeDefinition = retMemObj.arrItem.typeDefinition
                             if (paramAddress === -1) {
-                                const adder = Number('0x' + ParamMemObj.MemObj.hexContent) * TypeD.arrayMultiplierDim[arrayIndex]
+                                const adder = Number('0x' + ParamMemObj.MemObj.hexContent) * multiplier
                                 instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line), utils.createConstantMemObj(adder))
                             } else if (auxVars.isTemp(paramAddress)) {
-                                instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
+                                instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(multiplier))
                                 instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line), ParamMemObj.MemObj)
                                 auxVars.freeRegister(ParamMemObj.MemObj.address)
                             } else /* if (paramAddress is variable ) */ {
-                                if (TypeD.arrayMultiplierDim[arrayIndex] === 1) {
+                                if (multiplier === 1) {
                                     instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line), ParamMemObj.MemObj)
                                 } else {
                                     TmpMemObj = auxVars.getNewRegister()
                                     instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, ParamMemObj.MemObj)
-                                    instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
+                                    instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(multiplier))
                                     instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line), TmpMemObj)
                                     auxVars.freeRegister(TmpMemObj.address)
                                 }
                             }
                         } else /* if ( retMemObj.Offset.addr is variable not temp ) */ {
+                            retMemObj.Offset.declaration = retMemObj.arrItem.declaration
+                            retMemObj.Offset.typeDefinition = retMemObj.arrItem.typeDefinition
                             if (paramAddress === -1) {
                                 if (ParamMemObj.MemObj.hexContent !== '0000000000000000') {
                                     TmpMemObj = auxVars.getNewRegister()
                                     instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(ParamMemObj.MemObj.hexContent))
-                                    if (!isPointerOp) {
-                                        instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
-                                    }
+                                    instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(multiplier))
                                     instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), TmpMemObj, getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line))
                                     retMemObj.Offset.addr = TmpMemObj.address
                                 }
                             } else if (auxVars.isTemp(paramAddress)) {
-                                if (!isPointerOp) {
-                                    instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
-                                }
+                                instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), ParamMemObj.MemObj, utils.createConstantMemObj(multiplier))
                                 instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), ParamMemObj.MemObj, getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line))
                                 retMemObj.Offset.addr = ParamMemObj.MemObj.address
                             } else /* if (paramAddress is variable )) */ {
                                 TmpMemObj = auxVars.getNewRegister()
                                 instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, ParamMemObj.MemObj)
-                                if (!isPointerOp) {
-                                    instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(TypeD.arrayMultiplierDim[arrayIndex]))
-                                }
+                                instructionstrain += createInstruction(utils.genMulToken(objTree.Token.line), TmpMemObj, utils.createConstantMemObj(multiplier))
                                 instructionstrain += createInstruction(utils.genAddToken(objTree.Token.line), TmpMemObj, getMemoryObjectByLocation(retMemObj.Offset.addr, objTree.Token.line))
                                 retMemObj.Offset.addr = TmpMemObj.address
                             }
                         }
+                    } else {
+                        throw new TypeError(`At line: ${objTree.Token.line}. Modifier '${CurrentModifier.type}' not implemented.`)
                     }
                 })
 
@@ -747,42 +748,47 @@ function generate (Program: CONTRACT) {
                         const CGenObj = genCode(objTree.Center, false, revLogic, jumpFalse, jumpTrue)
                         instructionstrain += CGenObj.instructionset
 
-                        if (CGenObj.MemObj.declaration.indexOf('_ptr') === -1) {
+                        const declar = utils.getDeclarationFromMemory(CGenObj.MemObj)
+
+                        if (declar.includes('_ptr') === false) {
                             if (Program.Config.warningToError) {
                                 if (objTree.Center.type === 'endASN' || objTree.Center.type === 'lookupASN') {
                                     throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of variable ${objTree.Center.Token.value} that is not declared as pointer.`)
                                 }
                                 throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of a value that is not declared as pointer.`)
                             }
-                            CGenObj.MemObj.declaration = (CGenObj.MemObj.declaration + '_ptr') as DECLARATION_TYPES
+                            utils.setMemoryDeclaration(CGenObj.MemObj, (declar + '_ptr') as DECLARATION_TYPES)
+                        }
+                        if (CGenObj.MemObj.Offset) {
+                            // Double deference: deference and continue
+                            const TmpMemObj = auxVars.getNewRegister()
+                            TmpMemObj.declaration = utils.getDeclarationFromMemory(CGenObj.MemObj)
+                            instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, CGenObj.MemObj)
+                            if (CGenObj.MemObj.Offset.type === 'variable') auxVars.freeRegister(CGenObj.MemObj.Offset.addr)
+                            auxVars.freeRegister(CGenObj.MemObj.address)
+                            CGenObj.MemObj = TmpMemObj
                         }
 
-                        if (auxVars.isLeftSideOfAssignment) {
-                            CGenObj.MemObj.delayedDeference = true
-                            CGenObj.MemObj.declaration = CGenObj.MemObj.declaration.slice(0, -4) as DECLARATION_TYPES
-                            return { MemObj: CGenObj.MemObj, instructionset: instructionstrain }
+                        CGenObj.MemObj.Offset = {
+                            type: 'constant',
+                            value: 0,
+                            declaration: 'long'
                         }
-
-                        const TmpMemObj = auxVars.getNewRegister()
-                        TmpMemObj.declaration = CGenObj.MemObj.declaration.slice(0, -4) as DECLARATION_TYPES
-                        instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, CGenObj.MemObj)
 
                         if (logicalOp === true) {
-                            instructionstrain += createInstruction(utils.genNotEqualToken(), TmpMemObj, utils.createConstantMemObj(0), revLogic, jumpFalse, jumpTrue)
+                            instructionstrain += createInstruction(utils.genNotEqualToken(), CGenObj.MemObj, utils.createConstantMemObj(0), revLogic, jumpFalse, jumpTrue)
                             auxVars.freeRegister(CGenObj.MemObj.address)
-                            auxVars.freeRegister(TmpMemObj.address)
                             return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain }
                         }
 
-                        auxVars.freeRegister(CGenObj.MemObj.address)
-                        return { MemObj: TmpMemObj, instructionset: instructionstrain }
+                        return { MemObj: CGenObj.MemObj, instructionset: instructionstrain }
                     }
 
                     if (objTree.Operation.value === '-') {
                         const CGenObj = genCode(objTree.Center, false, revLogic, jumpFalse, jumpTrue)
                         instructionstrain += CGenObj.instructionset
                         const TmpMemObj = auxVars.getNewRegister()
-                        TmpMemObj.declaration = CGenObj.MemObj.declaration
+                        TmpMemObj.declaration = utils.getDeclarationFromMemory(CGenObj.MemObj)
                         instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(0))
                         instructionstrain += createInstruction(utils.genSubToken(objTree.Operation.line), TmpMemObj, CGenObj.MemObj)
                         auxVars.freeRegister(CGenObj.MemObj.address)
@@ -805,7 +811,7 @@ function generate (Program: CONTRACT) {
                         let TmpMemObj: MEMORY_SLOT
                         if (!auxVars.isTemp(CGenObj.MemObj.address)) {
                             TmpMemObj = auxVars.getNewRegister()
-                            TmpMemObj.declaration = CGenObj.MemObj.declaration
+                            TmpMemObj.declaration = utils.getDeclarationFromMemory(CGenObj.MemObj)
                             instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, CGenObj.MemObj)
                             clearVar = true
                         } else {
@@ -871,7 +877,9 @@ function generate (Program: CONTRACT) {
                             throw new TypeError(`At line: ${objTree.Operation.line}. Trying to get address of a Label`)
                         }
 
-                        TmpMemObj.declaration += '_ptr'
+                        if (TmpMemObj.declaration.includes('_ptr') === false) {
+                            TmpMemObj.declaration += '_ptr'
+                        }
                         return { MemObj: TmpMemObj, instructionset: instructionstrain }
                     }
 
@@ -912,10 +920,15 @@ function generate (Program: CONTRACT) {
                         instructionstrain += RGenObj.instructionset
                         instructionstrain += auxVars.getPostOperations()
 
-                        if (RGenObj.MemObj.declaration !== currentFunction.declaration) {
-                            throw new TypeError(`At line: ${objTree.Operation.line}. Function ${currentFunction.name} must return '` +
+                        if (utils.isNotValidDeclarationOp(currentFunction.declaration, RGenObj.MemObj)) {
+                            if (Program.Config.warningToError) {
+                                throw new TypeError(`WARNING: At line: ${objTree.Operation.line}. Function ${currentFunction.name} must return '` +
                                 `${currentFunction.declaration}' value, but it is returning '${RGenObj.MemObj.declaration}'.`)
+                            }
+                            // Override declaration protection rules
+                            utils.setMemoryDeclaration(RGenObj.MemObj, currentFunction.declaration)
                         }
+
                         instructionstrain += createInstruction(objTree.Operation, RGenObj.MemObj)
 
                         auxVars.freeRegister(RGenObj.MemObj.address)
@@ -1094,9 +1107,6 @@ function generate (Program: CONTRACT) {
                     if (LGenObj.MemObj.type === 'void' || RGenObj.MemObj.type === 'void') {
                         throw new TypeError('At line: ' + objTree.Operation.line + '. Trying to make operations with undefined variables')
                     }
-                    if (LGenObj.MemObj.delayedDeference === true || RGenObj.MemObj.delayedDeference === true) {
-                        throw new TypeError(`At line: ${objTree.Operation.line}. Invalid left value for assignment. Operation on deferenced pointer.`)
-                    }
 
                     // optimization on constant codes:
                     if (LGenObj.MemObj.type === 'constant' && RGenObj.MemObj.type === 'constant') {
@@ -1142,9 +1152,9 @@ function generate (Program: CONTRACT) {
                         }
                     }
                     let TmpMemObj: MEMORY_SLOT
-                    if (!auxVars.isTemp(LGenObj.MemObj.address)) {
+                    if (LGenObj.MemObj.type !== 'register') {
                         TmpMemObj = auxVars.getNewRegister()
-                        TmpMemObj.declaration = LGenObj.MemObj.declaration
+                        TmpMemObj.declaration = utils.getDeclarationFromMemory(LGenObj.MemObj)
                         instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, LGenObj.MemObj)
                         auxVars.freeRegister(LGenObj.MemObj.address)
                     } else {
@@ -1152,13 +1162,13 @@ function generate (Program: CONTRACT) {
                     }
 
                     // Pointer verifications
-                    if (RGenObj.MemObj.declaration.indexOf('_ptr') !== -1 && TmpMemObj.declaration.indexOf('_ptr') === -1) {
-                        // Case when adding numbers to pointers
+                    if (utils.getDeclarationFromMemory(RGenObj.MemObj).includes('_ptr') && !TmpMemObj.declaration.includes('_ptr')) {
+                        // Operation with pointers
                         TmpMemObj.declaration += '_ptr'
                     }
-                    if (TmpMemObj.declaration.indexOf('_ptr') !== -1) {
+                    if (TmpMemObj.declaration.includes('_ptr')) {
                         if (objTree.Operation.value !== '+' && objTree.Operation.value !== '-') {
-                            throw new TypeError('At line: ' + objTree.Operation.line + ". Operation not allowed on pointers. Only '+', '-', '++' and '--' are.")
+                            throw new TypeError(`At line: ${objTree.Operation.line}. Operation not allowed on pointers. Only '+', '-', '++' and '--' are.`)
                         }
                     }
 
@@ -1179,8 +1189,12 @@ function generate (Program: CONTRACT) {
                     if (jumpFalse !== undefined) {
                         throw new SyntaxError('At line: ' + objTree.Operation.line + '. Can not use assignment during logical operations with branches')
                     }
+                    if (objTree.Left.type === 'binaryASN' || (objTree.Left.type === 'unaryASN' && objTree.Left.Operation.value !== '*')) {
+                        throw new SyntaxError(`At line: ${objTree.Operation.line}. Invalid left value for assignment.`)
+                    }
 
                     auxVars.isLeftSideOfAssignment = true
+                    auxVars.hasVoidArray = false
                     const LGenObj = genCode(objTree.Left, false, revLogic, jumpFalse, jumpTrue)
                     instructionstrain += LGenObj.instructionset
                     auxVars.isLeftSideOfAssignment = false
@@ -1190,6 +1204,15 @@ function generate (Program: CONTRACT) {
                     }
                     if (LGenObj.MemObj.address === -1) {
                         throw new TypeError('At line: ' + objTree.Operation.line + '. Invalid left value for ' + objTree.Operation.type)
+                    }
+                    if (LGenObj.MemObj.type === 'array' && auxVars.hasVoidArray === false) {
+                        if (LGenObj.MemObj.Offset === undefined) {
+                            // Array assignment base type
+                            throw new TypeError(`At line: ${objTree.Operation.line}. Invalid left value for '${objTree.Operation.type}'. Can not reassign an array.`)
+                        }
+                    } else if (LGenObj.MemObj.Offset && LGenObj.MemObj.Offset.declaration.includes('_ptr') && LGenObj.MemObj.Offset.typeDefinition !== undefined && auxVars.hasVoidArray === false) {
+                        // Array assignment inside struct
+                        throw new TypeError(`At line: ${objTree.Operation.line}. Invalid left value for '${objTree.Operation.type}'. Can not reassign an array.`)
                     }
 
                     let savedDeclaration: DECLARATION_TYPES = ''
@@ -1208,7 +1231,6 @@ function generate (Program: CONTRACT) {
                         Program.Config.reuseAssignedVar === true &&
                         LGenObj.MemObj.type === 'long' &&
                         LGenObj.MemObj.Offset === undefined &&
-                        LGenObj.MemObj.delayedDeference !== true &&
                         CanReuseAssignedVar(LGenObj.MemObj.address, objTree.Right)) {
                         const newRegister: MEMORY_SLOT = JSON.parse(JSON.stringify(LGenObj.MemObj))
                         newRegister.type = 'register'
@@ -1230,21 +1252,8 @@ function generate (Program: CONTRACT) {
                     if (RGenObj.MemObj.type === 'void') {
                         throw new TypeError('At line: ' + objTree.Operation.line + '. Invalid right value for ' + objTree.Operation.type + '. Possible void value.')
                     }
-                    if (LGenObj.MemObj.type === 'array' && LGenObj.MemObj.declaration === 'long_ptr' && RGenObj.MemObj.size === 1) {
-                        throw new TypeError('At line: ' + objTree.Operation.line + '. Invalid left value for ' + objTree.Operation.type + '. Can not reassign an array.')
-                    }
-                    // Pointer verifications
-                    if (LGenObj.MemObj.declaration.indexOf('_ptr') !== -1 &&
-                        objTree.Operation.type === 'SetOperator' &&
-                        RGenObj.MemObj.declaration.indexOf('_ptr') === -1) {
-                        // Case when adding numbers to pointers
-                        RGenObj.MemObj.declaration += '_ptr'
-                        if (objTree.Operation.value !== '+=' && objTree.Operation.value !== '-=') {
-                            throw new TypeError('At line: ' + objTree.Operation.line + ". Operation not allowed on pointers. Only '+', '-', '++' and '--' are.")
-                        }
-                    }
 
-                    if (LGenObj.MemObj.declaration !== RGenObj.MemObj.declaration) {
+                    if (utils.isNotValidDeclarationOp(utils.getDeclarationFromMemory(LGenObj.MemObj), RGenObj.MemObj)) {
                         if (Program.Config.warningToError) {
                             throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Left and right values does not match. Values are: '" + LGenObj.MemObj.declaration + "' and '" + RGenObj.MemObj.declaration + "'.")
                         }
@@ -1458,10 +1467,7 @@ function generate (Program: CONTRACT) {
             let RetObj: MEMORY_SLOT
             let retInstructions = ''
             let retIsNew = false
-
-            if (ParamMemObj.delayedDeference === true) {
-                throw new TypeError(`At line: ${line}. Operation on delayedDeference variable. BugReport Please.`)
-            }
+            const paramDec = utils.getDeclarationFromMemory(ParamMemObj)
 
             if (ParamMemObj.type === 'constant') {
                 if (ParamMemObj.hexContent === undefined) {
@@ -1471,7 +1477,7 @@ function generate (Program: CONTRACT) {
                     throw new RangeError(`At line: ${line}. Overflow on long value assignment. Value bigger than 64 bits).`)
                 }
                 RetObj = auxVars.getNewRegister()
-                RetObj.declaration = ParamMemObj.declaration
+                RetObj.declaration = paramDec
                 if (ParamMemObj.hexContent === '0000000000000000') {
                     retInstructions += `CLR @${RetObj.asmName}\n`
                 // } else if (Number(ParamMemObj.hexContent) <= Program.Config.maxConstVars) {
@@ -1480,22 +1486,40 @@ function generate (Program: CONTRACT) {
                     retInstructions += `SET @${RetObj.asmName} #${ParamMemObj.hexContent}\n`
                 }
                 retIsNew = true
-            } else if (ParamMemObj.type === 'register' || ParamMemObj.type === 'long') {
-                if (ParamMemObj.Offset === undefined) {
-                    RetObj = ParamMemObj
-                } else {
-                    throw new TypeError('TODO')
+                return { MoldedObj: RetObj, instructionset: retInstructions, isNew: true }
+            }
+
+            if (ParamMemObj.Offset === undefined) {
+                return { MoldedObj: ParamMemObj, instructionset: '', isNew: false }
+            }
+
+            if (ParamMemObj.type === 'register' || ParamMemObj.type === 'long') {
+                if (ParamMemObj.Offset.type === 'constant') {
+                    RetObj = auxVars.getNewRegister()
+                    RetObj.declaration = paramDec
+                    if (ParamMemObj.Offset.value === 0) {
+                        retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName})\n`
+                    } else {
+                        const FlatConstant = flattenMemory(utils.createConstantMemObj(ParamMemObj.Offset.value), line)
+                        retInstructions += FlatConstant.instructionset
+                        retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${FlatConstant.MoldedObj.asmName})\n`
+                        if (FlatConstant.isNew) auxVars.freeRegister(FlatConstant.MoldedObj.address)
+                    }
+                    retIsNew = true
+                } else { // ParamMemObj.Offset.type === 'variable'
+                    RetObj = auxVars.getNewRegister()
+                    RetObj.declaration = paramDec
+                    retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${getMemoryObjectByLocation(ParamMemObj.Offset.addr, line).asmName})\n`
+                    retIsNew = true
                 }
             } else if (ParamMemObj.type === 'array') {
-                if (ParamMemObj.Offset === undefined) {
-                    RetObj = ParamMemObj
-                } else if (ParamMemObj.Offset.type === 'constant') { // Looks like an array but can be converted to regular variable
+                if (ParamMemObj.Offset.type === 'constant') { // Looks like an array but can be converted to regular variable
                     RetObj = getMemoryObjectByLocation(utils.addHexContents(ParamMemObj.hexContent, ParamMemObj.Offset.value), line)
                     auxVars.freeRegister(ParamMemObj.address)
                     retIsNew = true
                 } else { // ParamMemObj.Offset.type === 'variable'
                     RetObj = auxVars.getNewRegister()
-                    RetObj.declaration = ParamMemObj.declaration
+                    RetObj.declaration = paramDec
                     retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${getMemoryObjectByLocation(ParamMemObj.Offset.addr, line).asmName})\n`
                     retIsNew = true
                 }
@@ -1503,11 +1527,9 @@ function generate (Program: CONTRACT) {
                 // Impossible condition because struct variables have their type changed during LOOKUP_ASN processing
                 throw new Error(`At line: ${line}. Strange error. BugReport please.`)
             } else if (ParamMemObj.type === 'structRef') {
-                if (ParamMemObj.Offset === undefined) {
-                    RetObj = ParamMemObj
-                } else if (ParamMemObj.Offset.type === 'constant') {
+                if (ParamMemObj.Offset.type === 'constant') {
                     RetObj = auxVars.getNewRegister()
-                    RetObj.declaration = ParamMemObj.declaration
+                    RetObj.declaration = paramDec
                     const FlatConstant = flattenMemory(utils.createConstantMemObj(ParamMemObj.Offset.value), line)
                     retInstructions += FlatConstant.instructionset
                     retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${FlatConstant.MoldedObj.asmName})\n`
@@ -1515,7 +1537,7 @@ function generate (Program: CONTRACT) {
                     retIsNew = true
                 } else { // ParamMemObj.Offset.type === 'variable') {
                     RetObj = auxVars.getNewRegister()
-                    RetObj.declaration = ParamMemObj.declaration
+                    RetObj.declaration = paramDec
                     retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${getMemoryObjectByLocation(ParamMemObj.Offset.addr, line).asmName})\n`
                     retIsNew = true
                 }
@@ -1539,7 +1561,7 @@ function generate (Program: CONTRACT) {
                     throw new TypeError(`At line: ${objoperator.line}. Invalid left side for assigment.`)
                 case 'register':
                 case 'long':
-                    if (param1.delayedDeference === undefined || param1.delayedDeference === false) {
+                    if (param1.Offset === undefined) {
                         switch (param2.type) {
                         case 'constant':
                             if (param2.hexContent === undefined) {
@@ -1554,18 +1576,42 @@ function generate (Program: CONTRACT) {
                             return 'SET @' + param1.asmName + ' #' + param2.hexContent + '\n'
                         case 'register':
                         case 'long':
-                            if (param1.declaration === param2.declaration) {
-                                if (param1.address === param2.address) return ''
-                                else return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n'
-                            } else {
-                                if (param1.declaration === 'long' && param2.declaration === 'long_ptr') {
-                                    return `SET @${param1.asmName} $($${param2.asmName})\n`
+                            if (param2.Offset === undefined) {
+                                if ((param1.declaration === param2.declaration) ||
+                                    (param1.declaration === 'long_ptr' && param2.declaration === 'void_ptr') ||
+                                    (param1.declaration === 'void_ptr' && param2.declaration === 'long_ptr')) {
+                                    if (param1.address === param2.address) return ''
+                                    else return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n'
+                                } else {
+                                    if ((param1.declaration === 'long' && param2.declaration === 'long_ptr') ||
+                                        (param1.declaration === 'long' && param2.declaration === 'void_ptr')) {
+                                        return `SET @${param1.asmName} $($${param2.asmName})\n`
+                                    }
+                                    if ((param1.declaration === 'long_ptr' && param2.declaration === 'long') ||
+                                        (param1.declaration === 'void_ptr' && param2.declaration === 'long')) {
+                                        return `SET @($${param1.asmName}) $${param2.asmName}\n`
+                                    }
+                                    throw new RangeError(`At line: ${objoperator.line}. Strange param declaration. BugReport Please.`)
                                 }
-                                if (param1.declaration === 'long_ptr' && param2.declaration === 'long') {
-                                    return `SET @($${param1.asmName}) $${param2.asmName}\n`
+                            } else if (param2.Offset.type === 'constant') {
+                                if (!param2.declaration.includes('_ptr')) {
+                                    throw new Error('Strange error')
                                 }
+                                if (param2.Offset.value === 0) {
+                                    retinstr += `SET @${param1.asmName} $($${param2.asmName})\n`
+                                } else {
+                                    const FlatOffset = flattenMemory(utils.createConstantMemObj(param2.Offset.value), objoperator.line)
+                                    retinstr += FlatOffset.instructionset
+                                    retinstr += `SET @${param1.asmName} $($${param2.asmName} + $${FlatOffset.MoldedObj.asmName})\n`
+                                    if (FlatOffset.isNew) auxVars.freeRegister(FlatOffset.MoldedObj.address)
+                                }
+                                return retinstr
+                            } else { // param2.Offset.type === 'variable'
+                                if (!param2.declaration.includes('_ptr')) {
+                                    throw new Error('Strange error')
+                                }
+                                return `SET @${param1.asmName} $($${param2.asmName} + $${getMemoryObjectByLocation(param2.Offset.addr, objoperator.line).asmName})\n`
                             }
-                            throw new RangeError(`At line: ${objoperator.line}. Strange param declaration. BugReport Please.`)
                         case 'array':
                             if (param2.Offset === undefined) {
                                 return 'SET @' + param1.asmName + ' $' + param2.asmName + '\n'
@@ -1579,7 +1625,11 @@ function generate (Program: CONTRACT) {
                             throw new Error(`At line: ${objoperator.line}. Strange error. BugReport please.`)
                         case 'structRef':
                             if (param2.Offset === undefined) {
-                                throw new TypeError(`At line: ${objoperator.line}. Missing offset on structRef. BugReport please.`)
+                                if (param1.declaration === 'long_ptr' || param1.declaration === 'void_ptr') {
+                                    if (param1.address === param2.address) return ''
+                                    else return `SET @${param1.asmName} $${param2.asmName}\n`
+                                }
+                                throw new TypeError(`At line: ${objoperator.line}. Forbidden assignment: '${param1.declaration}' and '${param2.declaration}'.`)
                             } else if (param2.Offset.type === 'constant') {
                                 const FlatConstant = flattenMemory(utils.createConstantMemObj(param2.Offset.value), objoperator.line)
                                 retinstr += FlatConstant.instructionset
@@ -1592,17 +1642,27 @@ function generate (Program: CONTRACT) {
                             }
                         }
                         throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.")
-                    } else { // param1.delayedDeference === true
+                    } else if (param1.Offset.type === 'constant') {
                         const FlatMem = flattenMemory(param2, objoperator.line)
                         retinstr += FlatMem.instructionset
-                        retinstr += `SET @($${param1.asmName}) $${FlatMem.MoldedObj.asmName}\n`
+                        if (param1.Offset.value === 0) {
+                            retinstr += `SET @($${param1.asmName}) $${FlatMem.MoldedObj.asmName}\n`
+                        } else {
+                            const FlatConstant = flattenMemory(utils.createConstantMemObj(param1.Offset.value), objoperator.line)
+                            retinstr += FlatConstant.instructionset
+                            retinstr += `SET @($${param1.asmName} + $${FlatConstant.MoldedObj.asmName}) $${FlatMem.MoldedObj.asmName}\n`
+                            if (FlatConstant.isNew) auxVars.freeRegister(FlatConstant.MoldedObj.address)
+                        }
+                        if (FlatMem.isNew) auxVars.freeRegister(FlatMem.MoldedObj.address)
+                        return retinstr
+                    } else { // param1.Offset.type === 'variable'
+                        const FlatMem = flattenMemory(param2, objoperator.line)
+                        retinstr += FlatMem.instructionset
+                        retinstr += `SET @($${param1.asmName} + $${getMemoryObjectByLocation(param1.Offset.addr).asmName}) $${FlatMem.MoldedObj.asmName}\n`
                         if (FlatMem.isNew) auxVars.freeRegister(FlatMem.MoldedObj.address)
                         return retinstr
                     }
                 case 'array':
-                    if (param1.delayedDeference === true) {
-                        throw new TypeError(`At line: ${objoperator.line}. Can not deference an array. BugReport please`)
-                    }
                     if (param1.Offset === undefined) {
                         if (param2.type === 'constant') {
                             // special case for multi-long text assignment
@@ -1639,7 +1699,8 @@ function generate (Program: CONTRACT) {
                 case 'structRef':
                     if (param1.Offset === undefined) {
                         // no modifier
-                        if (param2.type === 'constant') {
+                        switch (param2.type) {
+                        case 'constant':
                             if (param2.hexContent === undefined) {
                                 throw new TypeError(`At line: ${objoperator.line}. Missing hexContent parameter. BugReport please.`)
                             }
@@ -1654,10 +1715,43 @@ function generate (Program: CONTRACT) {
                                 retinstr += `SET @${param1.asmName} #${param2.hexContent}\n`
                             }
                             return retinstr
-                        } else if (param2.type === 'register') {
-                            return `SET @${param1.asmName} $${param2.asmName}\n`
+                        case 'register':
+                        case 'long':
+                            if (param2.Offset === undefined) {
+                                if (param2.declaration === 'long_ptr' || param2.declaration === 'struct_ptr' || param2.declaration === 'void_ptr') {
+                                    return `SET @${param1.asmName} $${param2.asmName}\n`
+                                }
+                                throw new TypeError(`At line: ${objoperator.line}. Forbidden assignment: '${param1.declaration}' and '${param2.declaration}'.`)
+                            } else if (param2.Offset.type === 'constant') {
+                                const FlatOffset = flattenMemory(utils.createConstantMemObj(param2.Offset.value), objoperator.line)
+                                retinstr += FlatOffset.instructionset
+                                retinstr += `SET @${param1.asmName} $($${param2.asmName} + $${FlatOffset.MoldedObj.asmName})\n`
+                                if (FlatOffset.isNew) auxVars.freeRegister(FlatOffset.MoldedObj.address)
+                                return retinstr
+                            } else {
+                                return `SET @${param1.asmName} $($${param2.asmName} + $${getMemoryObjectByLocation(param2.Offset.addr, objoperator.line).asmName})\n`
+                            }
+                        case 'array':
+                            throw new TypeError('Not implemented: structRef -> array')
+                        case 'structRef':
+                            if (param2.Offset === undefined) {
+                                return `SET @${param1.asmName} $${param2.asmName}\n`
+                            } else if (param2.Offset.type === 'constant') {
+                                if (param2.Offset.declaration !== 'long_ptr' && param2.Offset.declaration !== 'struct_ptr' && param2.Offset.declaration !== 'void_ptr') {
+                                    throw new TypeError(`At line: ${objoperator.line}. Forbidden assignment: '${param1.declaration}' and '${param2.Offset.declaration}'.`)
+                                }
+                                const FlatOffset = flattenMemory(utils.createConstantMemObj(param2.Offset.value), objoperator.line)
+                                retinstr += FlatOffset.instructionset
+                                retinstr += `SET @${param1.asmName} $($${param2.asmName} + $${FlatOffset.MoldedObj.asmName})\n`
+                                if (FlatOffset.isNew) auxVars.freeRegister(FlatOffset.MoldedObj.address)
+                                return retinstr
+                            } else { // param2.Offset.type === 'variable'
+                                if (param2.Offset.declaration !== 'long_ptr' && param2.Offset.declaration !== 'struct_ptr' && param2.Offset.declaration !== 'void_ptr') {
+                                    throw new TypeError(`At line: ${objoperator.line}. Forbidden assignment: '${param1.declaration}' and '${param2.Offset.declaration}'.`)
+                                }
+                                return `SET @${param1.asmName} $($${param2.asmName} + $${getMemoryObjectByLocation(param2.Offset.addr, objoperator.line).asmName})\n`
+                            }
                         }
-                        throw new TypeError(`TODO 556`)
                     } else if (param1.Offset.type === 'constant') {
                         const FlatP2 = flattenMemory(param2, objoperator.line)
                         retinstr += FlatP2.instructionset
@@ -1679,9 +1773,8 @@ function generate (Program: CONTRACT) {
                         retinstr += `SET @($${param1.asmName} + $${getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName}) $${FlatP2.MoldedObj.asmName}\n`
                         return retinstr
                     }
-                default:
-                    throw new TypeError('At line: ' + objoperator.line + ". Unknow combination at createInstruction: param1 type '" + param1.type + "' and param2 type: '" + param2.type + "'.")
                 }
+                throw new TypeError(`At line: ${objoperator.line}. Unknow combination at createInstruction: param1 '${param1.type}' and param2 '${param2.type}'.`)
             }
 
             if (objoperator.type === 'Operator' || objoperator.type === 'SetOperator') {

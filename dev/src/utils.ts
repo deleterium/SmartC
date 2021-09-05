@@ -3,7 +3,7 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-/* global TOKEN AST MEMORY_SLOT */
+/* global TOKEN AST MEMORY_SLOT DECLARATION_TYPES */
 
 /**
  * Simple functions that do not depend external variables.
@@ -161,6 +161,47 @@ const utils = {
         }
         recursiveSplit(Obj)
         return ret
+    },
+    /**
+     * Checks declaration types and return true if operation is not allowed.
+     * @param desiredDeclaration Should be this type
+     * @param MemoObj Object to test
+     * @returns return true if operation is NOT allowed.
+     */
+    isNotValidDeclarationOp (desiredDeclaration: DECLARATION_TYPES, MemoObj: MEMORY_SLOT) {
+        const memoDeclaration = this.getDeclarationFromMemory(MemoObj)
+
+        if (desiredDeclaration === 'void' || memoDeclaration === 'void') {
+            return true
+        }
+        if (desiredDeclaration === memoDeclaration) {
+            return false
+        }
+        if (desiredDeclaration === 'void_ptr' && (memoDeclaration === 'long_ptr' || memoDeclaration === 'struct_ptr')) {
+            return false
+        }
+        if (memoDeclaration === 'void_ptr' && (desiredDeclaration === 'long_ptr' || desiredDeclaration === 'struct_ptr')) {
+            return false
+        }
+        if (desiredDeclaration.includes('_ptr') && MemoObj.type === 'constant') {
+            // manual pointer assignment or multi byte array assignment.
+            return false
+        }
+        return true
+    },
+    getDeclarationFromMemory (MemoObj: MEMORY_SLOT): DECLARATION_TYPES {
+        if (MemoObj.Offset === undefined) {
+            return MemoObj.declaration
+        } else {
+            return MemoObj.Offset.declaration
+        }
+    },
+    setMemoryDeclaration (MemoObj: MEMORY_SLOT, dec: DECLARATION_TYPES) {
+        if (MemoObj.Offset === undefined) {
+            MemoObj.declaration = dec
+        } else {
+            MemoObj.Offset.declaration = dec
+        }
     },
     /**
      * Simple otimization:
