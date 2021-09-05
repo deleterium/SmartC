@@ -119,14 +119,11 @@ function shape(tokenAST) {
                 tokenAST[AuxVars.currentToken + 2].type === 'Variable' &&
                 tokenAST[AuxVars.currentToken + 3].type === 'Function' &&
                 tokenAST[AuxVars.currentToken + 4].type === 'CodeDomain') {
-                // Function found. Does return pointer
-                if (tokenAST[AuxVars.currentToken].value === 'struct') {
-                    throw new SyntaxError(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct currently not implemented.`);
-                }
                 Program.functions.push({
                     argsMemObj: [],
                     sentences: [],
                     declaration: (tokenAST[AuxVars.currentToken].value + '_ptr'),
+                    typeDefinition: tokenAST[AuxVars.currentToken].extValue,
                     line: tokenAST[AuxVars.currentToken + 2].line,
                     name: tokenAST[AuxVars.currentToken + 2].value,
                     arguments: tokenAST[AuxVars.currentToken + 3].params,
@@ -394,7 +391,7 @@ function shape(tokenAST) {
         let accumulatedSize = 0;
         StructTypeD.structMembers.forEach(function (memb) {
             StructTypeD.structAccumulatedSize.push([memb.name, accumulatedSize]);
-            if (memb.type !== 'struct' || memb.declaration.indexOf('_ptr') !== -1) { // Remeber to change here code yolj1A
+            if (memb.type !== 'struct') { // Remeber to change here code yolj1A
                 accumulatedSize++;
             }
         });
@@ -450,18 +447,13 @@ function shape(tokenAST) {
                         return;
                     }
                     const structNameDef = phraseCode[keywordIndex].extValue;
-                    let search = Program.typesDefinitions.find(obj => obj.name === structNameDef && obj.type === 'struct');
-                    if (search === undefined && AuxVars.currentPrefix.length > 0) {
-                        search = Program.typesDefinitions.find(obj => obj.name === AuxVars.currentPrefix + structNameDef && obj.type === 'struct');
-                    }
-                    if (search === undefined) {
-                        throw new TypeError(`At line: ${phraseCode[keywordIndex].line}. Could not find type definition for 'struct' '${phraseCode[keywordIndex].extValue}'.`);
-                    }
                     let idx = keywordIndex + 1;
                     while (idx < phraseCode.length) {
                         const dimensions = [];
-                        const MemTemplate = JSON.parse(JSON.stringify(search.MemoryTemplate));
                         if (phraseCode[idx].type === 'Delimiter') {
+                            if (keywordIndex + 1 === idx) {
+                                throw new TypeError(`At line: ${phraseCode[idx].line}. Delimiter ',' not expected.`);
+                            }
                             idx++;
                             continue;
                         }
@@ -470,19 +462,56 @@ function shape(tokenAST) {
                             end = false;
                             break;
                         }
-                        if (phraseCode[idx].value === '*' && idx + 1 < phraseCode.length && phraseCode[idx + 1].type === 'Variable') {
+                        if (phraseCode[idx].value === '*' && phraseCode[idx + 1]?.type === 'Variable') {
                             ispointer = true;
-                            MemTemplate.declaration += '_ptr';
                             idx++;
                         }
                         else {
                             ispointer = false;
                         }
-                        MemTemplate.name = phraseCode[idx].value;
-                        MemTemplate.asmName = AuxVars.currentPrefix + phraseCode[idx].value;
-                        MemTemplate.scope = AuxVars.currentScopeName;
-                        MemTemplate.isDeclared = AuxVars.setIsDeclared;
                         if (phraseCode[idx].type === 'Variable') {
+                            let MemTemplate;
+                            let search = Program.typesDefinitions.find(obj => obj.name === structNameDef && obj.type === 'struct');
+                            if (search === undefined && AuxVars.currentPrefix.length > 0) {
+                                search = Program.typesDefinitions.find(obj => obj.name === AuxVars.currentPrefix + structNameDef && obj.type === 'struct');
+                            }
+                            if (ispointer) {
+                                if (search === undefined) {
+                                    // Maybe recursive definition.
+                                    MemTemplate = {
+                                        address: -1,
+                                        name: phraseCode[idx].value,
+                                        asmName: AuxVars.currentPrefix + phraseCode[idx].value,
+                                        type: 'structRef',
+                                        // Recursive struct works only with global definitions
+                                        typeDefinition: structNameDef,
+                                        scope: AuxVars.currentScopeName,
+                                        size: 1,
+                                        isDeclared: AuxVars.setIsDeclared,
+                                        declaration: 'struct_ptr'
+                                    };
+                                }
+                                else {
+                                    // not recursive definition
+                                    MemTemplate = JSON.parse(JSON.stringify(search.MemoryTemplate));
+                                    MemTemplate.name = phraseCode[idx].value;
+                                    MemTemplate.asmName = AuxVars.currentPrefix + phraseCode[idx].value;
+                                    MemTemplate.scope = AuxVars.currentScopeName;
+                                    MemTemplate.isDeclared = AuxVars.setIsDeclared;
+                                    MemTemplate.declaration = 'struct_ptr';
+                                    MemTemplate.type = 'structRef';
+                                }
+                            }
+                            else { // is not pointer
+                                if (search === undefined) {
+                                    throw new TypeError(`At line: ${phraseCode[keywordIndex].line}. Could not find type definition for 'struct' '${phraseCode[keywordIndex].extValue}'.`);
+                                }
+                                MemTemplate = JSON.parse(JSON.stringify(search.MemoryTemplate));
+                                MemTemplate.name = phraseCode[idx].value;
+                                MemTemplate.asmName = AuxVars.currentPrefix + phraseCode[idx].value;
+                                MemTemplate.scope = AuxVars.currentScopeName;
+                                MemTemplate.isDeclared = AuxVars.setIsDeclared;
+                            }
                             while (idx + 1 < phraseCode.length) {
                                 if (phraseCode[idx + 1].type === 'Arr') { // Array declaration
                                     idx++;
@@ -493,18 +522,21 @@ function shape(tokenAST) {
                                 }
                             }
                             if (dimensions.length > 0) { // is array of structs
-                                MemTemplate.type = 'array';
                                 MemTemplate.typeDefinition = MemTemplate.asmName;
                                 MemTemplate.asmName = AuxVars.currentPrefix + MemTemplate.name;
                                 MemTemplate.arrItem = {
-                                    type: search.type,
-                                    typeDefinition: search.name,
+                                    type: MemTemplate.type,
+                                    declaration: MemTemplate.declaration,
+                                    typeDefinition: AuxVars.currentPrefix + structNameDef,
                                     totalSize: 0
                                 };
-                                MemTemplate.declaration += '_ptr';
+                                MemTemplate.type = 'array';
+                                if (MemTemplate.declaration.includes('_ptr') === false) {
+                                    MemTemplate.declaration += '_ptr';
+                                }
                                 MemTemplate.arrItem.totalSize = 1 + dimensions.reduce(function (total, num) {
                                     return total * num;
-                                }, search.MemoryTemplate.size);
+                                }, MemTemplate.size);
                                 ret.push(MemTemplate);
                                 for (let x = 0, i = 0; x < dimensions.length; x++) {
                                     for (let y = 0; y < dimensions[x]; y++) {
@@ -523,7 +555,7 @@ function shape(tokenAST) {
                                         MemoryTemplate: MemTemplate
                                     };
                                     let j = dimensions.length - 1;
-                                    let acc = search.MemoryTemplate.size;
+                                    let acc = MemTemplate.size;
                                     do {
                                         TypeD.arrayMultiplierDim.unshift(acc);
                                         acc *= dimensions[j];
@@ -553,7 +585,8 @@ function shape(tokenAST) {
                     }
                     return ret;
                 }
-                if (phraseCode[keywordIndex].value === 'long') {
+                else if (phraseCode[keywordIndex].value === 'long' ||
+                    phraseCode[keywordIndex].value === 'void') {
                     let idx = keywordIndex + 1;
                     let valid = true;
                     while (idx < phraseCode.length) {
@@ -570,7 +603,7 @@ function shape(tokenAST) {
                             end = false;
                             break;
                         }
-                        if (valid === true && phraseCode[idx].value === '*' && idx + 1 < phraseCode.length && phraseCode[idx + 1].type === 'Variable') {
+                        if (valid === true && phraseCode[idx].value === '*' && phraseCode[idx + 1]?.type === 'Variable') {
                             ispointer = true;
                             idx++;
                         }
@@ -587,8 +620,18 @@ function shape(tokenAST) {
                             MemTemplate.name = phraseCode[idx].value;
                             MemTemplate.asmName = AuxVars.currentPrefix + phraseCode[idx].value;
                             MemTemplate.scope = AuxVars.currentScopeName;
-                            if (ispointer) {
-                                MemTemplate.declaration += '_ptr';
+                            if (phraseCode[keywordIndex].value === 'void') {
+                                if (ispointer) {
+                                    MemTemplate.declaration = 'void_ptr';
+                                }
+                                else {
+                                    throw new TypeError(`At line: ${phraseCode[idx].line}. Can not declare variables as void.`);
+                                }
+                            }
+                            else { // phraseCode[keywordIndex].value === 'long'
+                                if (ispointer) {
+                                    MemTemplate.declaration += '_ptr';
+                                }
                             }
                             MemTemplate.isDeclared = AuxVars.setIsDeclared;
                             while (idx + 1 < phraseCode.length) {
@@ -608,14 +651,17 @@ function shape(tokenAST) {
                                 // IS array
                                 // fill more information in memory template
                                 MemTemplate.type = 'array';
-                                MemTemplate.typeDefinition = MemTemplate.asmName;
+                                MemTemplate.typeDefinition = structName + MemTemplate.asmName;
                                 MemTemplate.arrItem = {
-                                    type: search.type,
-                                    typeDefinition: '',
+                                    type: 'long',
+                                    declaration: MemTemplate.declaration,
+                                    typeDefinition: structName + MemTemplate.asmName,
                                     totalSize: 0
                                 };
                                 // CHECK22
-                                MemTemplate.declaration += '_ptr';
+                                if (MemTemplate.declaration.includes('_ptr') === false) {
+                                    MemTemplate.declaration += '_ptr';
+                                }
                                 MemTemplate.arrItem.totalSize = 1 + dimensions.reduce(function (total, num) {
                                     return total * num;
                                 }, 1);
@@ -627,6 +673,7 @@ function shape(tokenAST) {
                                     Mem2.name = `${MemTemplate.name}_${i - 1}`;
                                     Mem2.asmName = `${MemTemplate.asmName}_${i - 1}`;
                                     Mem2.scope = AuxVars.currentScopeName;
+                                    Mem2.declaration = MemTemplate.arrItem.declaration;
                                     ret.push(Mem2);
                                 }
                                 // create array type definition
@@ -870,7 +917,7 @@ function shape(tokenAST) {
     function consolidateMemory() {
         let counter = 0;
         Program.memory.forEach(function (thisvar) {
-            if (thisvar.type === 'struct' && thisvar.declaration.indexOf('_ptr') === -1) { // Remeber to change here code yolj1A
+            if (thisvar.type === 'struct') { // Remeber to change here code yolj1A
                 thisvar.hexContent = counter.toString(16).padStart(16, '0');
             }
             else if (thisvar.type === 'array') {

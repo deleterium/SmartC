@@ -2,7 +2,7 @@
 // Author: Rui Deleterium
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
-/* global TOKEN AST MEMORY_SLOT */
+/* global TOKEN AST MEMORY_SLOT DECLARATION_TYPES */
 /**
  * Simple functions that do not depend external variables.
  */
@@ -12,6 +12,9 @@ const utils = {
     createConstantMemObj(value = '') {
         let param;
         if (typeof (value) === 'number') {
+            if (value % 1 !== 0) {
+                throw new TypeError('Only integer numbers in createConstantMemObj().');
+            }
             param = value.toString(16).padStart(16, '0').slice(-16);
         }
         else if (typeof (value) === 'string') {
@@ -177,6 +180,48 @@ const utils = {
         }
         recursiveSplit(Obj);
         return ret;
+    },
+    /**
+     * Checks declaration types and return true if operation is not allowed.
+     * @param desiredDeclaration Should be this type
+     * @param MemoObj Object to test
+     * @returns return true if operation is NOT allowed.
+     */
+    isNotValidDeclarationOp(desiredDeclaration, MemoObj) {
+        const memoDeclaration = this.getDeclarationFromMemory(MemoObj);
+        if (desiredDeclaration === 'void' || memoDeclaration === 'void') {
+            return true;
+        }
+        if (desiredDeclaration === memoDeclaration) {
+            return false;
+        }
+        if (desiredDeclaration === 'void_ptr' && (memoDeclaration === 'long_ptr' || memoDeclaration === 'struct_ptr')) {
+            return false;
+        }
+        if (memoDeclaration === 'void_ptr' && (desiredDeclaration === 'long_ptr' || desiredDeclaration === 'struct_ptr')) {
+            return false;
+        }
+        if (desiredDeclaration.includes('_ptr') && MemoObj.type === 'constant') {
+            // manual pointer assignment or multi byte array assignment.
+            return false;
+        }
+        return true;
+    },
+    getDeclarationFromMemory(MemoObj) {
+        if (MemoObj.Offset === undefined) {
+            return MemoObj.declaration;
+        }
+        else {
+            return MemoObj.Offset.declaration;
+        }
+    },
+    setMemoryDeclaration(MemoObj, dec) {
+        if (MemoObj.Offset === undefined) {
+            MemoObj.declaration = dec;
+        }
+        else {
+            MemoObj.Offset.declaration = dec;
+        }
     },
     /**
      * Simple otimization:

@@ -360,7 +360,7 @@ function parse(preTokens) {
                 return retToken;
             case '(':
                 if (mainLoopIndex > 0 && preTokens[mainLoopIndex - 1].type === 'variable') {
-                    retToken = { type: 'Function', value: '', precedence: 1, line: currentPreToken.line };
+                    retToken = { type: 'Function', value: '', precedence: 0, line: currentPreToken.line };
                 }
                 else {
                     retToken = { type: 'CodeCave', value: '', precedence: 1, line: currentPreToken.line };
