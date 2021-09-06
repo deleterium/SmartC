@@ -1103,6 +1103,7 @@ function generate(Program) {
                         const LGenObj = genCode(objTree.Left, false, revLogic, jumpFalse, jumpTrue);
                         instructionstrain += LGenObj.instructionset;
                         auxVars.isLeftSideOfAssignment = false;
+                        // Error condition checks
                         if (LGenObj.MemObj.type === 'void') {
                             throw new SyntaxError('At line: ' + objTree.Operation.line + '. Trying to assign undefined variable');
                         }
@@ -1118,6 +1119,9 @@ function generate(Program) {
                         else if (LGenObj.MemObj.Offset && LGenObj.MemObj.Offset.declaration.includes('_ptr') && LGenObj.MemObj.Offset.typeDefinition !== undefined && auxVars.hasVoidArray === false) {
                             // Array assignment inside struct
                             throw new TypeError(`At line: ${objTree.Operation.line}. Invalid left value for '${objTree.Operation.type}'. Can not reassign an array.`);
+                        }
+                        if (auxVars.hasVoidArray && (objTree.Right.type !== 'endASN' || (objTree.Right.type === 'endASN' && objTree.Right.Token.type !== 'Constant'))) {
+                            throw new TypeError(`At line: ${objTree.Operation.line}. Invalid right value for multi-array assignment. It must be a constant.`);
                         }
                         let savedDeclaration = '';
                         if (auxVars.declaring.length !== 0) {
@@ -1382,12 +1386,14 @@ function generate(Program) {
                 if (ParamMemObj.hexContent.length > 17) {
                     throw new RangeError(`At line: ${line}. Overflow on long value assignment. Value bigger than 64 bits).`);
                 }
+                const OptMem = Program.memory.find(MEM => MEM.asmName === 'n' + Number('0x' + ParamMemObj.hexContent) && MEM.hexContent === ParamMemObj.hexContent);
+                if (OptMem) {
+                    return { MoldedObj: OptMem, instructionset: '', isNew: false };
+                }
                 RetObj = auxVars.getNewRegister();
                 RetObj.declaration = paramDec;
                 if (ParamMemObj.hexContent === '0000000000000000') {
                     retInstructions += `CLR @${RetObj.asmName}\n`;
-                    // } else if (Number(ParamMemObj.hexContent) <= Program.Config.maxConstVars) {
-                    //     retInstructions += `SET @${RetObj.asmName} $n${(Number(ParamMemObj.hexContent))}\n`
                 }
                 else {
                     retInstructions += `SET @${RetObj.asmName} #${ParamMemObj.hexContent}\n`;
@@ -1481,6 +1487,9 @@ function generate(Program) {
                                     }
                                     if (param2.hexContent === '0000000000000000') {
                                         return 'CLR @' + param1.asmName + '\n';
+                                    }
+                                    if (Program.memory.find(MEM => MEM.asmName === 'n' + Number('0x' + param2.hexContent) && MEM.hexContent === param2.hexContent)) {
+                                        return `SET @${param1.asmName} $n${(Number('0x' + param2.hexContent))}\n`;
                                     }
                                     if (param2.hexContent.length > 17) {
                                         throw new RangeError('At line: ' + objoperator.line + '.Overflow on long value assignment (value bigger than 64 bits)');
@@ -1640,14 +1649,12 @@ function generate(Program) {
                                         throw new RangeError('At line: ' + objoperator.line + '. Overflow on long value assignment (value bigger than 64 bits)');
                                     }
                                     if (param2.hexContent === '0000000000000000') {
-                                        retinstr += `CLR @${param1.asmName}\n`;
-                                        // } else if (Number(ParamMemObj.hexContent) <= Program.Config.maxConstVars) {
-                                        //     retInstructions += `SET @${RetObj.asmName} $n${(Number(ParamMemObj.hexContent))}\n`
+                                        return `CLR @${param1.asmName}\n`;
                                     }
-                                    else {
-                                        retinstr += `SET @${param1.asmName} #${param2.hexContent}\n`;
+                                    if (Program.memory.find(MEM => MEM.asmName === 'n' + Number('0x' + param2.hexContent) && MEM.hexContent === param2.hexContent)) {
+                                        return `SET @${param1.asmName} $n${(Number('0x' + param2.hexContent))}\n`;
                                     }
-                                    return retinstr;
+                                    return `SET @${param1.asmName} #${param2.hexContent}\n`;
                                 case 'register':
                                 case 'long':
                                     if (param2.Offset === undefined) {
@@ -1714,6 +1721,8 @@ function generate(Program) {
                             const FlatP2 = flattenMemory(param2, objoperator.line);
                             retinstr += FlatP2.instructionset;
                             retinstr += `SET @($${param1.asmName} + $${getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName}) $${FlatP2.MoldedObj.asmName}\n`;
+                            if (FlatP2.isNew)
+                                auxVars.freeRegister(FlatP2.MoldedObj.address);
                             return retinstr;
                         }
                 }
@@ -1761,9 +1770,12 @@ function generate(Program) {
                         if (param2.hexContent === '0000000000000002') {
                             auxVars.freeRegister(TmpMemObj2.MoldedObj.address);
                             removeLastButOne();
-                            retinstr += createInstruction(utils.genIncToken(), TmpMemObj1.MoldedObj);
-                            retinstr += createInstruction(utils.genIncToken(), TmpMemObj1.MoldedObj);
-                            optimized = true;
+                            const OptMem = Program.memory.find(MEM => MEM.asmName === 'n2' && MEM.hexContent === '0000000000000002');
+                            if (OptMem === undefined) {
+                                retinstr += createInstruction(utils.genIncToken(), TmpMemObj1.MoldedObj);
+                                retinstr += createInstruction(utils.genIncToken(), TmpMemObj1.MoldedObj);
+                                optimized = true;
+                            }
                         }
                     }
                     else if (objoperator.value === '-' || objoperator.value === '-=') {
@@ -2057,8 +2069,19 @@ function generate(Program) {
         const fname = Program.functions[generateUtils.currFunctionIndex].name;
         if (fname === 'main') {
             writeAsmLine(`__fn_${fname}:`);
+            if (Program.functions.findIndex(obj => obj.name === 'catch') !== -1) {
+                writeAsmLine('ERR :__fn_catch');
+            }
             writeAsmLine('PCS');
             return;
+        }
+        else if (fname === 'catch') {
+            if (Program.functions.findIndex(obj => obj.name === 'main') !== -1) {
+                writeAsmLine(`__fn_${fname}:`);
+                writeAsmLine('PCS');
+                return;
+            }
+            throw new SyntaxError('Special function "catch" can only be used if there is a "main" function defined.');
         }
         writeAsmLine(`__fn_${fname}:`);
         Program.functions[generateUtils.currFunctionIndex].argsMemObj.forEach(Obj => {
@@ -2070,7 +2093,7 @@ function generate(Program) {
      */
     function functionTailGenerator() {
         const fname = Program.functions[generateUtils.currFunctionIndex].name;
-        if (fname === 'main') {
+        if (fname === 'main' || fname === 'catch') {
             if (generateUtils.assemblyCode.lastIndexOf('FIN') + 4 !== generateUtils.assemblyCode.length) {
                 writeAsmLine('FIN');
             }
