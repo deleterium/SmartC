@@ -2159,8 +2159,18 @@ function generate (Program: CONTRACT) {
         const fname = Program.functions[generateUtils.currFunctionIndex].name
         if (fname === 'main') {
             writeAsmLine(`__fn_${fname}:`)
+            if (Program.functions.findIndex(obj => obj.name === 'catch') !== -1) {
+                writeAsmLine('ERR :__fn_catch')
+            }
             writeAsmLine('PCS')
             return
+        } else if (fname === 'catch') {
+            if (Program.functions.findIndex(obj => obj.name === 'main') !== -1) {
+                writeAsmLine(`__fn_${fname}:`)
+                writeAsmLine('PCS')
+                return
+            }
+            throw new SyntaxError('Special function "catch" can only be used if there is a "main" function defined.')
         }
         writeAsmLine(`__fn_${fname}:`)
         Program.functions[generateUtils.currFunctionIndex].argsMemObj.forEach(Obj => {
@@ -2173,7 +2183,7 @@ function generate (Program: CONTRACT) {
      */
     function functionTailGenerator () {
         const fname = Program.functions[generateUtils.currFunctionIndex].name
-        if (fname === 'main') {
+        if (fname === 'main' || fname === 'catch') {
             if (generateUtils.assemblyCode.lastIndexOf('FIN') + 4 !== generateUtils.assemblyCode.length) {
                 writeAsmLine('FIN')
             }
