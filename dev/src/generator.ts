@@ -1236,6 +1236,9 @@ function generate (Program: CONTRACT) {
                         // Array assignment inside struct
                         throw new TypeError(`At line: ${objTree.Operation.line}. Invalid left value for '${objTree.Operation.type}'. Can not reassign an array.`)
                     }
+                    if (auxVars.hasVoidArray && (objTree.Right.type !== 'endASN' || (objTree.Right.type === 'endASN' && objTree.Right.Token.type !== 'Constant'))) {
+                        throw new TypeError(`At line: ${objTree.Operation.line}. Invalid right value for multi-array assignment. It must be a constant.`)
+                    }
 
                     let savedDeclaration: DECLARATION_TYPES = ''
                     if (auxVars.declaring.length !== 0) {
