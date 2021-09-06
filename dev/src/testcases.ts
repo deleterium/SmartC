@@ -899,6 +899,18 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`,
             true,
             ''
         ],
+        [
+            // Optimization with const nX variables
+            'const long n233 = 233; long a, b[2]; b[a]=233; b[0]=233; while (a<233) { a++; };',
+            false,
+            '^declare r0\n^declare r1\n^declare r2\n^declare n233\n^declare a\n^declare b\n^const SET @b #0000000000000006\n^declare b_0\n^declare b_1\n\n^const SET @n233 #00000000000000e9\nSET @($b + $a) $n233\nSET @b_0 $n233\n__loop1_continue:\nBGE $a $n233 :__loop1_break\n__loop1_start:\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'
+        ],
+        [
+            // Optimization with const nX variables
+            'const long n2 = 2; struct KOMBI { long driver; long collector; long passenger; } *pcar; pcar->passenger="Ze";',
+            false,
+            '^declare r0\n^declare r1\n^declare r2\n^declare n2\n^declare pcar\n\n^const SET @n2 #0000000000000002\nSET @r0 #000000000000655a\nSET @($pcar + $n2) $r0\nFIN\n'
+        ],
         /*
         [
             // C

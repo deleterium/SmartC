@@ -1221,6 +1221,7 @@ function generate (Program: CONTRACT) {
                     instructionstrain += LGenObj.instructionset
                     auxVars.isLeftSideOfAssignment = false
 
+                    // Error condition checks
                     if (LGenObj.MemObj.type === 'void') {
                         throw new SyntaxError('At line: ' + objTree.Operation.line + '. Trying to assign undefined variable')
                     }
@@ -1501,12 +1502,14 @@ function generate (Program: CONTRACT) {
                 if (ParamMemObj.hexContent.length > 17) {
                     throw new RangeError(`At line: ${line}. Overflow on long value assignment. Value bigger than 64 bits).`)
                 }
+                const OptMem = Program.memory.find(MEM => MEM.asmName === 'n' + Number('0x' + ParamMemObj.hexContent) && MEM.hexContent === ParamMemObj.hexContent)
+                if (OptMem) {
+                    return { MoldedObj: OptMem, instructionset: '', isNew: false }
+                }
                 RetObj = auxVars.getNewRegister()
                 RetObj.declaration = paramDec
                 if (ParamMemObj.hexContent === '0000000000000000') {
                     retInstructions += `CLR @${RetObj.asmName}\n`
-                // } else if (Number(ParamMemObj.hexContent) <= Program.Config.maxConstVars) {
-                //     retInstructions += `SET @${RetObj.asmName} $n${(Number(ParamMemObj.hexContent))}\n`
                 } else {
                     retInstructions += `SET @${RetObj.asmName} #${ParamMemObj.hexContent}\n`
                 }
@@ -1594,6 +1597,9 @@ function generate (Program: CONTRACT) {
                             }
                             if (param2.hexContent === '0000000000000000') {
                                 return 'CLR @' + param1.asmName + '\n'
+                            }
+                            if (Program.memory.find(MEM => MEM.asmName === 'n' + Number('0x' + param2.hexContent) && MEM.hexContent === param2.hexContent)) {
+                                return `SET @${param1.asmName} $n${(Number('0x' + param2.hexContent))}\n`
                             }
                             if (param2.hexContent.length > 17) {
                                 throw new RangeError('At line: ' + objoperator.line + '.Overflow on long value assignment (value bigger than 64 bits)')
@@ -1733,13 +1739,12 @@ function generate (Program: CONTRACT) {
                                 throw new RangeError('At line: ' + objoperator.line + '. Overflow on long value assignment (value bigger than 64 bits)')
                             }
                             if (param2.hexContent === '0000000000000000') {
-                                retinstr += `CLR @${param1.asmName}\n`
-                            // } else if (Number(ParamMemObj.hexContent) <= Program.Config.maxConstVars) {
-                            //     retInstructions += `SET @${RetObj.asmName} $n${(Number(ParamMemObj.hexContent))}\n`
-                            } else {
-                                retinstr += `SET @${param1.asmName} #${param2.hexContent}\n`
+                                return `CLR @${param1.asmName}\n`
                             }
-                            return retinstr
+                            if (Program.memory.find(MEM => MEM.asmName === 'n' + Number('0x' + param2.hexContent) && MEM.hexContent === param2.hexContent)) {
+                                return `SET @${param1.asmName} $n${(Number('0x' + param2.hexContent))}\n`
+                            }
+                            return `SET @${param1.asmName} #${param2.hexContent}\n`
                         case 'register':
                         case 'long':
                             if (param2.Offset === undefined) {
@@ -1796,6 +1801,7 @@ function generate (Program: CONTRACT) {
                         const FlatP2 = flattenMemory(param2, objoperator.line)
                         retinstr += FlatP2.instructionset
                         retinstr += `SET @($${param1.asmName} + $${getMemoryObjectByLocation(param1.Offset.addr, objoperator.line).asmName}) $${FlatP2.MoldedObj.asmName}\n`
+                        if (FlatP2.isNew) auxVars.freeRegister(FlatP2.MoldedObj.address)
                         return retinstr
                     }
                 }
@@ -1848,9 +1854,12 @@ function generate (Program: CONTRACT) {
                         if (param2.hexContent === '0000000000000002') {
                             auxVars.freeRegister(TmpMemObj2.MoldedObj.address)
                             removeLastButOne()
-                            retinstr += createInstruction(utils.genIncToken(), TmpMemObj1.MoldedObj)
-                            retinstr += createInstruction(utils.genIncToken(), TmpMemObj1.MoldedObj)
-                            optimized = true
+                            const OptMem = Program.memory.find(MEM => MEM.asmName === 'n2' && MEM.hexContent === '0000000000000002')
+                            if (OptMem === undefined) {
+                                retinstr += createInstruction(utils.genIncToken(), TmpMemObj1.MoldedObj)
+                                retinstr += createInstruction(utils.genIncToken(), TmpMemObj1.MoldedObj)
+                                optimized = true
+                            }
                         }
                     } else if (objoperator.value === '-' || objoperator.value === '-=') {
                         if (param2.hexContent === '0000000000000000') {
