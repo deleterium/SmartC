@@ -911,6 +911,24 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`,
             false,
             '^declare r0\n^declare r1\n^declare r2\n^declare n2\n^declare pcar\n\n^const SET @n2 #0000000000000002\nSET @r0 #000000000000655a\nSET @($pcar + $n2) $r0\nFIN\n'
         ],
+        [
+            // Macro codeStackPages test
+            '#program codeStackPages    10   \nlong a; void test(void) { a++; return; a++; }',
+            false,
+            '^program codeStackPages 10\n^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFIN\n\n__fn_test:\nINC @a\nRET\nINC @a\nRET\n'
+        ],
+        [
+            // Macro userStackPages test
+            '#program codeStackPages    0   \n#program userStackPages 5\n long a; void test(long aa) { a++; return; a++; }',
+            false,
+            '^program userStackPages 5\n^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test_aa\n\nFIN\n\n__fn_test:\nPOP @test_aa\nINC @a\nRET\nINC @a\nRET\n'
+        ],
+        [
+            // Macro codeStackPages error test
+            '#program codeStackPages a\n#program userStackPages  0\nlong a; void test(void) { a++; return; a++; }',
+            true,
+            ''
+        ],
         /*
         [
             // C

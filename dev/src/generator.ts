@@ -2088,6 +2088,12 @@ function generate (Program: CONTRACT) {
         if (Program.Config.PActivationAmount !== '') {
             writeAsmLine('^program activationAmount ' + Program.Config.PActivationAmount)
         }
+        if (Program.Config.PUserStackPages !== 0) {
+            writeAsmLine(`^program userStackPages ${Program.Config.PUserStackPages}`)
+        }
+        if (Program.Config.PCodeStackPages !== 0) {
+            writeAsmLine(`^program codeStackPages ${Program.Config.PCodeStackPages}`)
+        }
     }
 
     /** Handles variables declarations to assembly code. */

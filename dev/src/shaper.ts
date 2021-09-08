@@ -31,6 +31,10 @@ interface SC_CONFIG {
     PDescription: string,
     /** Program activationAmount: #program activationAmount */
     PActivationAmount: string,
+    /** User stack pages to be available: #program userStackPages */
+    PUserStackPages: number,
+    /** Code stack pages to be available:: #program codeStackPages */
+    PCodeStackPages: number,
 }
 
 interface SC_MACRO {
@@ -252,7 +256,9 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
             APIFunctions: false,
             PName: '',
             PDescription: '',
-            PActivationAmount: ''
+            PActivationAmount: '',
+            PUserStackPages: 0,
+            PCodeStackPages: 0
         }
     }
 
@@ -1112,6 +1118,22 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                     throw new TypeError(`At line: ${Token.line}. Program activation must be only numbers or '_'.`)
                 }
                 Program.Config.PActivationAmount = Token.value.replace(/_/g, '')
+                return
+            }
+            if (Token.property === 'userStackPages') {
+                const parts = /^[0-9]\s*$|^10\s*$/.exec(Token.value)
+                if (parts === null) {
+                    throw new TypeError(`At line: ${Token.line}. Program user stack pages must be a number between 0 and 10, included.`)
+                }
+                Program.Config.PUserStackPages = Number(Token.value)
+                return
+            }
+            if (Token.property === 'codeStackPages') {
+                const parts = /^[0-9]\s*$|^10\s*$/.exec(Token.value)
+                if (parts === null) {
+                    throw new TypeError(`At line: ${Token.line}. Program code stack pages must be a number between 0 and 10, included.`)
+                }
+                Program.Config.PCodeStackPages = Number(Token.value)
                 return
             }
         }
