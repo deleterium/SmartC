@@ -40,6 +40,10 @@ function generate(Program) {
         // add variables declaration
         Program.memory.forEach(assemblerDeclarationGenerator);
         writeAsmLine(''); // blank line to be nice to debugger!
+        // First instruction is add error handling function
+        if (Program.functions.findIndex(obj => obj.name === 'catch') !== -1) {
+            writeAsmLine('ERR :__fn_catch');
+        }
         // Add code for global sentences
         generateUtils.currFunctionIndex = -1;
         Program.Global.sentences.forEach(compileSentence);
@@ -1989,6 +1993,12 @@ function generate(Program) {
         if (Program.Config.PActivationAmount !== '') {
             writeAsmLine('^program activationAmount ' + Program.Config.PActivationAmount);
         }
+        if (Program.Config.PUserStackPages !== 0) {
+            writeAsmLine(`^program userStackPages ${Program.Config.PUserStackPages}`);
+        }
+        if (Program.Config.PCodeStackPages !== 0) {
+            writeAsmLine(`^program codeStackPages ${Program.Config.PCodeStackPages}`);
+        }
     }
     /** Handles variables declarations to assembly code. */
     function assemblerDeclarationGenerator(MemObj) {
@@ -2067,21 +2077,10 @@ function generate(Program) {
     */
     function functionHeaderGenerator() {
         const fname = Program.functions[generateUtils.currFunctionIndex].name;
-        if (fname === 'main') {
+        if (fname === 'main' || fname === 'catch') {
             writeAsmLine(`__fn_${fname}:`);
-            if (Program.functions.findIndex(obj => obj.name === 'catch') !== -1) {
-                writeAsmLine('ERR :__fn_catch');
-            }
             writeAsmLine('PCS');
             return;
-        }
-        else if (fname === 'catch') {
-            if (Program.functions.findIndex(obj => obj.name === 'main') !== -1) {
-                writeAsmLine(`__fn_${fname}:`);
-                writeAsmLine('PCS');
-                return;
-            }
-            throw new SyntaxError('Special function "catch" can only be used if there is a "main" function defined.');
         }
         writeAsmLine(`__fn_${fname}:`);
         Program.functions[generateUtils.currFunctionIndex].argsMemObj.forEach(Obj => {

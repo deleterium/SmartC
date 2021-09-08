@@ -143,6 +143,8 @@ function bytecode(assemblySourceCode) {
         PName: '',
         PDescription: '',
         PActivationAmount: '',
+        PUserStackPages: 0,
+        PCodeStackPages: 0,
         bytecode: '',
         bytedata: ''
     };
@@ -225,6 +227,12 @@ function bytecode(assemblySourceCode) {
             }
             if (parts[1] === 'activationAmount') {
                 AsmObj.PActivationAmount = parts[2];
+            }
+            if (parts[1] === 'userStackPages') {
+                AsmObj.PUserStackPages = Number(parts[2]);
+            }
+            if (parts[1] === 'codeStackPages') {
+                AsmObj.PCodeStackPages = Number(parts[2]);
             }
             return;
         }
@@ -399,10 +407,20 @@ function bytecode(assemblySourceCode) {
         let cspages = 0;
         let uspages = 0;
         if (assemblySourceCode.indexOf('JSR ') !== -1 || assemblySourceCode.indexOf('RET') !== -1) {
-            cspages = 1;
+            if (AsmObj.PCodeStackPages > 0) {
+                cspages = AsmObj.PCodeStackPages;
+            }
+            else {
+                cspages = 1;
+            }
         }
         if (assemblySourceCode.indexOf('POP ') !== -1 || assemblySourceCode.indexOf('PSH ') !== -1) {
-            uspages = 1;
+            if (AsmObj.PUserStackPages > 0) {
+                uspages = AsmObj.PUserStackPages;
+            }
+            else {
+                uspages = 1;
+            }
         }
         const datapages = Math.ceil(AsmObj.memory.length / 32);
         const codepages = Math.ceil(AsmObj.bytecode.length / (32 * 16));

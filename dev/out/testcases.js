@@ -806,13 +806,13 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`,
             // Special function 'catch'
             '#program activationAmount 0\nlong table[20];\nvoid main (void) { const long a = 0; while (true) { table[a] = fibbonacci(a); halt; a++; } }\nlong fibbonacci(long n) { if(n == 0){ return 0; } else if(n == 1) { return 1; } else { return (fibbonacci(n-1) + fibbonacci(n-2)); } }\nvoid catch(void) { long a++; }',
             false,
-            '^program activationAmount 0\n^declare r0\n^declare r1\n^declare r2\n^declare table\n^const SET @table #0000000000000004\n^declare table_0\n^declare table_1\n^declare table_2\n^declare table_3\n^declare table_4\n^declare table_5\n^declare table_6\n^declare table_7\n^declare table_8\n^declare table_9\n^declare table_10\n^declare table_11\n^declare table_12\n^declare table_13\n^declare table_14\n^declare table_15\n^declare table_16\n^declare table_17\n^declare table_18\n^declare table_19\n^declare main_a\n^declare fibbonacci_n\n^declare catch_a\n\nJMP :__fn_main\n\n__fn_main:\nERR :__fn_catch\nPCS\n^const SET @main_a #0000000000000000\n__loop1_continue:\n__loop1_start:\nPSH $main_a\nJSR :__fn_fibbonacci\nPOP @r0\nSET @($table + $main_a) $r0\nSTP\nINC @main_a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n\n__fn_fibbonacci:\nPOP @fibbonacci_n\nBNZ $fibbonacci_n :__if2_else\n__if2_start:\nCLR @r0\nPSH $r0\nRET\nJMP :__if2_endif\n__if2_else:\nSET @r0 #0000000000000001\nBNE $fibbonacci_n $r0 :__if3_else\n__if3_start:\nSET @r0 #0000000000000001\nPSH $r0\nRET\nJMP :__if3_endif\n__if3_else:\nPSH $fibbonacci_n\nSET @r0 $fibbonacci_n\nDEC @r0\nPSH $r0\nJSR :__fn_fibbonacci\nPOP @r0\nPOP @fibbonacci_n\nPSH $fibbonacci_n\nPSH $r0\nSET @r1 $fibbonacci_n\nSET @r2 #0000000000000002\nSUB @r1 $r2\nPSH $r1\nJSR :__fn_fibbonacci\nPOP @r1\nPOP @r0\nPOP @fibbonacci_n\nADD @r0 $r1\nPSH $r0\nRET\n__if3_endif:\n__if2_endif:\nCLR @r0\nPSH $r0\nRET\n\n__fn_catch:\nPCS\nINC @catch_a\nFIN\n'
+            '^program activationAmount 0\n^declare r0\n^declare r1\n^declare r2\n^declare table\n^const SET @table #0000000000000004\n^declare table_0\n^declare table_1\n^declare table_2\n^declare table_3\n^declare table_4\n^declare table_5\n^declare table_6\n^declare table_7\n^declare table_8\n^declare table_9\n^declare table_10\n^declare table_11\n^declare table_12\n^declare table_13\n^declare table_14\n^declare table_15\n^declare table_16\n^declare table_17\n^declare table_18\n^declare table_19\n^declare main_a\n^declare fibbonacci_n\n^declare catch_a\n\nERR :__fn_catch\nJMP :__fn_main\n\n__fn_main:\nPCS\n^const SET @main_a #0000000000000000\n__loop1_continue:\n__loop1_start:\nPSH $main_a\nJSR :__fn_fibbonacci\nPOP @r0\nSET @($table + $main_a) $r0\nSTP\nINC @main_a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n\n__fn_fibbonacci:\nPOP @fibbonacci_n\nBNZ $fibbonacci_n :__if2_else\n__if2_start:\nCLR @r0\nPSH $r0\nRET\nJMP :__if2_endif\n__if2_else:\nSET @r0 #0000000000000001\nBNE $fibbonacci_n $r0 :__if3_else\n__if3_start:\nSET @r0 #0000000000000001\nPSH $r0\nRET\nJMP :__if3_endif\n__if3_else:\nPSH $fibbonacci_n\nSET @r0 $fibbonacci_n\nDEC @r0\nPSH $r0\nJSR :__fn_fibbonacci\nPOP @r0\nPOP @fibbonacci_n\nPSH $fibbonacci_n\nPSH $r0\nSET @r1 $fibbonacci_n\nSET @r2 #0000000000000002\nSUB @r1 $r2\nPSH $r1\nJSR :__fn_fibbonacci\nPOP @r1\nPOP @r0\nPOP @fibbonacci_n\nADD @r0 $r1\nPSH $r0\nRET\n__if3_endif:\n__if2_endif:\nCLR @r0\nPSH $r0\nRET\n\n__fn_catch:\nPCS\nINC @catch_a\nFIN\n'
         ],
         [
-            // Special function 'catch': error test
+            // Special function 'catch': no main function
             'long b, a = 0; while (true) { a++; } void catch(void) { long a++; }',
-            true,
-            ''
+            false,
+            '^declare r0\n^declare r1\n^declare r2\n^declare b\n^declare a\n^declare catch_a\n\nERR :__fn_catch\nCLR @a\n__loop1_continue:\n__loop1_start:\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n\n__fn_catch:\nPCS\nINC @catch_a\nFIN\n'
         ],
         [
             // Optimization with const nX variables
@@ -825,6 +825,24 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`,
             'const long n2 = 2; struct KOMBI { long driver; long collector; long passenger; } *pcar; pcar->passenger="Ze";',
             false,
             '^declare r0\n^declare r1\n^declare r2\n^declare n2\n^declare pcar\n\n^const SET @n2 #0000000000000002\nSET @r0 #000000000000655a\nSET @($pcar + $n2) $r0\nFIN\n'
+        ],
+        [
+            // Macro codeStackPages test
+            '#program codeStackPages    10   \nlong a; void test(void) { a++; return; a++; }',
+            false,
+            '^program codeStackPages 10\n^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFIN\n\n__fn_test:\nINC @a\nRET\nINC @a\nRET\n'
+        ],
+        [
+            // Macro userStackPages test
+            '#program codeStackPages    0   \n#program userStackPages 5\n long a; void test(long aa) { a++; return; a++; }',
+            false,
+            '^program userStackPages 5\n^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test_aa\n\nFIN\n\n__fn_test:\nPOP @test_aa\nINC @a\nRET\nINC @a\nRET\n'
+        ],
+        [
+            // Macro codeStackPages error test
+            '#program codeStackPages a\n#program userStackPages  0\nlong a; void test(void) { a++; return; a++; }',
+            true,
+            ''
         ],
         /*
         [
