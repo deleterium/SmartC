@@ -997,6 +997,9 @@ a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;
         ['#include APIFunctions\n long a=0; if (Get_A1()){ a++;} ', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @a\nFUN @r0 get_A1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
         // bug 23 Parser trying to get property of undefined variable
         ['long a, b; *a + 1 = b', true, ''],
+        // bug 24 Wrong code being sucessfull compiled: ASM and Label disregarding information before them.
+        ['void  teste(long ret) { long temp = 2; if (temp==2){ goto div_end: } ret = temp; div_end: temp++; }', true, ''],
+        ['long a, b; a++; long c, asm { PSH $a\nPOP @b } b++;', true, ''],
         //    [ "", false, "" ],
         ['End of tests!', null, '']
     ];

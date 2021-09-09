@@ -260,7 +260,16 @@ function shape(tokenAST) {
                 if (codetrain[AuxVars.currentToken].value === 'else') {
                     throw new SyntaxError('At line: ' + codetrain[AuxVars.currentToken].line + ". 'else' not associated with an 'if(){}else{}' sentence");
                 }
-                if (codetrain[AuxVars.currentToken].value === 'asm' || codetrain[AuxVars.currentToken].value === 'label') {
+                if (codetrain[AuxVars.currentToken].value === 'asm') {
+                    if (phrase.length !== 0) {
+                        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Keyword 'asm' is not at start of sentence. Possible missing ';' before it.`);
+                    }
+                    return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]] }];
+                }
+                if (codetrain[AuxVars.currentToken].value === 'label') {
+                    if (phrase.length !== 0) {
+                        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Label '${codetrain[AuxVars.currentToken].extValue}' is not at start of sentence. Possible missing ';' before it.`);
+                    }
                     return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]] }];
                 }
                 if (codetrain[AuxVars.currentToken].value === 'do') {
