@@ -1263,6 +1263,7 @@ function generate (Program: CONTRACT) {
                         LGenObj.MemObj.type === 'long' &&
                         LGenObj.MemObj.Offset === undefined &&
                         CanReuseAssignedVar(LGenObj.MemObj.address, objTree.Right)) {
+                        const registerInitialState = JSON.parse(JSON.stringify(auxVars.registerInfo))
                         const newRegister: MEMORY_SLOT = JSON.parse(JSON.stringify(LGenObj.MemObj))
                         newRegister.type = 'register'
                         newRegister.declaration = 'long'
@@ -1272,6 +1273,22 @@ function generate (Program: CONTRACT) {
                         })
                         RGenObj = genCode(objTree.Right, false, revLogic, jumpFalse, jumpTrue)
                         auxVars.registerInfo.shift()
+                        const registerFinalState = JSON.parse(JSON.stringify(auxVars.registerInfo))
+                        if (RGenObj.MemObj.address !== LGenObj.MemObj.address && RGenObj.MemObj.address < Program.Config.maxAuxVars) {
+                            // if returning var is not the reused one, put it in that returning location.
+                            const index = RGenObj.MemObj.address + 1
+                            auxVars.registerInfo = registerInitialState
+                            auxVars.registerInfo.splice(index, 0, { inUse: false, Template: newRegister })
+                            const TestRGenObj = genCode(objTree.Right, false, revLogic, jumpFalse, jumpTrue)
+                            if (TestRGenObj.MemObj.address === LGenObj.MemObj.address) {
+                                // alteration suceed!
+                                RGenObj = TestRGenObj
+                                auxVars.registerInfo.splice(index, 1)
+                            } else {
+                                // not suceed, undo changes.
+                                auxVars.registerInfo = registerFinalState
+                            }
+                        }
                     } else {
                         RGenObj = genCode(objTree.Right, false, revLogic, jumpFalse, jumpTrue)
                     }

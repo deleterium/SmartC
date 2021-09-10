@@ -76,7 +76,7 @@ function runTestCases () {
 
         ['long a, b, c; a=~b/c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $b\nNOT @a\nDIV @a $c\nFIN\n'],
         ['long a, b, c; a=~b/~c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $b\nNOT @a\nSET @r0 $c\nNOT @r0\nDIV @a $r0\nFIN\n'],
-        ['long a, b, c; a=b/~c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $c\nNOT @a\nSET @r0 $b\nDIV @r0 $a\nSET @a $r0\nFIN\n'],
+        ['long a, b, c; a=b/~c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @r0 $c\nNOT @r0\nSET @a $b\nDIV @a $r0\nFIN\n'],
 
         ['long a, b; ~a=b;', true, ''],
 
@@ -105,17 +105,17 @@ function runTestCases () {
 
         ['long a, b; a+=-b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @r0\nSUB @r0 $b\nADD @a $r0\nFIN\n'],
         ['long a, b; a=-b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\nSUB @a $b\nFIN\n'],
-        ['long a, b, c; a=b/-c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nCLR @a\nSUB @a $c\nSET @r0 $b\nDIV @r0 $a\nSET @a $r0\nFIN\n'],
+        ['long a, b, c; a=b/-c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nCLR @r0\nSUB @r0 $c\nSET @a $b\nDIV @a $r0\nFIN\n'],
         ['long a, b, c; a=-b/c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nCLR @a\nSUB @a $b\nDIV @a $c\nFIN\n'],
         ['long a, b; a=-2;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\nSET @r0 #0000000000000002\nSUB @a $r0\nFIN\n'],
-        ['long a, b; a=-~b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @a $b\nNOT @a\nCLR @r0\nSUB @r0 $a\nSET @a $r0\nFIN\n'],
+        ['long a, b; a=-~b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nNOT @r0\nCLR @a\nSUB @a $r0\nFIN\n'],
         ['long a, b; a=~-b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\nSUB @a $b\nNOT @a\nFIN\n'],
         ['long a, b; a=-b-- ;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\nSUB @a $b\nDEC @b\nFIN\n'],
         ['long a, b; a=---b;', true, ''],
 
         ['long a, b; a=+b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @a $b\nFIN\n'],
         ['long a, b, c; a=b/+c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $b\nDIV @a $c\nFIN\n'],
-        ['long a, b, c; a=+b/-c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nCLR @a\nSUB @a $c\nSET @r0 $b\nDIV @r0 $a\nSET @a $r0\nFIN\n'],
+        ['long a, b, c; a=+b/-c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nCLR @r0\nSUB @r0 $c\nSET @a $b\nDIV @a $r0\nFIN\n'],
         ['long a, b, c; a=+b/+c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $b\nDIV @a $c\nFIN\n'],
         ['long a; a=+2;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @a #0000000000000002\nFIN\n'],
         ['long a; a-=+~2;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000002\nNOT @r0\nSUB @a $r0\nFIN\n'],
@@ -264,10 +264,10 @@ function runTestCases () {
         // MISC
         ['MISC;', null, 'div'],
         ['long a, *b; a=~-*b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\nSET @r0 $($b)\nSUB @a $r0\nNOT @a\nFIN\n'],
-        ['long a, *b; a=~-~-*b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\nSET @r0 $($b)\nSUB @a $r0\nNOT @a\nCLR @r0\nSUB @r0 $a\nNOT @r0\nSET @a $r0\nFIN\n'],
-        ['long a, *b; a=~-~-*b+1;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\nSET @r0 $($b)\nSUB @a $r0\nNOT @a\nCLR @r0\nSUB @r0 $a\nNOT @r0\nINC @r0\nSET @a $r0\nFIN\n'],
+        ['long a, *b; a=~-~-*b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @r0\nSET @a $($b)\nSUB @r0 $a\nNOT @r0\nCLR @a\nSUB @a $r0\nNOT @a\nFIN\n'],
+        ['long a, *b; a=~-~-*b+1;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @r0\nSET @a $($b)\nSUB @r0 $a\nNOT @r0\nCLR @a\nSUB @a $r0\nNOT @a\nINC @a\nFIN\n'],
         ['long a, b, c, d, e; a=b+c/d-e;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nSET @a $c\nDIV @a $d\nADD @a $b\nSUB @a $e\nFIN\n'],
-        ['long a, b, c, d, e; a=b<<c+d<<e;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nSET @a $c\nADD @a $d\nSET @r0 $b\nSHL @r0 $a\nSHL @r0 $e\nSET @a $r0\nFIN\n'],
+        ['long a, b, c, d, e; a=b<<c+d<<e;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nSET @r0 $c\nADD @r0 $d\nSET @a $b\nSHL @a $r0\nSHL @a $e\nFIN\n'],
         ['long a, b, c, d, e; a=b&c<<d^e;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nSET @a $c\nSHL @a $d\nAND @a $b\nXOR @a $e\nFIN\n'],
         ['long *a, b, c; *(a+1)=b; *(a+30)=b; *(a+c)=b; b=*(a+1); b=*(a+30); b=*(a+c);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @r0 $a\nINC @r0\nSET @($r0) $b\nSET @r0 #000000000000001e\nADD @r0 $a\nSET @($r0) $b\nSET @r0 $a\nADD @r0 $c\nSET @($r0) $b\nSET @b $a\nINC @b\nSET @b $($b)\nSET @b #000000000000001e\nADD @b $a\nSET @b $($b)\nSET @b $a\nADD @b $c\nSET @b $($b)\nFIN\n'],
 
@@ -547,7 +547,7 @@ pa = pb; pa = &pb; pa = &vb; *pa= vb;
         ['long a, b[4], c, d; a=b[c&d];', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^const SET @b #0000000000000005\n^declare b_0\n^declare b_1\n^declare b_2\n^declare b_3\n^declare c\n^declare d\n\nSET @a $c\nAND @a $d\nSET @a $($b + $a)\nFIN\n'],
         ['long a, b[4], c, d; a=*b[c];', true, ''],
         ['long a[4], *b, c,d; b=&a[c];', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\n^declare d\n\nSET @b $a\nADD @b $c\nFIN\n'],
-        ['long a[4][2], *b, c,d; b=&a[c][d];', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\n^declare c\n^declare d\n\nSET @b #0000000000000002\nMUL @b $c\nADD @b $d\nSET @r0 $a\nADD @r0 $b\nSET @b $r0\nFIN\n'],
+        ['long a[4][2], *b, c,d; b=&a[c][d];', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\n^declare c\n^declare d\n\nSET @r0 #0000000000000002\nMUL @r0 $c\nADD @r0 $d\nSET @b $a\nADD @b $r0\nFIN\n'],
 
         ['long a, b[4], c, d; a=b[&c];', true, ''],
         // Arr+ NewCodeLine
@@ -950,7 +950,7 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`,
         ['#pragma globalOptimization\nlong a,b; test(); void test (void) { return; a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nRET\n'],
         ['#pragma globalOptimization\nlong a,b; test(); void test (void) { if (a) a++; else b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nBZR $a :__if1_else\nINC @a\nRET\n__if1_else:\nINC @b\nRET\n'],
         ['#pragma globalOptimization\nlong a, b, c, d; a=(b*c)*d;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @a $b\nMUL @a $c\nMUL @a $d\nFIN\n'],
-        ['#pragma globalOptimization\nlong a[4][2], *b, c,d; b=&a[c][d];', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\n^declare c\n^declare d\n\nSET @b #0000000000000002\nMUL @b $c\nADD @b $d\nADD @b $a\nFIN\n'],
+        ['#pragma globalOptimization\nlong a[4][2], *b, c,d; b=&a[c][d];', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\n^declare c\n^declare d\n\nSET @r0 #0000000000000002\nMUL @r0 $c\nADD @r0 $d\nSET @b $a\nADD @b $r0\nFIN\n'],
 
         ['#pragma globalOptimization\n long a; a=0; void test(void){ a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @a\nFIN\n\n'],
         [`#pragma globalOptimization\nstruct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b, *c, d[2],z;pcar=&car;
