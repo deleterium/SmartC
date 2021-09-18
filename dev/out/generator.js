@@ -1143,6 +1143,7 @@ function generate(Program) {
                             LGenObj.MemObj.type === 'long' &&
                             LGenObj.MemObj.Offset === undefined &&
                             CanReuseAssignedVar(LGenObj.MemObj.address, objTree.Right)) {
+                            const registerInitialState = JSON.parse(JSON.stringify(auxVars.registerInfo));
                             const newRegister = JSON.parse(JSON.stringify(LGenObj.MemObj));
                             newRegister.type = 'register';
                             newRegister.declaration = 'long';
@@ -1152,6 +1153,23 @@ function generate(Program) {
                             });
                             RGenObj = genCode(objTree.Right, false, revLogic, jumpFalse, jumpTrue);
                             auxVars.registerInfo.shift();
+                            const registerFinalState = JSON.parse(JSON.stringify(auxVars.registerInfo));
+                            if (RGenObj.MemObj.address !== LGenObj.MemObj.address && RGenObj.MemObj.address < Program.Config.maxAuxVars) {
+                                // if returning var is not the reused one, put it in that returning location.
+                                const index = RGenObj.MemObj.address + 1;
+                                auxVars.registerInfo = registerInitialState;
+                                auxVars.registerInfo.splice(index, 0, { inUse: false, Template: newRegister });
+                                const TestRGenObj = genCode(objTree.Right, false, revLogic, jumpFalse, jumpTrue);
+                                if (TestRGenObj.MemObj.address === LGenObj.MemObj.address) {
+                                    // alteration suceed!
+                                    RGenObj = TestRGenObj;
+                                    auxVars.registerInfo.splice(index, 1);
+                                }
+                                else {
+                                    // not suceed, undo changes.
+                                    auxVars.registerInfo = registerFinalState;
+                                }
+                            }
                         }
                         else {
                             RGenObj = genCode(objTree.Right, false, revLogic, jumpFalse, jumpTrue);
@@ -1164,11 +1182,16 @@ function generate(Program) {
                             throw new TypeError('At line: ' + objTree.Operation.line + '. Invalid right value for ' + objTree.Operation.type + '. Possible void value.');
                         }
                         if (utils.isNotValidDeclarationOp(utils.getDeclarationFromMemory(LGenObj.MemObj), RGenObj.MemObj)) {
-                            if (Program.Config.warningToError) {
-                                throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Left and right values does not match. Values are: '" + LGenObj.MemObj.declaration + "' and '" + RGenObj.MemObj.declaration + "'.");
+                            const lDecl = utils.getDeclarationFromMemory(LGenObj.MemObj);
+                            const rDecl = utils.getDeclarationFromMemory(RGenObj.MemObj);
+                            // Allow SetOperator and pointer operation
+                            if (!(lDecl === rDecl + '_ptr' && (objTree.Operation.value === '+=' || objTree.Operation.value === '-='))) {
+                                if (Program.Config.warningToError) {
+                                    throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Left and right values does not match. Values are: '" + LGenObj.MemObj.declaration + "' and '" + RGenObj.MemObj.declaration + "'.");
+                                }
+                                // Override declaration protection rules
+                                LGenObj.MemObj.declaration = RGenObj.MemObj.declaration;
                             }
-                            // Override declaration protection rules
-                            LGenObj.MemObj.declaration = RGenObj.MemObj.declaration;
                         }
                         instructionstrain += createInstruction(objTree.Operation, LGenObj.MemObj, RGenObj.MemObj);
                         if (auxVars.isConstSentence === true) {

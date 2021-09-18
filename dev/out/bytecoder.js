@@ -432,6 +432,7 @@ function bytecode(assemblySourceCode) {
             CodePages: codepages,
             MinimumFeeNQT: minimumfee.toString(10),
             ByteCode: AsmObj.bytecode,
+            MachineCodeHashId: hashMachineCode(AsmObj.bytecode),
             ByteData: AsmObj.bytedata,
             Memory: AsmObj.memory.map(Obj => Obj.name),
             Labels: AsmObj.labels,
