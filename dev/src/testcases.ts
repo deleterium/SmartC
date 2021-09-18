@@ -483,6 +483,10 @@ pa = pb; pa = &pb; pa = &vb; *pa= vb;
         ['long *pa, *pb, va, vb; pa=vb; pa=*pb; *pa=pb; *pa=&pb; *pa=&vb; va=pb; va=&pb; va=&vb;', true, ''],
         [`#pragma warningToError false\nlong *pa, *pb, va, vb;
  pa=vb; pa=*pb; *pa=pb; *pa=&pb; *pa=&vb; va=pb; va=&pb; va=&vb;`, false, '^declare r0\n^declare r1\n^declare r2\n^declare pa\n^declare pb\n^declare va\n^declare vb\n\nSET @pa $vb\nSET @pa $($pb)\nSET @($pa) $pb\nSET @r0 #0000000000000004\nSET @($pa) $r0\nSET @r0 #0000000000000006\nSET @($pa) $r0\nSET @va $pb\nSET @va #0000000000000004\nSET @va #0000000000000006\nFIN\n'],
+        ['long *pa, *pb, va, vb; pa+=vb;', false, '^declare r0\n^declare r1\n^declare r2\n^declare pa\n^declare pb\n^declare va\n^declare vb\n\nADD @pa $vb\nFIN\n'],
+        ['long *pa, *pb, va, vb; pa+=vb+1;', false, '^declare r0\n^declare r1\n^declare r2\n^declare pa\n^declare pb\n^declare va\n^declare vb\n\nSET @r0 $vb\nINC @r0\nADD @pa $r0\nFIN\n'],
+        ['long *pa, *pb, va, vb; pa-=vb;', false, '^declare r0\n^declare r1\n^declare r2\n^declare pa\n^declare pb\n^declare va\n^declare vb\n\nSUB @pa $vb\nFIN\n'],
+        ['long *pa, *pb, va, vb; pa=pa-vb;', false, '^declare r0\n^declare r1\n^declare r2\n^declare pa\n^declare pb\n^declare va\n^declare vb\n\nSET @r0 $pa\nSUB @r0 $vb\nSET @pa $r0\nFIN\n'],
         ['long *pa, *pb, va, vb; va=*vb;', true, ''],
         ['long *pa, *pb, va, vb; *va=vb;', true, ''],
         ['long *a, *a+1=0;', true, ''],

@@ -1302,11 +1302,16 @@ function generate (Program: CONTRACT) {
                     }
 
                     if (utils.isNotValidDeclarationOp(utils.getDeclarationFromMemory(LGenObj.MemObj), RGenObj.MemObj)) {
-                        if (Program.Config.warningToError) {
-                            throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Left and right values does not match. Values are: '" + LGenObj.MemObj.declaration + "' and '" + RGenObj.MemObj.declaration + "'.")
+                        const lDecl = utils.getDeclarationFromMemory(LGenObj.MemObj)
+                        const rDecl = utils.getDeclarationFromMemory(RGenObj.MemObj)
+                        // Allow SetOperator and pointer operation
+                        if (!(lDecl === rDecl + '_ptr' && (objTree.Operation.value === '+=' || objTree.Operation.value === '-='))) {
+                            if (Program.Config.warningToError) {
+                                throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Left and right values does not match. Values are: '" + LGenObj.MemObj.declaration + "' and '" + RGenObj.MemObj.declaration + "'.")
+                            }
+                            // Override declaration protection rules
+                            LGenObj.MemObj.declaration = RGenObj.MemObj.declaration
                         }
-                        // Override declaration protection rules
-                        LGenObj.MemObj.declaration = RGenObj.MemObj.declaration
                     }
                     instructionstrain += createInstruction(objTree.Operation, LGenObj.MemObj, RGenObj.MemObj)
 
