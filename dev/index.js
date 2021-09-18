@@ -58,9 +58,10 @@ function compileCode(){
         //document.getElementById("status_output").innerHTML = JSON.stringify(bcode, stringifyReplacer , '    ');
         //document.getElementById("status_output").innerHTML = JSON.stringify(bcode, null , '    ');
         const t1 = new Date();
-        msg="<span class='msg_success'>Compile sucessfull!!!</span> <small>Compiled at " + t1.getHours() +":"+t1.getMinutes()+":"+t1.getSeconds();
+        msg="<span class='msg_success'>Compile sucessfull!!!</span> <small>Done at " + t1.getHours() +":"+t1.getMinutes()+":"+t1.getSeconds()+ " in "+(t1-t0)+" ms.";
+        msg += `<br>Machine code hash ID: ${bcode.MachineCodeHashId}`
         if (document.getElementById("debug").checked) {
-            msg+=" in "+(t1-t0)+" ms.\n\n"+JSON.stringify(bcode, null , '    ')
+            msg+="\n\n"+JSON.stringify(bcode, null , '    ')
         }
         document.getElementById("status_output").innerHTML = msg+"</small>";
 

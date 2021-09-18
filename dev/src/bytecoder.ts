@@ -2,6 +2,8 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
+/* global hashMachineCode */
+
 interface BYTECODE_RETURN_OBJECT {
     /** Number of data pages (Memory size) */
     DataPages: number
@@ -15,6 +17,8 @@ interface BYTECODE_RETURN_OBJECT {
     MinimumFeeNQT: string
     /** Hex string with contract machine code */
     ByteCode: string
+    /** Hash ID for compiled machine code */
+    MachineCodeHashId: string
     /** Hex string with contract starting memory values */
     ByteData: string
     /** Array with variables names ordered in memory */
@@ -544,6 +548,7 @@ function bytecode (assemblySourceCode: string): BYTECODE_RETURN_OBJECT {
             CodePages: codepages,
             MinimumFeeNQT: minimumfee.toString(10),
             ByteCode: AsmObj.bytecode,
+            MachineCodeHashId: hashMachineCode(AsmObj.bytecode),
             ByteData: AsmObj.bytedata,
             Memory: AsmObj.memory.map(Obj => Obj.name),
             Labels: AsmObj.labels,
