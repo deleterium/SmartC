@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="20mm"
+   height="20mm"
+   viewBox="0 0 20 20"
+   version="1.1"
+   id="svg8"
+   sodipodi:docname="SmartC1.svg"
+   inkscape:version="1.0.2 (e86c870879, 2021-01-15)">
+  <defs
+     id="defs2">
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath1189">
+      <ellipse
+         style="fill:#000000;fill-opacity:0.417989;stroke:none;stroke-width:1.42719;stroke-opacity:1"
+         id="ellipse1191"
+         ry="6"
+         rx="10"
+         cy="14"
+         cx="10" />
+    </clipPath>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.4"
+     inkscape:cx="107.80849"
+     inkscape:cy="40.034199"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     inkscape:window-width="2536"
+     inkscape:window-height="1337"
+     inkscape:window-x="8"
+     inkscape:window-y="56"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <ellipse
+       style="fill:#ddaa77;fill-opacity:1;stroke:none;stroke-width:1.42719;stroke-opacity:1"
+       id="path945-9-3"
+       cx="10"
+       cy="6"
+       rx="10"
+       ry="6" />
+    <g
+       id="g1187"
+       clip-path="url(#clipPath1189)">
+      <rect
+         style="fill:#111144;fill-opacity:1;stroke:none;stroke-width:0.449393;stroke-opacity:1"
+         id="rect837-9"
+         width="20"
+         height="2"
+         x="0"
+         y="14" />
+      <rect
+         style="fill:#dddddd;fill-opacity:1;stroke:none;stroke-width:0.161651;stroke-opacity:1"
+         id="rect859"
+         width="20"
+         height="4"
+         x="0"
+         y="16" />
+    </g>
+    <rect
+       style="fill:#111144;fill-opacity:1;stroke:none;stroke-width:0.449393;stroke-opacity:1"
+       id="rect837-9-2"
+       width="20"
+       height="2"
+       x="0"
+       y="10" />
+    <rect
+       style="fill:#ddaa77;fill-opacity:1;stroke:none;stroke-width:0.114305;stroke-opacity:1"
+       id="rect859-8-0"
+       width="20"
+       height="2"
+       x="0"
+       y="12" />
+    <rect
+       style="fill:#ddaa77;fill-opacity:1;stroke:none;stroke-width:0.161651;stroke-opacity:1"
+       id="rect859-8"
+       width="20"
+       height="4"
+       x="0"
+       y="6" />
+  </g>
+</svg>
