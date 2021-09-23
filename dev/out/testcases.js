@@ -932,6 +932,67 @@ a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;
         ['#define MAX 4\n#define MAX1 (MAX + 1)\n long a; if (a > MAX1) a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000005\nBLE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
         ['#define MAX 4\n#define MAX1 (MAX + 1)\n#undef MAX\n long a; if (a > MAX1) a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000005\nBLE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
         //    [ "", false, "" ],
+        // ifdef macro
+        [
+            'macro ifdef',
+            null,
+            'div'
+        ],
+        [
+            '#define debug\n#ifdef debug\n#pragma maxAuxVars 1\n#endif\nlong a; a++;',
+            false,
+            '^declare r0\n^declare a\n\nINC @a\nFIN\n'
+        ],
+        [
+            '#ifdef debug\n#pragma maxAuxVars 1\n#endif\nlong a; a++;',
+            false,
+            '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nINC @a\nFIN\n'
+        ],
+        [
+            '#ifdef debug\n#pragma maxAuxVars 1\n#else\n#pragma maxAuxVars 5\n#endif\nlong a; a++;',
+            false,
+            '^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nINC @a\nFIN\n'
+        ],
+        [
+            '#ifdef debug\n#pragma maxAuxVars 1\n#else\n#pragma maxAuxVars 5\n#else\n#pragma maxAuxVars 7\n#endif\nlong a; a++;',
+            true,
+            ''
+        ],
+        [
+            '#ifdef debug\nlong a; a++;',
+            true,
+            ''
+        ],
+        [
+            '#else\nlong a; a++;',
+            true,
+            ''
+        ],
+        [
+            '#endif\nlong a; a++;',
+            true,
+            ''
+        ],
+        [
+            '#define A1\n#define A2\n\n#ifdef A1\nlong a1;\n# ifdef A2\nlong a2;\n# endif\n#endif\n\n#ifdef A1\na1++;\n#endif\n\n#ifdef A2\na2++;\n#endif',
+            false,
+            '^declare r0\n^declare r1\n^declare r2\n^declare a1\n^declare a2\n\nINC @a1\nINC @a2\nFIN\n'
+        ],
+        [
+            '#define A1\n\n#ifdef A1\nlong a1;\n# ifdef A2\nlong a2;\n# endif\n#endif\n\n#ifdef A1\na1++;\n#endif\n\n#ifdef A2\na2++;\n#endif',
+            false,
+            '^declare r0\n^declare r1\n^declare r2\n^declare a1\n\nINC @a1\nFIN\n'
+        ],
+        [
+            '#ifdef A1\nlong a1;\n# ifdef A2\nlong a2;\n# endif\n#endif\n\n#ifdef A1\na1++;\n#endif\n\n#ifdef A2\na2++;\n#endif',
+            false,
+            '^declare r0\n^declare r1\n^declare r2\n\nFIN\n'
+        ],
+        [
+            '#define A2\n\n#ifdef A1\nlong a1;\n# ifdef A2\nlong a2;\n# endif\n#endif\n\n#ifdef A1\na1++;\n#endif\n\n#ifdef A2\na2++;\n#endif',
+            true,
+            ''
+        ],
         // bugfixes
         ['Bug fixes', null, 'div'],
         // bug 1, goto failed with undeclared variable
