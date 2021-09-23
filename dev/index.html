@@ -27,7 +27,7 @@
     <link  href="3rd-party/styles/tomorrow.css" rel="stylesheet">
 </head>
 
-<body onload='javascript:onLoad()'>
+<body>
     <h1 class="gdrow1 gdcol12 gmrow1">SmartC - C Compiler for Signum - dev</h1>
     <fieldset id="source_fieldset" class="gdrow2 gdcol12 gmrow2"><legend id="source_legend">&#10064; Source code:</legend>
         <div id="source_window" class="div_window_source">
@@ -68,8 +68,8 @@
         <div id="deployment_window" class="div_window_normal">
             <section class="table">
                 <div class="div_row"><div class="div_cell">Deployment:</div><div class="div_cell">
-                    <label title="localhost:6876" class="default"><input type="radio" onclick="deployClick(this);" value="6876" name="deploy" checked="true"> Testnet </label>&nbsp;&nbsp;
-                    <label title="localhost:8125" class="default"><input type="radio" onclick="deployClick(this);" value="8125" name="deploy"> Main </label></div>
+                    <label title="localhost:6876" class="default"><input type="radio" value="6876" name="deploy" checked="true"> Testnet </label>&nbsp;&nbsp;
+                    <label title="localhost:8125" class="default"><input type="radio" value="8125" name="deploy"> Main </label></div>
                 </div>
             </section>
             <form action="http://localhost:6876/burst" method="POST" target="formresponse" id="deploy_form" >
