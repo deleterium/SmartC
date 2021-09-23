@@ -50,7 +50,7 @@ function compileCode(){
             asmCode = codeString;
         }
 
-        document.getElementById("assembly_output").innerHTML = asm_highlight(asmCode);
+        document.getElementById("assembly_output").innerHTML = asmHighlight(asmCode);
         var bcode = bytecode(asmCode);
 
         //document.getElementById("status_output").innerHTML = asmCode+"\n\n"+asmCode.replace(/\n/g,"\\n")+"\n\n"+JSON.stringify(bcode, null , '    ');//+JSON.stringify(big_ast_opTree, null, '    ');
@@ -130,7 +130,7 @@ function SetColorCode () {
         if(document.getElementById("source_is_c").checked) {
             dest.innerHTML=hljs.highlight(source.value, {language: 'c'}).value+"\n\n\n\n\n";
         } else {
-            dest.innerHTML=asm_highlight(source.value)+"\n\n\n\n\n";
+            dest.innerHTML=asmHighlight(source.value)+"\n\n\n\n\n";
         }
         source.className ="transp";
     }

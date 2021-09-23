@@ -119,6 +119,28 @@ label:hover                      { background: #ddf; }
 	transition: all ease 0.2s;
 }
 
+.asmInstruction {
+    color: mediumblue
+}
+.asmVariable {
+    color: purple;
+}
+.asmComment {
+    color: darkgreen;
+}
+.asmDirective {
+    color: brown;
+    font-weight: bold;
+}
+.asmLabel {
+    color: sienna;
+}
+.asmNumber {
+    color: red;
+}
+.asmError {
+    background-color: pink;
+}
 
 ::selection {
 	color: #114;
