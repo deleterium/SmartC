@@ -1351,6 +1351,12 @@ function generate (Program: CONTRACT) {
                         retlines.push('^const SET @' + clrpart[1] + ' #0000000000000000')
                         return
                     }
+                    const setpart = /^\s*SET\s+@(\w+)\s+\$n(\d+)\s*$/.exec(instruction)
+                    if (setpart !== null) {
+                        // allow set const on optimized const vars
+                        retlines.push(`^const SET @${setpart[1]} #${BigInt(setpart[2]).toString(16).padStart(16, '0')}`)
+                        return
+                    }
                     throw new TypeError(`At line: ${line}. No operations can be done during 'const' assignment.`)
                 }
                 const search = Program.memory.find(obj => obj.asmName === parts[1])
