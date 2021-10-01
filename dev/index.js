@@ -30,6 +30,8 @@ window.onload = () => {
     document.getElementById('save').addEventListener('click', SaveSource)
     document.getElementById('load').addEventListener('click', LoadSource)
 
+    document.getElementById('copy_assembly').addEventListener('click', () => navigator.clipboard.writeText(document.getElementById('assembly_output').innerText))
+
     document.getElementById('source_legend').addEventListener('click', detachSource)
     document.getElementById('actions_legend').addEventListener('click', detachActions)
     document.getElementById('status_legend').addEventListener('click', detachStatus)
