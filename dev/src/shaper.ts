@@ -59,7 +59,7 @@ interface MEMORY_SLOT {
     /** Variable base types: 'register' | 'long' | 'constant' | 'struct' | 'structRef' | 'array' | 'label' | 'void' */
     type: MEMORY_BASE_TYPES
     /** Variable name in assembly code */
-    asmName?: string
+    asmName: string
     /** Controls if variable was already defined an can be used. */
     isDeclared: boolean
     /** Variable type during declaration */
@@ -654,6 +654,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
             structAccumulatedSize: [],
             MemoryTemplate: {
                 address: -1,
+                asmName: '',
                 name: '',
                 type: 'struct',
                 typeDefinition: AuxVars.currentPrefix + structPhrase.name,
