@@ -463,6 +463,9 @@ function generate (Program: CONTRACT) {
                             // Precedence 2: regular case
                             typeName = retMemObj.typeDefinition
                         }
+                        if (typeName === undefined) {
+                            throw new TypeError(`At line: ${objTree.Token.line}. Struct type definition for member '${memberName}' not found.`)
+                        }
 
                         const TypeD = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === typeName) as STRUCT_TYPE_DEFINITION | undefined
                         if (TypeD === undefined) {
