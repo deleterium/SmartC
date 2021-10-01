@@ -394,6 +394,9 @@ function generate(Program) {
                                 // Precedence 2: regular case
                                 typeName = retMemObj.typeDefinition;
                             }
+                            if (typeName === undefined) {
+                                throw new TypeError(`At line: ${objTree.Token.line}. Struct type definition for member '${memberName}' not found.`);
+                            }
                             const TypeD = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === typeName);
                             if (TypeD === undefined) {
                                 throw new TypeError(`At line: ${objTree.Token.line}. Type definition '${typeName}' not found.`);
@@ -1224,6 +1227,12 @@ function generate(Program) {
                     if (clrpart !== null) {
                         // allow CLR instruction and change to SET zero
                         retlines.push('^const SET @' + clrpart[1] + ' #0000000000000000');
+                        return;
+                    }
+                    const setpart = /^\s*SET\s+@(\w+)\s+\$n(\d+)\s*$/.exec(instruction);
+                    if (setpart !== null) {
+                        // allow set const on optimized const vars
+                        retlines.push(`^const SET @${setpart[1]} #${BigInt(setpart[2]).toString(16).padStart(16, '0')}`);
                         return;
                     }
                     throw new TypeError(`At line: ${line}. No operations can be done during 'const' assignment.`);

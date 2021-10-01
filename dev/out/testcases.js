@@ -1065,6 +1065,8 @@ a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;
         // bug 24 Wrong code being sucessfull compiled: ASM and Label disregarding information before them.
         ['void  teste(long ret) { long temp = 2; if (temp==2){ goto div_end: } ret = temp; div_end: temp++; }', true, ''],
         ['long a, b; a++; long c, asm { PSH $a\nPOP @b } b++;', true, ''],
+        // bug 25 Incompatibility with const keyword and optimization for contants values
+        ['#pragma maxConstVars 3\nconst long a = 1;const long n256 = 256;const long ac = 256;long ad = 256, ae = ac;', false, '^declare r0\n^declare r1\n^declare r2\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n^declare a\n^declare n256\n^declare ac\n^declare ad\n^declare ae\n\n^const SET @a #0000000000000001\n^const SET @n256 #0000000000000100\n^const SET @ac #0000000000000100\nSET @ad $n256\nSET @ae $ac\nFIN\n'],
         //    [ "", false, "" ],
         ['End of tests!', null, '']
     ];
