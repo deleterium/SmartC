@@ -23,7 +23,7 @@
   "homepage": "https://github.com/deleterium/SmartC#readme",
   "scripts": {
     "dev": "npx tsc",
-    "lint": "npx eslint ./src/*.ts",
+    "lint": "npx eslint ./src/*.ts ./index.js",
     "build": "npx tsc"
   },
   "eslintConfig": {
