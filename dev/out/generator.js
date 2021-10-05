@@ -117,7 +117,7 @@ function generate(Program) {
                 id.inUse = false;
             },
             createTmpVarsTable() {
-                const regs = Program.memory.filter(OBJ => OBJ.type === 'register');
+                const regs = Program.memory.filter(OBJ => /^r\d$/.exec(OBJ.asmName) !== null);
                 regs.forEach(MEM => {
                     this.registerInfo.push({
                         inUse: false,
@@ -2076,6 +2076,7 @@ function generate(Program) {
                 isDeclared: true,
                 declaration: '',
                 address: -1,
+                asmName: '',
                 name: varName,
                 scope: '',
                 size: 0

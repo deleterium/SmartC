@@ -381,6 +381,7 @@ function shape(tokenAST) {
             structAccumulatedSize: [],
             MemoryTemplate: {
                 address: -1,
+                asmName: '',
                 name: '',
                 type: 'struct',
                 typeDefinition: AuxVars.currentPrefix + structPhrase.name,

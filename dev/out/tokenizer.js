@@ -60,7 +60,7 @@ function tokenize(input) {
             addLength: 2
         },
         {
-            start: /^(break|const|continue|do|else|exit|for|goto|halt|if|long|return|sleep|void|while)/,
+            start: /^(break|const|continue|do|else|exit|for|goto|halt|if|long|return|sleep|void|while)\b/,
             tokenType: 'keyword',
             addLength: 0
         },
