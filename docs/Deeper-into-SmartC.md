@@ -5,8 +5,8 @@ Following table presents operators precedence order that are [based on C](https:
 
 | Order | Symbol | Description | Associativity |
 | --- | --- | --- | --- |
-| 0 | Variable, Constant, `[]` `.` `->` | Variables, constants, arrays, members | Left-to-right |
-| 1 | `()`   `{}`  | Scope, function call, statements group | Left-to-right |
+| 0 | Variable, Constant, Functions, `[]` `.` `->` | Variables, constants, functions, arrays, members | Left-to-right |
+| 1 | `()`   `{}`  | Scope (not functions!), statements group | Left-to-right |
 | 2 | `!`   `~`   `-`   `+`   `*`   `&`   `++`   `--` | Unary operators | Right-to-left* |
 | 3 | `*`   `/`   `%` | Multiplication, division, modulo | Left-to-right |
 | 4 | `+`   `-` | Addition and subtraction | Left-to-right |
@@ -28,7 +28,8 @@ Tokens are divided in groups and later on checked if their combinations are synt
 |Token type | Example/Operators | Description|
 | --- | --- | --- |
 | Variable | `var1` | Variables names. In special cases could be a pointer representation. |
-| Constant | `23`   `0xffa`   `"Hi!"` | Number to be stored inside a long value (64 bit). Strings are converted to number. |
+| Function | `func1(args)` | Function names. Represents a value returned by functions execution. |
+| Constant | `23`   `0xffa`   `'Hi!'` | Number to be stored inside a long value (64 bit). Strings are converted to number. |
 | Operator | `/`   `%`   `<<`   `>>`   `\|`   `^` | Tokens that are undoubtly binary operators and have no other interpretation. |
 | UnaryOperator | `!`   `~` | Tokens that are undoubtly unary operators and have no other interpretation. |
 | SetUnaryOperator | `++`   `--` | Special unary operations with same meaning in C - pre/post increment/decrement |
@@ -45,6 +46,6 @@ Tokens are divided in groups and later on checked if their combinations are synt
 | Member | `.`    `->` | Used to select a struct member. |
 
 ### Internal object structure
-If you plan to learn, inspect or modify the source, read section [[SmartC object structure]].
+Please refer to typescript source code for details.
 
 [Back](./)
