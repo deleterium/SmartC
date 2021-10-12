@@ -39,6 +39,7 @@ function runTestCases() {
         ["long a; a='BURST-MKCL-2226-W6AH-7ARVS';", false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @a #5c6ee8000049c552\nFIN\n'],
         ["long a; a='TS-MKCL-2226-W6AH-7ARVS';", false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @a #5c6ee8000049c552\nFIN\n'],
         ["long a; a='S-MKCL-2226-W6AH-7ARVS';", false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @a #5c6ee8000049c552\nFIN\n'],
+        ["long a; a='';", false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @a\nFIN\n'],
         ['long a; a=6660515985630020946;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @a #5c6ee8000049c552\nFIN\n'],
         ['long a; a=18446744073709551615;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @a #ffffffffffffffff\nFIN\n'],
         ['long a; a=18446744073709551616;', true, ''],

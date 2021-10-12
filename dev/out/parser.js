@@ -429,6 +429,8 @@ function parse(preTokens) {
         const byarr = [];
         let ret = '';
         let c, c1, i, j;
+        if (inStr.length === 0)
+            byarr.push(0);
         for (i = 0; i < inStr.length; i++) {
             c = inStr.charCodeAt(i);
             if (c < 128) {
