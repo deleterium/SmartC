@@ -22,6 +22,8 @@ function generate (Program: CONTRACT) {
         assemblyCode: string
         /** Current function being processed */
         currFunctionIndex: number
+        /** Line counter for source code */
+        currSourceLine: number
         getNewJumpID(currLine: number): string
         getLatestLoopId(): string
     } = {
@@ -29,6 +31,7 @@ function generate (Program: CONTRACT) {
         jumpId: 0,
         assemblyCode: '',
         currFunctionIndex: -1,
+        currSourceLine: 0,
         getNewJumpID: function (line: number) {
             let id = ''
             if (Program.Config.enableLineLabels) {
@@ -2101,10 +2104,25 @@ function generate (Program: CONTRACT) {
         }
     }
 
-    function writeAsmLine (lineContent: string) {
+    function writeAsmLine (lineContent: string, sourceCodeLine: number = 0) {
+        if (Program.Config.outputSourceLineNumber === true &&
+            sourceCodeLine !== 0 &&
+            sourceCodeLine !== generateUtils.currSourceLine) {
+            generateUtils.assemblyCode += `^comment line ${sourceCodeLine}\n`
+            generateUtils.currSourceLine = sourceCodeLine
+        }
         generateUtils.assemblyCode += lineContent + '\n'
     }
-    function writeAsmCode (lines: string) {
+    function writeAsmCode (lines: string, sourceCodeLine: number = 0) {
+        if (lines.length === 0) {
+            return
+        }
+        if (Program.Config.outputSourceLineNumber === true &&
+            sourceCodeLine !== 0 &&
+            sourceCodeLine !== generateUtils.currSourceLine) {
+            generateUtils.assemblyCode += `^comment line ${sourceCodeLine}\n`
+            generateUtils.currSourceLine = sourceCodeLine
+        }
         generateUtils.assemblyCode += lines
     }
 
@@ -2210,11 +2228,11 @@ function generate (Program: CONTRACT) {
     function functionHeaderGenerator () {
         const fname = Program.functions[generateUtils.currFunctionIndex].name
         if (fname === 'main' || fname === 'catch') {
-            writeAsmLine(`__fn_${fname}:`)
+            writeAsmLine(`__fn_${fname}:`, Program.functions[generateUtils.currFunctionIndex].line)
             writeAsmLine('PCS')
             return
         }
-        writeAsmLine(`__fn_${fname}:`)
+        writeAsmLine(`__fn_${fname}:`, Program.functions[generateUtils.currFunctionIndex].line)
         Program.functions[generateUtils.currFunctionIndex].argsMemObj.forEach(Obj => {
             writeAsmLine(`POP @${Obj.asmName}`)
         })
@@ -2248,18 +2266,18 @@ function generate (Program: CONTRACT) {
 
         switch (Sentence.type) {
         case 'phrase':
-            writeAsmCode(codeGenerator(Sentence.CodeAST))
+            writeAsmCode(codeGenerator(Sentence.CodeAST), Sentence.line)
             break
         case 'ifEndif':
             sentenceID = '__if' + generateUtils.getNewJumpID(Sentence.line)
-            writeAsmCode(codeGenerator(Sentence.ConditionAST, sentenceID + '_endif', sentenceID + '_start'))
+            writeAsmCode(codeGenerator(Sentence.ConditionAST, sentenceID + '_endif', sentenceID + '_start'), Sentence.line)
             writeAsmLine(sentenceID + '_start:')
             Sentence.trueBlock.forEach(compileSentence)
             writeAsmLine(sentenceID + '_endif:')
             break
         case 'ifElse':
             sentenceID = '__if' + generateUtils.getNewJumpID(Sentence.line)
-            writeAsmCode(codeGenerator(Sentence.ConditionAST, sentenceID + '_else', sentenceID + '_start'))
+            writeAsmCode(codeGenerator(Sentence.ConditionAST, sentenceID + '_else', sentenceID + '_start'), Sentence.line)
             writeAsmLine(sentenceID + '_start:')
             Sentence.trueBlock.forEach(compileSentence)
             writeAsmLine('JMP :' + sentenceID + '_endif')
@@ -2269,7 +2287,7 @@ function generate (Program: CONTRACT) {
             break
         case 'while':
             sentenceID = '__loop' + generateUtils.getNewJumpID(Sentence.line)
-            writeAsmLine(sentenceID + '_continue:')
+            writeAsmLine(sentenceID + '_continue:', Sentence.line)
             writeAsmCode(codeGenerator(Sentence.ConditionAST, sentenceID + '_break', sentenceID + '_start'))
             writeAsmLine(sentenceID + '_start:')
             generateUtils.latestLoopId.push(sentenceID)
@@ -2280,7 +2298,7 @@ function generate (Program: CONTRACT) {
             break
         case 'do':
             sentenceID = '__loop' + generateUtils.getNewJumpID(Sentence.line)
-            writeAsmLine(sentenceID + '_continue:')
+            writeAsmLine(sentenceID + '_continue:', Sentence.line)
             generateUtils.latestLoopId.push(sentenceID)
             Sentence.trueBlock.forEach(compileSentence)
             generateUtils.latestLoopId.pop()
@@ -2289,7 +2307,7 @@ function generate (Program: CONTRACT) {
             break
         case 'for':
             sentenceID = '__loop' + generateUtils.getNewJumpID(Sentence.line)
-            writeAsmCode(codeGenerator(Sentence.threeSentences[0].CodeAST))
+            writeAsmCode(codeGenerator(Sentence.threeSentences[0].CodeAST), Sentence.line)
             writeAsmLine(sentenceID + '_condition:')
             writeAsmCode(codeGenerator(Sentence.threeSentences[1].CodeAST, sentenceID + '_break', sentenceID + '_start'))
             writeAsmLine(sentenceID + '_start:')

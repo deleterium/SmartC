@@ -35,6 +35,8 @@ interface SC_CONFIG {
     PUserStackPages: number,
     /** Code stack pages to be available:: #program codeStackPages */
     PCodeStackPages: number,
+    /** Adds a comment in generated assembly code with the respective C source code line number  */
+    outputSourceLineNumber: boolean,
 }
 
 interface SC_MACRO {
@@ -96,6 +98,8 @@ type SENTENCES = SENTENCE_PHRASE | SENTENCE_IF_ENDIF | SENTENCE_IF_ELSE | SENTEN
 
 interface SENTENCE_PHRASE {
     type: 'phrase'
+    /** phrase starting line number */
+    line: number
     /** Array of tokens, recursive on Arr, Codecave and CodeDomain */
     code?: TOKEN[]
     /** Tokens organized in an AST */
@@ -258,7 +262,8 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
             PDescription: '',
             PActivationAmount: '',
             PUserStackPages: 0,
-            PCodeStackPages: 0
+            PCodeStackPages: 0,
+            outputSourceLineNumber: false
         }
     }
 
@@ -407,6 +412,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
     // Expects only one sentence in codetrain
     function code2sentence (codetrain: TOKEN[]): SENTENCES[] {
         const phrase: TOKEN[] = []
+        let lineOfFirstInstruction = 0
 
         if (codetrain[AuxVars.currentToken].type === 'CodeDomain') {
             const savedPosition = AuxVars.currentToken
@@ -420,7 +426,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
         while (AuxVars.currentToken < codetrain.length) {
             if (codetrain[AuxVars.currentToken].type === 'Terminator') {
                 // end of sentence!
-                return [{ type: 'phrase', code: phrase }]
+                return [{ type: 'phrase', code: phrase, line: lineOfFirstInstruction }]
             }
 
             if (codetrain[AuxVars.currentToken].type === 'CodeCave') {
@@ -525,13 +531,13 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                     if (phrase.length !== 0) {
                         throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Keyword 'asm' is not at start of sentence. Possible missing ';' before it.`)
                     }
-                    return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]] }]
+                    return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]], line: codetrain[AuxVars.currentToken].line }]
                 }
                 if (codetrain[AuxVars.currentToken].value === 'label') {
                     if (phrase.length !== 0) {
                         throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Label '${codetrain[AuxVars.currentToken].extValue}' is not at start of sentence. Possible missing ';' before it.`)
                     }
-                    return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]] }]
+                    return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]], line: codetrain[AuxVars.currentToken].line }]
                 }
 
                 if (codetrain[AuxVars.currentToken].value === 'do') {
@@ -585,7 +591,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                             line: codetrain[AuxVars.currentToken - 1].line,
                             name: structName,
                             members: code2sentence(codetrain),
-                            Phrase: { type: 'phrase' }
+                            Phrase: { type: 'phrase', line: codetrain[AuxVars.currentToken - 1].line }
                         }
                         Node.Phrase.code = [codetrain[AuxVars.currentToken - 1]]
                         AuxVars.currentToken++
@@ -610,6 +616,9 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
             }
 
             phrase.push(codetrain[AuxVars.currentToken])
+            if (lineOfFirstInstruction === 0) {
+                lineOfFirstInstruction = codetrain[AuxVars.currentToken].line
+            }
             AuxVars.currentToken++
         }
 
@@ -1095,6 +1104,10 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
             }
             if (Token.property === 'warningToError' && boolVal !== undefined) {
                 Program.Config.warningToError = boolVal
+                return
+            }
+            if (Token.property === 'outputSourceLineNumber' && boolVal !== undefined) {
+                Program.Config.outputSourceLineNumber = boolVal
                 return
             }
         }
