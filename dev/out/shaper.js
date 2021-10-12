@@ -36,7 +36,8 @@ function shape(tokenAST) {
             PDescription: '',
             PActivationAmount: '',
             PUserStackPages: 0,
-            PCodeStackPages: 0
+            PCodeStackPages: 0,
+            outputSourceLineNumber: false
         }
     };
     const AuxVars = {
@@ -157,6 +158,7 @@ function shape(tokenAST) {
     // Expects only one sentence in codetrain
     function code2sentence(codetrain) {
         const phrase = [];
+        let lineOfFirstInstruction = 0;
         if (codetrain[AuxVars.currentToken].type === 'CodeDomain') {
             const savedPosition = AuxVars.currentToken;
             AuxVars.currentToken = 0;
@@ -168,7 +170,7 @@ function shape(tokenAST) {
         while (AuxVars.currentToken < codetrain.length) {
             if (codetrain[AuxVars.currentToken].type === 'Terminator') {
                 // end of sentence!
-                return [{ type: 'phrase', code: phrase }];
+                return [{ type: 'phrase', code: phrase, line: lineOfFirstInstruction }];
             }
             if (codetrain[AuxVars.currentToken].type === 'CodeCave') {
                 if (codetrain[AuxVars.currentToken - 1].value === 'if') {
@@ -264,13 +266,13 @@ function shape(tokenAST) {
                     if (phrase.length !== 0) {
                         throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Keyword 'asm' is not at start of sentence. Possible missing ';' before it.`);
                     }
-                    return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]] }];
+                    return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]], line: codetrain[AuxVars.currentToken].line }];
                 }
                 if (codetrain[AuxVars.currentToken].value === 'label') {
                     if (phrase.length !== 0) {
                         throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Label '${codetrain[AuxVars.currentToken].extValue}' is not at start of sentence. Possible missing ';' before it.`);
                     }
-                    return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]] }];
+                    return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]], line: codetrain[AuxVars.currentToken].line }];
                 }
                 if (codetrain[AuxVars.currentToken].value === 'do') {
                     const id = `__loop${codetrain[AuxVars.currentToken].line}`;
@@ -318,7 +320,7 @@ function shape(tokenAST) {
                             line: codetrain[AuxVars.currentToken - 1].line,
                             name: structName,
                             members: code2sentence(codetrain),
-                            Phrase: { type: 'phrase' }
+                            Phrase: { type: 'phrase', line: codetrain[AuxVars.currentToken - 1].line }
                         };
                         Node.Phrase.code = [codetrain[AuxVars.currentToken - 1]];
                         AuxVars.currentToken++;
@@ -341,6 +343,9 @@ function shape(tokenAST) {
                 }
             }
             phrase.push(codetrain[AuxVars.currentToken]);
+            if (lineOfFirstInstruction === 0) {
+                lineOfFirstInstruction = codetrain[AuxVars.currentToken].line;
+            }
             AuxVars.currentToken++;
         }
         if (phrase.length !== 0) {
@@ -802,6 +807,10 @@ function shape(tokenAST) {
             }
             if (Token.property === 'warningToError' && boolVal !== undefined) {
                 Program.Config.warningToError = boolVal;
+                return;
+            }
+            if (Token.property === 'outputSourceLineNumber' && boolVal !== undefined) {
+                Program.Config.outputSourceLineNumber = boolVal;
                 return;
             }
         }

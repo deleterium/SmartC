@@ -17,6 +17,7 @@ function generate(Program) {
         jumpId: 0,
         assemblyCode: '',
         currFunctionIndex: -1,
+        currSourceLine: 0,
         getNewJumpID: function (line) {
             let id = '';
             if (Program.Config.enableLineLabels) {
@@ -2008,10 +2009,25 @@ function generate(Program) {
             throw new TypeError('At line: ' + objoperator.line + '. ' + objoperator.type + ' not supported');
         }
     }
-    function writeAsmLine(lineContent) {
+    function writeAsmLine(lineContent, sourceCodeLine = 0) {
+        if (Program.Config.outputSourceLineNumber === true &&
+            sourceCodeLine !== 0 &&
+            sourceCodeLine !== generateUtils.currSourceLine) {
+            generateUtils.assemblyCode += `^comment line ${sourceCodeLine}\n`;
+            generateUtils.currSourceLine = sourceCodeLine;
+        }
         generateUtils.assemblyCode += lineContent + '\n';
     }
-    function writeAsmCode(lines) {
+    function writeAsmCode(lines, sourceCodeLine = 0) {
+        if (lines.length === 0) {
+            return;
+        }
+        if (Program.Config.outputSourceLineNumber === true &&
+            sourceCodeLine !== 0 &&
+            sourceCodeLine !== generateUtils.currSourceLine) {
+            generateUtils.assemblyCode += `^comment line ${sourceCodeLine}\n`;
+            generateUtils.currSourceLine = sourceCodeLine;
+        }
         generateUtils.assemblyCode += lines;
     }
     /** Add content of macro 'program' information to assembly code */
@@ -2111,11 +2127,11 @@ function generate(Program) {
     function functionHeaderGenerator() {
         const fname = Program.functions[generateUtils.currFunctionIndex].name;
         if (fname === 'main' || fname === 'catch') {
-            writeAsmLine(`__fn_${fname}:`);
+            writeAsmLine(`__fn_${fname}:`, Program.functions[generateUtils.currFunctionIndex].line);
             writeAsmLine('PCS');
             return;
         }
-        writeAsmLine(`__fn_${fname}:`);
+        writeAsmLine(`__fn_${fname}:`, Program.functions[generateUtils.currFunctionIndex].line);
         Program.functions[generateUtils.currFunctionIndex].argsMemObj.forEach(Obj => {
             writeAsmLine(`POP @${Obj.asmName}`);
         });
@@ -2147,18 +2163,18 @@ function generate(Program) {
         let sentenceID;
         switch (Sentence.type) {
             case 'phrase':
-                writeAsmCode(codeGenerator(Sentence.CodeAST));
+                writeAsmCode(codeGenerator(Sentence.CodeAST), Sentence.line);
                 break;
             case 'ifEndif':
                 sentenceID = '__if' + generateUtils.getNewJumpID(Sentence.line);
-                writeAsmCode(codeGenerator(Sentence.ConditionAST, sentenceID + '_endif', sentenceID + '_start'));
+                writeAsmCode(codeGenerator(Sentence.ConditionAST, sentenceID + '_endif', sentenceID + '_start'), Sentence.line);
                 writeAsmLine(sentenceID + '_start:');
                 Sentence.trueBlock.forEach(compileSentence);
                 writeAsmLine(sentenceID + '_endif:');
                 break;
             case 'ifElse':
                 sentenceID = '__if' + generateUtils.getNewJumpID(Sentence.line);
-                writeAsmCode(codeGenerator(Sentence.ConditionAST, sentenceID + '_else', sentenceID + '_start'));
+                writeAsmCode(codeGenerator(Sentence.ConditionAST, sentenceID + '_else', sentenceID + '_start'), Sentence.line);
                 writeAsmLine(sentenceID + '_start:');
                 Sentence.trueBlock.forEach(compileSentence);
                 writeAsmLine('JMP :' + sentenceID + '_endif');
@@ -2168,7 +2184,7 @@ function generate(Program) {
                 break;
             case 'while':
                 sentenceID = '__loop' + generateUtils.getNewJumpID(Sentence.line);
-                writeAsmLine(sentenceID + '_continue:');
+                writeAsmLine(sentenceID + '_continue:', Sentence.line);
                 writeAsmCode(codeGenerator(Sentence.ConditionAST, sentenceID + '_break', sentenceID + '_start'));
                 writeAsmLine(sentenceID + '_start:');
                 generateUtils.latestLoopId.push(sentenceID);
@@ -2179,7 +2195,7 @@ function generate(Program) {
                 break;
             case 'do':
                 sentenceID = '__loop' + generateUtils.getNewJumpID(Sentence.line);
-                writeAsmLine(sentenceID + '_continue:');
+                writeAsmLine(sentenceID + '_continue:', Sentence.line);
                 generateUtils.latestLoopId.push(sentenceID);
                 Sentence.trueBlock.forEach(compileSentence);
                 generateUtils.latestLoopId.pop();
@@ -2188,7 +2204,7 @@ function generate(Program) {
                 break;
             case 'for':
                 sentenceID = '__loop' + generateUtils.getNewJumpID(Sentence.line);
-                writeAsmCode(codeGenerator(Sentence.threeSentences[0].CodeAST));
+                writeAsmCode(codeGenerator(Sentence.threeSentences[0].CodeAST), Sentence.line);
                 writeAsmLine(sentenceID + '_condition:');
                 writeAsmCode(codeGenerator(Sentence.threeSentences[1].CodeAST, sentenceID + '_break', sentenceID + '_start'));
                 writeAsmLine(sentenceID + '_start:');
