@@ -52,7 +52,7 @@ pre {
 	padding: 0;
 	margin: 0;
 	min-height: 50px;
-	font-family: "Lucida Console", "Courier New", 'monospace';
+	font-family: "Lucida Console", "Courier New", monospace;
 	white-space: pre-wrap;
 	word-wrap: anywhere;
 	max-width: 100%;
@@ -106,7 +106,7 @@ label:hover                      { background: #ddf; }
 	color: #114;
 	margin: 0;
 	padding: 1em;
-	font-family: "Lucida Console", "Courier New", 'monospace';
+	font-family: "Lucida Console", "Courier New", monospace;
 	width: 100%;
 }
 

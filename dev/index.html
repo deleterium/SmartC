@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -78,7 +78,6 @@
                 <input type="hidden" name="requestType" value="createATProgram">
                 <div class="div_row"><div class="div_cell">Contract Name:</div><div class="div_cell"><input type="text" name="name" style="width:100%;" pattern="[a-zA-Z0-9]{1,30}" title="Only letters (a to Z) and numbers"></div></div>
                 <div class="div_row"><div class="div_cell">Description:</div><div class="div_cell"><textarea name="description" rows="5" style="width:100%;min-width:200px;"></textarea></div></div>
-                <!-- <div class="div_row"><div class="div_cell">creationBytes:</div><div class="div_cell"><input type="text" name="creationBytes" style="width:100%;min-width:200px;"></div></div> -->
                 <div class="div_row"><div class="div_cell">Bytecode:</div><div class="div_cell"><input type="text" name="code" style="width:100%;min-width:200px;" pattern="[a-fA-F0-9]{1,}"></div></div>
                 <div class="div_row"><div class="div_cell">Bytedata:</div><div class="div_cell"><input type="text" name="data" style="width:100%;min-width:200px;"></div></div>
                 <div class="div_row"><div class="div_cell">Data Pages:</div><div class="div_cell"><input type="number" name="dpages" value="1" style="width:100%;min-width:200px;"></div></div>
@@ -86,29 +85,14 @@
                 <div class="div_row"><div class="div_cell">User Stack Pages:</div><div class="div_cell"><input type="number" name="uspages" value="0" style="width:100%;min-width:200px;"></div></div>
                 <div class="div_row"><div class="div_cell">Min. Activation Amount NQT:</div><div class="div_cell"><input type="text" name="minActivationAmountNQT" style="width:100%;min-width:200px;"></div></div>
                 <div class="div_row"><div class="div_cell">Secret Phrase:</div><div class="div_cell"><input type="password" name="secretPhrase" style="width:100%;min-width:200px;"></div></div>
-                <!-- <div class="div_row"><div class="div_cell">publicKey:</div><div class="div_cell"><input type="text" name="publicKey" style="width:100%;min-width:200px;"></div></div> -->
                 <div class="div_row"><div class="div_cell">Fee (NQT):</div><div class="div_cell"><input type="text" name="feeNQT" style="width:100%;min-width:200px;"></div></div>
                 <div class="div_row"><div class="div_cell">Tx Deadline (minutes):</div><div class="div_cell"><input type="text" name="deadline" style="width:100%;min-width:200px;" value="24"></div></div>
-                <!-- <div class="div_row"><div class="div_cell">referencedTransactionFullHash:</div><div class="div_cell"><input type="text" name="referencedTransactionFullHash" style="width:100%;min-width:200px;"></div></div> -->
                 <div class="div_row"><div class="div_cell">Broadcast Tx?</div><div class="div_cell"><input type="text" name="broadcast" style="width:100%;min-width:200px;" placeholder="true"></div></div>
-                <!--
-                <div class="div_row"><div class="div_cell">message:</div><div class="div_cell"><input type="text" name="message" style="width:100%;min-width:200px;"></div></div>
-                <div class="div_row"><div class="div_cell">messageIsText:</div><div class="div_cell"><input type="text" name="messageIsText" style="width:100%;min-width:200px;"></div></div>
-                <div class="div_row"><div class="div_cell">messageToEncrypt:</div><div class="div_cell"><input type="text" name="messageToEncrypt" style="width:100%;min-width:200px;"></div></div>
-                <div class="div_row"><div class="div_cell">messageToEncryptIsText:</div><div class="div_cell"><input type="text" name="messageToEncryptIsText" style="width:100%;min-width:200px;"></div></div>
-                <div class="div_row"><div class="div_cell">encryptedMessageData:</div><div class="div_cell"><input type="text" name="encryptedMessageData" style="width:100%;min-width:200px;"></div></div>
-                <div class="div_row"><div class="div_cell">encryptedMessageNonce:</div><div class="div_cell"><input type="text" name="encryptedMessageNonce" style="width:100%;min-width:200px;"></div></div>
-                <div class="div_row"><div class="div_cell">messageToEncryptToSelf:</div><div class="div_cell"><input type="text" name="messageToEncryptToSelf" style="width:100%;min-width:200px;"></div></div>
-                <div class="div_row"><div class="div_cell">messageToEncryptToSelfIsText:</div><div class="div_cell"><input type="text" name="messageToEncryptToSelfIsText" style="width:100%;min-width:200px;"></div></div>
-                <div class="div_row"><div class="div_cell">encryptToSelfMessageData:</div><div class="div_cell"><input type="text" name="encryptToSelfMessageData" style="width:100%;min-width:200px;"></div></div>
-                <div class="div_row"><div class="div_cell">encryptToSelfMessageNonce:</div><div class="div_cell"><input type="text" name="encryptToSelfMessageNonce" style="width:100%;min-width:200px;"></div></div>
-                <div class="div_row"><div class="div_cell">recipientPublicKey:</div><div class="div_cell"><input type="text" name="recipientPublicKey" style="width:100%;min-width:200px;"></div></div>
-                -->
                 <div class="div_row"><div class="div_cell"><input type="submit" class="btn btn-default" value="Submit"></div><div class="div_cell"></div></div>
             </section>
             </form>
             <h5>Response:</h5>
-            <iframe src="about:blank" name='formresponse' id="deployment_iframe"></iframe>
+            <iframe src="about:blank" name='formresponse' id="deployment_iframe" title="Deployment response"></iframe>
         </div>
     </fieldset>
 </body>

@@ -196,10 +196,9 @@ function stringifyReplacer(key, value) {
 }
 */
 
-// Used for 3rd-party WinBox
-/* eslint-disable no-new */
 function detachSource () {
-    new WinBox('Source code', {
+    const ret = WinBox.new({
+        title: 'Source code',
         height: '100%',
         top: 50,
         mount: document.getElementById('source_window'),
@@ -208,10 +207,12 @@ function detachSource () {
         }
     })
     document.getElementById('source_fieldset').style.display = 'none'
+    return ret
 }
 
 function detachStatus () {
-    new WinBox('Status', {
+    WinBox.new({
+        title: 'Status',
         mount: document.getElementById('status_window'),
         height: '25%',
         width: '50%',
@@ -226,7 +227,8 @@ function detachStatus () {
 }
 
 function detachActions () {
-    new WinBox('Actions', {
+    WinBox.new({
+        title: 'Actions',
         mount: document.getElementById('actions_window'),
         height: '20%',
         width: '50%',
@@ -241,7 +243,8 @@ function detachActions () {
 }
 
 function detachDeployment () {
-    const ret = new WinBox('Smart Contract Deployment', {
+    const ret = WinBox.new({
+        title: 'Smart Contract Deployment',
         mount: document.getElementById('deployment_window'),
         top: 50,
         height: '95%',
@@ -254,7 +257,8 @@ function detachDeployment () {
 }
 
 function detachAssembly () {
-    new WinBox('Assembly output', {
+    WinBox.new({
+        title: 'Assembly output',
         mount: document.getElementById('assembly_window'),
         height: '50%',
         width: '50%',
@@ -269,7 +273,8 @@ function detachAssembly () {
 }
 
 function detachHelp () {
-    const helpage = new WinBox('Help page', {
+    const helpage = WinBox.new({
+        title: 'Help page',
         url: 'https://deleterium.github.io/SmartC/docs/',
         height: '70%',
         width: '70%',
@@ -279,7 +284,6 @@ function detachHelp () {
     })
     helpage.focus()
 }
-/* eslint-enable no-new */
 
 function fillForm (AtInfo) {
     let myDom
