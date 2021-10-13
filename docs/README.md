@@ -7,4 +7,3 @@
 * [Functions repository](Functions-repository)
 * [Comprehensive example](./Comprehensive-example)
 * [Deeper into SmartC](./Deeper-into-SmartC)
-* [SmartC object structure](./SmartC-object-structure)

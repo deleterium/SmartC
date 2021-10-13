@@ -215,7 +215,7 @@ void getTxDetails(void) {
 * Messages are limited to 32 bytes, the size of superregister A. Text is encoded with UTF-8, so some characters need more than one byte.
 * There is no main function. The main loop will process transactions and then send all contract balance to creator. When the API `Send_All_To_Address_In_B` sends all balance, then the contract execution will stop because there is no more balance to run it (it will be frozen). When a new transaction above activation amoun is received, contract resumes execution and process all incoming transactions again.
 
-### Sending a message and burst
+### Sending a message and signa
 ```c
 //function and global variable shown
 struct SENDMESSAGESIGNA {
