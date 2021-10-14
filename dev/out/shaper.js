@@ -233,7 +233,6 @@ function shape(tokenAST) {
                     phrase.pop();
                     const id = `__loop${codetrain[AuxVars.currentToken].line}`;
                     const line = codetrain[AuxVars.currentToken].line;
-                    // codetrain[AuxVars.currentToken].params.push();
                     const savePosition = AuxVars.currentToken;
                     AuxVars.currentToken = 0;
                     const threeSentences = code2sentenceS(codetrain[savePosition].params, true);
@@ -370,7 +369,7 @@ function shape(tokenAST) {
             }
         });
     }
-    function getArraySize(tkn = [], line) {
+    function getArraySize(tkn = [], line = -1) {
         if (tkn.length !== 1 || tkn[0].type !== 'Constant') {
             throw new TypeError('At line: ' + line + '. Wrong array declaration. Only constant size declarations allowed.');
         }
@@ -538,6 +537,9 @@ function shape(tokenAST) {
                                 }
                             }
                             if (dimensions.length > 0) { // is array of structs
+                                if (phraseCode[0].extValue === undefined) {
+                                    throw new TypeError("Could not find type definition for an undefined 'struct'.");
+                                }
                                 MemTemplate.typeDefinition = MemTemplate.asmName;
                                 MemTemplate.asmName = AuxVars.currentPrefix + MemTemplate.name;
                                 MemTemplate.arrItem = {
@@ -585,6 +587,9 @@ function shape(tokenAST) {
                                     ret = ret.concat(MemTemplate);
                                 }
                                 else {
+                                    if (phraseCode[0].extValue === undefined) {
+                                        throw new TypeError("Could not find type definition for an undefined 'struct'.");
+                                    }
                                     ret = ret.concat(assignStructVariable(phraseCode[0].extValue, phraseCode[idx].value, ispointer));
                                 }
                             }
@@ -725,7 +730,7 @@ function shape(tokenAST) {
         }
         return ret;
     }
-    function assignStructVariable(structName = '', varName, ispointer) {
+    function assignStructVariable(structName, varName, ispointer) {
         let search = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === structName);
         if (search === undefined && AuxVars.currentPrefix.length > 0) {
             search = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === AuxVars.currentPrefix + structName);

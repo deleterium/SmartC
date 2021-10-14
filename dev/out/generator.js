@@ -230,7 +230,6 @@ function generate(Program) {
                             return { MemObj: retMemObj, instructionset: '' };
                         }
                         throw new TypeError('At line:' + objTree.Token.line + '. End object not implemented: ' + objTree.Token.type + ' ' + objTree.Token);
-                        // return { instructionset: "" };
                     }
                 case 'lookupASN':
                     if (objTree.Token.type === 'Variable') {
@@ -338,7 +337,8 @@ function generate(Program) {
                                 instructionstrain += createSimpleInstruction('Pop', retMemObj.asmName);
                             }
                             // Load registers again
-                            registerStack.reverse().forEach(OBJ => {
+                            registerStack.reverse();
+                            registerStack.forEach(OBJ => {
                                 instructionstrain += createSimpleInstruction('Pop', OBJ.Template.asmName);
                             });
                             if (isRecursive) {
@@ -678,6 +678,7 @@ function generate(Program) {
                     if (objTree.Operation.type === 'UnaryOperator') {
                         if (objTree.Operation.value === '!') { // logical NOT
                             if (logicalOp === true) {
+                                // Swapped arguments "jumpTrue, jumpFalse" because we are swapping the logic!
                                 return genCode(objTree.Center, true, !revLogic, jumpTrue, jumpFalse);
                             }
                             else {
@@ -937,7 +938,6 @@ function generate(Program) {
                                 instructionstrain += createSimpleInstruction('Label', IDEnd);
                             }
                             else {
-                                jumpTrue = IDCompST;
                                 ret = genCode(objTree, true, false, IDCompSF, IDCompST); // do it again, now with jump defined
                                 instructionstrain += ret.instructionset;
                                 TmpMemObj = auxVars.getNewRegister();
@@ -1433,7 +1433,6 @@ function generate(Program) {
                 else {
                     retInstructions += `SET @${RetObj.asmName} #${ParamMemObj.hexContent}\n`;
                 }
-                retIsNew = true;
                 return { MoldedObj: RetObj, instructionset: retInstructions, isNew: true };
             }
             if (ParamMemObj.Offset === undefined) {

@@ -45,7 +45,7 @@ function tokenize(input) {
             addLength: 0
         },
         {
-            start: /^([\s\t\n]+)/,
+            start: /^(\s+)/,
             tokenType: 'NONE',
             addLength: 0
         },

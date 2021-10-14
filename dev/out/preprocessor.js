@@ -109,7 +109,6 @@ function preprocess(sourcecode) {
                     ifActive.push({ active: false, flipped: false });
                 break;
             case 'ELSE': {
-                idx = preprocessorReplacements.findIndex(obj => obj.cname === PrepRule.parts[1]);
                 const lastIfInfo = ifActive.pop();
                 if (lastIfInfo === undefined)
                     throw new SyntaxError(`At line: ${lineNo + 1}. Unmatched '#else' directive.`);
