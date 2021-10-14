@@ -83,7 +83,7 @@ function tokenize(input) {
     const regexDoubleTokensSpecs = [
         {
             start: /^\/\*/,
-            end: /([\s\S]*?\*\/)/,
+            end: /^([\s\S]*?\*\/)/,
             tokenType: 'NONE',
             startLength: 2,
             removeTrailing: 0,
@@ -91,7 +91,7 @@ function tokenize(input) {
         },
         {
             start: /^"/,
-            end: /([\s\S]*?")/,
+            end: /^([\s\S]*?")/,
             tokenType: 'string',
             startLength: 1,
             removeTrailing: 1,
@@ -99,7 +99,7 @@ function tokenize(input) {
         },
         {
             start: /^'/,
-            end: /([\s\S]*?')/,
+            end: /^([\s\S]*?')/,
             tokenType: 'string',
             startLength: 1,
             removeTrailing: 1,

@@ -27,7 +27,7 @@ function asmHighlight(asmSourceCode) {
         { opCode: 0xf2, size: 0, regex: /^(\s*\^comment)(\s+.*)/ },
         { opCode: 0xf3, size: 0, regex: /^(\s*\^declare)(\s+\w+\s*)$/ },
         { opCode: 0xf4, size: 0, regex: /^(\s*\^const)(\s+.*)/ },
-        { opCode: 0xf5, size: 0, regex: /^(\s*\^program\s+\w+)(\s+[\s\S]+)$/ },
+        { opCode: 0xf5, size: 0, regex: /^(\s*\^program\s+\w+\b)(.*)$/ },
         { opCode: 0x01, size: 13, regex: /^(\s*SET\s+)(@\w+\s+)(#[\da-f]{16}\b\s*)$/ },
         { opCode: 0x02, size: 9, regex: /^(\s*SET\s+)(@\w+\s+)(\$\w+\s*)$/ },
         { opCode: 0x03, size: 5, regex: /^(\s*CLR\s+)(@\w+\s*)$/ },

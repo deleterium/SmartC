@@ -177,7 +177,15 @@ function bytecode(assemblySourceCode) {
         // second pass, solve branches offsets
         do {
             AsmObj.labels = [];
-            AsmObj.code.reduce(fillAddress, 0);
+            let currAddr = 0;
+            // Rebuild AsmObj.labels
+            AsmObj.code.forEach(element => {
+                element.address = currAddr;
+                if (element.station.length !== 0) {
+                    AsmObj.labels.push({ label: element.station, address: currAddr });
+                }
+                currAddr += element.size;
+            });
         } while (!AsmObj.code.every(checkBranches));
         // third pass, push jump an branches.
         AsmObj.code.forEach(fillJumpsAndBranches);
@@ -289,19 +297,6 @@ function bytecode(assemblySourceCode) {
             }
         }
         AsmObj.code.push(CodeObj);
-    }
-    /**
-     * Update address of current intructions. To use with Array.reduce
-     * @param currAddr Current address (offset from code start)
-     * @param currItem Current instruction to update address
-     * @returns Address of next code
-     */
-    function fillAddress(currAddr, currItem) {
-        currItem.address = currAddr;
-        if (currItem.station.length !== 0) {
-            AsmObj.labels.push({ label: currItem.station, address: currAddr });
-        }
-        return currAddr + currItem.size;
     }
     /**
      * Check if branches offsets are in range. If not, update AsmObj
