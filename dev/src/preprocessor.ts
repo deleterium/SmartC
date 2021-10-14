@@ -13,8 +13,9 @@ function preprocess (sourcecode: string) {
         regex: RegExp
         type: 'DEFINE_NULL' | 'DEFINE_VAL' | 'UNDEF' | 'IFDEF' | 'IFNDEF' | 'ELSE' | 'ENDIF'
     } [] = [
+        // Regex order is important!
         { regex: /^\s*#\s*define\s+(\w+)\s*$/, type: 'DEFINE_NULL' },
-        { regex: /^\s*#\s*define\s+(\w+)\s+(.*)\s*$/, type: 'DEFINE_VAL' },
+        { regex: /^\s*#\s*define\s+(\w+\b)(.+)$/, type: 'DEFINE_VAL' },
         { regex: /^\s*#\s*undef\s+(\w+)\s*$/, type: 'UNDEF' },
         { regex: /^\s*#\s*ifdef\s+(\w+)\s*$/, type: 'IFDEF' },
         { regex: /^\s*#\s*ifndef\s+(\w+)\s*$/, type: 'IFNDEF' },
