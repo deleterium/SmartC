@@ -494,7 +494,6 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                     const id = `__loop${codetrain[AuxVars.currentToken].line}`
                     const line = codetrain[AuxVars.currentToken].line
 
-                    // codetrain[AuxVars.currentToken].params.push();
                     const savePosition = AuxVars.currentToken
                     AuxVars.currentToken = 0
                     const threeSentences = code2sentenceS(codetrain[savePosition].params, true)
@@ -646,7 +645,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
         })
     }
 
-    function getArraySize (tkn: TOKEN[] = [], line: number) {
+    function getArraySize (tkn: TOKEN[] = [], line: number = -1) {
         if (tkn.length !== 1 || tkn[0].type !== 'Constant') {
             throw new TypeError('At line: ' + line + '. Wrong array declaration. Only constant size declarations allowed.')
         }
@@ -830,6 +829,9 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                             }
 
                             if (dimensions.length > 0) { // is array of structs
+                                if (phraseCode[0].extValue === undefined) {
+                                    throw new TypeError("Could not find type definition for an undefined 'struct'.")
+                                }
                                 MemTemplate.typeDefinition = MemTemplate.asmName
                                 MemTemplate.asmName = AuxVars.currentPrefix + MemTemplate.name
                                 MemTemplate.arrItem = {
@@ -877,6 +879,9 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                                 if (ispointer) {
                                     ret = ret.concat(MemTemplate)
                                 } else {
+                                    if (phraseCode[0].extValue === undefined) {
+                                        throw new TypeError("Could not find type definition for an undefined 'struct'.")
+                                    }
                                     ret = ret.concat(assignStructVariable(phraseCode[0].extValue, phraseCode[idx].value, ispointer))
                                 }
                             }
@@ -1021,7 +1026,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
         return ret
     }
 
-    function assignStructVariable (structName: string = '', varName: string, ispointer: boolean) {
+    function assignStructVariable (structName: string, varName: string, ispointer: boolean) {
         let search = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === structName) as (STRUCT_TYPE_DEFINITION | undefined)
         if (search === undefined && AuxVars.currentPrefix.length > 0) {
             search = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === AuxVars.currentPrefix + structName) as (STRUCT_TYPE_DEFINITION | undefined)

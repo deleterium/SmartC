@@ -214,23 +214,17 @@ const utils = {
      */
     miniOptimizeJumps (asmCode: string) {
         let tmpCodeLines = asmCode.split('\n')
-        let jumpToLabels: string[], labels: string[]
         let optimizedLines: number
 
         do {
-            jumpToLabels = []
-            labels = []
+            const jumpToLabels: string[] = []
 
             optimizedLines = tmpCodeLines.length
             // Collect information
             tmpCodeLines.forEach(value => {
                 const jmp = /^.+\s:(\w+)$/.exec(value)
-                const lbl = /^(\w+):$/.exec(value)
                 if (jmp !== null) {
                     jumpToLabels.push(jmp[1])
-                }
-                if (lbl !== null) {
-                    labels.push(lbl[1])
                 }
             })
 
@@ -266,8 +260,7 @@ const utils = {
             tmpCodeLines = tmpCodeLines.filter((value, index, array) => {
                 const jmpto = /^.+\s:(\w+)$/.exec(value)
                 if (jmpto !== null) {
-                    const i = index + 1
-                    const lbl = /^(\w+):$/.exec(array[i])
+                    const lbl = /^(\w+):$/.exec(array[index + 1])
                     if (lbl === null) {
                         return true
                     }

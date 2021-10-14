@@ -154,8 +154,8 @@ function syntaxProcess (Program: CONTRACT) {
                                 Center: tokenArray[currentIdx + 1]
                             })
                         }
-                        currentIdx++
-                    } else {
+                    } else if (tokenArray[currentIdx].type !== 'Variable') {
+                        // Variable type is the modifier allowed. Any other thing is error.
                         throw new TypeError(`At line: ${tokenArray[currentIdx].line}. Invalid type of variable modifier: '${tokenArray[currentIdx].type}'.`)
                     }
                 }

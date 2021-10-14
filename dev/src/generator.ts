@@ -292,7 +292,6 @@ function generate (Program: CONTRACT) {
                         return { MemObj: retMemObj, instructionset: '' }
                     }
                     throw new TypeError('At line:' + objTree.Token.line + '. End object not implemented: ' + objTree.Token.type + ' ' + objTree.Token)
-                    // return { instructionset: "" };
                 }
 
             case 'lookupASN':
@@ -410,7 +409,8 @@ function generate (Program: CONTRACT) {
                         }
 
                         // Load registers again
-                        registerStack.reverse().forEach(OBJ => {
+                        registerStack.reverse()
+                        registerStack.forEach(OBJ => {
                             instructionstrain += createSimpleInstruction('Pop', OBJ.Template.asmName)
                         })
 
@@ -739,6 +739,7 @@ function generate (Program: CONTRACT) {
                 if (objTree.Operation.type === 'UnaryOperator') {
                     if (objTree.Operation.value === '!') { // logical NOT
                         if (logicalOp === true) {
+                            // Swapped arguments "jumpTrue, jumpFalse" because we are swapping the logic!
                             return genCode(objTree.Center, true, !revLogic, jumpTrue, jumpFalse)
                         } else {
                             const rnd = generateUtils.getNewJumpID(objTree.Operation.line)
@@ -1029,7 +1030,6 @@ function generate (Program: CONTRACT) {
                             instructionstrain += createInstruction(utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(1))
                             instructionstrain += createSimpleInstruction('Label', IDEnd)
                         } else {
-                            jumpTrue = IDCompST
                             ret = genCode(objTree, true, false, IDCompSF, IDCompST) // do it again, now with jump defined
                             instructionstrain += ret.instructionset
                             TmpMemObj = auxVars.getNewRegister()
@@ -1550,7 +1550,6 @@ function generate (Program: CONTRACT) {
                 } else {
                     retInstructions += `SET @${RetObj.asmName} #${ParamMemObj.hexContent}\n`
                 }
-                retIsNew = true
                 return { MoldedObj: RetObj, instructionset: retInstructions, isNew: true }
             }
 

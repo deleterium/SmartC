@@ -2,13 +2,12 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-/*
-    keywords_forbidden
-        "auto", "double", "float", "register", "volatile"
-    keywords_not_implemented
-        "case", "char", "default", "enum", "extern",
-        "int", "short", "sizeof", "signed", "static",
-        "switch", "typedef", "union", "unsigned"
+/*  Keywords forbidden:
+        auto, double, float, register, volatile
+    Keywords not implemented:
+        case, char, default, enum, extern,
+        int, short, sizeof, signed, static,
+        switch, typedef, union, unsigned
 */
 interface PRE_TOKEN {
     line: number
@@ -62,7 +61,7 @@ function tokenize (input: string): PRE_TOKEN[] {
             addLength: 0
         },
         { // spaces, tabs, newlines
-            start: /^([\s\t\n]+)/,
+            start: /^(\s+)/,
             tokenType: 'NONE',
             addLength: 0
         },
