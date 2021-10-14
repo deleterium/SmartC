@@ -101,7 +101,7 @@ function tokenize (input: string): PRE_TOKEN[] {
     const regexDoubleTokensSpecs = [
         { // multi line comments
             start: /^\/\*/,
-            end: /([\s\S]*?\*\/)/,
+            end: /^([\s\S]*?\*\/)/,
             tokenType: 'NONE',
             startLength: 2,
             removeTrailing: 0,
@@ -109,7 +109,7 @@ function tokenize (input: string): PRE_TOKEN[] {
         },
         { // strings surrounded by double quotes
             start: /^"/,
-            end: /([\s\S]*?")/,
+            end: /^([\s\S]*?")/,
             tokenType: 'string',
             startLength: 1,
             removeTrailing: 1,
@@ -117,7 +117,7 @@ function tokenize (input: string): PRE_TOKEN[] {
         },
         { // strings surrounded by single quotes
             start: /^'/,
-            end: /([\s\S]*?')/,
+            end: /^([\s\S]*?')/,
             tokenType: 'string',
             startLength: 1,
             removeTrailing: 1,
