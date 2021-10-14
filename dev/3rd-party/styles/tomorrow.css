@@ -52,12 +52,9 @@ code.hljs {
   color: #d6d6d6;
 }
 
-
 /* purposely do not highlight these things */
-.hljs-formula,
-.hljs-params,
-.hljs-property
-{}
+/* comment just to remeber they exist and can be used:
+.hljs-formula, .hljs-params, .hljs-property */
 
 /* base03 - #8e908c -  Comments, Invisibles, Line Highlighting */
 .hljs-comment {

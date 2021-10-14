@@ -283,11 +283,10 @@ function bytecode (assemblySourceCode: string): BYTECODE_RETURN_OBJECT {
 
         // first pass, fill address, opcodes, apicodes, constants
         line.forEach((codeLine, idx) => {
-            // loop thru all regex expressions
-            for (let j = 0; j < opCodeTable.length; j++) {
-                const parts = opCodeTable[j].regex.exec(codeLine)
+            for (const currOpCodeTable of opCodeTable) {
+                const parts = currOpCodeTable.regex.exec(codeLine)
                 if (parts !== null) {
-                    process(parts, opCodeTable[j])
+                    process(parts, currOpCodeTable)
                     return
                 }
             }
@@ -424,7 +423,6 @@ function bytecode (assemblySourceCode: string): BYTECODE_RETURN_OBJECT {
                     throw new Error(`bytecode() error #3. API function not found. Instruction: "${CodeObj.source}"`)
                 }
                 CodeObj.instructionValues.push({ type: 'F', value: BigInt(search.apiCode) })
-                continue
             }
         }
         AsmObj.code.push(CodeObj)

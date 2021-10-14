@@ -41,11 +41,11 @@ function hashMachineCode (hexCode: string): string {
         const bi = wordArr.map(x => signed2unsigned(x))
         const retArr: number[] = []
         let val: number
-        for (let i = 0; i < bi.length; i++) {
-            val = (bi[i] >> 24) & 0xff
-            val |= ((bi[i] >> 16) & 0xff) << 8
-            val |= ((bi[i] >> 8) & 0xff) << 16
-            val |= (bi[i] & 0xff) << 24
+        for (const currBi of bi) {
+            val = (currBi >> 24) & 0xff
+            val |= ((currBi >> 16) & 0xff) << 8
+            val |= ((currBi >> 8) & 0xff) << 16
+            val |= (currBi & 0xff) << 24
             retArr.push(unsigned2signed(val))
         }
         return retArr

@@ -164,7 +164,6 @@ interface STRUCT_TYPE_DEFINITION {
 interface ARRAY_TYPE_DEFINITION {
     type: 'array'
     name: string
-    // TODO is temporary?
     arrayDimensions: number[]
     arrayMultiplierDim: number[]
     MemoryTemplate: MEMORY_SLOT
@@ -321,7 +320,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
             if (fnSentences !== undefined && fnSentences.length > 0) {
                 createMemoryTable(fnSentences)
             }
-        };
+        }
 
         if (Program.Config.APIFunctions) {
             Program.Global.APIFunctions = createAPItable()
@@ -1144,7 +1143,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                 return
             }
             if (Token.property === 'userStackPages') {
-                const parts = /^[0-9]\s*$|^10\s*$/.exec(Token.value)
+                const parts = /^\d\s*$|^10\s*$/.exec(Token.value)
                 if (parts === null) {
                     throw new TypeError(`At line: ${Token.line}. Program user stack pages must be a number between 0 and 10, included.`)
                 }
@@ -1152,7 +1151,7 @@ function shape (tokenAST: TOKEN[]): CONTRACT {
                 return
             }
             if (Token.property === 'codeStackPages') {
-                const parts = /^[0-9]\s*$|^10\s*$/.exec(Token.value)
+                const parts = /^\d\s*$|^10\s*$/.exec(Token.value)
                 if (parts === null) {
                     throw new TypeError(`At line: ${Token.line}. Program code stack pages must be a number between 0 and 10, included.`)
                 }

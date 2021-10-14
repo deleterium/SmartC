@@ -37,11 +37,11 @@ function preprocess (sourcecode: string) {
     let currentIfLevel = 0
 
     function getPrepRule (codeline: string) {
-        for (let i = 0; i < preprocessorCodes.length; i++) {
-            const parts = preprocessorCodes[i].regex.exec(codeline)
+        for (const currCode of preprocessorCodes) {
+            const parts = currCode.regex.exec(codeline)
             if (parts !== null) {
                 return {
-                    Code: preprocessorCodes[i],
+                    Code: currCode,
                     parts: parts
                 }
             }

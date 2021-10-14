@@ -468,10 +468,6 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
     // Input: javascript string (utf-16)
     // Output: string representing same string in hexadecimal utf-8
     function str2long (inStr: string) {
-        if (!(typeof inStr === 'string')) {
-            return ''
-        }
-
         const byarr = []
         let ret = ''
         let c, c1, i, j
@@ -533,7 +529,7 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
             return gexp[idx]
         }
 
-        function is_codeword_valid (codeword: number[]) {
+        function is_codeword_valid (codeword_to_test: number[]) {
             let sum = 0
             let i: number, j: number, t: number, pos: number
 
@@ -547,7 +543,7 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
                     if (j > 26) {
                         pos -= 14
                     }
-                    t ^= gmult(codeword[pos], gexp[(i * j) % 31])
+                    t ^= gmult(codeword_to_test[pos], gexp[(i * j) % 31])
                 }
                 sum |= t
             }
