@@ -17,7 +17,7 @@ function bytecode(assemblySourceCode) {
         { opCode: 0xf2, name: 'comment', size: 0, argsType: [], regex: /^\s*\^comment\s+(.*)/ },
         { opCode: 0xf3, name: 'declare', size: 0, argsType: [], regex: /^\s*\^declare\s+(\w+)\s*$/ },
         { opCode: 0xf4, name: 'const', size: 0, argsType: [], regex: /^\s*\^const\s+SET\s+@(\w+)\s+#([\da-f]{16})\b\s*$/ },
-        { opCode: 0xf5, name: 'program', size: 0, argsType: [], regex: /^\s*\^program\s+(\w+)\s+([\s\S]+)$/ },
+        { opCode: 0xf5, name: 'program', size: 0, argsType: [], regex: /^\s*\^program\s+(\w+\b)(.*)$/ },
         { opCode: 0x01, name: 'SET_VAL', size: 13, argsType: ['I', 'L'], regex: /^\s*SET\s+@(\w+)\s+#([\da-f]{16})\b\s*$/ },
         { opCode: 0x02, name: 'SET_DAT', size: 9, argsType: ['I', 'I'], regex: /^\s*SET\s+@(\w+)\s+\$(\w+)\s*$/ },
         { opCode: 0x03, name: 'CLR_DAT', size: 5, argsType: ['I'], regex: /^\s*CLR\s+@(\w+)\s*$/ },
@@ -164,11 +164,10 @@ function bytecode(assemblySourceCode) {
         const line = assemblySourceCode.split('\n');
         // first pass, fill address, opcodes, apicodes, constants
         line.forEach((codeLine, idx) => {
-            // loop thru all regex expressions
-            for (let j = 0; j < opCodeTable.length; j++) {
-                const parts = opCodeTable[j].regex.exec(codeLine);
+            for (const currOpCodeTable of opCodeTable) {
+                const parts = currOpCodeTable.regex.exec(codeLine);
                 if (parts !== null) {
-                    process(parts, opCodeTable[j]);
+                    process(parts, currOpCodeTable);
                     return;
                 }
             }
@@ -228,19 +227,19 @@ function bytecode(assemblySourceCode) {
         // '^program type information'
         if (instruction.opCode === 0xF5) {
             if (parts[1] === 'name') {
-                AsmObj.PName = parts[2];
+                AsmObj.PName = parts[2].trim();
             }
             if (parts[1] === 'description') {
-                AsmObj.PDescription = parts[2];
+                AsmObj.PDescription = parts[2].trim();
             }
             if (parts[1] === 'activationAmount') {
-                AsmObj.PActivationAmount = parts[2];
+                AsmObj.PActivationAmount = parts[2].trim();
             }
             if (parts[1] === 'userStackPages') {
-                AsmObj.PUserStackPages = Number(parts[2]);
+                AsmObj.PUserStackPages = Number(parts[2].trim());
             }
             if (parts[1] === 'codeStackPages') {
-                AsmObj.PCodeStackPages = Number(parts[2]);
+                AsmObj.PCodeStackPages = Number(parts[2].trim());
             }
             return;
         }
@@ -293,7 +292,6 @@ function bytecode(assemblySourceCode) {
                     throw new Error(`bytecode() error #3. API function not found. Instruction: "${CodeObj.source}"`);
                 }
                 CodeObj.instructionValues.push({ type: 'F', value: BigInt(search.apiCode) });
-                continue;
             }
         }
         AsmObj.code.push(CodeObj);

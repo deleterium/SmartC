@@ -847,13 +847,11 @@ function generate(Program) {
                     if (objTree.Operation.type === 'Keyword') {
                         if (objTree.Operation.value === 'long' || objTree.Operation.value === 'void') {
                             auxVars.declaring = objTree.Operation.value;
-                            const ret = genCode(objTree.Center, false, revLogic, jumpFalse, jumpTrue);
-                            return ret;
+                            return genCode(objTree.Center, false, revLogic, jumpFalse, jumpTrue);
                         }
                         if (objTree.Operation.value === 'const') {
                             auxVars.isConstSentence = true;
-                            const ret = genCode(objTree.Center, false, revLogic, jumpFalse, jumpTrue);
-                            return ret;
+                            return genCode(objTree.Center, false, revLogic, jumpFalse, jumpTrue);
                         }
                         if (objTree.Operation.value === 'return') {
                             if (generateUtils.currFunctionIndex === -1) {

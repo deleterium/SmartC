@@ -239,7 +239,7 @@ const utils = {
             optimizedLines = tmpCodeLines.length;
             // Collect information
             tmpCodeLines.forEach(value => {
-                const jmp = /.+\s:(\w+)$/.exec(value);
+                const jmp = /^.+\s:(\w+)$/.exec(value);
                 const lbl = /^(\w+):$/.exec(value);
                 if (jmp !== null) {
                     jumpToLabels.push(jmp[1]);
@@ -280,7 +280,7 @@ const utils = {
             });
             // remove meaningless jumps
             tmpCodeLines = tmpCodeLines.filter((value, index, array) => {
-                const jmpto = /.+\s:(\w+)$/.exec(value);
+                const jmpto = /^.+\s:(\w+)$/.exec(value);
                 if (jmpto !== null) {
                     const i = index + 1;
                     const lbl = /^(\w+):$/.exec(array[i]);

@@ -10,8 +10,9 @@
 // eslint-disable-next-line no-unused-vars
 function preprocess(sourcecode) {
     const preprocessorCodes = [
+        // Regex order is important!
         { regex: /^\s*#\s*define\s+(\w+)\s*$/, type: 'DEFINE_NULL' },
-        { regex: /^\s*#\s*define\s+(\w+)\s+(.*)\s*$/, type: 'DEFINE_VAL' },
+        { regex: /^\s*#\s*define\s+(\w+\b)(.+)$/, type: 'DEFINE_VAL' },
         { regex: /^\s*#\s*undef\s+(\w+)\s*$/, type: 'UNDEF' },
         { regex: /^\s*#\s*ifdef\s+(\w+)\s*$/, type: 'IFDEF' },
         { regex: /^\s*#\s*ifndef\s+(\w+)\s*$/, type: 'IFNDEF' },
@@ -27,11 +28,11 @@ function preprocess(sourcecode) {
     const ifActive = [{ active: true, flipped: false }];
     let currentIfLevel = 0;
     function getPrepRule(codeline) {
-        for (let i = 0; i < preprocessorCodes.length; i++) {
-            const parts = preprocessorCodes[i].regex.exec(codeline);
+        for (const currCode of preprocessorCodes) {
+            const parts = currCode.regex.exec(codeline);
             if (parts !== null) {
                 return {
-                    Code: preprocessorCodes[i],
+                    Code: currCode,
                     parts: parts
                 };
             }

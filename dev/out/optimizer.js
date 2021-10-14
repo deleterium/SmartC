@@ -23,7 +23,7 @@ function optimize(assemblySourceCode, maxConstVars) {
         optimizedLines = 0;
         // Collect jumps information
         codeLines.forEach(function (value) {
-            jmpto = /.+\s:(\w+)$/.exec(value); // match JMP JSR ERR and all branches
+            jmpto = /^.+\s:(\w+)$/.exec(value); // match JMP JSR ERR and all branches
             if (jmpto !== null) {
                 jumpToLabels.push(jmpto[1]);
             }
@@ -294,7 +294,7 @@ function optimize(assemblySourceCode, maxConstVars) {
                     if (lbl !== null) {
                         break;
                     }
-                    jmpto = /.+\s:(\w+)$/.exec(array[i]); // match JMP JSR ERR and all branches
+                    jmpto = /^.+\s:(\w+)$/.exec(array[i]); // match JMP JSR ERR and all branches
                     if (jmpto !== null) {
                         break;
                     }
@@ -395,7 +395,7 @@ function optimize(assemblySourceCode, maxConstVars) {
                     if (lbl !== null) {
                         break;
                     }
-                    jmpto = /.+\s:(\w+)$/.exec(array[i]); // match JMP JSR ERR and all branches
+                    jmpto = /^.+\s:(\w+)$/.exec(array[i]); // match JMP JSR ERR and all branches
                     if (jmpto !== null) {
                         break;
                     }

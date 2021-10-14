@@ -148,13 +148,19 @@ function tokenize(input) {
                     return true; // breaks find function
                 }
                 if (ruleN.tokenType === 'ASM') {
-                    const asmParts = /^(asm[^\w]*\{([\s\S]*?)\})/.exec(remainingText);
+                    const asmParts = /^(asm[^\w]*\{)([\s\S]*)/.exec(remainingText);
                     if (asmParts === null) {
                         throw new TypeError('At line:' + currentLine + ' Error parsing `asm { ... }` keyword');
                     }
-                    preTokens.push({ type: 'keyword', value: 'asm', line: currentLine, extValue: asmParts[2] });
-                    currentLine += (asmParts[1].match(/\n/g) || '').length;
-                    current += asmParts[1].length;
+                    const endLocation = asmParts[2].indexOf('}');
+                    if (endLocation === -1) {
+                        throw new TypeError(`At line: ${currentLine}. Ending '}' not found for 'asm { ... }' keyword.`);
+                    }
+                    const asmText = asmParts[2].slice(0, endLocation);
+                    const asmCode = asmParts[1] + asmText + '}';
+                    preTokens.push({ type: 'keyword', value: 'asm', line: currentLine, extValue: asmText });
+                    currentLine += (asmCode.match(/\n/g) || '').length;
+                    current += asmCode.length;
                     return true; // breaks find function
                 }
                 if (ruleN.tokenType === 'STRUCT') {
