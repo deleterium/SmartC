@@ -124,7 +124,7 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
             action (tokenID): TOKEN {
                 let val: string
                 const ptkn = preTokens[tokenID]
-                const parts = /^(BURST-|S-|TS-)([2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{5})/.exec(ptkn.value)
+                const parts = /^(BURST-|S-|TS-)([0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{5})/.exec(ptkn.value)
                 if (parts !== null) {
                     val = rsDecode(parts[2])
                 } else {

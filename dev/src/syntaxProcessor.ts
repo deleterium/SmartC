@@ -250,8 +250,11 @@ function syntaxProcess (Program: CONTRACT) {
                 Left: createSyntacticTree(tokenArray.slice(1)),
                 Operation: tokenArray[0]
             }
-        } else if (tokenArray[0].type === 'Variable' && tokenArray[tokenArray.length - 1].type === 'SetUnaryOperator') {
+        } else if (tokenArray.length > 1 && tokenArray[tokenArray.length - 1].type === 'SetUnaryOperator') {
             // Process exceptions for post increment and post decrement (left-to-right associativity)
+            if (tokenArray[0].type !== 'Variable') {
+                throw new SyntaxError(`At line: ${tokenArray[0].line}. 'SetUnaryOperator' '${tokenArray[tokenArray.length - 1].value}' expecting a variable, got a '${tokenArray[0].type}'.`)
+            }
             for (let j = 1; j < tokenArray.length - 1; j++) {
                 if (tokenArray[j].type === 'Variable' || tokenArray[j].type === 'Member') {
                     continue

@@ -276,7 +276,8 @@ function generate (Program: CONTRACT) {
                                        Program.functions[generateUtils.currFunctionIndex].name + "' must return a '" +
                                        Program.functions[generateUtils.currFunctionIndex].declaration + "' value.")
                             }
-                            if (Program.functions[generateUtils.currFunctionIndex].name === 'main') {
+                            if (Program.functions[generateUtils.currFunctionIndex].name === 'main' ||
+                                Program.functions[generateUtils.currFunctionIndex].name === 'catch') {
                                 return { MemObj: utils.createVoidMemObj(), instructionset: createSimpleInstruction('exit') }
                             }
                             return { MemObj: utils.createVoidMemObj(), instructionset: createInstruction(objTree.Token) }
@@ -422,7 +423,7 @@ function generate (Program: CONTRACT) {
                         }
                     }
                 } else {
-                    throw new TypeError(`At line: ${objTree.Token.line}. Function returning void value can not have modifiers.`)
+                    throw new TypeError(`At line: ${objTree.Token.line}. Modifiers on '${objTree.Token.type}' not implemmented. BugReport please.`)
                 }
 
                 if (objTree.modifiers.length !== 0 && retMemObj.type === 'void') {
@@ -467,12 +468,12 @@ function generate (Program: CONTRACT) {
                             typeName = retMemObj.typeDefinition
                         }
                         if (typeName === undefined) {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Struct type definition for member '${memberName}' not found.`)
+                            throw new TypeError(`At line: ${objTree.Token.line}. Variable '${retMemObj.name}' has no struct type definition`)
                         }
 
                         const TypeD = Program.typesDefinitions.find(obj => obj.type === 'struct' && obj.name === typeName) as STRUCT_TYPE_DEFINITION | undefined
                         if (TypeD === undefined) {
-                            throw new TypeError(`At line: ${objTree.Token.line}. Type definition '${typeName}' not found.`)
+                            throw new TypeError(`At line: ${objTree.Token.line}. Type definition '${typeName}' not found. BugReport please.`)
                         }
                         let memberIdx = -1
                         for (let i = 0; i < TypeD.structAccumulatedSize.length; i++) {
@@ -500,7 +501,7 @@ function generate (Program: CONTRACT) {
 
                         if (CurrentModifier.type === 'MemberByRef') {
                             if (utils.getDeclarationFromMemory(retMemObj) !== 'struct_ptr') {
-                                throw new TypeError(`At line: ${objTree.Token.line}. Variable '${retMemObj.name}' not defined as struct pointer.`)
+                                throw new TypeError(`At line: ${objTree.Token.line}. Variable '${retMemObj.name}' not defined as struct pointer. Try to use '.' instead.`)
                             }
 
                             if (retMemObj.Offset === undefined) {
@@ -767,9 +768,6 @@ function generate (Program: CONTRACT) {
                     }
 
                     if (objTree.Operation.value === '+') { // unary plus -> do nothing
-                        if (auxVars.isLeftSideOfAssignment === true) {
-                            throw new TypeError('At line: ' + objTree.Operation.line + ". Can not have unary operator '+' on left side of assignment.")
-                        }
                         return genCode(objTree.Center, logicalOp, revLogic, jumpFalse, jumpTrue)
                     }
 
@@ -876,16 +874,18 @@ function generate (Program: CONTRACT) {
                         instructionstrain += CGenObj.instructionset
                         let TmpMemObj: MEMORY_SLOT
 
-                        if (CGenObj.MemObj.type === 'void') {
+                        switch (CGenObj.MemObj.type) {
+                        case 'void':
                             throw new TypeError(`At line: ${objTree.Operation.line}. Trying to get address of void value.`)
-                        } else if (CGenObj.MemObj.type === 'register') {
+                        case 'register':
                             if (Program.Config.warningToError) {
                                 throw new TypeError(`WARNING: At line: ${objTree.Operation.line}. Returning address of a register.`)
                             }
                             TmpMemObj = utils.createConstantMemObj(CGenObj.MemObj.address)
-                        } else if (CGenObj.MemObj.type === 'constant') {
+                            break
+                        case 'constant':
                             throw new TypeError(`At line: ${objTree.Operation.line}. Trying to get address of a constant value.`)
-                        } else if (CGenObj.MemObj.type === 'array') {
+                        case 'array':
                             if (CGenObj.MemObj.Offset !== undefined) {
                                 if (CGenObj.MemObj.Offset.type === 'constant') {
                                     TmpMemObj = utils.createConstantMemObj(utils.addHexContents(CGenObj.MemObj.hexContent, CGenObj.MemObj.Offset.value))
@@ -901,14 +901,26 @@ function generate (Program: CONTRACT) {
                             } else {
                                 TmpMemObj = utils.createConstantMemObj(CGenObj.MemObj.address)
                             }
-                        } else if (CGenObj.MemObj.type === 'struct') {
+                            break
+                        case 'struct':
                             TmpMemObj = utils.createConstantMemObj(CGenObj.MemObj.hexContent)
-                            TmpMemObj.declaration = 'struct'
-                        } else if (CGenObj.MemObj.type === 'long' /* || CGenObj.MemObj.type === 'long_ptr' || CGenObj.MemObj.type === 'struct_ptr' */) {
+                            TmpMemObj.declaration = 'struct_ptr'
+                            break
+                        case 'structRef':
+                            if (CGenObj.MemObj.Offset !== undefined) {
+                                throw new TypeError(`At line: ${objTree.Operation.line}. Get address of 'structRef' with offset not implemented. `)
+                            }
+                            TmpMemObj = utils.createConstantMemObj(CGenObj.MemObj.address)
+                            TmpMemObj.declaration = 'struct_ptr'
+                            break
+                        case 'long':
                             TmpMemObj = utils.createConstantMemObj(CGenObj.MemObj.address)
                             TmpMemObj.declaration = 'long'
-                        } else {
+                            break
+                        case 'label':
                             throw new TypeError(`At line: ${objTree.Operation.line}. Trying to get address of a Label`)
+                        default:
+                            throw new TypeError(`At line: ${objTree.Operation.line}. Get address of '${CGenObj.MemObj.type}' not implemented.`)
                         }
 
                         if (TmpMemObj.declaration.includes('_ptr') === false) {
@@ -945,8 +957,9 @@ function generate (Program: CONTRACT) {
                                    currentFunction.name + "' must return a '" +
                                    currentFunction.declaration + "' value.")
                         }
-                        if (currentFunction.name === 'main') {
-                            throw new TypeError('At line: ' + objTree.Operation.line + '. main() Function must return void')
+                        if (currentFunction.name === 'main' ||
+                            currentFunction.name === 'catch') {
+                            throw new TypeError(`At line: ${objTree.Operation.line}. Special function ${currentFunction.name} must return void value.`)
                         }
                         const RGenObj = genCode(objTree.Center, false, revLogic, jumpFalse, jumpTrue)
                         instructionstrain += RGenObj.instructionset
@@ -967,7 +980,20 @@ function generate (Program: CONTRACT) {
                         return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain }
                     }
 
-                    if (objTree.Operation.value === 'goto' || objTree.Operation.value === 'sleep') {
+                    if (objTree.Operation.value === 'goto') {
+                        const RGenObj = genCode(objTree.Center, false, revLogic, jumpFalse, jumpTrue)
+                        instructionstrain += RGenObj.instructionset
+                        instructionstrain += auxVars.getPostOperations()
+
+                        if (RGenObj.MemObj.type !== 'label') {
+                            throw new TypeError(`At line: ${objTree.Operation.line}. Argument for keyword 'goto' is not a label.`)
+                        }
+                        instructionstrain += createInstruction(objTree.Operation, RGenObj.MemObj)
+
+                        auxVars.freeRegister(RGenObj.MemObj.address)
+                        return { MemObj: utils.createVoidMemObj(), instructionset: instructionstrain }
+                    }
+                    if (objTree.Operation.value === 'sleep') {
                         const RGenObj = genCode(objTree.Center, false, revLogic, jumpFalse, jumpTrue)
                         instructionstrain += RGenObj.instructionset
                         instructionstrain += auxVars.getPostOperations()
@@ -980,6 +1006,7 @@ function generate (Program: CONTRACT) {
                     if (objTree.Operation.value === 'struct') { // nothing to do here
                         return { MemObj: utils.createVoidMemObj(), instructionset: '' }
                     }
+                    throw new TypeError(`At line: ${objTree.Operation.line}. Invalid use of keyword '${objTree.Operation.value}'`)
                 }
 
                 break
@@ -1111,7 +1138,7 @@ function generate (Program: CONTRACT) {
 
                 if (objTree.Operation.type === 'Delimiter') {
                     if (jumpTarget !== undefined) {
-                        throw new TypeError('At line: ' + objTree.Operation.line + '. Only one expression at a time if jumpTarget is set.')
+                        throw new TypeError(`At line: ${objTree.Operation.line}. It is not possible to evaluate multiple sentences in logical operations.`)
                     }
 
                     const LGenObj = genCode(objTree.Left, false, revLogic, jumpFalse, jumpTrue)
@@ -1136,7 +1163,7 @@ function generate (Program: CONTRACT) {
 
                     // Error handling
                     if (LGenObj.MemObj.type === 'void' || RGenObj.MemObj.type === 'void') {
-                        throw new TypeError('At line: ' + objTree.Operation.line + '. Trying to make operations with undefined variables')
+                        throw new TypeError(`At line: ${objTree.Operation.line}. Can not make operations with void values.`)
                     }
 
                     // optimization on constant codes:
@@ -1232,10 +1259,10 @@ function generate (Program: CONTRACT) {
 
                     // Error condition checks
                     if (LGenObj.MemObj.type === 'void') {
-                        throw new SyntaxError('At line: ' + objTree.Operation.line + '. Trying to assign undefined variable')
+                        throw new SyntaxError(`At line: ${objTree.Operation.line}. Trying to assign a void variable.`)
                     }
                     if (LGenObj.MemObj.address === -1) {
-                        throw new TypeError('At line: ' + objTree.Operation.line + '. Invalid left value for ' + objTree.Operation.type)
+                        throw new TypeError(`At line: ${objTree.Operation.line}. Invalid left value for ${objTree.Operation.type}.`)
                     }
                     if (LGenObj.MemObj.type === 'array' && auxVars.hasVoidArray === false) {
                         if (LGenObj.MemObj.Offset === undefined) {
