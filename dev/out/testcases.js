@@ -11,6 +11,66 @@ function runTestCases() {
         });
     }
     const tests = [
+        ['Preprocessor error tests', null, 'div'],
+        ['#ifdef debug\nlong a; a++;', true, ''],
+        ['#else\nlong a; a++;', true, ''],
+        ['#endif\nlong a; a++;', true, ''],
+        ['#ifdef debug\n#pragma maxAuxVars 1\n#else\n#pragma maxAuxVars 5\n#else\n#pragma maxAuxVars 7\n#endif\nlong a; a++;', true, ''],
+        ['Tokenizer error tests', null, 'div'],
+        ['long a;/*asdf', true, ''],
+        ['long a="asdf;', true, ''],
+        ['long a=\'asdf;', true, ''],
+        ['long a; asm PSH $A;', true, ''],
+        ['long a; asm { PSH $A;', true, ''],
+        ['long a; struct { long b; }', true, ''],
+        ['long a; ²;', true, ''],
+        ['Something very wrong', true, ''],
+        ['Parser error tests', null, 'div'],
+        ['long a; };', true, ''],
+        ['long a[ ;', true, ''],
+        ['void main ((void) { long a++; }', true, ''],
+        ['void main (void) { long a++;', true, ''],
+        ['long a = "TS-MPMZ-8CD9-HZMD-A7R1X";', true, ''],
+        ['long a = "TS-MPMZ-8CD9-HZMD-A9R2X";', true, ''],
+        ['Shaper error tests', null, 'div'],
+        ['long a, b; test2() while (a) a++; long test2(void) { b++; return b; }', true, ''],
+        ['long a, b; test2() for (;;) a++; long test2(void) { b++; return b; }', true, ''],
+        ['long a, b; goto a; a++; a: b++;', true, ''],
+        ['long a, b; else a++; a: b++;', true, ''],
+        ['long a, b; do { a++; };', true, ''],
+        ['long a, b; do { a++; } long long;', true, ''],
+        ['long a, b; do { a++; } long (a);', true, ''],
+        ['long a, b; do { a++; } while (a) b++;', true, ''],
+        ['long a, b; break; b++;', true, ''],
+        ['long a, b; continue; b++;', true, ''],
+        ['long a, b; test(); void test() { c++; }', true, ''],
+        ['long a, b; test(b, a); void test(d++) { long c; c++; }', true, ''],
+        ['long a, b; test(b, a); void test(d) { long c; c++; }', true, ''],
+        ['long a, test_b; test(a); void test(long b) { long c; c++; }', true, ''],
+        ['syntaxProcessor error tests', null, 'div'],
+        ['long a; sleep; a++;', true, ''],
+        ['long a; const ;', true, ''],
+        ['long a; goto; a++;', true, ''],
+        ['long a, b; halt 1; a++;', true, ''],
+        ['long a, b; break 1; a++;', true, ''],
+        ['long a, b; continue a; a++;', true, ''],
+        ['long a, b; 4++; a++;', true, ''],
+        ['long a, b; ++4; a++;', true, ''],
+        ['long a, b; test()++; a++;', true, ''],
+        ['Generator error tests', null, 'div'],
+        ['long a, b; for a++;', true, ''],
+        ['long a; goto a; a++;', true, ''],
+        ['long a; return;', true, ''],
+        ['long b, a = 0; test();', true, ''],
+        ['#include APIFunctions\nlong b, a = 0; test();', true, ''],
+        ['long a = test()[4]; void test(void) {}', true, ''],
+        ['struct KOMBI { long driver, collector, passenger; } car; long carro; carro.driver=0;', true, ''],
+        ['struct KOMBI { long driver, collector, passenger; } car; car.nobody=0;', true, ''],
+        ['struct KOMBI { long driver, collector, passenger; } car; car->driver=0;', true, ''],
+        ['struct KOMBI { long driver, collector, passenger; } *car; car.driver=0;', true, ''],
+        ['long a, b; if (a, b) { a++;}', true, ''],
+        ['long a, b; a = b + test(); void test(void) { a++; }', true, ''],
+        ['struct KOMBI { long driver, collector[4]; } car; long *b; car.collector=b;', true, ''],
         // void test
         ['Arithmetic tests', null, 'div'],
         ['Void test;', null, 'div'],
@@ -663,6 +723,7 @@ a=pcar->passenger[b];
 *c=pcar->passenger[b];
 d[1]=pcar->passenger[b];
 d[a]=pcar->passenger[b];`, false, '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^const SET @car_passenger #0000000000000006\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #000000000000000f\n^declare d_0\n^declare d_1\n\nSET @pcar #0000000000000003\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 #000000000000655a\nSET @($pcar + $r0) $r1\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @($pcar + $r0) $a\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $($c)\nSET @($pcar + $r0) $r1\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @($pcar + $r0) $d_1\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $($d + $a)\nSET @($pcar + $r0) $r1\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r2 #0000000000000001\nSET @r1 $($pcar + $r2)\nSET @($pcar + $r0) $r1\nSET @r0 $a\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $b\nSET @r2 #0000000000000003\nADD @r1 $r2\nSET @r2 $($pcar + $r1)\nSET @($pcar + $r0) $r2\nSET @a $b\nSET @r0 #0000000000000003\nADD @a $r0\nSET @a $($pcar + $a)\nSET @r0 $b\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $($pcar + $r0)\nSET @($c) $r1\nSET @d_1 $b\nSET @r0 #0000000000000003\nADD @d_1 $r0\nSET @d_1 $($pcar + $d_1)\nSET @r0 $b\nSET @r1 #0000000000000003\nADD @r0 $r1\nSET @r1 $($pcar + $r0)\nSET @($d + $a) $r1\nFIN\n'],
+        ['struct KOMBI { long driver, collector, passenger; } *car; void * ptr; ptr = &car;', false, '^declare r0\n^declare r1\n^declare r2\n^declare car\n^declare ptr\n\nSET @ptr #0000000000000003\nFIN\n'],
         ['Logical operations with arrays and structs', null, 'div'],
         ['long a[2], b; if (a[b]) { b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBZR $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nFIN\n'],
         ['long a[2], b; if (!(a[b])) { b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nFIN\n'],
@@ -820,6 +881,12 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`,
             '^declare r0\n^declare r1\n^declare r2\n^declare b\n^declare a\n^declare catch_a\n\nERR :__fn_catch\nCLR @a\n__loop1_continue:\n__loop1_start:\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n\n__fn_catch:\nPCS\nINC @catch_a\nFIN\n'
         ],
         [
+            // 'catch' with return statement
+            'long b, a = 0; void catch(void) { if (a) return; a++; }',
+            false,
+            '^declare r0\n^declare r1\n^declare r2\n^declare b\n^declare a\n\nERR :__fn_catch\nCLR @a\nFIN\n\n__fn_catch:\nPCS\nBZR $a :__if1_endif\n__if1_start:\nFIN\n__if1_endif:\nINC @a\nFIN\n'
+        ],
+        [
             // Optimization with const nX variables
             'const long n233 = 233; long a, b[2]; b[a]=233; b[0]=233; while (a<233) { a++; };',
             false,
@@ -959,26 +1026,6 @@ a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;
             '#ifdef debug\n#pragma maxAuxVars 1\n#else\n#pragma maxAuxVars 5\n#endif\nlong a; a++;',
             false,
             '^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare a\n\nINC @a\nFIN\n'
-        ],
-        [
-            '#ifdef debug\n#pragma maxAuxVars 1\n#else\n#pragma maxAuxVars 5\n#else\n#pragma maxAuxVars 7\n#endif\nlong a; a++;',
-            true,
-            ''
-        ],
-        [
-            '#ifdef debug\nlong a; a++;',
-            true,
-            ''
-        ],
-        [
-            '#else\nlong a; a++;',
-            true,
-            ''
-        ],
-        [
-            '#endif\nlong a; a++;',
-            true,
-            ''
         ],
         [
             '#define A1\n#define A2\n\n#ifdef A1\nlong a1;\n# ifdef A2\nlong a2;\n# endif\n#endif\n\n#ifdef A1\na1++;\n#endif\n\n#ifdef A2\na2++;\n#endif',

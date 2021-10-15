@@ -227,9 +227,6 @@ function shape(tokenAST) {
                     if (phrase.length > 1) {
                         throw new SyntaxError(`At line: ${phrase[0].line}. Statement including 'for' in wrong way. Possible missing ';'.`);
                     }
-                    if (codetrain[AuxVars.currentToken].type !== 'CodeCave') {
-                        throw new SyntaxError(`At line: ${phrase[0].line}. Expected '(' in 'for(;;){}' loop.`);
-                    }
                     phrase.pop();
                     const id = `__loop${codetrain[AuxVars.currentToken].line}`;
                     const line = codetrain[AuxVars.currentToken].line;
@@ -921,8 +918,8 @@ function shape(tokenAST) {
                 throw new TypeError(`At line: ${currentFunction.line}. Wrong arguments for function '${currentFunction.name}'.`);
             }
             const memObj = phrase2memoryObject(sentence[0]);
-            if (memObj === undefined) {
-                throw new TypeError(`At line: ${currentFunction.line}. Error in one or more arguments for function '${currentFunction.name}'.`);
+            if (memObj === undefined || memObj.length === 0) {
+                throw new TypeError(`At line: ${currentFunction.line}. Variable declaration not found on arguments for function '${currentFunction.name}'.`);
             }
             currentFunction.argsMemObj = memObj;
             Program.memory = Program.memory.concat(memObj);
@@ -935,6 +932,11 @@ function shape(tokenAST) {
             for (j = i + 1; j < Program.memory.length; j++) {
                 if (Program.memory[i].asmName === Program.memory[j].asmName) {
                     throw new TypeError(`Error: Variable '${Program.memory[i].name}' was declared more than one time.`);
+                }
+            }
+            for (j = 0; j < Program.labels.length; j++) {
+                if (Program.memory[i].asmName === Program.labels[j]) {
+                    throw new TypeError(`Error: It was found a variable and label with same name. Change variable named '${Program.memory[i].name}'`);
                 }
             }
         }

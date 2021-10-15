@@ -84,7 +84,7 @@ function parse(preTokens) {
             action(tokenID) {
                 let val;
                 const ptkn = preTokens[tokenID];
-                const parts = /^(BURST-|S-|TS-)([2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{5})/.exec(ptkn.value);
+                const parts = /^(BURST-|S-|TS-)([0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{5})/.exec(ptkn.value);
                 if (parts !== null) {
                     val = rsDecode(parts[2]);
                 }
