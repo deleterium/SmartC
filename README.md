@@ -1,5 +1,11 @@
 # SmartC
-Write C smart contracts for signum network. Compile in your browser. Written in Typescript/Javascript.
+> Write C smart contracts for signum network. Compile in your browser. Written in Typescript/Javascript.
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=deleterium_SmartC&metric=alert_status)](https://sonarcloud.io/dashboard?id=deleterium_SmartC)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=deleterium_SmartC&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=deleterium_SmartC)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=deleterium_SmartC&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=deleterium_SmartC)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=deleterium_SmartC&metric=coverage)](https://sonarcloud.io/dashboard?id=deleterium_SmartC)
+
 
 ## Objective
 To empower developers, allowing them to create complex and highly optimized smart contracts.
@@ -20,4 +26,4 @@ Find [here](https://deleterium.github.io/SmartC/CHANGELOG) major upgrades betwee
 Did you like the project? Consider be owner of one SmartC NFT keyword. The smart contract is online at S-2Z65-L478-VKD4-386YY. More information on my [personal page](https://deleterium.info/NFT/). Check also other [commemorative](https://deleterium.github.io/SmartC/commemorative/) smart contracts. My address on signum: S-DKVF-VE8K-KUXB-DELET.
 
 ## Social media
-Join **SmartC Compiler** server in Discord to stay tuned on news or make questions.
+Join [SmartC Compiler](https://discord.gg/pQHnBRYE5c) server in Discord to stay tuned for news or ask questions.
