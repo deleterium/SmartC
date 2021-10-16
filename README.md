@@ -13,5 +13,11 @@ Some information and explanation about the project for users that aren't program
 ## Documentation
 [Docs](https://deleterium.github.io/SmartC/docs/) are availabe with detailed technical information about the project. Check also [SmartC playlist on Youtube](https://www.youtube.com/playlist?list=PLyu0NNtb1eg3Gcg2JCrOle8MjtuFPb-Gi), with videos for starting, simulating and deploying a smart contract.
 
+## Changelog
+Find [here](https://deleterium.github.io/SmartC/CHANGELOG) major upgrades between releases.
+
 ## Support
-Did you like the project? Consider be owner of one SmartC NFT keyword. The smart contract is online at S-2Z65-L478-VKD4-386YY. More information [here](https://deleterium.info/NFT/). Check also other [commemorative](./commemorative/) smart contracts. My address on signum: S-DKVF-VE8K-KUXB-DELET.
+Did you like the project? Consider be owner of one SmartC NFT keyword. The smart contract is online at S-2Z65-L478-VKD4-386YY. More information on my [personal page](https://deleterium.info/NFT/). Check also other [commemorative](https://deleterium.github.io/SmartC/commemorative/) smart contracts. My address on signum: S-DKVF-VE8K-KUXB-DELET.
+
+## Social media
+Join **SmartC Compiler** server in Discord to stay tuned on news or make questions.
