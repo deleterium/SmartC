@@ -22,14 +22,14 @@ function shape(tokenAST) {
         typesDefinitions: [],
         // Default configuration for compiler
         Config: {
-            compilerVersion: 'dev',
+            compilerVersion: '0.3',
             enableRandom: false,
             enableLineLabels: false,
             globalOptimization: false,
             maxAuxVars: 3,
             maxConstVars: 0,
             reuseAssignedVar: true,
-            version: 'dev',
+            version: '',
             warningToError: true,
             APIFunctions: false,
             PName: '',
