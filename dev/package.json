@@ -24,7 +24,8 @@
   "scripts": {
     "dev": "npx tsc",
     "lint": "npx eslint ./src/*.ts ./index.js",
-    "build": "npx tsc"
+    "build": "npx tsc",
+    "docs": "rm -R ../stable/htmlDocs && npx markdown-folder-to-html ../docs && mv ../_docs ../stable/htmlDocs && ln -s ./README.html ../stable/htmlDocs/index.html"
   },
   "eslintConfig": {
     "env": {
@@ -39,6 +40,7 @@
     "eslint-plugin-import": "^2.24.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.1.0",
+    "markdown-folder-to-html": "^2.4.0",
     "typescript": "^4.3.5"
   }
 }
