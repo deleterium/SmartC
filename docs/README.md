@@ -21,7 +21,7 @@ To empower developers, allowing them to create complex and highly optimized smar
 * [Deeper into SmartC](./6-Deeper-into-SmartC.md)
 
 ### Commemorative Smart Contracts
-* Check [Commemorative](https://deleterium.github.io/SmartC/commemorative/) smart contracts source code for complex cases.
+* Check [Commemorative](./commemorative/README.md) smart contracts source code for complex cases.
 
 ## Social media
 Join [SmartC Compiler](https://discord.gg/pQHnBRYE5c) server in Discord to stay tuned for news or ask questions.

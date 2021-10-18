@@ -6,12 +6,11 @@
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=deleterium_SmartC&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=deleterium_SmartC)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=deleterium_SmartC&metric=coverage)](https://sonarcloud.io/dashboard?id=deleterium_SmartC)
 
-
 ## Objective
 To empower developers, allowing them to create complex and highly optimized smart contracts.
 
 ## Usage
-[Run on gitpages](https://deleterium.github.io/SmartC/stable/index.html) latest stable version. Optionally download project to your computer and open file `index.html` of stable folder in your browser. After compiling, information to create the Smart Contract is presented and it is possible to deploy on your own local node. For old versions: [v0.1](https://smartc.deleterium.info/v0.1/) [v0.2](https://smartc.deleterium.info/v0.2/)
+[Run on gitpages](https://deleterium.github.io/SmartC/stable/index.html) latest stable version. Optionally download project to your computer and open file `index.html` of stable folder in your browser. After compiling, information to create the Smart Contract is presented and it is possible to deploy on your own local node. All versions released are avaliable at [https://deleterium.info/SmartC/](https://deleterium.info/SmartC/)
 
 ## FAQ
 Some information and explanation about the project for users that aren't programmers can be found on [Non-Technical FAQ](https://deleterium.github.io/SmartC/docs/Non-Technical-FAQ);
