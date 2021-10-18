@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      /*! ADAPTED
+    Typeplate : Starter Kit
+    URL ........... http://typeplate.com
+    Version ....... 3.0.2
+    Github ........ https://github.com/typeplate/starter-kit
+    Authors ....... Dennis Gaebel (@gryghostvisuals) & Zachary Kain (@zakkain)
+    License ....... Creative Commmons Attribution 3.0
+    License URL ... https://github.com/typeplate/starter-kit/blob/master/license.txt
+    */
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        text-rendering: optimizeLegibility;
+        line-height: 1;
+        margin-top: 0;
+        color: #222;
+      }
+
+      blockquote + figcaption cite {
+        display: block;
+        font-size: inherit;
+        text-align: right;
+      }
+
+      body {
+        word-wrap: break-word;
+      }
+
+      pre code {
+        word-wrap: normal;
+      }
+
+      body {
+        -webkit-hyphens: auto;
+        -ms-hyphens: auto;
+        hyphens: auto;
+        color: #444;
+      }
+
+      h1 {
+        font-size: 2em;
+        /* 2*16 = 32 */
+      }
+
+      h2 {
+        font-size: 1.5em;
+        /* 1.5*16 = 24 */
+      }
+
+      h3 {
+        font-size: 1.17em;
+        /* 1.17*16 = 18.72 */
+      }
+
+      h4 {
+        font-size: 1em;
+        /* 1*16 = 16 */
+      }
+
+      h5 {
+        font-size: 0.83em;
+        /* 0.83*16 = 13.28 */
+      }
+
+      h6 {
+        font-size: 0.75em;
+        /* 0.75*16 = 12 */
+      }
+
+      h1 {
+        margin: 2.42424rem 0 1.454544rem;
+      }
+
+      h2 {
+        margin: 2.0202rem 0 1.21212rem;
+      }
+
+      h3 {
+        margin: 1.61616rem 0 1rem;
+      }
+
+      h4 {
+        margin: 1.21212rem 0 1;
+      }
+
+      h5 {
+        margin: 0.80808rem 0;
+      }
+
+      h6 {
+        margin: 0.70707rem 0;
+      }
+
+      p {
+        margin: auto auto 1.5rem;
+      }
+
+      small {
+        font-size: 65%;
+      }
+
+      input,
+      abbr,
+      acronym,
+      blockquote,
+      code,
+      kbd,
+      q,
+      samp,
+      var {
+        -webkit-hyphens: none;
+        -ms-hyphens: none;
+        hyphens: none;
+      }
+
+      pre {
+        white-space: pre;
+      }
+
+      pre code {
+        white-space: -moz-pre-wrap;
+        white-space: pre-wrap;
+      }
+
+      code {
+        white-space: pre;
+        font-family: SF Mono, Consolas, Dejavu Sans Mono, Menlo, monospace;
+      }
+
+      abbr {
+        -webkit-font-variant: small-caps;
+        -moz-font-variant: small-caps;
+        -ms-font-variant: small-caps;
+        font-variant: small-caps;
+        font-weight: 600;
+        text-transform: lowercase;
+        color: gray;
+      }
+
+      abbr[title]:hover {
+        cursor: help;
+      }
+
+      /* FROM http://purecss.io/layouts/side-menu/  adapted to remove pure classes*/
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+          "Segoe UI Symbol";
+        color: #444;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: auto;
+      }
+
+      code,
+      pre {
+        background-color: #f5f5f5;
+        color: #444;
+        border-radius: 2px;
+        text-shadow: 0px 1px 0px white;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+      }
+
+      pre code {
+        border: none;
+        box-shadow: none;
+      }
+
+      pre {
+        padding: 0.5em;
+      }
+
+      code {
+        display: inline-block;
+        padding: 0 0.5em;
+        line-height: 1.4;
+        font-size: 0.9em;
+      }
+
+      table {
+        border-spacing: 0;
+        margin-bottom: 1.5rem;
+      }
+
+      table th,
+      table td {
+        padding: 0.3em 0.7em;
+      }
+
+      table th {
+        background-color: #f4f4f4;
+        border-bottom: 2px solid #444;
+      }
+
+      table td {
+        border: 1px solid #f5f5f5;
+      }
+
+      /* Add transition to containers so they can push in and out. */
+
+      #layout,
+      #menu,
+      .menu-link {
+        -webkit-transition: all 0.2s ease-out;
+        -moz-transition: all 0.2s ease-out;
+        -ms-transition: all 0.2s ease-out;
+        -o-transition: all 0.2s ease-out;
+        transition: all 0.2s ease-out;
+      }
+
+      /* This is the parent `<div>` that contains the menu and the content area. */
+
+      #layout {
+        position: relative;
+        padding-left: 0;
+      }
+
+      #layout.active #menu {
+        left: 250px;
+        width: 250px;
+      }
+
+      #layout.active .menu-link {
+        left: 250px;
+      }
+
+      /* The content `<div>` is where all your content goes. */
+
+      .content {
+        margin: 50px auto;
+        padding: 0 2em;
+        max-width: 80ex;
+        line-height: 1.6em;
+      }
+
+      /*
+      The `#menu` `<div>` is the parent `<div>` that contains the menu that
+      appears on the left side of the page.
+      */
+
+      #menu {
+        margin-left: -250px;
+        /* "#menu" width */
+        width: 250px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 1000;
+        /* so the menu or its navicon stays above all content */
+        background: #f4f4f4;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        font-size: 0.9em;
+      }
+
+      @media print {
+        #menu,
+        .menu-link {
+          display: none !important;
+        }
+      }
+
+      a,
+      a * {
+        text-decoration: none;
+        color: #2483cc;
+      }
+
+      a:visited {
+        text-decoration: none;
+        color: #2483cc;
+      }
+
+      /* All anchors inside the menu should be styled like this. */
+
+      #menu a {
+        display: block;
+        padding: 0.5em 0.5em;
+      }
+
+      #menu a:first-letter {
+        text-transform: capitalize;
+      }
+
+      #menu ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 1em 0.5em;
+      }
+
+      #menu ul ul {
+        margin-top: 0.5em;
+        margin-left: 0.5em;
+        border-left: 4px solid rgba(255, 255, 255, 0.5);
+      }
+
+      /* Change color of the anchor links on hover/focus. */
+
+      #menu li a:hover,
+      #menu li a:focus {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      /* This styles the selected menu item `<li>`. */
+
+      #menu li a.active {
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      /* This styles a link within a selected menu item `<li>`. */
+
+      #menu li a.active {
+        color: #222;
+      }
+
+      /* This styles the menu heading. */
+
+      #menu li.heading {
+        font-size: 0.9em;
+        text-transform: uppercase;
+        color: #000;
+      }
+
+      #menu li.heading > * {
+        padding: 0.5em;
+        display: block;
+      }
+
+      #menu li.heading a {
+        color: #0c68af;
+      }
+
+      /* -- Dynamic Button For Responsive Menu -------------------------------------*/
+
+      /*
+      `.menu-link` represents the responsive menu toggle that shows/hides on
+      small screens.
+      */
+
+      .menu-link {
+        position: fixed;
+        display: block;
+        /* show this only on small screens */
+        top: 0;
+        left: 0;
+        /* "#menu width" */
+        font-size: 10px;
+        /* change this value to increase/decrease button size */
+        z-index: 10;
+        width: 2em;
+        height: auto;
+        padding: 1.6em 1.2em;
+        border-radius: 0 2px 2px 0;
+      }
+
+      .menu-link:hover {
+        background: #f4f4f4;
+      }
+
+      .menu-link span {
+        position: relative;
+        display: block;
+      }
+
+      .menu-link span,
+      .menu-link span:before,
+      .menu-link span:after {
+        background-color: #555;
+        width: 100%;
+        height: 0.2em;
+        border-radius: 1em;
+      }
+
+      .menu-link span:before,
+      .menu-link span:after {
+        position: absolute;
+        margin-top: -0.6em;
+        content: " ";
+      }
+
+      .menu-link span:after {
+        margin-top: 0.6em;
+      }
+
+      /* Hides the menu at `48em`, but modify this based on your app's needs. */
+
+      @media (min-width: 48em) {
+        .header,
+        .content {
+          padding-left: 2em;
+          padding-right: 2em;
+        }
+
+        #layout {
+          padding-left: 250px;
+          /* left col width "#menu" */
+          left: 0;
+        }
+        #menu {
+          left: 250px;
+        }
+
+        .menu-link {
+          position: fixed;
+          left: 250px;
+          display: none;
+        }
+
+        #layout.active .menu-link {
+          left: 250px;
+        }
+      }
+
+      @media (max-width: 48em) {
+        /* Only apply this when the window is small. Otherwise, the following case results in extra padding on the left:
+         * Make the window small.
+         * Tap the menu to trigger the active state.
+         * Make the window large again.
+         */
+        #layout.active {
+          position: relative;
+          left: 250px;
+        }
+      }
+
+      /* Heading anchors and permalinks */
+      h1[id],
+      h2[id],
+      h3[id],
+      h4[id],
+      h5[id],
+      h6[id] {
+        position: relative;
+      }
+      .heading-anchor-permalink {
+        /* Position the permalink to the left of the title */
+        position: absolute;
+        right: 100%;
+        /* Add some spacing as padding to not lose the hover */
+        padding-right: 0.6rem;
+        /* Make it only visible on heading hover, see below */
+        opacity: 0;
+      }
+      h1[id]:hover .heading-anchor-permalink,
+      h2[id]:hover .heading-anchor-permalink,
+      h3[id]:hover .heading-anchor-permalink,
+      h4[id]:hover .heading-anchor-permalink,
+      h5[id]:hover .heading-anchor-permalink,
+      h6[id]:hover .heading-anchor-permalink {
+        opacity: 0.5;
+      }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+  </head>
+
+  <body>
+    <div id="layout">
+      <!-- Menu toggle -->
+      <a href="#menu" id="menuLink" class="menu-link">
+        <!-- Hamburger icon -->
+        <span></span>
+      </a>
+      <nav id="menu">
+        <ul>
+<li><a class="" href="README.html">README</a></li>
+<li><a class="" href="1-Basis.html">Basis</a></li>
+<li><a class="active" href="2-API-Pseudo-Code.html">API Pseudo Code</a></li>
+<li><a class="" href="3-Learning-with-examples.html">Learning with examples</a></li>
+<li><a class="" href="4-Functions-repository.html">Functions repository</a></li>
+<li><a class="" href="5-Comprehensive-example.html">Comprehensive example</a></li>
+<li><a class="" href="6-Deeper-into-SmartC.html">Deeper into SmartC</a></li>
+<li><a class="" href="Non-Technical-FAQ.html">Non Technical FAQ</a></li>
+<li class="heading"><span>commemorative</span></li>
+<ul>
+<li><a class="" href="commemorative/README.html">README</a></li>
+<li><a class="" href="commemorative/v0.1_SmartC_NFT.html">v0.1 SmartC NFT</a></li>
+<li><a class="" href="commemorative/v0.2_PromotionalRaffle227.html">v0.2 PromotionalRaffle227</a></li>
+<li><a class="" href="commemorative/v0.3_Hive_The_Tumbler.html">v0.3 Hive The Tumbler</a></li>
+</ul>
+</ul>
+      </nav>
+      <article id="main" class="content">
+        <p><a href="./">Back</a></p>
+<h1 id="api-functions-pseudo-code-operations">API Functions pseudo code operations <a class="heading-anchor-permalink" href="#api-functions-pseudo-code-operations">#</a></h1>
+<h1 id="keep-in-mind!">Keep in mind! <a class="heading-anchor-permalink" href="#keep-in-mind!">#</a></h1>
+<h3 id="a-and-b-registers">A and B registers <a class="heading-anchor-permalink" href="#a-and-b-registers">#</a></h3>
+<p>They are 256-bit registers and can be used as one big number (called A or B) or in 64-bit pieces (called A1…A4 or B1…B4). A1 is the least significative long. They have the same “mixed” mode as long vars: unsigned for bit operations and signed for aritmetics.</p>
+<h3 id="timestamps">Timestamps <a class="heading-anchor-permalink" href="#timestamps">#</a></h3>
+<p>They are actually two integer 32-bit values joined in a 64-bit value. The most significant part (MSP) is the blockheight and the LSP is the transaction order when the block was forged.</p>
+<h3 id="messages">Messages <a class="heading-anchor-permalink" href="#messages">#</a></h3>
+<p>An encrypted message to contract is the same as not sending a message.</p>
+<h1 id="pseudo-code">Pseudo code <a class="heading-anchor-permalink" href="#pseudo-code">#</a></h1>
+<p>The code below is not valid for SmartC, but can give an idea what is happening when an API function is called.</p>
+<h2 id="get%2Fset-functions-for-%E2%80%9Cpseudo-registers%E2%80%9D">Get/Set functions for “pseudo registers” <a class="heading-anchor-permalink" href="#get%2Fset-functions-for-%E2%80%9Cpseudo-registers%E2%80%9D">#</a></h2>
+<pre><code class="language-c">long Get_A1(void){
+    // Assembly name: get_A1
+    return A1;
+}
+
+long Get_A2(void) {
+    // Assembly name: get_A2
+    return A2;
+}
+
+long Get_A3(void) {
+    // Assembly name: get_A3
+    return A3;
+}
+
+long Get_A4(void) {
+    // Assembly name: get_A4
+    return A4;
+}
+
+long Get_B1(void) {
+    // Assembly name: get_B1
+    return B1;
+}
+
+long Get_B2(void) {
+    // Assembly name: get_B2
+    return B2;
+}
+
+long Get_B3(void) {
+    // Assembly name: get_B3
+    return B3;
+}
+
+long Get_B4(void) {
+    // Assembly name: get_B4
+    return B4;
+}
+
+void Set_A1(long value) {
+    // Assembly name: set_A1
+    A1 = value;
+}
+
+void Set_A2(long value) {
+    // Assembly name: set_A2
+    A2 = value;
+}
+
+void Set_A3(long value) {
+    // Assembly name: set_A3
+    A3 = value;
+}
+
+void Set_A4(long value) {
+    // Assembly name: set_A4
+    A4 = value;
+}
+
+void Set_A1_A2(long value1, long value2) {
+    // Assembly name: set_A1_A2
+    A1 = value1;
+    A2 = value2;
+}
+
+void Set_A3_A4(long value1, long value2) {
+    // Assembly name: set_A3_A4
+    A3 = value1;
+    A4 = value2;
+}
+
+void Set_B1(long value) {
+    // Assembly name: set_B1
+    B1 = value;
+}
+
+void Set_B2(long value) {
+    // Assembly name: set_B2
+    B2 = value;
+}
+
+void Set_B3(long value) {
+    // Assembly name: set_B3
+    B3 = value;
+}
+
+void Set_B4(long value) {
+    // Assembly name: set_B4
+    B4 = value;
+}
+
+void Set_B1_B2(long value1,long value2) {
+    // Assembly name: set_B1_B2
+    B1 = value1;
+    B2 = value2;
+}
+
+void Set_B3_B4(long value1,long value2) {
+    // Assembly name: set_B3_B4
+    B3 = value1;
+    B4 = value2;
+}
+
+void Clear_A(void) {
+    // Assembly name: clear_A
+    A1 = A2 = A3 = A4 = 0;
+}
+
+
+void Clear_B(void) {
+    // Assembly name: clear_B
+    B1 = B2 = B3 = B4 = 0;
+}
+
+void Clear_A_And_B(void) {
+    // Assembly name: clear_A_B
+    A1 = A2 = A3 = A4 = 0;
+    B1 = B2 = B3 = B4 = 0;
+}
+
+void Copy_A_From_B(void) {
+    // Assembly name: copy_A_From_B
+    A1 = B1;
+    A2 = B2;
+    A3 = B3;
+    A4 = B4;
+}
+
+void Copy_B_From_A(void) {
+    // Assembly name: copy_B_From_A
+    B1 = A1;
+    B2 = A2;
+    B3 = A3;
+    B4 = A4;
+}
+
+long Check_A_Is_Zero(void) {
+    // Assembly name: check_A_Is_Zero
+    /* Note that boolean logic is inverted.
+     * Try not use this function */
+    if (A1 == 0 &amp;&amp; A2 == 0 &amp;&amp; A3 == 0 &amp;&amp; A4 == 0)
+        return 0;
+    return 1;
+}
+
+long Check_B_Is_Zero(void) {
+    // Assembly name: check_B_Is_Zero
+    /* Note that boolean logic is inverted.
+     * Try not use this function */
+    if (B1 == 0 &amp;&amp; B2 == 0 &amp;&amp; B3 == 0 &amp;&amp; B4 == 0)
+        return 0;
+    return 1;
+}
+
+long Check_A_Equals_B(void) {
+    // Assembly name: check_A_equals_B
+    if (A1 == B1 &amp;&amp; A2 == B2 &amp;&amp; A3 == B3 &amp;&amp; A4 == B4)
+        return 1;
+    return 0;
+}
+
+void Swap_A_and_B(void) {
+    // Assembly name: swap_A_and_B
+    long t1 = A1, t2 = B2, t3 = B3, t4 = B4;
+    A1 = B1, A2 = B2, A3 = B4, A4 = B4;
+    B1 = t1, B2 = t2, B3 = t3, B4 = t4;
+}
+
+void OR_A_with_B(void) {
+    // Assembly name: OR_A_with_B
+    A1 |= B1;
+    A2 |= B2;
+    A3 |= B3;
+    A4 |= B4;
+}
+
+void OR_B_with_A(void) {
+    // Assembly name: OR_B_with_A
+    B1 |= A1;
+    B2 |= A2;
+    B3 |= A3;
+    B4 |= A4;
+}
+
+void AND_A_with_B(void) {
+    // Assembly name: AND_A_with_B
+    A1 &amp;= B1;
+    A2 &amp;= B2;
+    A3 &amp;= B3;
+    A4 &amp;= B4;
+}
+
+void AND_B_with_A(void) {
+    // Assembly name: AND_B_with_A
+    B1 &amp;= A1;
+    B2 &amp;= A2;
+    B3 &amp;= A3;
+    B4 &amp;= A4;
+}
+
+void XOR_A_with_B(void) {
+    // Assembly name: XOR_A_with_B
+    A1 ^= B1;
+    A2 ^= B2;
+    A3 ^= B3;
+    A4 ^= B4;
+}
+
+void XOR_B_with_A(void) {
+    // Assembly name: XOR_B_with_A
+    B1 ^= A1;
+    B2 ^= A2;
+    B3 ^= A3;
+    B4 ^= A4;
+}
+
+void Add_A_To_B(void) {
+    // Assembly name: add_A_to_B
+    // Using full 256-bit register
+    B = A + B;
+}
+
+void Add_B_To_A(void) {
+    // Assembly name: add_B_to_A
+    // Using full 256-bit register
+    A = A + B;
+}
+
+void Sub_A_From_B(void) {
+    // Assembly name: sub_A_from_B
+    // Using full 256-bit register
+    B = B - A;
+}
+
+void Sub_B_From_A(void) {
+    // Assembly name: sub_B_from_A
+    // Using full 256-bit register
+    A = A - B;
+}
+
+void Mul_A_By_B(void) {
+    // Assembly name: mul_A_by_B
+    // Using full 256-bit register
+    B = A * B;
+}
+
+void Mul_B_By_A(void) {
+    // Assembly name: mul_B_by_A
+    // Using full 256-bit register
+    A = A * B;
+}
+
+void Div_A_By_B(void) {
+    // Assembly name: div_A_by_B
+    // Using full 256-bit register
+    if (B == 0)
+        return;
+    B = A / B;
+}
+
+void Div_B_By_A(void) {
+    // Assembly name: div_B_by_A
+    if (A == 0)
+        return;
+    A = B / A;
+}
+</code></pre>
+<h2 id="functions-that-perform-hash-operations">Functions that perform hash operations <a class="heading-anchor-permalink" href="#functions-that-perform-hash-operations">#</a></h2>
+<pre><code class="language-c">void MD5_A_To_B(void) {
+    // Assembly name: MD5_A_to_B
+    long md5hash[2] = MD5.hash(A1, A2);
+    B1 = md5hash[0];
+    B2 = md5hash[1];
+}
+
+long Check_MD5_A_With_B(void) {
+    // Assembly name: check_MD5_A_with_B
+    long md5hash[2] = MD5.hash(A1, A2);
+    if (md5hash[0] == B1 &amp;&amp; md5hash[1] == B2)
+        return 1;
+    return 0;
+}
+
+void HASH160_A_To_B(void) {
+    // Assembly name: HASH160_A_to_B
+    long RIPEhash[3] = RIPE.hash(A1, A2, A3, A4);
+    B1=RIPEhash[0];
+    B2=RIPEhash[1];
+    B3=RIPEhash[2];
+}
+
+long Check_HASH160_A_With_B(void) {
+    // Assembly name: check_HASH160_A_with_B
+    long RIPEhash[3] = RIPE.hash(A1, A2, A3, A4);
+    if (RIPEhash[0] == B1 &amp;&amp; RIPEhash[1] == B2 &amp;&amp; RIPEhash[2] == (B[2] &amp; 0x00000000FFFFFFFF))
+        return 1;
+    return 0;
+}
+
+void SHA256_A_To_B(void) {
+    // Assembly name: SHA256_A_to_B
+    long SHA256hash[4] = SHA256.hash(A1, A2, A3, A4);
+    B1 = SHA256hash[0];
+    B2 = SHA256hash[1];
+    B3 = SHA256hash[2];
+    B4 = SHA256hash[3];
+}
+
+long Check_SHA256_A_With_B(void) {
+    // Assembly name: check_SHA256_A_with_B
+    long SHA256hash[4] = SHA256.hash(A1, A2, A3, A4);
+    if (SHA256hash[0] == B1 &amp;&amp; SHA256hash[1] == B2 &amp;&amp; SHA256hash[2] == B3 &amp;&amp; SHA256hash[3] == B4 )
+        return 1;
+    return 0;
+}
+</code></pre>
+<h2 id="generic-functions-that-get-block-and-tx-info">Generic functions that get block and tx info <a class="heading-anchor-permalink" href="#generic-functions-that-get-block-and-tx-info">#</a></h2>
+<pre><code class="language-c">long Get_Block_Timestamp(void) {
+    // Assembly name: get_Block_Timestamp
+    return Blockchain.CurrentBlock &lt;&lt; 32;
+}
+
+long Get_Creation_Timestamp(void) {
+    // Assembly name: get_Creation_Timestamp
+    return Contract.DeployBlock &lt;&lt; 32;
+}
+
+long Get_Last_Block_Timestamp(void) {
+    // Assembly name: get_Last_Block_Timestamp
+    return (Blockchain.CurrentBlock - 1) &lt;&lt; 32;
+}
+
+void Put_Last_Block_Hash_In_A(void) {
+    // Assembly name: put_Last_Block_Hash_In_A
+    A = Blockchain.LastBlock.Hash;
+}
+
+void A_To_Tx_After_Timestamp(long value) {
+    // Assembly name: A_to_Tx_after_Timestamp
+    long TXid = Blockchain.SearchNextTxToThisContractStartingAt(value);
+    A1 = A2 = A3 = A4 = 0;
+    if (TXid !== NULL)
+        A1 = TXid;
+}
+
+long Get_Type_For_Tx_In_A(void) {
+    // Assembly name: get_Type_for_Tx_in_A
+    if (Blockchain.IsThisTxValid(A1) == false)
+        return -1;
+    if (Blockchain.IsThereMessageinTx(A1) == false)
+        return 0;
+    return 1;
+}
+
+long Get_Amount_For_Tx_In_A(void) {
+    // Assembly name: get_Amount_for_Tx_in_A
+    if (Blockchain.IsThisTxValid(A1) == false)
+        return -1;
+    return Blockchain.GetAmountFromTx(A1) - ContractActivationAmount;
+}
+
+long Get_Timestamp_For_Tx_In_A(void) {
+    // Assembly name: get_Timestamp_for_Tx_in_A
+    if (Blockchain.IsThisTxValid(A1) == false)
+        return -1;
+    return Blockchain.GetTimestampFromTx(A1) - ContractActivationAmount;}
+
+long Get_Random_Id_For_Tx_In_A(void) {
+    // Assembly name: get_Ticket_Id_for_Tx_in_A
+    /* This function will wait 15 blocks than return a random number */
+    if (Blockchain.IsThisTxValid(A1) == false)
+        return -1;
+    sleep 15;
+    return random;
+}
+
+void Message_From_Tx_In_A_To_B(void) {
+    // Assembly name: message_from_Tx_in_A_to_B
+    if (Blockchain.IsThisTxValid(A1) == false)
+        return -1;
+    B = 0;
+ 
+    if (Blockchain.IsThereMessageinTx(A1))
+        B = Blockchain.GetMessageFromTx(A1)
+}
+
+void B_To_Address_Of_Tx_In_A(void) {
+    // Assembly name: B_to_Address_of_Tx_in_A
+    B = 0;
+    if (Blockchain.IsThisTxValid(A1))
+       B1 = Blockchain.GetSenderFromTx(A1)
+}
+
+void B_To_Address_Of_Creator(void) {
+    // Assembly name: B_to_Address_of_Creator
+    B = 0;
+    B1 = ContractCreator;
+}
+</code></pre>
+<h2 id="generic-functions-that-check-balances-and-perform-ops">Generic functions that check balances and perform ops <a class="heading-anchor-permalink" href="#generic-functions-that-check-balances-and-perform-ops">#</a></h2>
+<pre><code class="language-c">long Get_Current_Balance(void) {
+    // Assembly name: get_Current_Balance
+    return Blockchain.GetMyBalanceNow();
+}
+
+long Get_Previous_Balance(void) {
+    // Assembly name: get_Previous_Balance
+    return Blockchain.GetMyBalanceLastTimeIWasFrozen();
+}
+
+void Send_To_Address_In_B(long value) {
+    // Assembly name: send_to_Address_in_B
+    long ContractBalance = Blockchain.GetMyBalanceNow();
+    if (value &gt; ContractBalance)
+        Blockchain.SendAllMyBalanceTo(B1);
+    else
+        Blockchain.SendBalanceTo(value, B1);
+}
+
+void Send_All_To_Address_In_B(void) {
+    // Assembly name: send_All_to_Address_in_B
+    Blockchain.SendAllMyBalanceTo(B1);
+}
+
+void Send_Old_To_Address_In_B(void) {
+    // Assembly name: send_Old_to_Address_in_B
+    long PreviouContractBalance = Blockchain.GetMyBalanceLastTimeIWasFrozen();
+    long ContractBalance = Blockchain.GetMyBalanceNow();
+    if (PreviouContractBalance &gt; ContractBalance)
+        Blockchain.SendAllMyBalanceTo(B1);
+    else
+        Blockchain.SendBalanceTo(PreviouContractBalance, B1);
+}
+
+void Send_A_To_Address_In_B(void) {
+    // Assembly name: send_A_to_Address_in_B
+     Blockchain.SendMessageInATo(B1);
+}
+
+long Add_Minutes_To_Timestamp(long timestamp,long minutes) {
+    // Assembly name: add_Minutes_to_Timestamp
+    return ((minutes/4) &lt;&lt; 32) + timestamp
+}
+</code></pre>
+<p><a href="./">Back</a></p>
+
+      </article>
+    </div>
+    <script>
+      // Load contents.json if you need it
+    </script>
+    <script>
+      // FROM http://purecss.io/js/ui.js
+      (function(window, document) {
+        var layout = document.getElementById("layout"),
+          menu = document.getElementById("menu"),
+          menuLink = document.getElementById("menuLink");
+
+        function toggleClass(element, className) {
+          var classes = element.className.split(/\s+/),
+            length = classes.length,
+            i = 0;
+
+          for (; i < length; i++) {
+            if (classes[i] === className) {
+              classes.splice(i, 1);
+              break;
+            }
+          }
+          // The className is not found
+          if (length === classes.length) {
+            classes.push(className);
+          }
+
+          element.className = classes.join(" ");
+        }
+
+        menuLink.onclick = function(e) {
+          var active = "active";
+
+          e.preventDefault();
+          toggleClass(layout, active);
+          toggleClass(menu, active);
+          toggleClass(menuLink, active);
+        };
+      })(this, this.document);
+    </script>
+  </body>
+</html>
