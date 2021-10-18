@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      /*! ADAPTED
+    Typeplate : Starter Kit
+    URL ........... http://typeplate.com
+    Version ....... 3.0.2
+    Github ........ https://github.com/typeplate/starter-kit
+    Authors ....... Dennis Gaebel (@gryghostvisuals) & Zachary Kain (@zakkain)
+    License ....... Creative Commmons Attribution 3.0
+    License URL ... https://github.com/typeplate/starter-kit/blob/master/license.txt
+    */
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        text-rendering: optimizeLegibility;
+        line-height: 1;
+        margin-top: 0;
+        color: #222;
+      }
+
+      blockquote + figcaption cite {
+        display: block;
+        font-size: inherit;
+        text-align: right;
+      }
+
+      body {
+        word-wrap: break-word;
+      }
+
+      pre code {
+        word-wrap: normal;
+      }
+
+      body {
+        -webkit-hyphens: auto;
+        -ms-hyphens: auto;
+        hyphens: auto;
+        color: #444;
+      }
+
+      h1 {
+        font-size: 2em;
+        /* 2*16 = 32 */
+      }
+
+      h2 {
+        font-size: 1.5em;
+        /* 1.5*16 = 24 */
+      }
+
+      h3 {
+        font-size: 1.17em;
+        /* 1.17*16 = 18.72 */
+      }
+
+      h4 {
+        font-size: 1em;
+        /* 1*16 = 16 */
+      }
+
+      h5 {
+        font-size: 0.83em;
+        /* 0.83*16 = 13.28 */
+      }
+
+      h6 {
+        font-size: 0.75em;
+        /* 0.75*16 = 12 */
+      }
+
+      h1 {
+        margin: 2.42424rem 0 1.454544rem;
+      }
+
+      h2 {
+        margin: 2.0202rem 0 1.21212rem;
+      }
+
+      h3 {
+        margin: 1.61616rem 0 1rem;
+      }
+
+      h4 {
+        margin: 1.21212rem 0 1;
+      }
+
+      h5 {
+        margin: 0.80808rem 0;
+      }
+
+      h6 {
+        margin: 0.70707rem 0;
+      }
+
+      p {
+        margin: auto auto 1.5rem;
+      }
+
+      small {
+        font-size: 65%;
+      }
+
+      input,
+      abbr,
+      acronym,
+      blockquote,
+      code,
+      kbd,
+      q,
+      samp,
+      var {
+        -webkit-hyphens: none;
+        -ms-hyphens: none;
+        hyphens: none;
+      }
+
+      pre {
+        white-space: pre;
+      }
+
+      pre code {
+        white-space: -moz-pre-wrap;
+        white-space: pre-wrap;
+      }
+
+      code {
+        white-space: pre;
+        font-family: SF Mono, Consolas, Dejavu Sans Mono, Menlo, monospace;
+      }
+
+      abbr {
+        -webkit-font-variant: small-caps;
+        -moz-font-variant: small-caps;
+        -ms-font-variant: small-caps;
+        font-variant: small-caps;
+        font-weight: 600;
+        text-transform: lowercase;
+        color: gray;
+      }
+
+      abbr[title]:hover {
+        cursor: help;
+      }
+
+      /* FROM http://purecss.io/layouts/side-menu/  adapted to remove pure classes*/
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+          "Segoe UI Symbol";
+        color: #444;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: auto;
+      }
+
+      code,
+      pre {
+        background-color: #f5f5f5;
+        color: #444;
+        border-radius: 2px;
+        text-shadow: 0px 1px 0px white;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+      }
+
+      pre code {
+        border: none;
+        box-shadow: none;
+      }
+
+      pre {
+        padding: 0.5em;
+      }
+
+      code {
+        display: inline-block;
+        padding: 0 0.5em;
+        line-height: 1.4;
+        font-size: 0.9em;
+      }
+
+      table {
+        border-spacing: 0;
+        margin-bottom: 1.5rem;
+      }
+
+      table th,
+      table td {
+        padding: 0.3em 0.7em;
+      }
+
+      table th {
+        background-color: #f4f4f4;
+        border-bottom: 2px solid #444;
+      }
+
+      table td {
+        border: 1px solid #f5f5f5;
+      }
+
+      /* Add transition to containers so they can push in and out. */
+
+      #layout,
+      #menu,
+      .menu-link {
+        -webkit-transition: all 0.2s ease-out;
+        -moz-transition: all 0.2s ease-out;
+        -ms-transition: all 0.2s ease-out;
+        -o-transition: all 0.2s ease-out;
+        transition: all 0.2s ease-out;
+      }
+
+      /* This is the parent `<div>` that contains the menu and the content area. */
+
+      #layout {
+        position: relative;
+        padding-left: 0;
+      }
+
+      #layout.active #menu {
+        left: 250px;
+        width: 250px;
+      }
+
+      #layout.active .menu-link {
+        left: 250px;
+      }
+
+      /* The content `<div>` is where all your content goes. */
+
+      .content {
+        margin: 50px auto;
+        padding: 0 2em;
+        max-width: 80ex;
+        line-height: 1.6em;
+      }
+
+      /*
+      The `#menu` `<div>` is the parent `<div>` that contains the menu that
+      appears on the left side of the page.
+      */
+
+      #menu {
+        margin-left: -250px;
+        /* "#menu" width */
+        width: 250px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 1000;
+        /* so the menu or its navicon stays above all content */
+        background: #f4f4f4;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        font-size: 0.9em;
+      }
+
+      @media print {
+        #menu,
+        .menu-link {
+          display: none !important;
+        }
+      }
+
+      a,
+      a * {
+        text-decoration: none;
+        color: #2483cc;
+      }
+
+      a:visited {
+        text-decoration: none;
+        color: #2483cc;
+      }
+
+      /* All anchors inside the menu should be styled like this. */
+
+      #menu a {
+        display: block;
+        padding: 0.5em 0.5em;
+      }
+
+      #menu a:first-letter {
+        text-transform: capitalize;
+      }
+
+      #menu ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 1em 0.5em;
+      }
+
+      #menu ul ul {
+        margin-top: 0.5em;
+        margin-left: 0.5em;
+        border-left: 4px solid rgba(255, 255, 255, 0.5);
+      }
+
+      /* Change color of the anchor links on hover/focus. */
+
+      #menu li a:hover,
+      #menu li a:focus {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      /* This styles the selected menu item `<li>`. */
+
+      #menu li a.active {
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      /* This styles a link within a selected menu item `<li>`. */
+
+      #menu li a.active {
+        color: #222;
+      }
+
+      /* This styles the menu heading. */
+
+      #menu li.heading {
+        font-size: 0.9em;
+        text-transform: uppercase;
+        color: #000;
+      }
+
+      #menu li.heading > * {
+        padding: 0.5em;
+        display: block;
+      }
+
+      #menu li.heading a {
+        color: #0c68af;
+      }
+
+      /* -- Dynamic Button For Responsive Menu -------------------------------------*/
+
+      /*
+      `.menu-link` represents the responsive menu toggle that shows/hides on
+      small screens.
+      */
+
+      .menu-link {
+        position: fixed;
+        display: block;
+        /* show this only on small screens */
+        top: 0;
+        left: 0;
+        /* "#menu width" */
+        font-size: 10px;
+        /* change this value to increase/decrease button size */
+        z-index: 10;
+        width: 2em;
+        height: auto;
+        padding: 1.6em 1.2em;
+        border-radius: 0 2px 2px 0;
+      }
+
+      .menu-link:hover {
+        background: #f4f4f4;
+      }
+
+      .menu-link span {
+        position: relative;
+        display: block;
+      }
+
+      .menu-link span,
+      .menu-link span:before,
+      .menu-link span:after {
+        background-color: #555;
+        width: 100%;
+        height: 0.2em;
+        border-radius: 1em;
+      }
+
+      .menu-link span:before,
+      .menu-link span:after {
+        position: absolute;
+        margin-top: -0.6em;
+        content: " ";
+      }
+
+      .menu-link span:after {
+        margin-top: 0.6em;
+      }
+
+      /* Hides the menu at `48em`, but modify this based on your app's needs. */
+
+      @media (min-width: 48em) {
+        .header,
+        .content {
+          padding-left: 2em;
+          padding-right: 2em;
+        }
+
+        #layout {
+          padding-left: 250px;
+          /* left col width "#menu" */
+          left: 0;
+        }
+        #menu {
+          left: 250px;
+        }
+
+        .menu-link {
+          position: fixed;
+          left: 250px;
+          display: none;
+        }
+
+        #layout.active .menu-link {
+          left: 250px;
+        }
+      }
+
+      @media (max-width: 48em) {
+        /* Only apply this when the window is small. Otherwise, the following case results in extra padding on the left:
+         * Make the window small.
+         * Tap the menu to trigger the active state.
+         * Make the window large again.
+         */
+        #layout.active {
+          position: relative;
+          left: 250px;
+        }
+      }
+
+      /* Heading anchors and permalinks */
+      h1[id],
+      h2[id],
+      h3[id],
+      h4[id],
+      h5[id],
+      h6[id] {
+        position: relative;
+      }
+      .heading-anchor-permalink {
+        /* Position the permalink to the left of the title */
+        position: absolute;
+        right: 100%;
+        /* Add some spacing as padding to not lose the hover */
+        padding-right: 0.6rem;
+        /* Make it only visible on heading hover, see below */
+        opacity: 0;
+      }
+      h1[id]:hover .heading-anchor-permalink,
+      h2[id]:hover .heading-anchor-permalink,
+      h3[id]:hover .heading-anchor-permalink,
+      h4[id]:hover .heading-anchor-permalink,
+      h5[id]:hover .heading-anchor-permalink,
+      h6[id]:hover .heading-anchor-permalink {
+        opacity: 0.5;
+      }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+  </head>
+
+  <body>
+    <div id="layout">
+      <!-- Menu toggle -->
+      <a href="#menu" id="menuLink" class="menu-link">
+        <!-- Hamburger icon -->
+        <span></span>
+      </a>
+      <nav id="menu">
+        <ul>
+<li><a class="" href="index.html">index</a></li>
+<li><a class="" href="1-Basis.html">Basis</a></li>
+<li><a class="" href="2-Deeper-into-SmartC.html">Deeper into SmartC</a></li>
+<li><a class="" href="3-Learning-with-examples.html">Learning with examples</a></li>
+<li><a class="" href="4-Functions-repository.html">Functions repository</a></li>
+<li><a class="" href="5-Comprehensive-example.html">Comprehensive example</a></li>
+<li><a class="active" href="6-SmartC-object-structure.html">SmartC object structure</a></li>
+</ul>
+      </nav>
+      <article id="main" class="content">
+        <p>TO BE UPDATED!!!
+<a href="./">Back</a></p>
+<h1 id="javascript-object-structure-in-burstat-cc">Javascript Object Structure in BurstAT-CC <a class="heading-anchor-permalink" href="#javascript-object-structure-in-burstat-cc">#</a></h1>
+<p>Compiling process consists in organize the code into an AST (Abstract Syntax Tree). The objects and properties are explained bellow. A convention is that variables that are objects starts with a capital letter. The object types can be recursive to describe entire program. Array of objects are also used. To understand this text, keep in mind</p>
+<ul>
+<li>Objects will be named <code>Object {}</code></li>
+<li>Array of objects will have indication of object type <code>array []: Object {}</code></li>
+<li>Strings are surrounded <code>“string”</code></li>
+<li>Numbers are surrounded <code>‘number’</code></li>
+<li>Strings used as boolean <code>“true” / “false”</code></li>
+</ul>
+<h2 id="big_ast">Big_AST <a class="heading-anchor-permalink" href="#big_ast">#</a></h2>
+<p>This is the target object that is need by code generator.</p>
+<p><img src="https://user-images.githubusercontent.com/54009773/116814018-0757ba80-ab2d-11eb-97f5-a65a9b76a326.png" alt="image"></p>
+<p>Properties:</p>
+<ul>
+<li><code>Global{}</code>: All global statements and declarations.</li>
+<li><code>functions[]: Function{}</code>: This array will have all functions declared in the program.</li>
+</ul>
+<h2 id="global">Global <a class="heading-anchor-permalink" href="#global">#</a></h2>
+<p>All global statements and declarations. Properties:</p>
+<ul>
+<li><code>code[]: Token{}</code>: Temporary property containing tokens. It is deleted when translated to Sentence objects.</li>
+<li><code>sentences[]: Sentence{}</code>: All global statements organized in Sentence objects.</li>
+<li><code>declared_vars[]: Args{}</code>: Global variables.</li>
+<li><code>macros[]: Token{}</code>: Grouped tokens typed “Macro”.</li>
+<li><code>APIFunctions[]: Function{}</code>: Prototypes for API functions. Exception to the rule, array of objects starting with capital letter.</li>
+</ul>
+<h2 id="function">Function <a class="heading-anchor-permalink" href="#function">#</a></h2>
+<p>Holds all information about one function.</p>
+<p><img src="https://user-images.githubusercontent.com/54009773/116815050-2573e980-ab32-11eb-9c06-81bacdcfb525.png" alt="image"></p>
+<p>Properties:</p>
+<ul>
+<li><code>name: “ ”</code>: Function name.</li>
+<li><code>return_type: keyword</code>: Keyword for returning type (at moment <code>long</code> or <code>void</code>).</li>
+<li><code>return_pointer: “yes”/”no”</code>: Indication if it is returning a pointer (at moment not used for checks).</li>
+<li><code>arguments[]: Args{}</code>: Function arguments, variables declared during function declaration. If <code>void</code>, will have an empty array.</li>
+<li><code>sentences[]: Sentence{}</code>: All function statements organized in Sentence objects.</li>
+<li><code>declared_vars[]: Args{}</code>: Variables declared inside a function. Filled during shapeProgram() and addArgsToDeclaredVars() functions</li>
+<li><code>code[]: Token{}</code>: Temporary property containing Tokens. It is deleted when translated to Sentence objects.</li>
+</ul>
+<h2 id="args">Args <a class="heading-anchor-permalink" href="#args">#</a></h2>
+<p>It is actually a Token typed “Varible” with some extra properties.</p>
+<p><img src="https://user-images.githubusercontent.com/54009773/116814858-29533c00-ab31-11eb-9cb2-f2cd4ebd150f.png" alt="image"></p>
+<p>Properties specifc to Args object:</p>
+<ul>
+<li><code>declaration: keyword</code>: Keyword with type declaration (at moment only <code>long</code>).</li>
+<li><code>size: ‘ ’</code>: If variable is an array, size will be size declaration plus one! First assembly var is a pointer to array memory location.</li>
+<li><code>dec_in_generator: “yes”/”no”</code>: Used during code generation to know if declaration is before first use.</li>
+<li><code>dec_as_array: “yes”/”no”</code>: Indicate that variable is an array. This is used to avoid array pointer being override.</li>
+<li><code>asmName: “ ”</code>: Variable name used in assembly code. If it is global, same name. But if function, will have function name as prefix. Ex: in function <em>test</em>, variable <em>counter</em> will be name <em>test_counter</em>.</li>
+</ul>
+<h2 id="sentence">Sentence <a class="heading-anchor-permalink" href="#sentence">#</a></h2>
+<p>Holds information about the least possible statement. Can be different types according the keyword used.</p>
+<p><img src="https://user-images.githubusercontent.com/54009773/116815334-66b8c900-ab33-11eb-9338-36c87864f96e.png" alt="image"></p>
+<h3 id="sentence.type%3A-%E2%80%9Cphrase%E2%80%9D">Sentence.type: “phrase” <a class="heading-anchor-permalink" href="#sentence.type%3A-%E2%80%9Cphrase%E2%80%9D">#</a></h3>
+<ul>
+<li><code>code[]: Token{}</code>: Temporary property. Deleted once translate to OpTree.</li>
+<li><code>OpTree{}</code>: An entire AST with only unary/binary operations created by createSyntacticTree() function. Organized operations as will be in assembly code. Takes precedence of operators on account during the process. Will create an arithmetic result.</li>
+</ul>
+<h3 id="sentence.type%3A-%E2%80%9Cif_endif%E2%80%9D">Sentence.type: “if_endif” <a class="heading-anchor-permalink" href="#sentence.type%3A-%E2%80%9Cif_endif%E2%80%9D">#</a></h3>
+<ul>
+<li><code>id: “ ”</code>: Debug purposes only, not used.</li>
+<li><code>line: ‘ ’</code>: Line the sentence starts.</li>
+<li><code>condition[]: Tokens{}</code>: Temporary property. Deleted once translate to ConditionOpTree.</li>
+<li><code>ConditionOpTree{}</code>: An entire AST with only unary/binary operations created by createSyntacticTree() function. Organized operations as will be in assembly code. Takes precedence of operators on account during the process. Will create a logical result (with a jump location).</li>
+<li><code>if_true[]: Sentence{}</code>: Array with all statements that will be executed if the ConditionOpTree is evaluated to <code>true</code>.</li>
+</ul>
+<h3 id="sentence.type%3A-%E2%80%9Cif_else%E2%80%9D">Sentence.type: “if_else” <a class="heading-anchor-permalink" href="#sentence.type%3A-%E2%80%9Cif_else%E2%80%9D">#</a></h3>
+<p>All other properties already explained plus:</p>
+<ul>
+<li><code>if_false[]: Sentence{}</code>: Array with all statements that will be executed if the ConditionOpTree is evaluated to <code>false</code>.</li>
+</ul>
+<h3 id="sentence.type%3A-%E2%80%9Cwhile%E2%80%9D">Sentence.type: “while” <a class="heading-anchor-permalink" href="#sentence.type%3A-%E2%80%9Cwhile%E2%80%9D">#</a></h3>
+<p>All other properties already explained plus:</p>
+<ul>
+<li><code>while_true[]: Sentence{}</code>: Array with all statements that will be executed in loop while the ConditionOpTree is evaluated to <code>true</code>.</li>
+</ul>
+<h3 id="sentence.type%3A-%E2%80%9Cdo%E2%80%9D">Sentence.type: “do” <a class="heading-anchor-permalink" href="#sentence.type%3A-%E2%80%9Cdo%E2%80%9D">#</a></h3>
+<p>Very similar to <code>while</code> loop, but ConditionOpTree is evaluated at the end of loop.</p>
+<h3 id="sentence.type%3A-%E2%80%9Cfor%E2%80%9D">Sentence.type: “for” <a class="heading-anchor-permalink" href="#sentence.type%3A-%E2%80%9Cfor%E2%80%9D">#</a></h3>
+<p>All other properties already explained plus:</p>
+<ul>
+<li><code>three_sentences[]: Sentence{}</code>: Array containing three sentences as expected in a for loop. First sentence is executed once at the start of loop (arithmetic evaluation), Second is a condition statement (logical evaluation), and Third is executed after <code>while_true</code> sentences and before a new evaluation of conditional.</li>
+</ul>
+<h1 id="program-flow">Program flow <a class="heading-anchor-permalink" href="#program-flow">#</a></h1>
+<h2 id="token_output-%3D-tokenizer(codestring)%3B">token_output = tokenizer(codeString); <a class="heading-anchor-permalink" href="#token_output-%3D-tokenizer(codestring)%3B">#</a></h2>
+<p>Source code is splitted into simple tokens.</p>
+<h2 id="parser_output-%3D-parser(token_output)%3B">parser_output = parser(token_output); <a class="heading-anchor-permalink" href="#parser_output-%3D-parser(token_output)%3B">#</a></h2>
+<p>Simple tokens are translated into actually <code>Token {}</code> objects.</p>
+<h2 id="ver_output-%3D-verify(parser_output)%3B">ver_output = verify(parser_output); <a class="heading-anchor-permalink" href="#ver_output-%3D-verify(parser_output)%3B">#</a></h2>
+<p>Simple rules verification avoiding non-sense tokens combinations. Some tokens are also modified, so this step can not be skipped.</p>
+<h2 id="big_ast-%3D-shapeprogram(ver_output)%3B">Big_ast = shapeProgram(ver_output); <a class="heading-anchor-permalink" href="#big_ast-%3D-shapeprogram(ver_output)%3B">#</a></h2>
+<p>Statements are processed and Big_AST object is created with some temporary properties.</p>
+<h2 id="big_ast_optree-%3D-bigastprocesssyntax(big_ast)%3B">Big_ast_opTree = bigastProcessSyntax(Big_ast); <a class="heading-anchor-permalink" href="#big_ast_optree-%3D-bigastprocesssyntax(big_ast)%3B">#</a></h2>
+<p>Traverse the Big_ast received translating <code>Tokens {}</code> to <code>OpTree {}</code>. Big_ast_OpTree is almost ready.</p>
+<h2 id="asmcode-%3D-bigastcompile(big_ast_optree)%3B">asmCode = bigastCompile(big_ast_opTree); <a class="heading-anchor-permalink" href="#asmcode-%3D-bigastcompile(big_ast_optree)%3B">#</a></h2>
+<p>Some small modifications done and all sentences, functions and declarations translated into assembly code.</p>
+<p><a href="./">Back</a></p>
+
+      </article>
+    </div>
+    <script>
+      // Load contents.json if you need it
+    </script>
+    <script>
+      // FROM http://purecss.io/js/ui.js
+      (function(window, document) {
+        var layout = document.getElementById("layout"),
+          menu = document.getElementById("menu"),
+          menuLink = document.getElementById("menuLink");
+
+        function toggleClass(element, className) {
+          var classes = element.className.split(/\s+/),
+            length = classes.length,
+            i = 0;
+
+          for (; i < length; i++) {
+            if (classes[i] === className) {
+              classes.splice(i, 1);
+              break;
+            }
+          }
+          // The className is not found
+          if (length === classes.length) {
+            classes.push(className);
+          }
+
+          element.className = classes.join(" ");
+        }
+
+        menuLink.onclick = function(e) {
+          var active = "active";
+
+          e.preventDefault();
+          toggleClass(layout, active);
+          toggleClass(menu, active);
+          toggleClass(menuLink, active);
+        };
+      })(this, this.document);
+    </script>
+  </body>
+</html>

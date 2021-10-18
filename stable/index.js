@@ -250,7 +250,7 @@ function detachAssembly(){
 
 function detachHelp(){
     var helpage = new WinBox("Help page", {
-        url: "https://deleterium.github.io/SmartC/docs/",
+        url: "./htmlDocs/index.html",
         height: "70%",
         width: "70%",
         x: "center",

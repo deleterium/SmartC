@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      /*! ADAPTED
+    Typeplate : Starter Kit
+    URL ........... http://typeplate.com
+    Version ....... 3.0.2
+    Github ........ https://github.com/typeplate/starter-kit
+    Authors ....... Dennis Gaebel (@gryghostvisuals) & Zachary Kain (@zakkain)
+    License ....... Creative Commmons Attribution 3.0
+    License URL ... https://github.com/typeplate/starter-kit/blob/master/license.txt
+    */
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        text-rendering: optimizeLegibility;
+        line-height: 1;
+        margin-top: 0;
+        color: #222;
+      }
+
+      blockquote + figcaption cite {
+        display: block;
+        font-size: inherit;
+        text-align: right;
+      }
+
+      body {
+        word-wrap: break-word;
+      }
+
+      pre code {
+        word-wrap: normal;
+      }
+
+      body {
+        -webkit-hyphens: auto;
+        -ms-hyphens: auto;
+        hyphens: auto;
+        color: #444;
+      }
+
+      h1 {
+        font-size: 2em;
+        /* 2*16 = 32 */
+      }
+
+      h2 {
+        font-size: 1.5em;
+        /* 1.5*16 = 24 */
+      }
+
+      h3 {
+        font-size: 1.17em;
+        /* 1.17*16 = 18.72 */
+      }
+
+      h4 {
+        font-size: 1em;
+        /* 1*16 = 16 */
+      }
+
+      h5 {
+        font-size: 0.83em;
+        /* 0.83*16 = 13.28 */
+      }
+
+      h6 {
+        font-size: 0.75em;
+        /* 0.75*16 = 12 */
+      }
+
+      h1 {
+        margin: 2.42424rem 0 1.454544rem;
+      }
+
+      h2 {
+        margin: 2.0202rem 0 1.21212rem;
+      }
+
+      h3 {
+        margin: 1.61616rem 0 1rem;
+      }
+
+      h4 {
+        margin: 1.21212rem 0 1;
+      }
+
+      h5 {
+        margin: 0.80808rem 0;
+      }
+
+      h6 {
+        margin: 0.70707rem 0;
+      }
+
+      p {
+        margin: auto auto 1.5rem;
+      }
+
+      small {
+        font-size: 65%;
+      }
+
+      input,
+      abbr,
+      acronym,
+      blockquote,
+      code,
+      kbd,
+      q,
+      samp,
+      var {
+        -webkit-hyphens: none;
+        -ms-hyphens: none;
+        hyphens: none;
+      }
+
+      pre {
+        white-space: pre;
+      }
+
+      pre code {
+        white-space: -moz-pre-wrap;
+        white-space: pre-wrap;
+      }
+
+      code {
+        white-space: pre;
+        font-family: SF Mono, Consolas, Dejavu Sans Mono, Menlo, monospace;
+      }
+
+      abbr {
+        -webkit-font-variant: small-caps;
+        -moz-font-variant: small-caps;
+        -ms-font-variant: small-caps;
+        font-variant: small-caps;
+        font-weight: 600;
+        text-transform: lowercase;
+        color: gray;
+      }
+
+      abbr[title]:hover {
+        cursor: help;
+      }
+
+      /* FROM http://purecss.io/layouts/side-menu/  adapted to remove pure classes*/
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+          "Segoe UI Symbol";
+        color: #444;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: auto;
+      }
+
+      code,
+      pre {
+        background-color: #f5f5f5;
+        color: #444;
+        border-radius: 2px;
+        text-shadow: 0px 1px 0px white;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+      }
+
+      pre code {
+        border: none;
+        box-shadow: none;
+      }
+
+      pre {
+        padding: 0.5em;
+      }
+
+      code {
+        display: inline-block;
+        padding: 0 0.5em;
+        line-height: 1.4;
+        font-size: 0.9em;
+      }
+
+      table {
+        border-spacing: 0;
+        margin-bottom: 1.5rem;
+      }
+
+      table th,
+      table td {
+        padding: 0.3em 0.7em;
+      }
+
+      table th {
+        background-color: #f4f4f4;
+        border-bottom: 2px solid #444;
+      }
+
+      table td {
+        border: 1px solid #f5f5f5;
+      }
+
+      /* Add transition to containers so they can push in and out. */
+
+      #layout,
+      #menu,
+      .menu-link {
+        -webkit-transition: all 0.2s ease-out;
+        -moz-transition: all 0.2s ease-out;
+        -ms-transition: all 0.2s ease-out;
+        -o-transition: all 0.2s ease-out;
+        transition: all 0.2s ease-out;
+      }
+
+      /* This is the parent `<div>` that contains the menu and the content area. */
+
+      #layout {
+        position: relative;
+        padding-left: 0;
+      }
+
+      #layout.active #menu {
+        left: 250px;
+        width: 250px;
+      }
+
+      #layout.active .menu-link {
+        left: 250px;
+      }
+
+      /* The content `<div>` is where all your content goes. */
+
+      .content {
+        margin: 50px auto;
+        padding: 0 2em;
+        max-width: 80ex;
+        line-height: 1.6em;
+      }
+
+      /*
+      The `#menu` `<div>` is the parent `<div>` that contains the menu that
+      appears on the left side of the page.
+      */
+
+      #menu {
+        margin-left: -250px;
+        /* "#menu" width */
+        width: 250px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 1000;
+        /* so the menu or its navicon stays above all content */
+        background: #f4f4f4;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        font-size: 0.9em;
+      }
+
+      @media print {
+        #menu,
+        .menu-link {
+          display: none !important;
+        }
+      }
+
+      a,
+      a * {
+        text-decoration: none;
+        color: #2483cc;
+      }
+
+      a:visited {
+        text-decoration: none;
+        color: #2483cc;
+      }
+
+      /* All anchors inside the menu should be styled like this. */
+
+      #menu a {
+        display: block;
+        padding: 0.5em 0.5em;
+      }
+
+      #menu a:first-letter {
+        text-transform: capitalize;
+      }
+
+      #menu ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 1em 0.5em;
+      }
+
+      #menu ul ul {
+        margin-top: 0.5em;
+        margin-left: 0.5em;
+        border-left: 4px solid rgba(255, 255, 255, 0.5);
+      }
+
+      /* Change color of the anchor links on hover/focus. */
+
+      #menu li a:hover,
+      #menu li a:focus {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      /* This styles the selected menu item `<li>`. */
+
+      #menu li a.active {
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      /* This styles a link within a selected menu item `<li>`. */
+
+      #menu li a.active {
+        color: #222;
+      }
+
+      /* This styles the menu heading. */
+
+      #menu li.heading {
+        font-size: 0.9em;
+        text-transform: uppercase;
+        color: #000;
+      }
+
+      #menu li.heading > * {
+        padding: 0.5em;
+        display: block;
+      }
+
+      #menu li.heading a {
+        color: #0c68af;
+      }
+
+      /* -- Dynamic Button For Responsive Menu -------------------------------------*/
+
+      /*
+      `.menu-link` represents the responsive menu toggle that shows/hides on
+      small screens.
+      */
+
+      .menu-link {
+        position: fixed;
+        display: block;
+        /* show this only on small screens */
+        top: 0;
+        left: 0;
+        /* "#menu width" */
+        font-size: 10px;
+        /* change this value to increase/decrease button size */
+        z-index: 10;
+        width: 2em;
+        height: auto;
+        padding: 1.6em 1.2em;
+        border-radius: 0 2px 2px 0;
+      }
+
+      .menu-link:hover {
+        background: #f4f4f4;
+      }
+
+      .menu-link span {
+        position: relative;
+        display: block;
+      }
+
+      .menu-link span,
+      .menu-link span:before,
+      .menu-link span:after {
+        background-color: #555;
+        width: 100%;
+        height: 0.2em;
+        border-radius: 1em;
+      }
+
+      .menu-link span:before,
+      .menu-link span:after {
+        position: absolute;
+        margin-top: -0.6em;
+        content: " ";
+      }
+
+      .menu-link span:after {
+        margin-top: 0.6em;
+      }
+
+      /* Hides the menu at `48em`, but modify this based on your app's needs. */
+
+      @media (min-width: 48em) {
+        .header,
+        .content {
+          padding-left: 2em;
+          padding-right: 2em;
+        }
+
+        #layout {
+          padding-left: 250px;
+          /* left col width "#menu" */
+          left: 0;
+        }
+        #menu {
+          left: 250px;
+        }
+
+        .menu-link {
+          position: fixed;
+          left: 250px;
+          display: none;
+        }
+
+        #layout.active .menu-link {
+          left: 250px;
+        }
+      }
+
+      @media (max-width: 48em) {
+        /* Only apply this when the window is small. Otherwise, the following case results in extra padding on the left:
+         * Make the window small.
+         * Tap the menu to trigger the active state.
+         * Make the window large again.
+         */
+        #layout.active {
+          position: relative;
+          left: 250px;
+        }
+      }
+
+      /* Heading anchors and permalinks */
+      h1[id],
+      h2[id],
+      h3[id],
+      h4[id],
+      h5[id],
+      h6[id] {
+        position: relative;
+      }
+      .heading-anchor-permalink {
+        /* Position the permalink to the left of the title */
+        position: absolute;
+        right: 100%;
+        /* Add some spacing as padding to not lose the hover */
+        padding-right: 0.6rem;
+        /* Make it only visible on heading hover, see below */
+        opacity: 0;
+      }
+      h1[id]:hover .heading-anchor-permalink,
+      h2[id]:hover .heading-anchor-permalink,
+      h3[id]:hover .heading-anchor-permalink,
+      h4[id]:hover .heading-anchor-permalink,
+      h5[id]:hover .heading-anchor-permalink,
+      h6[id]:hover .heading-anchor-permalink {
+        opacity: 0.5;
+      }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+  </head>
+
+  <body>
+    <div id="layout">
+      <!-- Menu toggle -->
+      <a href="#menu" id="menuLink" class="menu-link">
+        <!-- Hamburger icon -->
+        <span></span>
+      </a>
+      <nav id="menu">
+        <ul>
+<li><a class="" href="index.html">index</a></li>
+<li><a class="" href="1-Basis.html">Basis</a></li>
+<li><a class="" href="2-Deeper-into-SmartC.html">Deeper into SmartC</a></li>
+<li><a class="active" href="3-Learning-with-examples.html">Learning with examples</a></li>
+<li><a class="" href="4-Functions-repository.html">Functions repository</a></li>
+<li><a class="" href="5-Comprehensive-example.html">Comprehensive example</a></li>
+<li><a class="" href="6-SmartC-object-structure.html">SmartC object structure</a></li>
+</ul>
+      </nav>
+      <article id="main" class="content">
+        <p><a href="./">Back</a></p>
+<h1 id="lessons-and-examples-to-create-smart-contracts-in-signum-network">Lessons and examples to create smart contracts in Signum network <a class="heading-anchor-permalink" href="#lessons-and-examples-to-create-smart-contracts-in-signum-network">#</a></h1>
+<p>Following guide will show examples with progressive complexity and comments how they works. It is expected that you know C language. It is a good idea to read all docs from SmartC wiki, and also ciyam official documentation available <a href="https://ciyam.org/at/">here</a>.</p>
+<h2 id="basic-contracts">Basic contracts <a class="heading-anchor-permalink" href="#basic-contracts">#</a></h2>
+<h3 id="always-running%2C-doing-nothing">Always Running, doing nothing <a class="heading-anchor-permalink" href="#always-running%2C-doing-nothing">#</a></h3>
+<pre><code class="language-c">#program name alwaysRuning
+#program description Always Running, doing nothing
+#pragma maxAuxVars 1
+
+while (1) {
+    sleep 1;
+}
+</code></pre>
+<ul>
+<li>This contract has no functions, API and no variable declared.</li>
+<li>Macro <code>#pragma</code> can set some specific behaviour of compiler, in this case it will set compiler to use only one auxiliary variable (they act as registers for operations). Default value is 5, but here we will use the minimum allowed.</li>
+<li>Only one global statement, <code>while (1)</code> is used to make an infinite loop.</li>
+<li>Keyword <code>sleep 1</code> will stop the contract process at current block and resumes execution at the next block.</li>
+<li>It will keep in this loop until there is no more balance at the contract, then it will be freezed until it receives more balance.</li>
+</ul>
+<h3 id="counting-transactions%2C-easy-way">Counting transactions, easy way <a class="heading-anchor-permalink" href="#counting-transactions%2C-easy-way">#</a></h3>
+<pre><code class="language-c">#program name CountingTxDelayed
+#program description Counting transactions, easy way
+
+void main(void) {
+    long counter;
+    counter++;
+}
+</code></pre>
+<ul>
+<li>The <code>main</code> function is the entry point when a block is forged and contract has pending TX to be processed. When finished via <code>return</code> or <code>exit</code> the execution will stop.</li>
+<li>If two transactions are received by this contract, the first one will be processed and the contract will enter finished state. In the next block it will be activated again with the second message that was not processed in same block height. This means, if this contract receives 10 messages at some block, it will take 10 blocks to finish counting them.</li>
+<li>When the contract is created, all memory is zeroed. So variable counter will start from zero and keep increasing every block it has received TXs.</li>
+</ul>
+<h3 id="counting-transactions-without-delay.">Counting transactions without delay. <a class="heading-anchor-permalink" href="#counting-transactions-without-delay.">#</a></h3>
+<pre><code class="language-c">#program name CountingTx
+#program description Counting transactions without delay
+#include APIFunctions
+
+void processTX(void){
+    const long counter=10;
+    counter++;
+}
+
+void main(void) {
+    long lastTX;
+
+    do {
+        get_next_tx_details(lastTX);
+        if (tx_details.timestamp == 0) //no more transactions
+            break;
+        lastTX = tx_details.timestamp;
+        processTX();
+    } while (1);
+
+    //clean_up();
+}
+
+struct TXINFO {
+   long timestamp;
+   long sender;
+   long amount;
+   long message[4];
+} tx_details;
+
+void get_next_tx_details(long last_timestamp) {
+
+    //put the next tx in superregister A  
+    A_To_Tx_After_Timestamp(last_timestamp);
+
+    //gets A1, (less significative long of superregister A)
+    if (Get_A1() == 0) { //no more transactions
+        tx_details.timestamp=0;
+        return;
+    }
+    tx_details.amount  = Get_Amount_For_Tx_In_A();
+    tx_details.timestamp = Get_Timestamp_For_Tx_In_A();
+    B_To_Address_Of_Tx_In_A();
+    tx_details.sender = Get_B1();
+    Message_From_Tx_In_A_To_B();
+    tx_details.message[0]=Get_B1();
+    tx_details.message[1]=Get_B2();
+    tx_details.message[2]=Get_B3();
+    tx_details.message[3]=Get_B4();
+    return;
+}
+</code></pre>
+<ul>
+<li>To get details from incoming transaction, we will use the API functions. Tell the compiler you will need them with macro <code>#include APIFunctions</code>.</li>
+<li>It is presented the function <code>get_next_tx_details()</code> that will get all details from incoming message to a global variable <code>tx_details</code>. This stuct has members to store all information that can be retrieved from a TX.</li>
+<li>The <code>main</code> function will loop thru all TX received in same block. When the API <code>A_To_Tx_After_Timestamp</code> returns timestamp zero, it means there is no more pending transactions, so the contract can be finished.</li>
+<li>Counter value will be set to 10 during contract deployment (keyword const!). Then it will be increased for each new valid tx received.</li>
+<li>Of course you can implement a new way.</li>
+<li>Global variable is used because it needs less instructions to make same thing. It is important to note, because every assembly instructions will be charged a fee for execution and there is limitations for code and memory sizes when deploying an smart contract in the blockchain.</li>
+</ul>
+<h3 id="sending-signa">Sending signa <a class="heading-anchor-permalink" href="#sending-signa">#</a></h3>
+<pre><code class="language-c">#program name SendSigna
+#program description Using a function to send signa.
+#include APIFunctions
+
+const long send_to=&quot;S-2LER-KMQ8-88WQ-EPKST&quot;;
+//long ONE_BURST=1_0000_0000;
+
+void main(void) {
+    long lastTX, curr_balance;
+
+    do {
+        get_next_tx_details(lastTX);
+        if (tx_details.timestamp == 0) //no more transactions
+            break;
+        lastTX = tx_details.timestamp;
+    } while (1);
+
+    curr_balance = Get_Current_Balance();
+
+    if (curr_balance &gt; 30*100000000) {
+        send_signa.recipient = send_to;
+        send_signa.amount = curr_balance - 5 * 1_0000_0000;
+        Send_Signa();
+    }
+}
+
+struct SENDSIGNA {
+   long recipient;
+   long amount;
+} send_signa;
+
+void Send_Signa() {
+    Set_B1(send_signa.recipient);
+    Send_To_Address_In_B(send_signa.amount);
+}
+
+struct TXINFO {
+   long timestamp;
+   long sender;
+   long amount;
+   long message[4];
+} tx_details;
+
+void get_next_tx_details(long last_timestamp) {
+   
+    A_To_Tx_After_Timestamp(last_timestamp);
+
+    if (Get_A1() == 0) { //no more transactions
+        tx_details.timestamp=0;
+        return;
+    }
+    tx_details.amount  = Get_Amount_For_Tx_In_A();
+    tx_details.timestamp = Get_Timestamp_For_Tx_In_A();
+    B_To_Address_Of_Tx_In_A();
+    tx_details.sender = Get_B1();
+    Message_From_Tx_In_A_To_B();
+    tx_details.message[0]=Get_B1();
+    tx_details.message[1]=Get_B2();
+    tx_details.message[2]=Get_B3();
+    tx_details.message[3]=Get_B4();
+    return;
+}
+</code></pre>
+<ul>
+<li>Loop thru all incoming messages doing nothing. When there is no more tx, then check if account balance is greater than 30 burst. If it is, send funds to address defined and keep 5 burst in contract account.</li>
+<li>Function <code>Send_Burst()</code> is very simple and can be implemented passing arguments, or even embeed in code.</li>
+<li>Burst quantity is always specified in NQT. 1 Burst is 1.0000.0000 NQT.</li>
+</ul>
+<h3 id="sending-a-message">Sending a message <a class="heading-anchor-permalink" href="#sending-a-message">#</a></h3>
+<pre><code class="language-c">#program name SendMessage
+#program description Easy way to send messages
+#include APIFunctions
+
+void main(void) {
+    long lastTX;
+
+    do {
+        get_next_tx_details(lastTX);
+        if (tx_details.timestamp == 0) //no more transactions
+            break;
+        lastTX = tx_details.timestamp;
+
+        send_message.recipient = tx_details.sender;
+        send_message.message[]=&quot;Thanks for donation!&quot;;
+        Send_Message();
+
+    } while (1);
+}
+
+
+struct SENDMESSAGE {
+   long recipient;
+   long message[4];
+} send_message;
+
+void Send_Message() {
+    Set_B1(send_message.recipient);
+    Set_A1_A2(send_message.message[0], send_message.message[1]);
+    Set_A3_A4(send_message.message[2], send_message.message[3]);
+    Send_A_To_Address_In_B();
+}
+
+
+struct TXINFO {
+   long timestamp;
+   long sender;
+   long amount;
+   long message[4];
+} tx_details;
+
+void get_next_tx_details(long last_timestamp) {
+   
+    A_To_Tx_After_Timestamp(last_timestamp);
+
+    if (Get_A1() == 0) { //no more transactions
+        tx_details.timestamp=0;
+        return;
+    }
+    tx_details.amount  = Get_Amount_For_Tx_In_A();
+    tx_details.timestamp = Get_Timestamp_For_Tx_In_A();
+    B_To_Address_Of_Tx_In_A();
+    tx_details.sender = Get_B1();
+    Message_From_Tx_In_A_To_B();
+    tx_details.message[0]=Get_B1();
+    tx_details.message[1]=Get_B2();
+    tx_details.message[2]=Get_B3();
+    tx_details.message[3]=Get_B4();
+    return;
+}
+
+</code></pre>
+<ul>
+<li>Presenting function <code>Send_Message()</code> thats sends a message with content in global variable <code>send_message</code>.</li>
+<li>If the contract sends two messages to same recipient in same block, recipient will receive only the last one.</li>
+<li>Messages are limited to 32 bytes, the size of superregister A. Text is encoded with UTF-8, so some characters need more than one byte.</li>
+</ul>
+<h3 id="sending-a-message-and-burst">Sending a message and burst <a class="heading-anchor-permalink" href="#sending-a-message-and-burst">#</a></h3>
+<pre><code class="language-c">//function and global variable shown
+struct SENDMESSAGESIGNA {
+   long recipient;
+   long amount;
+   long message[4];
+} send_message_signa;
+
+void Send_Message_Signa() {
+    Set_B1(send_message_signa.recipient);
+    Set_A1_A2(send_message_signa.message[0], send_message_signa.message[1]);
+    Set_A3_A4(send_message_signa.message[2], send_message_signa.message[3]);
+    Send_A_To_Address_In_B();
+    Send_To_Address_In_B(send_message_signa.amount);
+}
+</code></pre>
+<ul>
+<li>Easy, just join the API call to send message and send signa. Function and global variable is show in example.</li>
+<li>Set values then call the function.</li>
+</ul>
+<p><a href="./">Back</a></p>
+
+      </article>
+    </div>
+    <script>
+      // Load contents.json if you need it
+    </script>
+    <script>
+      // FROM http://purecss.io/js/ui.js
+      (function(window, document) {
+        var layout = document.getElementById("layout"),
+          menu = document.getElementById("menu"),
+          menuLink = document.getElementById("menuLink");
+
+        function toggleClass(element, className) {
+          var classes = element.className.split(/\s+/),
+            length = classes.length,
+            i = 0;
+
+          for (; i < length; i++) {
+            if (classes[i] === className) {
+              classes.splice(i, 1);
+              break;
+            }
+          }
+          // The className is not found
+          if (length === classes.length) {
+            classes.push(className);
+          }
+
+          element.className = classes.join(" ");
+        }
+
+        menuLink.onclick = function(e) {
+          var active = "active";
+
+          e.preventDefault();
+          toggleClass(layout, active);
+          toggleClass(menu, active);
+          toggleClass(menuLink, active);
+        };
+      })(this, this.document);
+    </script>
+  </body>
+</html>
