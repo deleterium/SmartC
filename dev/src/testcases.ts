@@ -2,8 +2,9 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-// eslint-disable-next-line no-unused-vars
-function runTestCases (asmCompiler: any, cCompiler: any) {
+import { SmartC } from './SmartC/smartc.js'
+
+export function runTestCases () {
     function encodedStr (rawStr: string) {
         return rawStr.replace(/[\u00A0-\u9999<>&]/g, function (i) {
             return '&#' + i.charCodeAt(0) + ';'
@@ -1284,7 +1285,6 @@ a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;
 
     ]
 
-    let code
     let result = ''
     let itemPass = 0
     let itemFail = 0
@@ -1293,8 +1293,12 @@ a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;
     for (let i = 0; i < bytecodeTests.length; i++) {
         try {
             result += '<br>Test ' + i + ' '
-            asmCompiler.compile(bytecodeTests[i][0])
-            code = asmCompiler.getMachineCode()
+            const asmCompiler = new SmartC({
+                language: 'Assembly',
+                sourceCode: bytecodeTests[i][0]
+            })
+            asmCompiler.compile()
+            const code = asmCompiler.getMachineCode()
             if (bytecodeTests[i][1] === false) {
                 if (code.ByteCode === bytecodeTests[i][2] && code.ByteData === bytecodeTests[i][3]) {
                     result += 'Pass! (run OK)'
@@ -1334,8 +1338,12 @@ GOT: ${e}`
                 return
             }
             result += `<br>Test ${index} `
-            cCompiler.compile(currentTest[0])
-            code = cCompiler.getAssemblyCode()
+            const cCompiler = new SmartC({
+                language: 'C',
+                sourceCode: currentTest[0]
+            })
+            cCompiler.compile()
+            const code = cCompiler.getAssemblyCode()
             if (currentTest[1] === false) {
                 if (code === currentTest[2]) {
                     result += `Pass! (run OK) Code: <span style='color:blue'>${encodedStr(currentTest[0])}</span>`

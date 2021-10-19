@@ -1,21 +1,13 @@
 import { SmartC } from './SmartC/smartc.js'
 import { asmHighlight } from './asmHighlight.js'
+import { runTestCases } from './testcases.js'
 
 /* Following global functions are define on the files:
-preprocess      -> out/preprocessor.js
-tokenize        -> out/tokenizer.js
-parse           -> out/parser.js
-shape           -> out/shaper.js
-syntaxProcess   -> out/syntaxProcessor.js
-generate        -> out/generator.js
-bytecode        -> out/bytecoder.js
-runTestCases    -> out/testcases.js
-asmHighlight    -> out/asmHighlight.js
 WinBox          -> 3rd-party/winbox.bundle.js
 hljs            -> 3rd-party/highlight.min.js
 */
 
-/* global runTestCases hljs WinBox */
+/* global hljs WinBox */
 
 window.onload = () => {
     const scode = document.getElementById('source-code')
@@ -50,6 +42,21 @@ window.onload = () => {
     toggleLang(document.getElementById('source_is_c'))
 
     detachDeployment().minimize(true)
+
+    try {
+        const startUpTest = new SmartC({
+            language: 'C',
+            sourceCode: '#pragma maxAuxVars 1\nlong a, b, c; a=b/~c;'
+        })
+        startUpTest.compile()
+        if (startUpTest.getMachineCode().MachineCodeHashId === '7488355358104845254') {
+            document.getElementById('status_output').innerHTML = '<span class="msg_success">Start up test done!</span>'
+            return
+        }
+        document.getElementById('status_output').innerHTML = '<span class="msg_failure">Start up test failed...</span>'
+    } catch (e) {
+        document.getElementById('status_output').innerHTML = '<span class="msg_failure">Start up test crashed...</span>'
+    }
 }
 
 const PageGlobal = {
