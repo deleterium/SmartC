@@ -1,6 +1,6 @@
 {
   "name": "smartc",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "C Compiler for smart contracts on Signum network",
   "main": "index.js",
   "repository": {
@@ -23,10 +23,11 @@
   "homepage": "https://github.com/deleterium/SmartC#readme",
   "scripts": {
     "dev": "npx tsc",
-    "lint": "npx eslint ./**/*.ts ./index.js",
-    "build": "npx tsc && cp ./src/index.js ./out/index.js",
+    "lint": "npx eslint './src/**/*'",
+    "build": "npm run lint && npx tsc && cp ./src/index.js ./out/index.js",
+    "build:stable": "npm run build && rm -Rf ../stable||: && mkdir ../stable && cp -R ./out index.html style.css ./3rd-party favicon.svg ../stable/ && npm run build:docs && echo 'Sucess'",
     "start": "npx light-server -s . -p 7000 --no-reload",
-    "docs": "rm -R ../stable/htmlDocs && npx markdown-folder-to-html ../docs && mv ../_docs ../stable/htmlDocs && ln -s ./README.html ../stable/htmlDocs/index.html"
+    "build:docs": "rm -Rf ../stable/htmlDocs||: && npx markdown-folder-to-html ../docs && mv ../_docs ../stable/htmlDocs && ln -s ./README.html ../stable/htmlDocs/index.html && rm ../stable/htmlDocs/contents.json"
   },
   "eslintConfig": {
     "env": {
