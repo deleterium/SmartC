@@ -22,10 +22,10 @@
   },
   "homepage": "https://github.com/deleterium/SmartC#readme",
   "scripts": {
-    "dev": "npx tsc",
-    "lint": "npx eslint './src/**/*'",
-    "build": "npm run lint && npx tsc && cp ./src/index.js ./out/index.js",
-    "build:stable": "npm run build && rm -Rf ../stable||: && mkdir ../stable && cp -R ./out index.html style.css ./3rd-party favicon.svg ../stable/ && npm run build:docs && echo 'Sucess'",
+    "dev": "node esbuild.config.js",
+    "lint": "npx eslint './src/**/*' && npx tsc",
+    "build": "npm run lint && node esbuild.config.js",
+    "build:stable": "npm run build && rm -Rf ../stable||: && mkdir ../stable && cp -R ./lib index.html style.css ./3rd-party favicon.svg ../stable/ && npm run build:docs && echo 'Sucess'",
     "start": "npx light-server -s . -p 7000 --no-reload",
     "build:docs": "rm -Rf ../stable/htmlDocs||: && npx markdown-folder-to-html ../docs && mv ../_docs ../stable/htmlDocs && ln -s ./README.html ../stable/htmlDocs/index.html && rm ../stable/htmlDocs/contents.json"
   },
@@ -37,6 +37,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.29.1",
     "@typescript-eslint/parser": "^4.29.1",
+    "esbuild": "^0.13.8",
     "eslint": "^7.32.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-plugin-import": "^2.24.0",

@@ -67,15 +67,15 @@ const PageGlobal = {
 function compileCode () {
     const codeString = document.getElementById('source-code').value
     const t0 = new Date()
-    let compiler
 
     try {
+        let compiler
         if (document.getElementById('source_is_c').checked) {
-            compiler = new SmartC('C')
+            compiler = new SmartC({ language: 'C', sourceCode: codeString })
         } else {
-            compiler = new SmartC('Assembly')
+            compiler = new SmartC({ language: 'Assembly', sourceCode: codeString })
         }
-        compiler.compile(codeString)
+        compiler.compile()
         const asmCode = compiler.getAssemblyCode()
         const bcode = compiler.getMachineCode()
 

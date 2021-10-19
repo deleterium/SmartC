@@ -44,7 +44,7 @@ export class SmartC {
     private codeGenerated?: string
     private byteCoded?: MACHINE_OBJECT
 
-    constructor (options: {language: 'C' | 'Assembly', sourceCode: string}) {
+    constructor (options: { language: 'C' | 'Assembly', sourceCode: string }) {
         this.language = options.language
         this.sourceCode = options.sourceCode
     }
@@ -52,7 +52,7 @@ export class SmartC {
     /**
      * Triggers compilation process
      * @throws {Error} if compilation is not sucessfull */
-    compile () {
+    compile () : void {
         if (this.byteCoded) {
             return
         }
@@ -78,18 +78,18 @@ export class SmartC {
      * @returns Sucessfull compiled assembly code
      * @throws {Error} if compilation was not done
      */
-    getAssemblyCode () {
+    getAssemblyCode () : string {
         if (!this.byteCoded) {
             throw new Error('Source code was not compiled.')
         }
-        return this.codeGenerated
+        return this.codeGenerated ?? ''
     }
 
     /**
      * @returns Sucessfull compiled machine code
      * @throws {Error} if compilation was not done
      */
-    getMachineCode () {
+    getMachineCode () : MACHINE_OBJECT {
         if (!this.byteCoded) {
             throw new Error('Source code was not compiled.')
         }
