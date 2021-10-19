@@ -1,3 +1,6 @@
+import { SmartC } from './out/SmartC/smartc.js'
+import { asmHighlight } from './out/src/asmHighlight.js'
+
 /* Following global functions are define on the files:
 preprocess      -> out/preprocessor.js
 tokenize        -> out/tokenizer.js
@@ -12,7 +15,7 @@ WinBox          -> 3rd-party/winbox.bundle.js
 hljs            -> 3rd-party/highlight.min.js
 */
 
-/* global preprocess tokenize parse shape syntaxProcess generate asmHighlight bytecode runTestCases hljs WinBox */
+/* global runTestCases hljs WinBox */
 
 window.onload = () => {
     const scode = document.getElementById('source-code')
@@ -57,22 +60,19 @@ const PageGlobal = {
 function compileCode () {
     const codeString = document.getElementById('source-code').value
     const t0 = new Date()
+    let compiler
 
     try {
-        let asmCode
         if (document.getElementById('source_is_c').checked) {
-            const preprocessOut = preprocess(codeString)
-            const tokenizeOut = tokenize(preprocessOut)
-            const parseOut = parse(tokenizeOut)
-            const shapeOut = shape(parseOut)
-            const syntaxOut = syntaxProcess(shapeOut)
-            asmCode = generate(syntaxOut)
+            compiler = new SmartC('C')
         } else {
-            asmCode = codeString
+            compiler = new SmartC('Assembly')
         }
+        compiler.compile(codeString)
+        const asmCode = compiler.getAssemblyCode()
+        const bcode = compiler.getMachineCode()
 
         document.getElementById('assembly_output').innerHTML = asmHighlight(asmCode)
-        const bcode = bytecode(asmCode)
 
         const t1 = new Date()
         let compileMessage = `<span class='msg_success'>Compile sucessfull!!!</span> <small>Done at ${t1.getHours()}:${t1.getMinutes()}:${t1.getSeconds()} in ${t1 - t0} ms.`
@@ -332,7 +332,7 @@ function clearForm () {
 function testCode () {
     document.getElementById('assembly_output').innerHTML = ''
     clearForm()
-    document.getElementById('status_output').innerHTML = runTestCases()
+    document.getElementById('status_output').innerHTML = runTestCases(new SmartC('Assembly'), new SmartC('C'))
 }
 
 function toggleLang (ev) {

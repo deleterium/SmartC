@@ -17,8 +17,7 @@
  * @param hexCode Machine code to be calculated, as hex string.
  * @returns A string representing a hash ID of given contract
  */
-// eslint-disable-next-line no-unused-vars
-function hashMachineCode (hexCode: string): string {
+export function hashMachineCode (hexCode: string): string {
     // Pad input to match codepage length
     const hexLen = Number(((BigInt(hexCode.length) / 512n) + 1n) * 512n)
     hexCode = hexCode.padEnd(hexLen, '0')

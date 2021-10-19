@@ -2,16 +2,21 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-/* global TOKEN TOKEN_MODIFIER CONTRACT SENTENCES optimize MEMORY_SLOT DECLARATION_TYPES AST utils ARRAY_TYPE_DEFINITION
-STRUCT_TYPE_DEFINITION */
+import { CONTRACT } from '../typings/contractTypes'
+import {
+    AST, MEMORY_SLOT, DECLARATION_TYPES, ARRAY_TYPE_DEFINITION,
+    STRUCT_TYPE_DEFINITION, TOKEN_MODIFIER, TOKEN, SENTENCES
+} from '../typings/syntaxTypes'
+
+import { optimize } from './optimizer.js'
+import { utils } from './utils.js'
 
 /**
  * Code generator. Translates a Program into assembly source code
  * @param Program object holding information
  * @returns assembly source code
  */
-// eslint-disable-next-line no-unused-vars
-function generate (Program: CONTRACT) {
+export function codeGenerate (Program: CONTRACT) {
     // holds variables needed during compilation
     const generateUtils: {
         /** Stack saving loops IDs */

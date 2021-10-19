@@ -2,49 +2,17 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-/* global hashMachineCode */
-
-interface BYTECODE_RETURN_OBJECT {
-    /** Number of data pages (Memory size) */
-    DataPages: number
-    /** Number of code stack pages (code stack size) */
-    CodeStackPages: number
-    /** Number of user stack pages (user stack size) */
-    UserStackPages: number
-    /** Number of machine instructions pages */
-    CodePages: number
-    /** Calculated minimum fee for contract deployment */
-    MinimumFeeNQT: string
-    /** Hex string with contract machine code */
-    ByteCode: string
-    /** Hash ID for compiled machine code */
-    MachineCodeHashId: string
-    /** Hex string with contract starting memory values */
-    ByteData: string
-    /** Array with variables names ordered in memory */
-    Memory: string[]
-    /** Array with labels and their addresses (not ordered) */
-    Labels: {
-        label: string
-        address: number
-    }[]
-    /** Program name */
-    PName: string
-    /** Program description */
-    PDescription: string
-    /** Program activation amount */
-    PActivationAmount: string
-}
+import { MACHINE_OBJECT } from '../typings/contractTypes'
+import { hashMachineCode } from './hashMachineCode.js'
 
 /**
  * Transforms assembly code into machine code
  * @param assemblySourceCode string
- * @returns {BYTECODE_RETURN_OBJECT} with all details needed for
+ * @returns {MACHINE_OBJECT} with all details needed for
  * smart contract deployment.
  * @throws {Error} on any source code mistake.
  */
-// eslint-disable-next-line no-unused-vars
-function bytecode (assemblySourceCode: string): BYTECODE_RETURN_OBJECT {
+export function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
     // Local interfaces
     interface MEMORY_INFO {
         name: string
@@ -277,7 +245,7 @@ function bytecode (assemblySourceCode: string): BYTECODE_RETURN_OBJECT {
     }
 
     /* * * Main function! * * */
-    function bytecodeMain (): BYTECODE_RETURN_OBJECT {
+    function bytecodeMain (): MACHINE_OBJECT {
         // process line by line
         const line = assemblySourceCode.split('\n')
 
@@ -514,7 +482,7 @@ function bytecode (assemblySourceCode: string): BYTECODE_RETURN_OBJECT {
     }
 
     /** Builds returnObject with values from AsmObj */
-    function buildRetObj (): BYTECODE_RETURN_OBJECT {
+    function buildRetObj (): MACHINE_OBJECT {
         let cspages = 0; let uspages = 0
         if (assemblySourceCode.indexOf('JSR ') !== -1 || assemblySourceCode.indexOf('RET') !== -1) {
             if (AsmObj.PCodeStackPages > 0) {

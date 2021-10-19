@@ -9,7 +9,7 @@
  * @returns same text with syntax highlight in html
  */
 // eslint-disable-next-line no-unused-vars
-function asmHighlight (asmSourceCode: string) {
+export function asmHighlight (asmSourceCode: string) {
     const Config = {
         divId: 'asmCodeline',
         divClass: 'asmLine',

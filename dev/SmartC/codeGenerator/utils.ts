@@ -3,13 +3,12 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-/* global TOKEN AST MEMORY_SLOT DECLARATION_TYPES */
+import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES } from '../typings/syntaxTypes'
 
 /**
  * Simple functions that do not depend external variables.
  */
-// eslint-disable-next-line no-unused-vars
-const utils = {
+export const utils = {
     /** Creates a constant Memory Object */
     createConstantMemObj (value: number|string = ''): MEMORY_SLOT {
         let param: string

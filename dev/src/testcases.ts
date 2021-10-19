@@ -2,10 +2,8 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-/* global generate syntaxProcess shape parse tokenize preprocess bytecode */
-
 // eslint-disable-next-line no-unused-vars
-function runTestCases () {
+function runTestCases (asmCompiler: any, cCompiler: any) {
     function encodedStr (rawStr: string) {
         return rawStr.replace(/[\u00A0-\u9999<>&]/g, function (i) {
             return '&#' + i.charCodeAt(0) + ';'
@@ -527,7 +525,7 @@ function runTestCases () {
         ['long a, b; while (a) { a++; if (a==5) continue; b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nSET @r0 #0000000000000005\nBNE $a $r0 :__if2_endif\n__if2_start:\nJMP :__loop1_continue\n__if2_endif:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'],
         ['long a, b, c; a++; goto alabel; b++; alabel: c++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nINC @a\nJMP :alabel\nINC @b\nalabel:\nINC @c\nFIN\n'],
         ['long temp; temp = 2; if (temp>0) goto label1; if (temp==0) goto label2; goto label3; label1: temp++; label2: temp++; label3: temp++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare temp\n\nSET @temp #0000000000000002\nCLR @r0\nBLE $temp $r0 :__if1_endif\n__if1_start:\nJMP :label1\n__if1_endif:\nBNZ $temp :__if2_endif\n__if2_start:\nJMP :label2\n__if2_endif:\nJMP :label3\nlabel1:\nINC @temp\nlabel2:\nINC @temp\nlabel3:\nINC @temp\nFIN\n'],
-        ['long a, b; a++; asm { PSH @a\nPOP @b } b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nINC @a\nPSH @a\nPOP @b\nINC @b\nFIN\n'],
+        ['long a, b; a++; asm { PSH $a\nPOP @b } b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nINC @a\nPSH $a\nPOP @b\nINC @b\nFIN\n'],
         ['long a, b; a++; sleep 1;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nINC @a\nSET @r0 #0000000000000001\nSLP $r0\nFIN\n'],
         ['long a, b; exit; a++; ', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nFIN\nINC @a\nFIN\n'],
         ['halt;', false, '^declare r0\n^declare r1\n^declare r2\n\nSTP\nFIN\n'],
@@ -1295,7 +1293,8 @@ a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;
     for (let i = 0; i < bytecodeTests.length; i++) {
         try {
             result += '<br>Test ' + i + ' '
-            code = bytecode(bytecodeTests[i][0])
+            asmCompiler.compile(bytecodeTests[i][0])
+            code = asmCompiler.getMachineCode()
             if (bytecodeTests[i][1] === false) {
                 if (code.ByteCode === bytecodeTests[i][2] && code.ByteData === bytecodeTests[i][3]) {
                     result += 'Pass! (run OK)'
@@ -1335,7 +1334,8 @@ GOT: ${e}`
                 return
             }
             result += `<br>Test ${index} `
-            code = generate(syntaxProcess(shape(parse(tokenize(preprocess(currentTest[0]))))))
+            cCompiler.compile(currentTest[0])
+            code = cCompiler.getAssemblyCode()
             if (currentTest[1] === false) {
                 if (code === currentTest[2]) {
                     result += `Pass! (run OK) Code: <span style='color:blue'>${encodedStr(currentTest[0])}</span>`

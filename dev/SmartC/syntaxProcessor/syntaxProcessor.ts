@@ -2,63 +2,8 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-/* global TOKEN CONTRACT SENTENCES */
-
-// eslint-disable-next-line no-use-before-define
-type AST = UNARY_ASN | BINARY_ASN | NULL_ASN | END_ASN | LOOKUP_ASN | EXCEPTION_ASN
-
-interface UNARY_ASN {
-    /** Unary Abstract Syntax Node */
-    type: 'unaryASN'
-    /** Unary operator token */
-    Operation: TOKEN
-    /** Continuation of AST */
-    Center: AST
-}
-interface BINARY_ASN {
-    /** Binary Abstract Syntax Node */
-    type: 'binaryASN'
-    /** Binary operator token */
-    Operation: TOKEN
-    /** Left side AST */
-    Left: AST
-    /** Right side AST */
-    Right: AST
-}
-
-interface NULL_ASN {
-    /** End Abstract Syntax Node */
-    type: 'nullASN'
-}
-
-interface END_ASN {
-    /** End Abstract Syntax Node */
-    type: 'endASN'
-    /** End token. May be undefined, but most of times this situation leads to error. */
-    Token: TOKEN
-}
-type TOKEN_MODIFIER = {type: 'Array', Center: AST} | {type: 'MemberByVal', Center: TOKEN} | {type: 'MemberByRef', Center: TOKEN}
-
-interface LOOKUP_ASN {
-    /** Abstract Syntax Node for variables with modifiers to be evaluated in chain  */
-    type: 'lookupASN'
-    /** End token with type == 'Variable' or 'Function' */
-    Token: TOKEN
-    /** Function arguments AST */
-    FunctionArgs?: AST
-    /** Value modifiers like Arr or Members */
-    modifiers: TOKEN_MODIFIER[]
-}
-interface EXCEPTION_ASN {
-    /** exception Abstract Syntax Node. Used for SetUnaryOperator */
-    type: 'exceptionASN'
-    /** Binary operator token. Currently only SetUnaryOperator */
-    Operation: TOKEN
-    /** Left side AST. Indicating pre-increment or pre-decrement */
-    Left?: AST
-    /** Rigth side AST. Indicating post-increment or post-decrement */
-    Right?: AST
-}
+import { CONTRACT } from '../typings/contractTypes'
+import { TOKEN, SENTENCES, AST, LOOKUP_ASN } from '../typings/syntaxTypes'
 
 /**
  * Traverse Program transforming some sentences properties from arrays of
@@ -69,8 +14,7 @@ interface EXCEPTION_ASN {
  * @returns Program processed
  * @throws {TypeError|SyntaxError} on any mistake.
  */
-// eslint-disable-next-line no-unused-vars
-function syntaxProcess (Program: CONTRACT) {
+export function syntaxProcess (Program: CONTRACT) {
     /**
      * Traverse an array of tokens to create a real AST based on
      * simple operations. Only unary or binary operations permitted here

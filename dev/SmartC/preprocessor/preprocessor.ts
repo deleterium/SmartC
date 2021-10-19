@@ -7,8 +7,7 @@
  * @param sourcecode Source code input
  * @returns preprocessed string
  */
-// eslint-disable-next-line no-unused-vars
-function preprocess (sourcecode: string) {
+export function preprocess (sourcecode: string) {
     const preprocessorCodes: {
         regex: RegExp
         type: 'DEFINE_NULL' | 'DEFINE_VAL' | 'UNDEF' | 'IFDEF' | 'IFNDEF' | 'ELSE' | 'ENDIF'

@@ -1,44 +1,16 @@
 
-interface PRE_TOKEN {
-    line: number
-    type: string
-    value: string
-    /** Only applicable for asm token */
-    asmText?: string
-}
-
 // Author: Rui Deleterium
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-/** Allowed token types */
-type TOKEN_TYPES = 'Variable' | 'Constant' | 'Operator' | 'UnaryOperator' |
-'SetUnaryOperator' | 'Assignment'| 'SetOperator'|'Comparision'|'CheckOperator'|
-'Arr'|'CodeCave'|'CodeDomain'|'Delimiter'|'Terminator'|'Macro'|'Member'|'Colon'|
-'Keyword'|'Function' | 'APICall' | 'Push'
-
-type DECLARATION_TYPES = 'void' | 'long' | 'struct' | 'void_ptr' | 'long_ptr' | 'struct_ptr' | ''
-
-interface TOKEN {
-    line: number
-    precedence: number
-    type: TOKEN_TYPES
-    declaration?: DECLARATION_TYPES
-    /** Empty string for Arr, CodeCave, CodeDomain */
-    value: string
-    /** Only applicable to Arr, CodeCave, CodeDomain, Variable with modifier */
-    params?: TOKEN[]
-    /** Only applicable to types: asm, break, continue, struct or label */
-    extValue?: string
-}
+import { PRE_TOKEN, TOKEN } from '../typings/syntaxTypes'
 
 /** Translate an array of pre tokens to an array of tokens. First phase of parsing.
  * @param tokens Array of pre-tokens
  * @returns Array of TOKENS. Recursive on Arr, CodeCave and CodeDomain types
  * @throws {TypeError | SyntaxError} at any mistakes
  */
-// eslint-disable-next-line no-unused-vars
-function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
+export function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
     interface TOKEN_SPEC {
         sequence: string[]
         action(item: number): TOKEN

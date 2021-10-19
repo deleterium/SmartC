@@ -23,8 +23,9 @@
   "homepage": "https://github.com/deleterium/SmartC#readme",
   "scripts": {
     "dev": "npx tsc",
-    "lint": "npx eslint ./src/*.ts ./index.js",
+    "lint": "npx eslint ./**/*.ts ./index.js",
     "build": "npx tsc",
+    "start": "npx light-server -s . -p 7000 --no-reload",
     "docs": "rm -R ../stable/htmlDocs && npx markdown-folder-to-html ../docs && mv ../_docs ../stable/htmlDocs && ln -s ./README.html ../stable/htmlDocs/index.html"
   },
   "eslintConfig": {
@@ -40,6 +41,7 @@
     "eslint-plugin-import": "^2.24.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.1.0",
+    "light-server": "^2.9.1",
     "markdown-folder-to-html": "^2.4.0",
     "typescript": "^4.3.5"
   }

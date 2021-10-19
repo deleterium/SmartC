@@ -9,13 +9,7 @@
         int, short, sizeof, signed, static,
         switch, typedef, union, unsigned
 */
-interface PRE_TOKEN {
-    line: number
-    type: string
-    value: string
-    /** Applicable for asm and struct tokens */
-    extValue?: string
-}
+import { PRE_TOKEN } from '../typings/syntaxTypes'
 
 /**
  * Transforms input source code into an array of pre tokens.
@@ -23,8 +17,7 @@ interface PRE_TOKEN {
  * @param input source code
  * @returns array of pre tokens
  */
-// eslint-disable-next-line no-unused-vars
-function tokenize (input: string): PRE_TOKEN[] {
+export function tokenize (input: string): PRE_TOKEN[] {
     const singleTokensSpecs = [
         { char: '=', tokenType: 'equal' },
         { char: '*', tokenType: 'star' },
