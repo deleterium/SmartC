@@ -24,7 +24,7 @@
   "scripts": {
     "dev": "npx tsc",
     "lint": "npx eslint ./**/*.ts ./index.js",
-    "build": "npx tsc",
+    "build": "npx tsc && cp ./src/index.js ./out/index.js",
     "start": "npx light-server -s . -p 7000 --no-reload",
     "docs": "rm -R ../stable/htmlDocs && npx markdown-folder-to-html ../docs && mv ../_docs ../stable/htmlDocs && ln -s ./README.html ../stable/htmlDocs/index.html"
   },

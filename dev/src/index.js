@@ -1,5 +1,5 @@
-import { SmartC } from './out/SmartC/smartc.js'
-import { asmHighlight } from './out/src/asmHighlight.js'
+import { SmartC } from './SmartC/smartc.js'
+import { asmHighlight } from './asmHighlight.js'
 
 /* Following global functions are define on the files:
 preprocess      -> out/preprocessor.js
