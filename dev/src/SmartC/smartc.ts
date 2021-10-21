@@ -1,10 +1,10 @@
-import { preprocess } from './preprocessor/preprocessor.js'
-import { tokenize } from './tokenizer/tokenizer.js'
-import { parse } from './parser/parser.js'
-import { shape } from './shaper/shaper.js'
-import { syntaxProcess } from './syntaxProcessor/syntaxProcessor.js'
-import { codeGenerate } from './codeGenerator/codeGenerator.js'
-import { byteCode } from './byteCoder/byteCoder.js'
+import { preprocess } from './preprocessor/preprocessor'
+import { tokenize } from './tokenizer/tokenizer'
+import { parse } from './parser/parser'
+import { shape } from './shaper/shaper'
+import { syntaxProcess } from './syntaxProcessor/syntaxProcessor'
+import { codeGenerate } from './codeGenerator/codeGenerator'
+import { byteCode } from './byteCoder/byteCoder'
 
 import { PRE_TOKEN, TOKEN } from './typings/syntaxTypes'
 import { CONTRACT, MACHINE_OBJECT } from './typings/contractTypes'
@@ -52,9 +52,9 @@ export class SmartC {
     /**
      * Triggers compilation process
      * @throws {Error} if compilation is not sucessfull */
-    compile () : void {
+    compile () : SmartC {
         if (this.byteCoded) {
-            return
+            return this
         }
         switch (this.language) {
         case 'C':
@@ -72,6 +72,7 @@ export class SmartC {
             throw new Error('Invalid usage. Language must be "C" or "Assembly".')
         }
         this.byteCoded = byteCode(this.codeGenerated)
+        return this
     }
 
     /**

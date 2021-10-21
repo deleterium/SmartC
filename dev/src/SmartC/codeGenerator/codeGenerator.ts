@@ -8,8 +8,8 @@ import {
     STRUCT_TYPE_DEFINITION, TOKEN_MODIFIER, TOKEN, SENTENCES
 } from '../typings/syntaxTypes'
 
-import { optimize } from './optimizer.js'
-import { utils } from './utils.js'
+import { optimize } from './optimizer'
+import { utils } from './utils'
 
 /**
  * Code generator. Translates a Program into assembly source code

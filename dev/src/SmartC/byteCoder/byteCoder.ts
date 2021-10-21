@@ -3,7 +3,7 @@
 // License: BSD 3-Clause License
 
 import { MACHINE_OBJECT } from '../typings/contractTypes'
-import { hashMachineCode } from './hashMachineCode.js'
+import { hashMachineCode } from './hashMachineCode'
 
 /**
  * Transforms assembly code into machine code
