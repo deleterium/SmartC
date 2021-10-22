@@ -17,8 +17,10 @@ jobs:
           node-version: 14
 
       - name: Run SmartC Tests
-          working-directory: ./dev
-        run: npm run test:ci
+        working-directory: ./dev
+        run: |
+          npm ci
+          npm run test:ci
 
       - name: fix code coverage paths
         working-directory: ./dev/coverage
