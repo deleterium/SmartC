@@ -87,9 +87,9 @@ export function preprocess (sourcecode: string) {
             if (lineActive === false) break
             idx = preprocessorReplacements.findIndex(obj => obj.cname === PrepRule.parts[1])
             if (idx === -1) {
-                preprocessorReplacements.push({ cname: PrepRule.parts[1], value: replaceDefines(PrepRule.parts[2]) })
+                preprocessorReplacements.push({ cname: PrepRule.parts[1], value: replaceDefines(PrepRule.parts[2]).trim() })
             } else {
-                preprocessorReplacements[idx].value = PrepRule.parts[2]
+                preprocessorReplacements[idx].value = PrepRule.parts[2].trim()
             }
             break
         case 'UNDEF':
@@ -109,13 +109,12 @@ export function preprocess (sourcecode: string) {
             else ifActive.push({ active: false, flipped: false })
             break
         case 'ELSE': {
-            const lastIfInfo = ifActive.pop()
-            if (lastIfInfo === undefined) throw new SyntaxError(`At line: ${lineNo + 1}. Unmatched '#else' directive.`)
-            if (lastIfInfo.flipped === true) throw new SyntaxError(`At line: ${lineNo + 1}. Unmatched '#else' directive.`)
-            ifActive.push({ active: !lastIfInfo.active, flipped: true })
-            if (ifActive.length === 1) {
+            if (ifActive.length <= 1) {
                 throw new SyntaxError(`At line: ${lineNo + 1}. '#else' directive not associated with '#ifdef', '#ifndef' nor '#if'.`)
             }
+            const lastIfInfo = ifActive.pop() as IF_INFO
+            if (lastIfInfo.flipped === true) throw new SyntaxError(`At line: ${lineNo + 1}. Unmatched '#else' directive.`)
+            ifActive.push({ active: !lastIfInfo.active, flipped: true })
             break
         }
         case 'ENDIF':
@@ -126,7 +125,7 @@ export function preprocess (sourcecode: string) {
             }
             break
         default:
-                // not implementd
+            throw new SyntaxError(`At line: ${lineNo + 1}. Preprocessor diretive missing implementation.`)
         }
         // push empty line so line numbers will not be messed
         ret.push('')
