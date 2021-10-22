@@ -6,6 +6,6 @@ esbuild.build({
     bundle: true,
     minify: true,
     platform: 'browser',
-    sourcemap: 'external',
+    sourcemap: 'both',
     target: 'es2020'
 }).catch(() => process.exit(1))
