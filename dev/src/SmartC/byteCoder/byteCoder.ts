@@ -296,44 +296,41 @@ export function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
             return idx
         }
 
-        // blank line
-        if (instruction.opCode === 0xF0) {
+        switch (instruction.opCode) {
+        case 0xF0:
+            // blank line
             return
-        }
-        // '^comment user_comment'
-        if (instruction.opCode === 0xF2) {
+        case 0xF2:
+            // '^comment user_comment'
             return
-        }
-        // '^declare varName'
-        if (instruction.opCode === 0xF3) {
+        case 0xF3:
+            // '^declare varName'
             getMemoryAddress(parts[1])
             return
-        }
-        // '^const SET @(varName) #(hex_content)'
-        if (instruction.opCode === 0xF4) {
-            // This can cause a bug if const instruction become before declare instruction.
-            // But this is forbidden by generator, so only bug if compiling from wrong man
-            // made assembly code.
-            const addr = getMemoryAddress(parts[1])
-            AsmObj.memory[addr].value = BigInt('0x' + parts[2])
+        case 0xF4:
+            // '^const SET @(varName) #(hex_content)'
+            AsmObj.memory[getMemoryAddress(parts[1])].value = BigInt('0x' + parts[2])
             return
-        }
-        // '^program type information'
-        if (instruction.opCode === 0xF5) {
-            if (parts[1] === 'name') {
+        case 0xF5:
+            // '^program type information'
+            switch (parts[1]) {
+            case 'name':
                 AsmObj.PName = parts[2].trim()
-            }
-            if (parts[1] === 'description') {
+                break
+            case 'description':
                 AsmObj.PDescription = parts[2].trim()
-            }
-            if (parts[1] === 'activationAmount') {
+                break
+            case 'activationAmount':
                 AsmObj.PActivationAmount = parts[2].trim()
-            }
-            if (parts[1] === 'userStackPages') {
+                break
+            case 'userStackPages':
                 AsmObj.PUserStackPages = Number(parts[2].trim())
-            }
-            if (parts[1] === 'codeStackPages') {
+                break
+            case 'codeStackPages':
                 AsmObj.PCodeStackPages = Number(parts[2].trim())
+                break
+            default:
+                throw new Error(`bytecode() error #7. Unknow '^program' directive: '${parts[1]}'`)
             }
             return
         }
@@ -366,31 +363,32 @@ export function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
         }
         for (; i < instruction.argsType.length; i++) {
             // process generic instructions
-            if (instruction.argsType[i] === 'I') {
+            switch (instruction.argsType[i]) {
+            case 'I':
                 CodeObj.instructionValues.push({ type: 'I', value: BigInt(getMemoryAddress(parts[i + 1])) })
-                continue
-            }
-            if (instruction.argsType[i] === 'L') {
+                break
+            case 'L':
                 CodeObj.instructionValues.push({ type: 'L', value: BigInt('0x' + parts[i + 1]) })
-                continue
-            }
-            if (instruction.argsType[i] === 'B') {
+                break
+            case 'B':
                 // branch offset will be processed later
                 CodeObj.branchLabel = parts[i + 1]
-                continue
-            }
-            if (instruction.argsType[i] === 'J') {
+                break
+            case 'J':
                 // jump will be processed later
                 CodeObj.jumpLabel = parts[i + 1]
-                continue
-            }
-            if (instruction.argsType[i] === 'F') {
+                break
+            case 'F': {
                 // function name for opCodes 0x32, 0x33, 0x34
                 const search = apiCodeTable.find(obj => obj.name === parts[1] && obj.opCode === instruction.opCode)
                 if (search === undefined) {
                     throw new Error(`bytecode() error #3. API function not found. Instruction: "${CodeObj.source}"`)
                 }
                 CodeObj.instructionValues.push({ type: 'F', value: BigInt(search.apiCode) })
+                break
+            }
+            default:
+                throw new Error('bytecode() error #99. Fix opCodeTable.argsType')
             }
         }
         AsmObj.code.push(CodeObj)
@@ -484,17 +482,17 @@ export function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
     /** Builds returnObject with values from AsmObj */
     function buildRetObj (): MACHINE_OBJECT {
         let cspages = 0; let uspages = 0
-        if (assemblySourceCode.indexOf('JSR ') !== -1 || assemblySourceCode.indexOf('RET') !== -1) {
-            if (AsmObj.PCodeStackPages > 0) {
-                cspages = AsmObj.PCodeStackPages
-            } else {
+        if (AsmObj.PCodeStackPages > 0) {
+            cspages = AsmObj.PCodeStackPages
+        } else {
+            if (assemblySourceCode.indexOf('JSR ') !== -1 || assemblySourceCode.indexOf('RET') !== -1) {
                 cspages = 1
             }
         }
-        if (assemblySourceCode.indexOf('POP ') !== -1 || assemblySourceCode.indexOf('PSH ') !== -1) {
-            if (AsmObj.PUserStackPages > 0) {
-                uspages = AsmObj.PUserStackPages
-            } else {
+        if (AsmObj.PUserStackPages > 0) {
+            uspages = AsmObj.PUserStackPages
+        } else {
+            if (assemblySourceCode.indexOf('POP ') !== -1 || assemblySourceCode.indexOf('PSH ') !== -1) {
                 uspages = 1
             }
         }
