@@ -387,7 +387,8 @@ export function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
                 break
             }
             default:
-                throw new Error('bytecode() error #99. Fix opCodeTable.argsType')
+                // Fix opCodeTable.argsType!!
+                throw new Error('Internal error.')
             }
         }
         AsmObj.code.push(CodeObj)
@@ -472,7 +473,8 @@ export function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
         if (currItem.branchLabel !== undefined) {
             const search = AsmObj.labels.find(obj => obj.label === currItem.branchLabel)
             if (search === undefined) {
-                throw new Error(`bytecode() error #6: Unknow branch label ${currItem.branchLabel}. Source: "${currItem.source}"`)
+                // did not find a label that was insert automatically?
+                throw new Error('Internal error.')
             }
             const offset = search.address - currItem.address
             currItem.instructionValues.push({ type: 'B', value: BigInt(offset) })

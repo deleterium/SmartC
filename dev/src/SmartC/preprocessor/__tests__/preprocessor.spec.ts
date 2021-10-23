@@ -83,8 +83,8 @@ describe('preprocessor right tests', () => {
         expect(preprocess(code)).toBe(result)
     })
     it('#define, #undef at line not active test', () => {
-        const code = '#ifdef debug\n#define A1 44\n#define A2\n#undef true\n#endif\nlong a; a=A1+A2+true;'
-        const result = '\n\n\n\n\nlong a; a=A1+A2+1;'
+        const code = '#ifdef debug\n#define A1 44\n#ifndef impossible\na++;\n#endif\n#define A2\n#undef true\n#endif\nlong a; a=A1+A2+true;'
+        const result = '\n\n\n\n\n\n\n\nlong a; a=A1+A2+1;'
         expect(preprocess(code)).toBe(result)
     })
     it('#define, #undef at line active test', () => {
@@ -99,24 +99,24 @@ describe('preprocessor wrong code', () => {
         expect(() => {
             const code = '#ifdef debug\nlong a; a++;'
             preprocess(code)
-        }).toThrow()
+        }).toThrowError(/^At line/)
     })
-    test('no #endif', () => {
+    test('unmatched #else', () => {
         expect(() => {
             const code = '#else\nlong a; a++;'
             preprocess(code)
-        }).toThrow()
+        }).toThrowError(/^At line/)
     })
-    test('no #endif', () => {
+    test('no #ifdef/#ifndef', () => {
         expect(() => {
             const code = '#endif\nlong a; a++;'
             preprocess(code)
-        }).toThrow()
+        }).toThrowError(/^At line/)
     })
-    test('no #endif', () => {
+    test('many #else', () => {
         expect(() => {
             const code = '#ifdef debug\n#pragma maxAuxVars 1\n#else\n#pragma maxAuxVars 5\n#else\n#pragma maxAuxVars 7\n#endif\nlong a; a++;'
             preprocess(code)
-        }).toThrow()
+        }).toThrowError(/^At line/)
     })
 })

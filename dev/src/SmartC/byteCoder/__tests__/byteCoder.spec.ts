@@ -142,36 +142,36 @@ describe('byteCoder wrong code', () => {
         expect(() => {
             const code = 'INC @a\nlaravel\n'
             byteCode(code)
-        }).toThrow()
+        }).toThrowError(/^bytecode/)
     })
     test('Unknow API function (with return value)', () => {
         expect(() => {
             const code = '^declare a\nFUN @a getA1\nFIN'
             byteCode(code)
-        }).toThrow()
+        }).toThrowError(/^bytecode/)
     })
     test('Unknow API function (without return value)', () => {
         expect(() => {
             const code = 'SET @a #0000000000000005\nFUN send_to_TO_Address_in_B $a\nFIN'
             byteCode(code)
-        }).toThrow()
+        }).toThrowError(/^bytecode/)
     })
     test('Unknow ^program directive', () => {
         expect(() => {
             const code = '^program word processor\nFIN'
             byteCode(code)
-        }).toThrow()
+        }).toThrowError(/^bytecode/)
     })
     test('Invalid jump location', () => {
         expect(() => {
             const code = 'INC @a\nJMP :nowhere\nINC @a\nFIN'
             byteCode(code)
-        }).toThrow()
+        }).toThrowError(/^bytecode/)
     })
     test('Invalid branch location', () => {
         expect(() => {
             const code = 'INC @a\nBZR $a :nowhere\nINC @a\nFIN'
             byteCode(code)
-        }).toThrow()
+        }).toThrowError(/^bytecode/)
     })
 })
