@@ -32,19 +32,28 @@ describe('SmartC class (no compiling)', () => {
     })
 })
 describe('SmartC class (void compiling)', () => {
-    it('should compile sucessfull void code 1x', () => {
+    it('should compile sucessfull void C code 1x', () => {
         const compiler = new SmartC({
             language: 'C',
             sourceCode: ''
         })
         expect(compiler.compile().getAssemblyCode()).toBe('^declare r0\n^declare r1\n^declare r2\n\nFIN\n')
     })
-    it('should compile sucessfull void code 2x', () => {
+    it('should compile sucessfull void C code 2x', () => {
         const compiler = new SmartC({
             language: 'C',
             sourceCode: ''
         })
         compiler.compile()
+        compiler.compile()
         expect(compiler.getAssemblyCode()).toBe('^declare r0\n^declare r1\n^declare r2\n\nFIN\n')
+    })
+    it('should compile sucessfull void Assembly code', () => {
+        const compiler = new SmartC({
+            language: 'Assembly',
+            sourceCode: ''
+        })
+        expect(compiler.compile().getAssemblyCode()).toBe('')
+        expect(compiler.getMachineCode().ByteCode).toBe('')
     })
 })
