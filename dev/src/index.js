@@ -1,18 +1,13 @@
+import { SmartC } from './SmartC/smartc.js'
+import { asmHighlight } from './asmHighlight.js'
+import { runTestCases } from './testcases.js'
+
 /* Following global functions are define on the files:
-preprocess      -> out/preprocessor.js
-tokenize        -> out/tokenizer.js
-parse           -> out/parser.js
-shape           -> out/shaper.js
-syntaxProcess   -> out/syntaxProcessor.js
-generate        -> out/generator.js
-bytecode        -> out/bytecoder.js
-runTestCases    -> out/testcases.js
-asmHighlight    -> out/asmHighlight.js
 WinBox          -> 3rd-party/winbox.bundle.js
 hljs            -> 3rd-party/highlight.min.js
 */
 
-/* global preprocess tokenize parse shape syntaxProcess generate asmHighlight bytecode runTestCases hljs WinBox */
+/* global hljs WinBox */
 
 window.onload = () => {
     const scode = document.getElementById('source-code')
@@ -47,6 +42,21 @@ window.onload = () => {
     toggleLang(document.getElementById('source_is_c'))
 
     detachDeployment().minimize(true)
+
+    try {
+        const startUpTest = new SmartC({
+            language: 'C',
+            sourceCode: '#pragma maxAuxVars 1\nlong a, b, c; a=b/~c;'
+        })
+        startUpTest.compile()
+        if (startUpTest.getMachineCode().MachineCodeHashId === '7488355358104845254') {
+            document.getElementById('status_output').innerHTML = '<span class="msg_success">Start up test done!</span>'
+            return
+        }
+        document.getElementById('status_output').innerHTML = '<span class="msg_failure">Start up test failed...</span>'
+    } catch (e) {
+        document.getElementById('status_output').innerHTML = '<span class="msg_failure">Start up test crashed...</span>'
+    }
 }
 
 const PageGlobal = {
@@ -59,20 +69,17 @@ function compileCode () {
     const t0 = new Date()
 
     try {
-        let asmCode
+        let compiler
         if (document.getElementById('source_is_c').checked) {
-            const preprocessOut = preprocess(codeString)
-            const tokenizeOut = tokenize(preprocessOut)
-            const parseOut = parse(tokenizeOut)
-            const shapeOut = shape(parseOut)
-            const syntaxOut = syntaxProcess(shapeOut)
-            asmCode = generate(syntaxOut)
+            compiler = new SmartC({ language: 'C', sourceCode: codeString })
         } else {
-            asmCode = codeString
+            compiler = new SmartC({ language: 'Assembly', sourceCode: codeString })
         }
+        compiler.compile()
+        const asmCode = compiler.getAssemblyCode()
+        const bcode = compiler.getMachineCode()
 
         document.getElementById('assembly_output').innerHTML = asmHighlight(asmCode)
-        const bcode = bytecode(asmCode)
 
         const t1 = new Date()
         let compileMessage = `<span class='msg_success'>Compile sucessfull!!!</span> <small>Done at ${t1.getHours()}:${t1.getMinutes()}:${t1.getSeconds()} in ${t1 - t0} ms.`
@@ -332,7 +339,7 @@ function clearForm () {
 function testCode () {
     document.getElementById('assembly_output').innerHTML = ''
     clearForm()
-    document.getElementById('status_output').innerHTML = runTestCases()
+    document.getElementById('status_output').innerHTML = runTestCases(new SmartC('Assembly'), new SmartC('C'))
 }
 
 function toggleLang (ev) {

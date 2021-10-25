@@ -2,16 +2,21 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-/* global TOKEN TOKEN_MODIFIER CONTRACT SENTENCES optimize MEMORY_SLOT DECLARATION_TYPES AST utils ARRAY_TYPE_DEFINITION
-STRUCT_TYPE_DEFINITION */
+import { CONTRACT } from '../typings/contractTypes'
+import {
+    AST, MEMORY_SLOT, DECLARATION_TYPES, ARRAY_TYPE_DEFINITION,
+    STRUCT_TYPE_DEFINITION, TOKEN_MODIFIER, TOKEN, SENTENCES
+} from '../typings/syntaxTypes'
+
+import { optimize } from './optimizer'
+import { utils } from './utils'
 
 /**
  * Code generator. Translates a Program into assembly source code
  * @param Program object holding information
  * @returns assembly source code
  */
-// eslint-disable-next-line no-unused-vars
-function generate (Program: CONTRACT) {
+export function codeGenerate (Program: CONTRACT) {
     // holds variables needed during compilation
     const generateUtils: {
         /** Stack saving loops IDs */
@@ -344,7 +349,7 @@ function generate (Program: CONTRACT) {
                             instructionstrain += RGenObj.instructionset
                             if (utils.getDeclarationFromMemory(RGenObj.MemObj) !== 'long') {
                                 if (Program.Config.warningToError) {
-                                    throw new TypeError(`WARNING: At line: ${objTree.Token.line}. API Function parameter type is different from variable: 'long' and '${RGenObj.MemObj.declaration}'.`)
+                                    throw new TypeError(`At line: ${objTree.Token.line}. Warning: API Function parameter type is different from variable: 'long' and '${RGenObj.MemObj.declaration}'.`)
                                 }
                                 // Override declaration protection rules
                                 utils.setMemoryDeclaration(RGenObj.MemObj, 'long')
@@ -386,7 +391,7 @@ function generate (Program: CONTRACT) {
                             const fnArg = search.argsMemObj[i]
                             if (utils.isNotValidDeclarationOp(fnArg.declaration, RGenObj.MemObj)) {
                                 if (Program.Config.warningToError) {
-                                    throw new TypeError(`WARNING: At line: ${objTree.Token.line}. Function parameter type is different from variable: '${fnArg.declaration}' and '${RGenObj.MemObj.declaration}'.`)
+                                    throw new TypeError(`At line: ${objTree.Token.line}. Warning: Function parameter type is different from variable: '${fnArg.declaration}' and '${RGenObj.MemObj.declaration}'.`)
                                 }
                                 // Override declaration protection rules
                                 utils.setMemoryDeclaration(RGenObj.MemObj, fnArg.declaration)
@@ -785,9 +790,9 @@ function generate (Program: CONTRACT) {
                         if (declar.includes('_ptr') === false) {
                             if (Program.Config.warningToError) {
                                 if (objTree.Center.type === 'endASN' || objTree.Center.type === 'lookupASN') {
-                                    throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of variable ${objTree.Center.Token.value} that is not declared as pointer.`)
+                                    throw new TypeError(`At line: ${objTree.Operation.line}. Warning: Trying to read/set content of variable ${objTree.Center.Token.value} that is not declared as pointer.`)
                                 }
-                                throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of a value that is not declared as pointer.`)
+                                throw new TypeError(`At line: ${objTree.Operation.line}. Warning: Trying to read/set content of a value that is not declared as pointer.`)
                             }
                             utils.setMemoryDeclaration(CGenObj.MemObj, (declar + '_ptr') as DECLARATION_TYPES)
                         }
@@ -879,7 +884,7 @@ function generate (Program: CONTRACT) {
                             throw new TypeError(`At line: ${objTree.Operation.line}. Trying to get address of void value.`)
                         case 'register':
                             if (Program.Config.warningToError) {
-                                throw new TypeError(`WARNING: At line: ${objTree.Operation.line}. Returning address of a register.`)
+                                throw new TypeError(`At line: ${objTree.Operation.line}. Warning: Returning address of a register.`)
                             }
                             TmpMemObj = utils.createConstantMemObj(CGenObj.MemObj.address)
                             break
@@ -967,7 +972,7 @@ function generate (Program: CONTRACT) {
 
                         if (utils.isNotValidDeclarationOp(currentFunction.declaration, RGenObj.MemObj)) {
                             if (Program.Config.warningToError) {
-                                throw new TypeError(`WARNING: At line: ${objTree.Operation.line}. Function ${currentFunction.name} must return '` +
+                                throw new TypeError(`At line: ${objTree.Operation.line}. Warning: Function ${currentFunction.name} must return '` +
                                 `${currentFunction.declaration}' value, but it is returning '${RGenObj.MemObj.declaration}'.`)
                             }
                             // Override declaration protection rules
@@ -1338,7 +1343,7 @@ function generate (Program: CONTRACT) {
                         // Allow SetOperator and pointer operation
                         if (!(lDecl === rDecl + '_ptr' && (objTree.Operation.value === '+=' || objTree.Operation.value === '-='))) {
                             if (Program.Config.warningToError) {
-                                throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Left and right values does not match. Values are: '" + LGenObj.MemObj.declaration + "' and '" + RGenObj.MemObj.declaration + "'.")
+                                throw new TypeError(`At line: ${objTree.Operation.line}. Warning: Left and right values does not match. Values are: '${LGenObj.MemObj.declaration}' and '${RGenObj.MemObj.declaration}'.`)
                             }
                             // Override declaration protection rules
                             LGenObj.MemObj.declaration = RGenObj.MemObj.declaration

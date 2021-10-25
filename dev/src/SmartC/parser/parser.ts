@@ -1,44 +1,16 @@
 
-interface PRE_TOKEN {
-    line: number
-    type: string
-    value: string
-    /** Only applicable for asm token */
-    asmText?: string
-}
-
 // Author: Rui Deleterium
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-/** Allowed token types */
-type TOKEN_TYPES = 'Variable' | 'Constant' | 'Operator' | 'UnaryOperator' |
-'SetUnaryOperator' | 'Assignment'| 'SetOperator'|'Comparision'|'CheckOperator'|
-'Arr'|'CodeCave'|'CodeDomain'|'Delimiter'|'Terminator'|'Macro'|'Member'|'Colon'|
-'Keyword'|'Function' | 'APICall' | 'Push'
-
-type DECLARATION_TYPES = 'void' | 'long' | 'struct' | 'void_ptr' | 'long_ptr' | 'struct_ptr' | ''
-
-interface TOKEN {
-    line: number
-    precedence: number
-    type: TOKEN_TYPES
-    declaration?: DECLARATION_TYPES
-    /** Empty string for Arr, CodeCave, CodeDomain */
-    value: string
-    /** Only applicable to Arr, CodeCave, CodeDomain, Variable with modifier */
-    params?: TOKEN[]
-    /** Only applicable to types: asm, break, continue, struct or label */
-    extValue?: string
-}
+import { PRE_TOKEN, TOKEN } from '../typings/syntaxTypes'
 
 /** Translate an array of pre tokens to an array of tokens. First phase of parsing.
  * @param tokens Array of pre-tokens
  * @returns Array of TOKENS. Recursive on Arr, CodeCave and CodeDomain types
  * @throws {TypeError | SyntaxError} at any mistakes
  */
-// eslint-disable-next-line no-unused-vars
-function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
+export function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
     interface TOKEN_SPEC {
         sequence: string[]
         action(item: number): TOKEN
@@ -126,7 +98,7 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
                 const ptkn = preTokens[tokenID]
                 const parts = /^(BURST-|S-|TS-)([0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{5})/.exec(ptkn.value)
                 if (parts !== null) {
-                    val = rsDecode(parts[2])
+                    val = rsDecode(parts[2], ptkn.line)
                 } else {
                     val = str2long(ptkn.value)
                 }
@@ -394,7 +366,7 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
                 retToken.params.push(getNextToken())
                 // getNextToken will increase mainLoopIndex for loop
                 if (preTokens[mainLoopIndex] === undefined) {
-                    throw new SyntaxError(`At end of file. Missing closing ']' for Arr started at line: ${retToken.line}.`)
+                    throw new SyntaxError(`At line: end of file. Missing closing ']' for Arr started at line: ${retToken.line}.`)
                 }
             }
             // discard closing bracket
@@ -413,7 +385,7 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
                 retToken.params.push(getNextToken())
                 // getNextToken will increase mainLoopIndex for loop
                 if (preTokens[mainLoopIndex] === undefined) {
-                    throw new SyntaxError(`At end of file. Missing closing ')' for ${retToken.type} started at line: ${retToken.line}.`)
+                    throw new SyntaxError(`At line: end of file. Missing closing ')' for ${retToken.type} started at line: ${retToken.line}.`)
                 }
             }
             mainLoopIndex++
@@ -427,7 +399,7 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
                 retToken.params.push(getNextToken())
                 // getNextToken will increase mainLoopIndex for loop
                 if (preTokens[mainLoopIndex] === undefined) {
-                    throw new SyntaxError(`At end of file. Missing closing '}' for CodeDomain started at line: ${retToken.line}.`)
+                    throw new SyntaxError(`At line: end of file. Missing closing '}' for CodeDomain started at line: ${retToken.line}.`)
                 }
             }
             mainLoopIndex++
@@ -515,7 +487,7 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
     /* eslint-disable camelcase */
     // Decode REED-SALOMON signum address from string to long value
     // Adapted from https://github.com/signum-network/signumj
-    function rsDecode (cypher_string: string) {
+    function rsDecode (cypher_string: string, currLine: number) {
         const gexp = [1, 2, 4, 8, 16, 5, 10, 20, 13, 26, 17, 7, 14, 28, 29, 31, 27, 19, 3, 6, 12, 24, 21, 15, 30, 25, 23, 11, 22, 9, 18, 1]
         const glog = [0, 0, 1, 18, 2, 5, 19, 11, 3, 29, 6, 27, 20, 8, 12, 23, 4, 10, 30, 17, 7, 22, 28, 26, 21, 25, 9, 16, 13, 14, 24, 15]
         const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
@@ -565,7 +537,7 @@ function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
             codeword_length++
         }
         if (codeword_length !== 17 || !is_codeword_valid(codeword)) {
-            throw new TypeError(`Error decoding address: S-${cypher_string}`)
+            throw new TypeError(`At line: ${currLine}. Error decoding address: S-${cypher_string}`)
         }
 
         // base32 to base10 conversion

@@ -2,49 +2,17 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-/* global hashMachineCode */
-
-interface BYTECODE_RETURN_OBJECT {
-    /** Number of data pages (Memory size) */
-    DataPages: number
-    /** Number of code stack pages (code stack size) */
-    CodeStackPages: number
-    /** Number of user stack pages (user stack size) */
-    UserStackPages: number
-    /** Number of machine instructions pages */
-    CodePages: number
-    /** Calculated minimum fee for contract deployment */
-    MinimumFeeNQT: string
-    /** Hex string with contract machine code */
-    ByteCode: string
-    /** Hash ID for compiled machine code */
-    MachineCodeHashId: string
-    /** Hex string with contract starting memory values */
-    ByteData: string
-    /** Array with variables names ordered in memory */
-    Memory: string[]
-    /** Array with labels and their addresses (not ordered) */
-    Labels: {
-        label: string
-        address: number
-    }[]
-    /** Program name */
-    PName: string
-    /** Program description */
-    PDescription: string
-    /** Program activation amount */
-    PActivationAmount: string
-}
+import { MACHINE_OBJECT } from '../typings/contractTypes'
+import { hashMachineCode } from './hashMachineCode'
 
 /**
  * Transforms assembly code into machine code
  * @param assemblySourceCode string
- * @returns {BYTECODE_RETURN_OBJECT} with all details needed for
+ * @returns {MACHINE_OBJECT} with all details needed for
  * smart contract deployment.
  * @throws {Error} on any source code mistake.
  */
-// eslint-disable-next-line no-unused-vars
-function bytecode (assemblySourceCode: string): BYTECODE_RETURN_OBJECT {
+export function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
     // Local interfaces
     interface MEMORY_INFO {
         name: string
@@ -277,7 +245,7 @@ function bytecode (assemblySourceCode: string): BYTECODE_RETURN_OBJECT {
     }
 
     /* * * Main function! * * */
-    function bytecodeMain (): BYTECODE_RETURN_OBJECT {
+    function bytecodeMain (): MACHINE_OBJECT {
         // process line by line
         const line = assemblySourceCode.split('\n')
 
@@ -318,66 +286,62 @@ function bytecode (assemblySourceCode: string): BYTECODE_RETURN_OBJECT {
         return buildRetObj()
     }
 
+    /** Get and/or assign a variable address */
+    function getMemoryAddress (varName: string) {
+        const idx = AsmObj.memory.findIndex(Obj => Obj.name === varName)
+        if (idx === -1) {
+            return AsmObj.memory.push({ name: varName, value: 0n }) - 1
+        }
+        return idx
+    }
+
     /** Process one matched instruction */
     function process (parts: RegExpExecArray, instruction: OPCODE_RULE) {
-        function getMemoryAddress (varName: string) {
-            const idx = AsmObj.memory.findIndex(Obj => Obj.name === varName)
-            if (idx === -1) {
-                return AsmObj.memory.push({ name: varName, value: 0n }) - 1
-            }
-            return idx
-        }
-
-        // blank line
-        if (instruction.opCode === 0xF0) {
-            return
-        }
-        // '^comment user_comment'
-        if (instruction.opCode === 0xF2) {
-            return
-        }
-        // '^declare varName'
-        if (instruction.opCode === 0xF3) {
-            getMemoryAddress(parts[1])
-            return
-        }
-        // '^const SET @(varName) #(hex_content)'
-        if (instruction.opCode === 0xF4) {
-            // This can cause a bug if const instruction become before declare instruction.
-            // But this is forbidden by generator, so only bug if compiling from wrong man
-            // made assembly code.
-            const addr = getMemoryAddress(parts[1])
-            AsmObj.memory[addr].value = BigInt('0x' + parts[2])
-            return
-        }
-        // '^program type information'
-        if (instruction.opCode === 0xF5) {
-            if (parts[1] === 'name') {
-                AsmObj.PName = parts[2].trim()
-            }
-            if (parts[1] === 'description') {
-                AsmObj.PDescription = parts[2].trim()
-            }
-            if (parts[1] === 'activationAmount') {
-                AsmObj.PActivationAmount = parts[2].trim()
-            }
-            if (parts[1] === 'userStackPages') {
-                AsmObj.PUserStackPages = Number(parts[2].trim())
-            }
-            if (parts[1] === 'codeStackPages') {
-                AsmObj.PCodeStackPages = Number(parts[2].trim())
-            }
-            return
-        }
-
         // Create a new object
         const CodeObj = genCodeInstr()
         CodeObj.source = parts[0]
 
-        // label:
-        if (instruction.opCode === 0xF1) {
+        switch (instruction.opCode) {
+        case 0xF0:
+            // blank line
+            return
+        case 0xF1:
+            // label:
             CodeObj.station = parts[1]
             AsmObj.code.push(CodeObj)
+            return
+        case 0xF2:
+            // '^comment user_comment'
+            return
+        case 0xF3:
+            // '^declare varName'
+            getMemoryAddress(parts[1])
+            return
+        case 0xF4:
+            // '^const SET @(varName) #(hex_content)'
+            AsmObj.memory[getMemoryAddress(parts[1])].value = BigInt('0x' + parts[2])
+            return
+        case 0xF5:
+            // '^program type information'
+            switch (parts[1]) {
+            case 'name':
+                AsmObj.PName = parts[2].trim()
+                break
+            case 'description':
+                AsmObj.PDescription = parts[2].trim()
+                break
+            case 'activationAmount':
+                AsmObj.PActivationAmount = parts[2].trim()
+                break
+            case 'userStackPages':
+                AsmObj.PUserStackPages = Number(parts[2].trim())
+                break
+            case 'codeStackPages':
+                AsmObj.PCodeStackPages = Number(parts[2].trim())
+                break
+            default:
+                throw new Error(`bytecode() error #7. Unknow '^program' directive: '${parts[1]}'`)
+            }
             return
         }
 
@@ -387,45 +351,56 @@ function bytecode (assemblySourceCode: string): BYTECODE_RETURN_OBJECT {
         let i = 0
         if (instruction.opCode >= 0x35 && instruction.opCode <= 0x37) {
             // 0x35, 0x36 and 0x37 are exceptions for args order, treat now
-            const search = apiCodeTable.find(obj => obj.name === parts[2] && obj.opCode === instruction.opCode)
-            if (search === undefined) {
-                throw new Error(`bytecode() error #2. API function not found. Instruction: "${CodeObj.source}"`)
-            }
-            CodeObj.instructionValues.push({ type: 'F', value: BigInt(search.apiCode) })
-            CodeObj.instructionValues.push({ type: 'I', value: BigInt(BigInt(getMemoryAddress(parts[1]))) })
-
+            CodeObj.instructionValues.push({
+                type: 'F',
+                value: BigInt(getApiCode(parts[2], instruction.opCode, CodeObj.source))
+            })
+            CodeObj.instructionValues.push({
+                type: 'I',
+                value: BigInt(getMemoryAddress(parts[1]))
+            })
             i = 2
         }
         for (; i < instruction.argsType.length; i++) {
             // process generic instructions
-            if (instruction.argsType[i] === 'I') {
+            switch (instruction.argsType[i]) {
+            case 'I':
                 CodeObj.instructionValues.push({ type: 'I', value: BigInt(getMemoryAddress(parts[i + 1])) })
-                continue
-            }
-            if (instruction.argsType[i] === 'L') {
+                break
+            case 'L':
                 CodeObj.instructionValues.push({ type: 'L', value: BigInt('0x' + parts[i + 1]) })
-                continue
-            }
-            if (instruction.argsType[i] === 'B') {
+                break
+            case 'B':
                 // branch offset will be processed later
                 CodeObj.branchLabel = parts[i + 1]
-                continue
-            }
-            if (instruction.argsType[i] === 'J') {
+                break
+            case 'J':
                 // jump will be processed later
                 CodeObj.jumpLabel = parts[i + 1]
-                continue
-            }
-            if (instruction.argsType[i] === 'F') {
+                break
+            case 'F': {
                 // function name for opCodes 0x32, 0x33, 0x34
-                const search = apiCodeTable.find(obj => obj.name === parts[1] && obj.opCode === instruction.opCode)
-                if (search === undefined) {
-                    throw new Error(`bytecode() error #3. API function not found. Instruction: "${CodeObj.source}"`)
-                }
-                CodeObj.instructionValues.push({ type: 'F', value: BigInt(search.apiCode) })
+                CodeObj.instructionValues.push({
+                    type: 'F',
+                    value: BigInt(getApiCode(parts[1], instruction.opCode, CodeObj.source))
+                })
+                break
+            }
+            default:
+                // Fix opCodeTable.argsType!!
+                throw new Error('Internal error.')
             }
         }
         AsmObj.code.push(CodeObj)
+    }
+
+    /** Finds and return an API Code for a given name, or throws if not found */
+    function getApiCode (nameToSearch: string, currOpCode: number, currentCodeLine:string) : number {
+        const query = apiCodeTable.find(obj => obj.name === nameToSearch && obj.opCode === currOpCode)
+        if (query) {
+            return query.apiCode
+        }
+        throw new Error(`bytecode() error #2. API function not found. Instruction: '${currentCodeLine}'`)
     }
 
     /**
@@ -498,7 +473,8 @@ function bytecode (assemblySourceCode: string): BYTECODE_RETURN_OBJECT {
         if (currItem.branchLabel !== undefined) {
             const search = AsmObj.labels.find(obj => obj.label === currItem.branchLabel)
             if (search === undefined) {
-                throw new Error(`bytecode() error #6: Unknow branch label ${currItem.branchLabel}. Source: "${currItem.source}"`)
+                // did not find a label that was insert automatically?
+                throw new Error('Internal error.')
             }
             const offset = search.address - currItem.address
             currItem.instructionValues.push({ type: 'B', value: BigInt(offset) })
@@ -514,19 +490,19 @@ function bytecode (assemblySourceCode: string): BYTECODE_RETURN_OBJECT {
     }
 
     /** Builds returnObject with values from AsmObj */
-    function buildRetObj (): BYTECODE_RETURN_OBJECT {
+    function buildRetObj (): MACHINE_OBJECT {
         let cspages = 0; let uspages = 0
-        if (assemblySourceCode.indexOf('JSR ') !== -1 || assemblySourceCode.indexOf('RET') !== -1) {
-            if (AsmObj.PCodeStackPages > 0) {
-                cspages = AsmObj.PCodeStackPages
-            } else {
+        if (AsmObj.PCodeStackPages > 0) {
+            cspages = AsmObj.PCodeStackPages
+        } else {
+            if (assemblySourceCode.indexOf('JSR ') !== -1 || assemblySourceCode.indexOf('RET') !== -1) {
                 cspages = 1
             }
         }
-        if (assemblySourceCode.indexOf('POP ') !== -1 || assemblySourceCode.indexOf('PSH ') !== -1) {
-            if (AsmObj.PUserStackPages > 0) {
-                uspages = AsmObj.PUserStackPages
-            } else {
+        if (AsmObj.PUserStackPages > 0) {
+            uspages = AsmObj.PUserStackPages
+        } else {
+            if (assemblySourceCode.indexOf('POP ') !== -1 || assemblySourceCode.indexOf('PSH ') !== -1) {
                 uspages = 1
             }
         }
@@ -584,25 +560,24 @@ function bytecode (assemblySourceCode: string): BYTECODE_RETURN_OBJECT {
      * @returns Value in hexstring in little endian format
      */
     function number2hexstring (value: bigint, valType: INSTRUCTION_PARAM_TYPES) {
-        if (valType === 'O') {
-            return value.toString(16).padStart(2, '0')
-        }
-
-        if (valType === 'B') {
-            if (value >= 0n) {
-                return value.toString(16).padStart(2, '0')
-            } else {
-                return (256n + value).toString(16).padStart(2, '0')
-            }
-        }
-
         let bytes = 0
         let retString = ''
 
-        if (valType === 'F') bytes = 2
-        if (valType === 'J') bytes = 4
-        if (valType === 'I') bytes = 4
-        if (valType === 'L') bytes = 8
+        switch (valType) {
+        case 'O':
+            return value.toString(16).padStart(2, '0')
+        case 'B':
+            return ((256n + value) % 256n).toString(16).padStart(2, '0')
+        case 'F':
+            bytes = 2
+            break
+        case 'J':
+        case 'I':
+            bytes = 4
+            break
+        case 'L':
+            bytes = 8
+        }
 
         for (let i = 0, base = 256n; i < bytes; i++) {
             retString += (value % base).toString(16).padStart(2, '0')

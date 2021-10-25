@@ -7,8 +7,7 @@
  * @param assemblySourceCode
  * @returns Optimized source code
  */
-// eslint-disable-next-line no-unused-vars
-function optimize (assemblySourceCode: string, maxConstVars: number) {
+export function optimize (assemblySourceCode: string, maxConstVars: number) {
     let codeLines = assemblySourceCode.split('\n')
 
     let jumpToLabels: string[]

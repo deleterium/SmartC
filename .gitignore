@@ -1,2 +1,4 @@
 dev/node_modules/*
-dev/out/*
+dev/lib
+dev/coverage
+stable

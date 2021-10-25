@@ -17,16 +17,12 @@
  * @param hexCode Machine code to be calculated, as hex string.
  * @returns A string representing a hash ID of given contract
  */
-// eslint-disable-next-line no-unused-vars
-function hashMachineCode (hexCode: string): string {
+export function hashMachineCode (hexCode: string): string {
     // Pad input to match codepage length
     const hexLen = Number(((BigInt(hexCode.length) / 512n) + 1n) * 512n)
     hexCode = hexCode.padEnd(hexLen, '0')
-    // Split program into words (32-bit)
-    const parts = hexCode.match(/[\s\S]{8}/g)
-    if (parts === null) {
-        return 'ERROR'
-    }
+    // Split program into words (32-bit) (matches always)
+    const parts = hexCode.match(/[\s\S]{8}/g) as RegExpMatchArray
     // Translate hex text to words.
     const codeWordArr = parts.map(str => unsigned2signed(Number('0x' + str)))
     // Calculate sha-256 and toggle result to little endian
