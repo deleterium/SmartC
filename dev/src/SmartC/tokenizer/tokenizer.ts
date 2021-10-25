@@ -22,7 +22,7 @@ export function tokenize (inputSourceCode: string): PRE_TOKEN[] {
         char: string
         pretokenType: 'equal'|'star'|'not'|'bracket'|'minus'|'plus'|'backslash'|
         'forwardslash'|'dot'|'less'|'greater'|'pipe'|'and'|'percent'|'caret'|'comma'|
-        'semi'|'tilde'|'grave'|'paren'|'paren'|'colon'|'curly'|'SPECIAL'
+        'semi'|'tilde'|'grave'|'paren'|'colon'|'curly'|'SPECIAL'
     }
     const simpleTokensSpecs : SIMPLE_PRETOKEN_SPECS[] = [
         { char: '=', pretokenType: 'equal' },
@@ -241,8 +241,7 @@ export function tokenize (inputSourceCode: string): PRE_TOKEN[] {
         if (item.char !== AuxVars.currentChar) {
             return false
         }
-        switch (item.pretokenType) {
-        case 'SPECIAL':
+        if (item.pretokenType === 'SPECIAL') {
             if (item.char === '#') {
                 AuxVars.current++
                 const lines = inputSourceCode.slice(AuxVars.current).split('\n')
@@ -262,11 +261,10 @@ export function tokenize (inputSourceCode: string): PRE_TOKEN[] {
             }
             // SPECIAL rule not implemented in tokenizer()
             throw new TypeError('Internal error')
-        default:
-            AuxVars.preTokens.push({ type: item.pretokenType, value: AuxVars.currentChar, line: AuxVars.currentLine })
-            AuxVars.current++
-            return true
         }
+        AuxVars.preTokens.push({ type: item.pretokenType, value: AuxVars.currentChar, line: AuxVars.currentLine })
+        AuxVars.current++
+        return true
     }
 
     return tokenizeMain()
