@@ -12,89 +12,109 @@
 import { PRE_TOKEN } from '../typings/syntaxTypes'
 
 /**
- * Transforms input source code into an array of pre tokens.
+ * Transforms inputSourceCode into an array of pre tokens.
  * This array is not recursive.
- * @param input source code
+ * @param inputSourceCode source code text
  * @returns array of pre tokens
  */
-export function tokenize (input: string): PRE_TOKEN[] {
-    const singleTokensSpecs = [
-        { char: '=', tokenType: 'equal' },
-        { char: '*', tokenType: 'star' },
-        { char: '!', tokenType: 'not' },
-        { char: '[', tokenType: 'bracket' },
-        { char: ']', tokenType: 'bracket' },
-        { char: '-', tokenType: 'minus' },
-        { char: '+', tokenType: 'plus' },
-        { char: '\\', tokenType: 'backslash' },
-        { char: '/', tokenType: 'forwardslash' },
-        { char: '.', tokenType: 'dot' },
-        { char: '<', tokenType: 'less' },
-        { char: '>', tokenType: 'greater' },
-        { char: '|', tokenType: 'pipe' },
-        { char: '&', tokenType: 'and' },
-        { char: '%', tokenType: 'percent' },
-        { char: '^', tokenType: 'caret' },
-        { char: ',', tokenType: 'comma' },
-        { char: ';', tokenType: 'semi' },
-        { char: '~', tokenType: 'tilde' },
-        { char: '`', tokenType: 'grave' },
-        { char: '(', tokenType: 'paren' },
-        { char: ')', tokenType: 'paren' },
-        { char: ':', tokenType: 'colon' },
-        { char: '{', tokenType: 'curly' },
-        { char: '}', tokenType: 'curly' },
-        { char: '#', tokenType: 'SPECIAL' }
+export function tokenize (inputSourceCode: string): PRE_TOKEN[] {
+    interface SIMPLE_PRETOKEN_SPECS {
+        char: string
+        pretokenType: 'equal'|'star'|'not'|'bracket'|'minus'|'plus'|'backslash'|
+        'forwardslash'|'dot'|'less'|'greater'|'pipe'|'and'|'percent'|'caret'|'comma'|
+        'semi'|'tilde'|'grave'|'paren'|'paren'|'colon'|'curly'|'SPECIAL'
+    }
+    const simpleTokensSpecs : SIMPLE_PRETOKEN_SPECS[] = [
+        { char: '=', pretokenType: 'equal' },
+        { char: '*', pretokenType: 'star' },
+        { char: '!', pretokenType: 'not' },
+        { char: '[', pretokenType: 'bracket' },
+        { char: ']', pretokenType: 'bracket' },
+        { char: '-', pretokenType: 'minus' },
+        { char: '+', pretokenType: 'plus' },
+        { char: '\\', pretokenType: 'backslash' },
+        { char: '/', pretokenType: 'forwardslash' },
+        { char: '.', pretokenType: 'dot' },
+        { char: '<', pretokenType: 'less' },
+        { char: '>', pretokenType: 'greater' },
+        { char: '|', pretokenType: 'pipe' },
+        { char: '&', pretokenType: 'and' },
+        { char: '%', pretokenType: 'percent' },
+        { char: '^', pretokenType: 'caret' },
+        { char: ',', pretokenType: 'comma' },
+        { char: ';', pretokenType: 'semi' },
+        { char: '~', pretokenType: 'tilde' },
+        { char: '`', pretokenType: 'grave' },
+        { char: '(', pretokenType: 'paren' },
+        { char: ')', pretokenType: 'paren' },
+        { char: ':', pretokenType: 'colon' },
+        { char: '{', pretokenType: 'curly' },
+        { char: '}', pretokenType: 'curly' },
+        { char: '#', pretokenType: 'SPECIAL' }
     ]
 
-    const regexSingleTokensSpecs = [
+    interface SINGLE_PRETOKEN_SPECS {
+            start: RegExp
+            pretokenType: 'NONE'|'numberDec'|'numberHex'|'keyword'|'ASM'|'STRUCT'|'variable'
+            addLength: number
+    }
+    const regexSingleTokensSpecs : SINGLE_PRETOKEN_SPECS[] = [
         { // comment single line
             start: /^(\/\/.*)/,
-            tokenType: 'NONE',
+            pretokenType: 'NONE',
             addLength: 0
         },
         { // spaces, tabs, newlines
             start: /^(\s+)/,
-            tokenType: 'NONE',
+            pretokenType: 'NONE',
             addLength: 0
         },
         { // decimal numbers
             start: /^(\d[\d_]*\b)/,
-            tokenType: 'numberDec',
+            pretokenType: 'numberDec',
             addLength: 0
         },
         { // hexadecimal numbers
             start: /^0[xX]([\da-fA-F][\da-fA-F_]*\b)/,
-            tokenType: 'numberHex',
+            pretokenType: 'numberHex',
             addLength: 2
         },
         { // regular keywords
             start: /^(break|const|continue|do|else|exit|for|goto|halt|if|long|return|sleep|void|while)\b/,
-            tokenType: 'keyword',
+            pretokenType: 'keyword',
             addLength: 0
         },
         { // exception
             start: /^(asm)/,
-            tokenType: 'ASM',
+            pretokenType: 'ASM',
             addLength: 0
         },
         { // exception
             start: /^(struct)/,
-            tokenType: 'STRUCT',
+            pretokenType: 'STRUCT',
             addLength: 0
         },
         { // names for variables (or functions)
             start: /^(\w+)/,
-            tokenType: 'variable',
+            pretokenType: 'variable',
             addLength: 0
         }
     ]
 
-    const regexDoubleTokensSpecs = [
+    interface DOUBLE_PRETOKEN_SPECS {
+            start: RegExp
+            end: RegExp
+            pretokenType: 'NONE' | 'string'
+            startLength: number
+            removeTrailing: number
+            errorMsg: string
+    }
+
+    const regexDoubleTokensSpecs : DOUBLE_PRETOKEN_SPECS [] = [
         { // multi line comments
             start: /^\/\*/,
             end: /^([\s\S]*?\*\/)/,
-            tokenType: 'NONE',
+            pretokenType: 'NONE',
             startLength: 2,
             removeTrailing: 0,
             errorMsg: "Missing '*/' to end comment section."
@@ -102,7 +122,7 @@ export function tokenize (input: string): PRE_TOKEN[] {
         { // strings surrounded by double quotes
             start: /^"/,
             end: /^([\s\S]*?")/,
-            tokenType: 'string',
+            pretokenType: 'string',
             startLength: 1,
             removeTrailing: 1,
             errorMsg: "Missing '\"' to end string."
@@ -110,128 +130,144 @@ export function tokenize (input: string): PRE_TOKEN[] {
         { // strings surrounded by single quotes
             start: /^'/,
             end: /^([\s\S]*?')/,
-            tokenType: 'string',
+            pretokenType: 'string',
             startLength: 1,
             removeTrailing: 1,
             errorMsg: "Missing \"'\" to end string."
         }
     ]
 
-    let currentChar:string, remainingText: string
-
-    let current = 0
-    const preTokens: PRE_TOKEN[] = []
-    let currentLine = 1
-
-    while (current < input.length) {
-        currentChar = input.charAt(current)
-        remainingText = input.slice(current)
-
-        // Resolve double regex preTokens
-        const found = regexDoubleTokensSpecs.find(ruleN => {
-            const startParts = ruleN.start.exec(remainingText)
-            if (startParts != null) {
-                const endParts = ruleN.end.exec(remainingText.slice(ruleN.startLength))
-                current += ruleN.startLength
-                if (endParts !== null) {
-                    if (ruleN.tokenType === 'NONE') {
-                        currentLine += (endParts[1].match(/\n/g) || '').length
-                        current += endParts[1].length
-                        return true// breaks find function
-                    }
-                    preTokens.push({ type: ruleN.tokenType, value: endParts[1].slice(0, -ruleN.removeTrailing), line: currentLine })
-                    currentLine += (endParts[1].match(/\n/g) || '').length
-                    current += endParts[1].length
-                    return true// breaks find function
-                }
-                throw new TypeError(`At line: ${currentLine}. ${ruleN.errorMsg}`)
-            }
-            return false
-        })
-        if (found !== undefined) {
-            // item already processed
-            continue
-        }
-
-        // Resolve single regex preTokens
-        const found2 = regexSingleTokensSpecs.find(ruleN => {
-            const startParts = ruleN.start.exec(remainingText)
-            if (startParts != null) {
-                if (ruleN.tokenType === 'NONE') {
-                    currentLine += (startParts[1].match(/\n/g) || '').length
-                    current += startParts[1].length + ruleN.addLength
-                    return true// breaks find function
-                }
-                if (ruleN.tokenType === 'ASM') {
-                    const asmParts = /^(asm[^\w]*\{)([\s\S]*)/.exec(remainingText)
-                    if (asmParts === null) {
-                        throw new TypeError('At line:' + currentLine + ' Error parsing `asm { ... }` keyword')
-                    }
-                    const endLocation = asmParts[2].indexOf('}')
-                    if (endLocation === -1) {
-                        throw new TypeError(`At line: ${currentLine}. Ending '}' not found for 'asm { ... }' keyword.`)
-                    }
-                    const asmText = asmParts[2].slice(0, endLocation)
-                    const asmCode = asmParts[1] + asmText + '}'
-                    preTokens.push({ type: 'keyword', value: 'asm', line: currentLine, extValue: asmText })
-                    currentLine += (asmCode.match(/\n/g) || '').length
-                    current += asmCode.length
-                    return true// breaks find function
-                }
-                if (ruleN.tokenType === 'STRUCT') {
-                    const structParts = /^(struct\s+(\w+))/.exec(remainingText)
-                    if (structParts === null) {
-                        throw new TypeError(`At line: ${currentLine}. 'struct' keyword must be followed by a type name`)
-                    }
-                    preTokens.push({ type: 'keyword', value: 'struct', line: currentLine, extValue: structParts[2] })
-                    currentLine += (structParts[1].match(/\n/g) || '').length
-                    current += structParts[1].length
-                    return true// breaks find function
-                }
-                preTokens.push({ type: ruleN.tokenType, value: startParts[1], line: currentLine })
-                currentLine += (startParts[1].match(/\n/g) || '').length
-                current += startParts[1].length + ruleN.addLength
-                return true// breaks find function
-            }
-            return false
-        })
-        if (found2 !== undefined) {
-            continue
-        }
-
-        // Resolve all single preTokens
-        const search = singleTokensSpecs.find(charDB => charDB.char === currentChar)
-        if (search !== undefined) {
-            if (search.tokenType === 'NONE') {
-                current++
-                continue
-            } else if (search.tokenType === 'SPECIAL') {
-                if (search.char === '#') {
-                    current++
-                    const lines = input.slice(current).split('\n')
-                    let i = 0; let val = ''
-                    for (; i < lines.length; i++) {
-                        val += lines[i]
-                        current += lines[i].length + 1// newline!
-                        currentLine++
-                        if (lines[i].endsWith('\\')) {
-                            val = val.slice(0, -1)
-                            continue
-                        }
-                        break
-                    }
-                    preTokens.push({ type: 'macro', value: val, line: currentLine - i - 1 })
-                    continue
-                }
-                throw new TypeError(`At line: ${currentLine}. SPECIAL rule not implemented in tokenizer().`)
-            }
-            preTokens.push({ type: search.tokenType, value: currentChar, line: currentLine })
-            current++
-            continue
-        }
-
-        throw new TypeError(`At line: ${currentLine}. Forbidden character found: '${currentChar}'.`)
+    const AuxVars : {
+        currentChar: string
+        remainingText: string
+        current: number
+        preTokens: PRE_TOKEN[]
+        currentLine: number
+    } = {
+        currentChar: '',
+        remainingText: '',
+        current: 0,
+        preTokens: [],
+        currentLine: 1
     }
 
-    return preTokens
+    function tokenizeMain () : PRE_TOKEN[] {
+        while (AuxVars.current < inputSourceCode.length) {
+            AuxVars.currentChar = inputSourceCode.charAt(AuxVars.current)
+            AuxVars.remainingText = inputSourceCode.slice(AuxVars.current)
+            // Resolve double regex preTokens
+            if (regexDoubleTokensSpecs.find(findAndProcessDoubleTokens)) {
+                continue
+            }
+            // Resolve single regex preTokens
+            if (regexSingleTokensSpecs.find(findAndProcessSingleTokens)) {
+                continue
+            }
+            // Resolve all simple preTokens
+            if (simpleTokensSpecs.find(findAndProcessSimpleTokens)) {
+                continue
+            }
+            throw new TypeError(`At line: ${AuxVars.currentLine}. Forbidden character found: '${AuxVars.currentChar}'.`)
+        }
+        return AuxVars.preTokens
+    }
+
+    function findAndProcessDoubleTokens (ruleN: DOUBLE_PRETOKEN_SPECS) {
+        const startParts = ruleN.start.exec(AuxVars.remainingText)
+        if (startParts === null) {
+            return false
+        }
+        const endParts = ruleN.end.exec(AuxVars.remainingText.slice(ruleN.startLength))
+        AuxVars.current += ruleN.startLength
+        if (endParts === null) {
+            throw new TypeError(`At line: ${AuxVars.currentLine}. ${ruleN.errorMsg}`)
+        }
+        if (ruleN.pretokenType === 'NONE') {
+            AuxVars.currentLine += (endParts[1].match(/\n/g) || '').length
+            AuxVars.current += endParts[1].length
+            return true// breaks find function
+        }
+        AuxVars.preTokens.push({ type: ruleN.pretokenType, value: endParts[1].slice(0, -ruleN.removeTrailing), line: AuxVars.currentLine })
+        AuxVars.currentLine += (endParts[1].match(/\n/g) || '').length
+        AuxVars.current += endParts[1].length
+        return true// breaks find function
+    }
+
+    function findAndProcessSingleTokens (ruleN: SINGLE_PRETOKEN_SPECS) {
+        const startParts = ruleN.start.exec(AuxVars.remainingText)
+        if (startParts === null) {
+            return false
+        }
+        switch (ruleN.pretokenType) {
+        case 'NONE':
+            AuxVars.currentLine += (startParts[1].match(/\n/g) || '').length
+            AuxVars.current += startParts[1].length + ruleN.addLength
+            return true
+        case 'ASM': {
+            const asmParts = /^(asm[^\w]*\{)([\s\S]*)/.exec(AuxVars.remainingText)
+            if (asmParts === null) {
+                throw new TypeError(`At line: ${AuxVars.currentLine}. Error parsing 'asm { ... }' keyword`)
+            }
+            const endLocation = asmParts[2].indexOf('}')
+            if (endLocation === -1) {
+                throw new TypeError(`At line: ${AuxVars.currentLine}. Ending '}' not found for 'asm { ... }' keyword.`)
+            }
+            const asmText = asmParts[2].slice(0, endLocation)
+            const asmCode = asmParts[1] + asmText + '}'
+            AuxVars.preTokens.push({ type: 'keyword', value: 'asm', line: AuxVars.currentLine, extValue: asmText })
+            AuxVars.currentLine += (asmCode.match(/\n/g) || '').length
+            AuxVars.current += asmCode.length
+            return true
+        }
+        case 'STRUCT': {
+            const structParts = /^(struct\s+(\w+))/.exec(AuxVars.remainingText)
+            if (structParts === null) {
+                throw new TypeError(`At line: ${AuxVars.currentLine}. 'struct' keyword must be followed by a type name`)
+            }
+            AuxVars.preTokens.push({ type: 'keyword', value: 'struct', line: AuxVars.currentLine, extValue: structParts[2] })
+            AuxVars.currentLine += (structParts[1].match(/\n/g) || '').length
+            AuxVars.current += structParts[1].length
+            return true
+        }
+        default:
+            AuxVars.preTokens.push({ type: ruleN.pretokenType, value: startParts[1], line: AuxVars.currentLine })
+            AuxVars.currentLine += (startParts[1].match(/\n/g) || '').length
+            AuxVars.current += startParts[1].length + ruleN.addLength
+            return true
+        }
+    }
+
+    function findAndProcessSimpleTokens (item: SIMPLE_PRETOKEN_SPECS) : boolean {
+        if (item.char !== AuxVars.currentChar) {
+            return false
+        }
+        switch (item.pretokenType) {
+        case 'SPECIAL':
+            if (item.char === '#') {
+                AuxVars.current++
+                const lines = inputSourceCode.slice(AuxVars.current).split('\n')
+                let i = 0; let val = ''
+                for (; i < lines.length; i++) {
+                    val += lines[i]
+                    AuxVars.current += lines[i].length + 1 // newline!
+                    AuxVars.currentLine++
+                    if (lines[i].endsWith('\\')) {
+                        val = val.slice(0, -1)
+                        continue
+                    }
+                    break
+                }
+                AuxVars.preTokens.push({ type: 'macro', value: val, line: AuxVars.currentLine - i - 1 })
+                return true
+            }
+            // SPECIAL rule not implemented in tokenizer()
+            throw new TypeError('Internal error')
+        default:
+            AuxVars.preTokens.push({ type: item.pretokenType, value: AuxVars.currentChar, line: AuxVars.currentLine })
+            AuxVars.current++
+            return true
+        }
+    }
+
+    return tokenizeMain()
 }
