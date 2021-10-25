@@ -349,7 +349,7 @@ export function codeGenerate (Program: CONTRACT) {
                             instructionstrain += RGenObj.instructionset
                             if (utils.getDeclarationFromMemory(RGenObj.MemObj) !== 'long') {
                                 if (Program.Config.warningToError) {
-                                    throw new TypeError(`WARNING: At line: ${objTree.Token.line}. API Function parameter type is different from variable: 'long' and '${RGenObj.MemObj.declaration}'.`)
+                                    throw new TypeError(`At line: ${objTree.Token.line}. Warning: API Function parameter type is different from variable: 'long' and '${RGenObj.MemObj.declaration}'.`)
                                 }
                                 // Override declaration protection rules
                                 utils.setMemoryDeclaration(RGenObj.MemObj, 'long')
@@ -391,7 +391,7 @@ export function codeGenerate (Program: CONTRACT) {
                             const fnArg = search.argsMemObj[i]
                             if (utils.isNotValidDeclarationOp(fnArg.declaration, RGenObj.MemObj)) {
                                 if (Program.Config.warningToError) {
-                                    throw new TypeError(`WARNING: At line: ${objTree.Token.line}. Function parameter type is different from variable: '${fnArg.declaration}' and '${RGenObj.MemObj.declaration}'.`)
+                                    throw new TypeError(`At line: ${objTree.Token.line}. Warning: Function parameter type is different from variable: '${fnArg.declaration}' and '${RGenObj.MemObj.declaration}'.`)
                                 }
                                 // Override declaration protection rules
                                 utils.setMemoryDeclaration(RGenObj.MemObj, fnArg.declaration)
@@ -790,9 +790,9 @@ export function codeGenerate (Program: CONTRACT) {
                         if (declar.includes('_ptr') === false) {
                             if (Program.Config.warningToError) {
                                 if (objTree.Center.type === 'endASN' || objTree.Center.type === 'lookupASN') {
-                                    throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of variable ${objTree.Center.Token.value} that is not declared as pointer.`)
+                                    throw new TypeError(`At line: ${objTree.Operation.line}. Warning: Trying to read/set content of variable ${objTree.Center.Token.value} that is not declared as pointer.`)
                                 }
-                                throw new TypeError(`At line: ${objTree.Operation.line}. Trying to read/set content of a value that is not declared as pointer.`)
+                                throw new TypeError(`At line: ${objTree.Operation.line}. Warning: Trying to read/set content of a value that is not declared as pointer.`)
                             }
                             utils.setMemoryDeclaration(CGenObj.MemObj, (declar + '_ptr') as DECLARATION_TYPES)
                         }
@@ -884,7 +884,7 @@ export function codeGenerate (Program: CONTRACT) {
                             throw new TypeError(`At line: ${objTree.Operation.line}. Trying to get address of void value.`)
                         case 'register':
                             if (Program.Config.warningToError) {
-                                throw new TypeError(`WARNING: At line: ${objTree.Operation.line}. Returning address of a register.`)
+                                throw new TypeError(`At line: ${objTree.Operation.line}. Warning: Returning address of a register.`)
                             }
                             TmpMemObj = utils.createConstantMemObj(CGenObj.MemObj.address)
                             break
@@ -972,7 +972,7 @@ export function codeGenerate (Program: CONTRACT) {
 
                         if (utils.isNotValidDeclarationOp(currentFunction.declaration, RGenObj.MemObj)) {
                             if (Program.Config.warningToError) {
-                                throw new TypeError(`WARNING: At line: ${objTree.Operation.line}. Function ${currentFunction.name} must return '` +
+                                throw new TypeError(`At line: ${objTree.Operation.line}. Warning: Function ${currentFunction.name} must return '` +
                                 `${currentFunction.declaration}' value, but it is returning '${RGenObj.MemObj.declaration}'.`)
                             }
                             // Override declaration protection rules
@@ -1343,7 +1343,7 @@ export function codeGenerate (Program: CONTRACT) {
                         // Allow SetOperator and pointer operation
                         if (!(lDecl === rDecl + '_ptr' && (objTree.Operation.value === '+=' || objTree.Operation.value === '-='))) {
                             if (Program.Config.warningToError) {
-                                throw new TypeError('WARNING: At line: ' + objTree.Operation.line + ". Left and right values does not match. Values are: '" + LGenObj.MemObj.declaration + "' and '" + RGenObj.MemObj.declaration + "'.")
+                                throw new TypeError(`At line: ${objTree.Operation.line}. Warning: Left and right values does not match. Values are: '${LGenObj.MemObj.declaration}' and '${RGenObj.MemObj.declaration}'.`)
                             }
                             // Override declaration protection rules
                             LGenObj.MemObj.declaration = RGenObj.MemObj.declaration

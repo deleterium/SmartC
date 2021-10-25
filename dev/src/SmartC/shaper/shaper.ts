@@ -1017,26 +1017,26 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
         for (i = 0; i < Program.memory.length - 1; i++) {
             for (j = i + 1; j < Program.memory.length; j++) {
                 if (Program.memory[i].asmName === Program.memory[j].asmName) {
-                    throw new TypeError(`Error: Variable '${Program.memory[i].name}' was declared more than one time.`)
+                    throw new TypeError(`At line: unknow. It was found that variable '${Program.memory[i].name}' was declared more than one time.`)
                 }
             }
             for (j = 0; j < Program.labels.length; j++) {
                 if (Program.memory[i].asmName === Program.labels[j]) {
-                    throw new TypeError(`Error: It was found a variable and label with same name. Change variable named '${Program.memory[i].name}'`)
+                    throw new TypeError(`At line: unknown. It was found a variable and a label with same name. Change variable named '${Program.memory[i].name}'`)
                 }
             }
         }
         for (i = 0; i < Program.functions.length; i++) {
             for (j = i + 1; j < Program.functions.length; j++) {
                 if (Program.functions[i].name === Program.functions[j].name) {
-                    throw new TypeError("Error: Function '" + Program.functions[i].name + "' was declared more than one time.")
+                    throw new TypeError(`At line: ${Program.functions[j].line}. Function '${Program.functions[j].name}' was declared again.`)
                 }
             }
             if (Program.Config.APIFunctions === true) {
                 for (j = 0; j < Program.Global.APIFunctions.length; j++) {
                     if (Program.functions[i].name === Program.Global.APIFunctions[j].name ||
                         Program.functions[i].name === Program.Global.APIFunctions[j].asmName) {
-                        throw new TypeError("Error: Function '" + Program.functions[i].name + "' has same name of one API Functions.")
+                        throw new TypeError(`At line: ${Program.functions[i].line}. Function '${Program.functions[i].name}' has same name of one API Functions.`)
                     }
                 }
             }
