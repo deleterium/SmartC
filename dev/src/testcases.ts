@@ -8,7 +8,7 @@ import { tests, bytecodeTests, jestTests, jestBytecodeTests } from './templateTe
 export type CTestType = [string, boolean|null, string]
 export type AssemblyTestType = [ string, boolean, string, string]
 
-export function runTestCases (jestTest: boolean = false) {
+export function runTestCases (jestTest: boolean = false) : string {
     function encodedStr (rawStr: string) {
         return rawStr.replace(/[\u00A0-\u9999<>&]/g, function (i) {
             return '&#' + i.charCodeAt(0) + ';'
@@ -32,21 +32,23 @@ export function runTestCases (jestTest: boolean = false) {
         } catch (e) {
             testError = e
         }
-        if (currentByteTest[1] === testFailed && testMessageA === currentByteTest[2] && testMessageB === currentByteTest[3]) {
+        if (currentByteTest[1] === testFailed &&
+            testMessageA === currentByteTest[2] &&
+            testMessageB === currentByteTest[3]) {
             itemPass++
             return `Pass! (${idx})`
-        } else {
-            itemFail++
-            return `<span style='color:red'>Fail...</span> Code: <span style='color:purple'>${encodedStr(currentByteTest[0])}</span>
-GOT: ${testMessageA}
-Error: ${testError}`
         }
+        itemFail++
+        return "<span style='color:red'>Fail...</span>" +
+            `Code: <span style='color:purple'>${encodedStr(currentByteTest[0])}</span>\n` +
+            `GOT: ${testMessageA}\n` +
+            `Error: ${testError}`
     }
 
     function processOneCTest (currentTest: CTestType) {
         if (currentTest[1] === null) {
             subItemCount = 0
-            return `\n<h4>${currentTest[0]}</h4>`
+            return `<h4>${currentTest[0]}</h4>`
         }
         let testFailed = true
         let testMessage = ''
@@ -65,14 +67,14 @@ Error: ${testError}`
         }
         if (currentTest[1] === testFailed && testMessage === currentTest[2]) {
             itemPass++
-            return `Pass! (${subItemCount}) Code: <span style='color:blue'>${encodedStr(currentTest[0])}</span>`
-        } else {
-            itemFail++
-            return `<span style='color:red'>Fail...</span> (${subItemCount}) Code: <span style='color:blue'>${encodedStr(currentTest[0])}</span> Expected:
-${currentTest[2]}
-GOT output: ${testMessage}
-GOT error:  ${testError}`
+            return `Pass! (${subItemCount})` +
+                `Code: <span style='color:blue'>${encodedStr(currentTest[0])}</span>`
         }
+        itemFail++
+        return `<span style='color:red'>Fail...</span> (${subItemCount})` +
+            `Code: <span style='color:blue'>${encodedStr(currentTest[0])}</span> Expected:\n${currentTest[2]}\n` +
+            `GOT output: ${testMessage}\n` +
+            `GOT error:  ${testError}`
     }
 
     let itemPass = 0
@@ -83,7 +85,7 @@ GOT error:  ${testError}`
         jestTests.forEach(processOneCTest)
         jestBytecodeTests.forEach(processOneAssemblyTest)
         if (itemPass !== 4) {
-            throw new Error('Browser test testcases failed.')
+            return 'Browser test testcases failed.'
         }
         return 'Test tescases ok!'
     }
