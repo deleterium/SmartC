@@ -188,6 +188,7 @@ export function asmHighlight (asmSourceCode: string) {
         }
         const parts = Rule.regex.exec(asmLine)
         if (parts === null) {
+            // this should never be reached
             return toSpan(asmLine, Config.spanErrorClass)
         }
         switch (Rule.opCode) {
@@ -338,13 +339,13 @@ export function asmHighlight (asmSourceCode: string) {
             if (allowedFunctions.findIndex(Obj => Obj.fnName === apiName) === -1) {
                 return toSpan(parts[1], Config.spanInstructionClass) +
                     toSpan(parts[2], Config.spanVariableClass) +
-                    toSpan(parts[3], Config.spanInstructionClass) +
+                    toSpan(parts[3], Config.spanErrorClass) +
                     toSpan(parts[4], Config.spanVariableClass) +
                     toSpan(parts[5], Config.spanVariableClass)
             } else {
                 return toSpan(parts[1], Config.spanInstructionClass) +
                     toSpan(parts[2], Config.spanVariableClass) +
-                    toSpan(parts[3], Config.spanErrorClass) +
+                    toSpan(parts[3], Config.spanInstructionClass) +
                     toSpan(parts[4], Config.spanVariableClass) +
                     toSpan(parts[5], Config.spanVariableClass)
             }

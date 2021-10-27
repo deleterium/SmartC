@@ -339,7 +339,11 @@ function clearForm () {
 function testCode () {
     document.getElementById('assembly_output').innerHTML = ''
     clearForm()
-    document.getElementById('status_output').innerHTML = runTestCases(new SmartC('Assembly'), new SmartC('C'))
+    let testTestcases = false
+    if (document.getElementById('debug').checked) {
+        testTestcases = true
+    }
+    document.getElementById('status_output').innerHTML = runTestCases(testTestcases)
 }
 
 function toggleLang (ev) {
