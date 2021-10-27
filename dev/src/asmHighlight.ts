@@ -298,19 +298,17 @@ export function asmHighlight (asmSourceCode: string) {
             if (allowedFunctions.findIndex(Obj => Obj.fnName === apiName) === -1) {
                 return toSpan(parts[1], Config.spanInstructionClass) +
                     toSpan(parts[2], Config.spanErrorClass)
-            } else {
-                return toSpan(parts[0], Config.spanInstructionClass)
             }
+            return toSpan(parts[0], Config.spanInstructionClass)
         case 0x33:
             apiName = parts[2].trim()
             if (allowedFunctions.findIndex(Obj => Obj.fnName === apiName) === -1) {
                 return toSpan(parts[1], Config.spanInstructionClass) +
                     toSpan(parts[2], Config.spanErrorClass) +
                     toSpan(parts[3], Config.spanVariableClass)
-            } else {
-                return toSpan(parts[1] + parts[2], Config.spanInstructionClass) +
-                    toSpan(parts[3], Config.spanVariableClass)
             }
+            return toSpan(parts[1] + parts[2], Config.spanInstructionClass) +
+                toSpan(parts[3], Config.spanVariableClass)
         case 0x34:
             apiName = parts[2].trim()
             if (allowedFunctions.findIndex(Obj => Obj.fnName === apiName) === -1) {
@@ -318,22 +316,20 @@ export function asmHighlight (asmSourceCode: string) {
                     toSpan(parts[2], Config.spanErrorClass) +
                     toSpan(parts[3], Config.spanVariableClass) +
                     toSpan(parts[4], Config.spanVariableClass)
-            } else {
-                return toSpan(parts[1] + parts[2], Config.spanInstructionClass) +
-                    toSpan(parts[3], Config.spanVariableClass) +
-                    toSpan(parts[4], Config.spanVariableClass)
             }
+            return toSpan(parts[1] + parts[2], Config.spanInstructionClass) +
+                toSpan(parts[3], Config.spanVariableClass) +
+                toSpan(parts[4], Config.spanVariableClass)
         case 0x35:
             apiName = parts[3].trim()
             if (allowedFunctions.findIndex(Obj => Obj.fnName === apiName) === -1) {
                 return toSpan(parts[1], Config.spanInstructionClass) +
                     toSpan(parts[2], Config.spanVariableClass) +
                     toSpan(parts[3], Config.spanErrorClass)
-            } else {
-                return toSpan(parts[1], Config.spanInstructionClass) +
-                    toSpan(parts[2], Config.spanVariableClass) +
-                    toSpan(parts[3], Config.spanInstructionClass)
             }
+            return toSpan(parts[1], Config.spanInstructionClass) +
+                toSpan(parts[2], Config.spanVariableClass) +
+                toSpan(parts[3], Config.spanInstructionClass)
         case 0x37:
             apiName = parts[3].trim()
             if (allowedFunctions.findIndex(Obj => Obj.fnName === apiName) === -1) {
@@ -342,18 +338,17 @@ export function asmHighlight (asmSourceCode: string) {
                     toSpan(parts[3], Config.spanErrorClass) +
                     toSpan(parts[4], Config.spanVariableClass) +
                     toSpan(parts[5], Config.spanVariableClass)
-            } else {
-                return toSpan(parts[1], Config.spanInstructionClass) +
-                    toSpan(parts[2], Config.spanVariableClass) +
-                    toSpan(parts[3], Config.spanInstructionClass) +
-                    toSpan(parts[4], Config.spanVariableClass) +
-                    toSpan(parts[5], Config.spanVariableClass)
             }
+            return toSpan(parts[1], Config.spanInstructionClass) +
+                toSpan(parts[2], Config.spanVariableClass) +
+                toSpan(parts[3], Config.spanInstructionClass) +
+                toSpan(parts[4], Config.spanVariableClass) +
+                toSpan(parts[5], Config.spanVariableClass)
         case 0x36:
         default:
+            // this should never be reached
+            return toSpan(asmLine, Config.spanErrorClass)
         }
-        // this should never be reached
-        return toSpan(asmLine, Config.spanErrorClass)
     }
 
     return toHTML(asmSourceCode, false)
