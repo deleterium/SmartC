@@ -22,7 +22,8 @@ export function stringToHexstring (inStr: string) : string {
             byarr.push(0xc0 | (charCode >> 6))
             byarr.push(0x80 | (charCode & 0x3f))
             break
-        case (charCode < 0xd800 || charCode > 0xdfff):
+        case (charCode < 0xd800):
+        case (charCode > 0xdfff):
             byarr.push(0xe0 | (0x3f & (charCode >> 12)))
             byarr.push(0x80 | (0x3f & (charCode >> 6)))
             byarr.push(0x80 | (0x3f & charCode))
