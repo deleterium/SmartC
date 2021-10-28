@@ -22,7 +22,7 @@ export function stringToHexstring (inStr: string) : string {
             byarr.push(0xc0 | (charCode >> 6))
             byarr.push(0x80 | (charCode & 0x3f))
             break
-        case (charCode < 0xd800 || 0xdfff):
+        case (charCode < 0xd800 || charCode > 0xdfff):
             byarr.push(0xe0 | (0x3f & (charCode >> 12)))
             byarr.push(0x80 | (0x3f & (charCode >> 6)))
             byarr.push(0x80 | (0x3f & charCode))
@@ -63,10 +63,8 @@ export function stringToHexstring (inStr: string) : string {
 export function ReedSalomonAddressDecode (RSString: string, currLine: number) : string {
     const gexp = [1, 2, 4, 8, 16, 5, 10, 20, 13, 26, 17, 7, 14, 28, 29, 31, 27, 19, 3, 6, 12, 24, 21, 15, 30, 25, 23, 11, 22, 9, 18, 1]
     const glog = [0, 0, 1, 18, 2, 5, 19, 11, 3, 29, 6, 27, 20, 8, 12, 23, 4, 10, 30, 17, 7, 22, 28, 26, 21, 25, 9, 16, 13, 14, 24, 15]
-    const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
-    const codewordMap = [3, 2, 1, 0, 7, 6, 5, 4, 13, 14, 15, 16, 12, 8, 9, 10, 11]
 
-    function gmult (a: number, b: number) {
+    function gmult (a: number, b: number) : number {
         if (a === 0 || b === 0) {
             return 0
         }
@@ -74,7 +72,7 @@ export function ReedSalomonAddressDecode (RSString: string, currLine: number) : 
         return gexp[idx]
     }
 
-    function isCodewordValid (codewordToTest: number[]) {
+    function isCodewordValid (codewordToTest: number[]) : boolean {
         let sum = 0
         for (let i = 1; i < 5; i++) {
             let t = 0
@@ -93,32 +91,30 @@ export function ReedSalomonAddressDecode (RSString: string, currLine: number) : 
         return sum === 0
     }
 
-    let codewordLength = 0
-    const codeword: number[] = []
-    let codewordIndex: number
+    function run () : string {
+        const codeword: number[] = []
+        const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
+        const codewordMap = [3, 2, 1, 0, 7, 6, 5, 4, 13, 14, 15, 16, 12, 8, 9, 10, 11]
 
-    for (let i = 0; i < RSString.length; i++) {
-        const positionInAlphabet = alphabet.indexOf(RSString.charAt(i))
-        if (positionInAlphabet <= -1) {
-            continue
+        const validChars = RSString.replace(/[^23456789ABCDEFGHJKLMNPQRSTUVWXYZ]/g, '')
+        validChars.split('').forEach((char, index) => {
+            const positionInAlphabet = alphabet.indexOf(char)
+            codeword[codewordMap[index]] = positionInAlphabet
+        })
+        if (validChars.length !== 17 || !isCodewordValid(codeword)) {
+            throw new TypeError(`At line: ${currLine}. Error decoding address: S-${RSString}`)
         }
-        codewordIndex = codewordMap[codewordLength]
-        codeword[codewordIndex] = positionInAlphabet
-        codewordLength++
-    }
-    if (codewordLength !== 17 || !isCodewordValid(codeword)) {
-        throw new TypeError(`At line: ${currLine}. Error decoding address: S-${RSString}`)
+
+        // base32 to bigint conversion. Disregard checking bytes on indexes above 13.
+        const accountId = codeword.slice(0, 13).reduce((previousValue, currentValue, currentIndex) => {
+            return previousValue + (BigInt(currentValue) * (1n << (5n * BigInt(currentIndex))))
+        }, 0n)
+
+        if (accountId >= 18446744073709551616n) {
+            throw new TypeError(`At line: ${currLine}. Error decoding address: S-${RSString}`)
+        }
+        return accountId.toString(16).padStart(16, '0')
     }
 
-    // base32 to base10 conversion
-    const length = 13
-    let accountId = 0n
-    for (let i = 0, mul = 1n; i < length; i++) {
-        accountId += mul * BigInt(codeword[i])
-        mul *= 32n
-    }
-    if (accountId >= 18446744073709551616n) {
-        throw new TypeError(`At line: ${currLine}. Error decoding address: S-${RSString}`)
-    }
-    return accountId.toString(16).padStart(16, '0')
+    return run()
 }

@@ -1,13 +1,13 @@
 import { stringToHexstring, ReedSalomonAddressDecode } from '../repository'
 
 describe('Strings to hexstring', () => {
-    it('should convert: simple string', () => {
+    it('should convert: simple string ( <= 0x7f)', () => {
         const str = 'Simple'
         const hexstring = '00 00 65 6c 70 6d 69 53'
         const result = stringToHexstring(str)
         expect(result).toBe(hexstring.replace(/ /g, ''))
     })
-    it('should convert: low special char (2 bytes)', () => {
+    it('should convert: string sucessfully ( > 0x7f and < 0x800)', () => {
         const str = 'Até'
         const hexstring = '00 00 00 00 a9 c3 74 41'
         const result = stringToHexstring(str)
@@ -31,7 +31,13 @@ describe('Strings to hexstring', () => {
         const result = stringToHexstring(str)
         expect(result).toBe(hexstring.replace(/ /g, ''))
     })
-    it('should convert string sucessfully (over 65535)', () => {
+    it('should convert string sucessfully (between 0xdfff and 0x10000 )', () => {
+        const str = '＃＞'
+        const hexstring = '00 00 9e bc ef 83 bc ef'
+        const result = stringToHexstring(str)
+        expect(result).toBe(hexstring.replace(/ /g, ''))
+    })
+    it('should convert string sucessfully (over 0x10000)', () => {
         const str = '🨁'
         const hexstring = '00 00 00 00 81 a8 9f f0'
         const result = stringToHexstring(str)
@@ -55,6 +61,12 @@ describe('Reed-Salomon decode', () => {
     it('should convert: 2222-2222-2222-22222 (id zero)', () => {
         const str = '2222-2222-2222-22222'
         const hexstring = '00 00 00 00 00 00 00 00'
+        const result = ReedSalomonAddressDecode(str, 0)
+        expect(result).toBe(hexstring.replace(/ /g, ''))
+    })
+    it('should convert: ZZZZ-ZZZZ-QY2K-HZZZZ (last valid id)', () => {
+        const str = 'ZZZZ-ZZZZ-QY2K-HZZZZ'
+        const hexstring = 'ff ff ff ff ff ff ff ff'
         const result = ReedSalomonAddressDecode(str, 0)
         expect(result).toBe(hexstring.replace(/ /g, ''))
     })
