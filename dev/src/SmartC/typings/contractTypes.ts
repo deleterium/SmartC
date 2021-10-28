@@ -2,7 +2,7 @@ import { DECLARATION_TYPES, MEMORY_SLOT, SENTENCES, TOKEN, TYPE_DEFINITIONS } fr
 
 export interface SC_CONFIG {
     /** This compiler version!!! */
-    compilerVersion: 'dev',
+    compilerVersion: string,
     /** Add random string to labels: #pragma enableRandom  */
     enableRandom: boolean,
     /** Add line number to labels: #pragma enableLineLabels */

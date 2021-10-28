@@ -1,4 +1,4 @@
-import { SmartC } from './SmartC/smartc.js'
+import { SmartC, Constants } from './SmartC/smartc.js'
 import { asmHighlight } from './asmHighlight.js'
 import { runTestCases } from './testcases.js'
 
@@ -43,10 +43,14 @@ window.onload = () => {
 
     detachDeployment().minimize(true)
 
+    document.title = document.title.replace('%version%', Constants.compilerVersion)
+    const h1TitleDom = document.getElementById('h1_title')
+    h1TitleDom.innerText = h1TitleDom.innerText.replace('%version%', Constants.compilerVersion)
+
     try {
         const startUpTest = new SmartC({
             language: 'C',
-            sourceCode: '#pragma maxAuxVars 1\nlong a, b, c; a=b/~c;'
+            sourceCode: '#pragma version ' + Constants.compilerVersion + '\n#pragma maxAuxVars 1\nlong a, b, c; a=b/~c;'
         })
         startUpTest.compile()
         if (startUpTest.getMachineCode().MachineCodeHashId === '7488355358104845254') {

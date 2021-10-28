@@ -9,6 +9,15 @@ import { byteCode } from './byteCoder/byteCoder'
 import { PRE_TOKEN, TOKEN } from './typings/syntaxTypes'
 import { CONTRACT, MACHINE_OBJECT } from './typings/contractTypes'
 
+export const Constants = {
+    /** Hardcoded compiler version */
+    compilerVersion: 'dev-0.4.1',
+    /** Default version for user's programs. If different from above, user must
+     * specify #pragma version to set source code version. Note: setting
+     * these two values different will crash all jest testcases. */
+    defaultVersion: 'dev-0.4.1'
+}
+
 /**
  * SmartC Compiler class.
  *

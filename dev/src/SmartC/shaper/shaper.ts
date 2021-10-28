@@ -9,6 +9,8 @@ import {
     REGISTER_TYPE_DEFINITION
 } from '../typings/syntaxTypes'
 
+import { Constants } from '../smartc'
+
 import { defaultTypesTableTemplate, APITableTemplate } from './templates'
 
 /** Translate an array of tokens to an object representing the program.
@@ -30,14 +32,14 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
         typesDefinitions: [],
         // Default configuration for compiler
         Config: {
-            compilerVersion: 'dev',
+            compilerVersion: Constants.compilerVersion,
             enableRandom: false,
             enableLineLabels: false,
             globalOptimization: false,
             maxAuxVars: 3,
             maxConstVars: 0,
             reuseAssignedVar: true,
-            version: 'dev',
+            version: Constants.defaultVersion,
             warningToError: true,
             APIFunctions: false,
             PName: '',

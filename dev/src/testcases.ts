@@ -2,7 +2,7 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-import { SmartC } from './SmartC/smartc'
+import { SmartC, Constants } from './SmartC/smartc'
 import { tests, bytecodeTests, jestTests, jestBytecodeTests } from './templateTests'
 
 export type CTestType = [string, boolean|null, string]
@@ -57,7 +57,7 @@ export function runTestCases (jestTest: boolean = false) : string {
         try {
             const cCompiler = new SmartC({
                 language: 'C',
-                sourceCode: currentTest[0]
+                sourceCode: `#pragma version ${Constants.compilerVersion}\n${currentTest[0]}`
             })
             cCompiler.compile()
             testMessage = cCompiler.getAssemblyCode()

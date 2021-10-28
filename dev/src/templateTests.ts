@@ -1002,7 +1002,7 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`,
         // Macro outputSourceLineNumber test
         '#pragma outputSourceLineNumber\nlong a=5;\nif (a==6){\na--;\n}\n',
         false,
-        '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n^comment line 2\nSET @a #0000000000000005\n^comment line 3\nSET @r0 #0000000000000006\nBNE $a $r0 :__if1_endif\n__if1_start:\n^comment line 4\nDEC @a\n__if1_endif:\nFIN\n'
+        '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n^comment line 3\nSET @a #0000000000000005\n^comment line 4\nSET @r0 #0000000000000006\nBNE $a $r0 :__if1_endif\n__if1_start:\n^comment line 5\nDEC @a\n__if1_endif:\nFIN\n'
     ],
     /*
     [
