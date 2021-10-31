@@ -1,3 +1,83 @@
+// Author: Rui Deleterium
+// Project: https://github.com/deleterium/SmartC
+// License: BSD 3-Clause License
+
+// Note: Use assert or failIf only in cases for internal error or debug purposes.
+// Using them with regular error messages will lead to condition not beeing checked
+// in coverage report.
+
+/**
+ * Ensure the value is not undefined
+ * @param argument Anything
+ * @returns Anything, but not undefined
+ * @throws {Typerror} if value is undefined
+ */
+export function assertNotUndefined<Type> (argument: Type | undefined, errorMessage: string): Exclude<Type, undefined> {
+    if (argument === undefined) {
+        throw new TypeError(errorMessage)
+    }
+    return argument as Exclude<Type, undefined>
+}
+
+/**
+ * Ensure the argument is not undefined and not equal param
+ * @param argument to check
+ * @param param to compare
+ * @param errorMessage to throw
+ * @returns Argument without undefined type
+ * @throws {TypeError} if not pass condition
+ */
+export function assertNotEqual<T> (argument: T | undefined, param: T, errorMessage: string): Exclude<T, undefined> {
+    if (argument !== undefined && argument !== param) {
+        return argument as Exclude<T, undefined>
+    }
+    throw new TypeError(errorMessage)
+}
+
+/**
+ * Ensure the argument is true
+ * @param argument to check
+ * @param errorMessage to throw
+ * @returns true
+ * @throws {TypeError} if expression is false
+ */
+export function assertExpression (argument: boolean, errorMessage: string): void {
+    if (!argument) {
+        throw new TypeError(errorMessage)
+    }
+}
+
+/**
+ * Throw if argument is true
+ * @param argument to check
+ * @param errorMessage to throw
+ * @returns true
+ * @throws {TypeError} if expression is false
+ */
+export function failIf (argument: boolean, errorMessage: string): void {
+    if (argument) {
+        throw new TypeError(errorMessage)
+    }
+}
+
+// Note: Found at https://gist.github.com/sunnyy02/2477458d4d1c08bde8cc06cd8f56702e
+// https://javascript.plainenglish.io/deep-clone-an-object-and-preserve-its-type-with-typescript-d488c35e5574
+/**
+ * Create a deep copy of one variable.
+ */
+export function deepCopy<T> (source: T): T {
+    return Array.isArray(source)
+        ? source.map(item => deepCopy(item))
+        : source instanceof Date
+            ? new Date(source.getTime())
+            : source && typeof source === 'object'
+                ? Object.getOwnPropertyNames(source).reduce((o, prop) => {
+                    Object.defineProperty(o, prop, Object.getOwnPropertyDescriptor(source, prop)!)
+                    o[prop] = deepCopy((source as { [key: string]: any })[prop])
+                    return o
+                }, Object.create(Object.getPrototypeOf(source)))
+                : source as T
+}
 
 /**
  * Converts a utf-16 string to utf-8 hexstring

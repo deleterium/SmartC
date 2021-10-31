@@ -82,10 +82,8 @@ export interface CONTRACT {
     Global: SC_GLOBAL,
     /** Declared functions */
     functions: SC_FUNCTION[],
-    /** Variables and constants in memory */
+    /** Variables, constants and labels in memory */
     memory: MEMORY_SLOT[],
-    /** All labels used in program */
-    labels: string[],
     /** Extended information for arrays and structs */
     typesDefinitions: TYPE_DEFINITIONS[],
     /** Compiler configurations */
