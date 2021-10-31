@@ -73,7 +73,7 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
     /* * * Main function! * * */
     function shapeMain () : CONTRACT {
         splitCode()
-        Program.Global.macros.forEach(processMacro)
+        Program.Global.macros.forEach(processMacroControl)
         if (Program.Config.version === '') {
             throw new TypeError(`Compiler version not set. Pin current compiler version in your program adding '#pragma version ${Program.Config.compilerVersion}' to code.`)
         }
@@ -156,11 +156,10 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
     }
 
     /** Reads/verifies one macro token and add it into Program.Config object */
-    function processMacro (Token: SC_MACRO) : void {
+    function processMacroControl (Token: SC_MACRO) : void {
         let boolVal: boolean | undefined
         let throwBoolVal = false
         let usedBoolVal = false
-        let num : number
 
         switch (Token.value) {
         case undefined:
@@ -180,51 +179,7 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
 
         switch (Token.type) {
         case 'pragma':
-            switch (Token.property) {
-            case 'maxAuxVars':
-                num = parseInt(Token.value)
-                if (num >= 1 && num <= 10) {
-                    Program.Config.maxAuxVars = num
-                    return
-                }
-                throw new RangeError(`At line: ${Token.line}. Value out of permitted range 1..10.`)
-            case 'maxConstVars':
-                num = parseInt(Token.value)
-                if (num >= 0 && num <= 10) {
-                    Program.Config.maxConstVars = num
-                    return
-                }
-                throw new RangeError(`At line: ${Token.line}. Value out of permitted range 0..10.`)
-            case 'reuseAssignedVar':
-                Program.Config.reuseAssignedVar = boolVal
-                usedBoolVal = true
-                break
-            case 'enableRandom':
-                Program.Config.enableRandom = boolVal
-                usedBoolVal = true
-                break
-            case 'enableLineLabels':
-                Program.Config.enableLineLabels = boolVal
-                usedBoolVal = true
-                break
-            case 'globalOptimization':
-                Program.Config.globalOptimization = boolVal
-                usedBoolVal = true
-                break
-            case 'version':
-                Program.Config.version = Token.value
-                break
-            case 'warningToError':
-                Program.Config.warningToError = boolVal
-                usedBoolVal = true
-                break
-            case 'outputSourceLineNumber':
-                Program.Config.outputSourceLineNumber = boolVal
-                usedBoolVal = true
-                break
-            default:
-                throw new TypeError(`At line: ${Token.line}. Unknow macro property: '#${Token.type} ${Token.property}'. Please check valid values on Help page`)
-            }
+            usedBoolVal = processMacroPragma(Token, boolVal)
             break
         case 'include':
             if (Token.property === 'APIFunctions') {
@@ -234,46 +189,94 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
             }
             throw new TypeError(`At line: ${Token.line}. Unknow macro property '#${Token.type} ${Token.property}'. Please check valid values on Help page`)
         case 'program':
-            switch (Token.property) {
-            case 'name':
-                if (/^[0-9a-zA-Z]{1,30}$/.test(Token.value)) {
-                    Program.Config.PName = Token.value
-                    return
-                }
-                throw new TypeError(`At line: ${Token.line}. Program name must contains only letters [a-z][A-Z][0-9], from 1 to 30 chars.`)
-            case 'description':
-                if (Token.value.length >= 1000) {
-                    throw new TypeError(`At line: ${Token.line}. Program description max lenght is 1000 chars. It is ${Token.value.length} chars.`)
-                }
-                Program.Config.PDescription = Token.value
-                return
-            case 'activationAmount':
-                if (/^[0-9_]{1,20}$/.test(Token.value)) {
-                    Program.Config.PActivationAmount = Token.value.replace(/_/g, '')
-                    return
-                }
-                throw new TypeError(`At line: ${Token.line}. Program activation must be only numbers or '_'.`)
-            case 'userStackPages':
-                if (/^\d\s*$|^10\s*$/.test(Token.value)) {
-                    Program.Config.PUserStackPages = Number(Token.value)
-                    return
-                }
-                throw new TypeError(`At line: ${Token.line}. Program user stack pages must be a number between 0 and 10, included.`)
-            case 'codeStackPages':
-                if (/^\d\s*$|^10\s*$/.test(Token.value)) {
-                    Program.Config.PCodeStackPages = Number(Token.value)
-                    return
-                }
-                throw new TypeError(`At line: ${Token.line}. Program code stack pages must be a number between 0 and 10, included.`)
-            default:
-                throw new TypeError(`At line: ${Token.line}. Unknow macro property: '#${Token.type} ${Token.property}'. Please check valid values on Help page`)
-            }
+            processMacroProgram(Token)
+            break
         default:
             throw new TypeError(`At line: ${Token.line}. Unknow macro: '#${Token.type}'. Please check valid values on Help page`)
         }
         // Check if there was an error assign boolean values
         if (throwBoolVal && usedBoolVal) {
             throw new TypeError(`At line: ${Token.line}. Macro: '#${Token.type} ${Token.property}' with wrong value. Please check valid values on Help page.`)
+        }
+    }
+
+    /** Process all macro pragma options. Return true if bool was used in assignment. */
+    function processMacroPragma (macroToken: SC_MACRO, bool: boolean): boolean {
+        const num = parseInt(macroToken.value)
+        switch (macroToken.property) {
+        case 'maxAuxVars':
+            if (num >= 1 && num <= 10) {
+                Program.Config.maxAuxVars = num
+                return false
+            }
+            throw new RangeError(`At line: ${macroToken.line}. Value out of permitted range 1..10.`)
+        case 'maxConstVars':
+            if (num >= 0 && num <= 10) {
+                Program.Config.maxConstVars = num
+                return false
+            }
+            throw new RangeError(`At line: ${macroToken.line}. Value out of permitted range 0..10.`)
+        case 'reuseAssignedVar':
+            Program.Config.reuseAssignedVar = bool
+            return true
+        case 'enableRandom':
+            Program.Config.enableRandom = bool
+            return true
+        case 'enableLineLabels':
+            Program.Config.enableLineLabels = bool
+            return true
+        case 'globalOptimization':
+            Program.Config.globalOptimization = bool
+            return true
+        case 'version':
+            Program.Config.version = macroToken.value
+            return false
+        case 'warningToError':
+            Program.Config.warningToError = bool
+            return true
+        case 'outputSourceLineNumber':
+            Program.Config.outputSourceLineNumber = bool
+            return true
+        default:
+            throw new TypeError(`At line: ${macroToken.line}. Unknow macro property: '#${macroToken.type} ${macroToken.property}'. Please check valid values on Help page`)
+        }
+    }
+
+    /** Process all macro Program options */
+    function processMacroProgram (macroToken: SC_MACRO) : void {
+        switch (macroToken.property) {
+        case 'name':
+            if (/^[0-9a-zA-Z]{1,30}$/.test(macroToken.value)) {
+                Program.Config.PName = macroToken.value
+                return
+            }
+            throw new TypeError(`At line: ${macroToken.line}. Program name must contains only letters [a-z][A-Z][0-9], from 1 to 30 chars.`)
+        case 'description':
+            if (macroToken.value.length >= 1000) {
+                throw new TypeError(`At line: ${macroToken.line}. Program description max lenght is 1000 chars. It is ${macroToken.value.length} chars.`)
+            }
+            Program.Config.PDescription = macroToken.value
+            return
+        case 'activationAmount':
+            if (/^[0-9_]{1,20}$/.test(macroToken.value)) {
+                Program.Config.PActivationAmount = macroToken.value.replace(/_/g, '')
+                return
+            }
+            throw new TypeError(`At line: ${macroToken.line}. Program activation must be only numbers or '_'.`)
+        case 'userStackPages':
+            if (/^\d\s*$|^10\s*$/.test(macroToken.value)) {
+                Program.Config.PUserStackPages = Number(macroToken.value)
+                return
+            }
+            throw new TypeError(`At line: ${macroToken.line}. Program user stack pages must be a number between 0 and 10, included.`)
+        case 'codeStackPages':
+            if (/^\d\s*$|^10\s*$/.test(macroToken.value)) {
+                Program.Config.PCodeStackPages = Number(macroToken.value)
+                return
+            }
+            throw new TypeError(`At line: ${macroToken.line}. Program code stack pages must be a number between 0 and 10, included.`)
+        default:
+            throw new TypeError(`At line: ${macroToken.line}. Unknow macro property: '#${macroToken.type} ${macroToken.property}'. Please check valid values on Help page`)
         }
     }
 

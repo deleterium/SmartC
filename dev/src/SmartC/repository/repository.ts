@@ -76,7 +76,7 @@ export function deepCopy<T> (source: T): T {
                     o[prop] = deepCopy((source as { [key: string]: any })[prop])
                     return o
                 }, Object.create(Object.getPrototypeOf(source)))
-                : source as T
+                : source
 }
 
 /**

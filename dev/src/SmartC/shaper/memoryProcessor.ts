@@ -100,34 +100,33 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
      * This is the actual processing code. */
     function longOrVoidToMemoryObject (definition: 'long'|'void') : MEMORY_SLOT[] {
         const longTD = getTypeDefinitionTemplate('long')
-        let ispointer = false
-        if (phraseCode[ptmoCounter - 1].value === '*') {
-            ispointer = true
-        }
+        const isLovPointer = isItPointer()
+        const startingPmtoCounter = ptmoCounter
+        const lovDimensions = getArrayDimensions()
+        // pmtoCounter was advanced by structArrDimensions.length
+
+        // prepare lovHeader
         const lovHeader = deepCopy(longTD.MemoryTemplate)
-        lovHeader.name = phraseCode[ptmoCounter].value
-        lovHeader.asmName = AuxVars.currentPrefix + phraseCode[ptmoCounter].value
+        lovHeader.name = phraseCode[startingPmtoCounter].value
+        lovHeader.asmName = AuxVars.currentPrefix + phraseCode[startingPmtoCounter].value
         lovHeader.scope = AuxVars.currentScopeName
         if (definition === 'void') {
-            if (ispointer === false) {
-                throw new TypeError(`At line: ${phraseCode[ptmoCounter].line}. Can not declare variables as void.`)
+            if (isLovPointer === false) {
+                throw new TypeError(`At line: ${phraseCode[startingPmtoCounter].line}. Can not declare variables as void.`)
             }
             lovHeader.declaration = 'void_ptr'
         } else { // phraseCode[keywordIndex].value === 'long'
-            if (ispointer) {
+            if (isLovPointer) {
                 lovHeader.declaration += '_ptr'
             }
         }
         lovHeader.isDeclared = AuxVars.setIsDeclared
 
-        const lovDimensions = getArrayDimensions()
-
+        // If is not an array, just send the header
         if (lovDimensions.length === 0) {
-            // It IS NOT an array
             return [lovHeader]
         }
-        // It IS an array
-        // fill more information in memory template
+        // But if it IS an array, update header
         lovHeader.type = 'array'
         lovHeader.typeDefinition = structPrefix + lovHeader.asmName
         lovHeader.arrItem = {
@@ -136,17 +135,15 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
             typeDefinition: structPrefix + lovHeader.asmName,
             totalSize: 0
         }
-        if (ispointer === false) {
+        if (isLovPointer === false) {
             lovHeader.declaration += '_ptr'
         }
         lovHeader.arrItem.totalSize = 1 + lovDimensions.reduce(function (total, num) {
             return total * num
         }, 1)
 
-        // Create item in memory_template
+        // Push items into memory
         const retArrMem = [lovHeader]
-
-        // Create array items in memory_template
         for (let i = 1; i < lovHeader.arrItem.totalSize; i++) {
             const Mem2 = deepCopy(longTD.MemoryTemplate)
             Mem2.name = `${lovHeader.name}_${i - 1}`
@@ -157,29 +154,12 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
         }
 
         // create array type definition
-        if (lovHeader.arrItem.totalSize > 1) {
-            const TypeD: ARRAY_TYPE_DEFINITION = {
-                name: structPrefix + lovHeader.asmName,
-                type: 'array',
-                arrayDimensions: lovDimensions,
-                arrayMultiplierDim: [],
-                // CHECK unneed?
-                MemoryTemplate: lovHeader
-            }
-            let j = lovDimensions.length - 1
-            let acc = 1
-            do {
-                TypeD.arrayMultiplierDim.unshift(acc)
-                acc *= lovDimensions[j]
-                j--
-            } while (j >= 0)
-            ProgramTD.push(TypeD)
-        }
+        ProgramTD.push(createArrayTypeDefinition(lovHeader, lovDimensions))
 
         return retArrMem
     }
 
-    /** Return current item Array dimensions, if there is any. */
+    /** Return current item Array dimensions, if there is any. It advances ptmoCounter! */
     function getArrayDimensions () : number[] {
         const dimensions: number[] = []
         while (ptmoCounter + 1 < phraseCode.length) {
@@ -199,6 +179,32 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
             throw new TypeError('At line: ' + line + '. Wrong array declaration. Only constant size declarations allowed.')
         }
         return parseInt(tkn[0].value, 16)
+    }
+
+    function isItPointer () : boolean {
+        if (phraseCode[ptmoCounter - 1].value === '*') {
+            return true
+        }
+        return false
+    }
+
+    function createArrayTypeDefinition (header: MEMORY_SLOT, dimensions: number[]) : ARRAY_TYPE_DEFINITION {
+        const retTypeD: ARRAY_TYPE_DEFINITION = {
+            name: assertNotUndefined(header.typeDefinition, 'Internal error. Missing type definion.'),
+            type: 'array',
+            arrayDimensions: deepCopy(dimensions),
+            arrayMultiplierDim: [],
+            // CHECK unneed?
+            MemoryTemplate: header
+        }
+        let j = dimensions.length - 1
+        let acc = header.size
+        do {
+            retTypeD.arrayMultiplierDim.unshift(acc)
+            acc *= dimensions[j]
+            j--
+        } while (j >= 0)
+        return retTypeD
     }
 
     /** From Code containing a struct, return an array of memory objects.
@@ -248,50 +254,55 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
     function structToMemoryObject (currentStructNameDef: string, startingLine: number) : MEMORY_SLOT[] {
         const retStructMemory : MEMORY_SLOT[] = []
         const structTD = findSTD(currentStructNameDef)
-        let ispointer = false
-        if (phraseCode[ptmoCounter - 1].value === '*') {
-            ispointer = true
-        }
         let structMemHeader : MEMORY_SLOT
+        const isStructPointer = isItPointer()
+        const startingPmtoCounter = ptmoCounter
+        const structArrDimensions = getArrayDimensions()
+        // pmtoCounter was advanced by structArrDimensions.length
 
-        if (ispointer) {
+        if (structArrDimensions.length === 0) {
+            // It IS NOT array of structs
+            if (isStructPointer === false) {
+                if (structTD === undefined) {
+                    throw new TypeError(`At line: ${startingLine}. Could not find type definition for 'struct' '${currentStructNameDef}'.`)
+                }
+                return createMemoryObjectFromSTD(currentStructNameDef, phraseCode[ptmoCounter].value, isStructPointer)
+            }
+            // isStructPointer is true
             if (structTD === undefined) {
-            // Maybe recursive definition.
+                // Maybe recursive definition.
                 structMemHeader = getMemoryTemplate('structRef')
                 // Recursive struct works only with global definitions
                 structMemHeader.typeDefinition = currentStructNameDef
                 structMemHeader.size = 1
                 structMemHeader.declaration = 'struct_ptr'
             } else {
-            // not recursive definition
+                // not recursive definition
                 structMemHeader = deepCopy(structTD.MemoryTemplate)
                 structMemHeader.declaration = 'struct_ptr'
                 structMemHeader.type = 'structRef'
             }
-        } else { // is not pointer
-            if (structTD === undefined) {
-                throw new TypeError(`At line: ${startingLine}. Could not find type definition for 'struct' '${currentStructNameDef}'.`)
-            }
-            structMemHeader = deepCopy(structTD.MemoryTemplate)
-        }
-        structMemHeader.name = phraseCode[ptmoCounter].value
-        structMemHeader.asmName = AuxVars.currentPrefix + phraseCode[ptmoCounter].value
-        structMemHeader.scope = AuxVars.currentScopeName
-        structMemHeader.isDeclared = AuxVars.setIsDeclared
-
-        const structArrDimensions = getArrayDimensions()
-
-        if (structArrDimensions.length === 0) {
-            // It IS NOT array of structs
-            if (ispointer) {
-                retStructMemory.push(structMemHeader)
-            } else {
-                retStructMemory.push(...createMemoryObjectFromSTD(currentStructNameDef, phraseCode[ptmoCounter].value, ispointer))
-            }
-            return retStructMemory
+            structMemHeader.name = phraseCode[startingPmtoCounter].value
+            structMemHeader.asmName = AuxVars.currentPrefix + phraseCode[startingPmtoCounter].value
+            structMemHeader.scope = AuxVars.currentScopeName
+            structMemHeader.isDeclared = AuxVars.setIsDeclared
+            return [structMemHeader]
         }
 
         // It IS array of structs
+        if (structTD === undefined) {
+            throw new TypeError(`At line: ${startingLine}. Could not find type definition for 'struct' '${currentStructNameDef}'.`)
+        }
+
+        // Prepare structMemHeader
+        structMemHeader = deepCopy(structTD.MemoryTemplate)
+        if (isStructPointer) {
+            structMemHeader.declaration = 'struct_ptr'
+        }
+        structMemHeader.name = phraseCode[startingPmtoCounter].value
+        structMemHeader.asmName = AuxVars.currentPrefix + phraseCode[startingPmtoCounter].value
+        structMemHeader.scope = AuxVars.currentScopeName
+        structMemHeader.isDeclared = AuxVars.setIsDeclared
         structMemHeader.type = 'array'
         structMemHeader.typeDefinition = structMemHeader.asmName
         structMemHeader.arrItem = {
@@ -301,38 +312,25 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
             totalSize: 0
         }
 
-        if (ispointer === false) {
+        if (isStructPointer === false) {
+            // Update info after using it n arrItem
             structMemHeader.declaration += '_ptr'
         }
         structMemHeader.arrItem.totalSize = 1 + structArrDimensions.reduce(function (total, num) {
             return total * num
         }, structMemHeader.size)
 
+        // Push items in memory
         retStructMemory.push(structMemHeader)
         for (let x = 0, i = 0; x < structArrDimensions.length; x++) {
             for (let y = 0; y < structArrDimensions[x]; y++) {
-                retStructMemory.push(...createMemoryObjectFromSTD(currentStructNameDef, phraseCode[ptmoCounter - structArrDimensions.length].value + '_' + i, ispointer))
+                retStructMemory.push(...createMemoryObjectFromSTD(currentStructNameDef, phraseCode[ptmoCounter - structArrDimensions.length].value + '_' + i, isStructPointer))
                 i++
             }
         }
 
         // create array type definition
-        const TypeD: ARRAY_TYPE_DEFINITION = {
-            name: AuxVars.currentPrefix + phraseCode[ptmoCounter - structArrDimensions.length].value,
-            type: 'array',
-            arrayDimensions: structArrDimensions,
-            arrayMultiplierDim: [],
-            // CHECK unneed?
-            MemoryTemplate: structMemHeader
-        }
-        let j = structArrDimensions.length - 1
-        let acc = structMemHeader.size
-        do {
-            TypeD.arrayMultiplierDim.unshift(acc)
-            acc *= structArrDimensions[j]
-            j--
-        } while (j >= 0)
-        ProgramTD.push(TypeD)
+        ProgramTD.push(createArrayTypeDefinition(structMemHeader, structArrDimensions))
 
         return retStructMemory
     }
