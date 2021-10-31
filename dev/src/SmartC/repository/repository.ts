@@ -65,18 +65,21 @@ export function failIf (argument: boolean, errorMessage: string): void {
 /**
  * Create a deep copy of one variable.
  */
-export function deepCopy<T> (source: T): T {
-    return Array.isArray(source)
-        ? source.map(item => deepCopy(item))
-        : source instanceof Date
-            ? new Date(source.getTime())
-            : source && typeof source === 'object'
-                ? Object.getOwnPropertyNames(source).reduce((o, prop) => {
-                    Object.defineProperty(o, prop, Object.getOwnPropertyDescriptor(source, prop)!)
-                    o[prop] = deepCopy((source as { [key: string]: any })[prop])
-                    return o
-                }, Object.create(Object.getPrototypeOf(source)))
-                : source
+export function deepCopy<T1> (source: T1): T1 {
+    if (Array.isArray(source)) {
+        return source.map(item => deepCopy(item)) as unknown as T1
+    }
+    if (source instanceof Date) {
+        return new Date(source.getTime()) as unknown as T1
+    }
+    if (source && typeof source === 'object') {
+        return Object.getOwnPropertyNames(source).reduce((o, prop) => {
+            Object.defineProperty(o, prop, Object.getOwnPropertyDescriptor(source, prop)!)
+            o[prop] = deepCopy((source as { [key: string]: any })[prop])
+            return o
+        }, Object.create(Object.getPrototypeOf(source)))
+    }
+    return source
 }
 
 /**

@@ -35,10 +35,10 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
                 break
             case 'long':
             case 'void':
-                retMem.push(...longOrVoidProcessControl(phraseCode, phraseCode[ptmoCounter].value as 'long'|'void'))
+                retMem.push(...longOrVoidProcessControl(phraseCode[ptmoCounter].value as 'long'|'void'))
                 break
             case 'struct':
-                retMem.push(...structProcessControl(phraseCode))
+                retMem.push(...structProcessControl())
                 break
             default:
                 ptmoCounter++
@@ -61,7 +61,7 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
 
     /** From Code containing long/void declaration, return an array of memory objects.
      * Handle regular variables, arrays and pointers. This is control flow */
-    function longOrVoidProcessControl (phraseCode: TOKEN [], definition: 'long'|'void') : MEMORY_SLOT[] {
+    function longOrVoidProcessControl (definition: 'long'|'void') : MEMORY_SLOT[] {
         const retMemory : MEMORY_SLOT[] = []
         const keywordIndex = ptmoCounter
         let valid = true
@@ -210,7 +210,7 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
     /** From Code containing a struct, return an array of memory objects.
      * Handle regular structs, arrays of structs and struct pointers. This
      * is the control flow */
-    function structProcessControl (phraseCode: TOKEN []) : MEMORY_SLOT[] {
+    function structProcessControl () : MEMORY_SLOT[] {
         const retMemory : MEMORY_SLOT[] = []
         const keywordIndex = ptmoCounter
         assertExpression(phraseCode[ptmoCounter].value === 'struct',
