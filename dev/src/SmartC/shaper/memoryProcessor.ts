@@ -76,7 +76,6 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
                 ptmoCounter++
                 valid = true
                 break
-            case 'Terminator':
             case 'Keyword':
                 return retMemory
             case 'Variable': {
@@ -120,7 +119,7 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
                 lovHeader.declaration += '_ptr'
             }
         }
-        lovHeader.isDeclared = AuxVars.setIsDeclared
+        lovHeader.isDeclared = AuxVars.isFunctionArgument
 
         // If is not an array, just send the header
         if (lovDimensions.length === 0) {
@@ -212,6 +211,7 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
      * is the control flow */
     function structProcessControl () : MEMORY_SLOT[] {
         const retMemory : MEMORY_SLOT[] = []
+        let isPointer = false
         const keywordIndex = ptmoCounter
         assertExpression(phraseCode[ptmoCounter].value === 'struct',
             'Internal error.')
@@ -227,23 +227,27 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
                     throw new TypeError(`At line: ${line}. Delimiter ',' not expected.`)
                 }
                 ptmoCounter++
+                isPointer = false
                 break
-            case 'Terminator':
             case 'Keyword':
                 return retMemory
             case 'UnaryOperator':
             case 'Operator':
                 if (phraseCode[ptmoCounter].value === '*') {
+                    isPointer = true
                     ptmoCounter++
                     break
                 }
                 throw new TypeError(`At line: ${line}. Invalid element (value: '${phraseCode[ptmoCounter].value}') found in struct definition.`)
             case 'Variable':
+                if (AuxVars.isFunctionArgument && !isPointer) {
+                    throw new TypeError(`At line: ${line}. Passing struct by value as argument is not supported. Pass by reference.`)
+                }
                 retMemory.push(...structToMemoryObject(structNameDef, phraseCode[keywordIndex].line))
                 ptmoCounter++
                 break
             default:
-                throw new TypeError('At line: ' + phraseCode[ptmoCounter].line + ". Invalid element (type: '" + phraseCode[ptmoCounter].type + "' value: '" + phraseCode[ptmoCounter].value + "') found in struct definition!")
+                throw new TypeError(`At line: ${line}. Invalid element (type: '${phraseCode[ptmoCounter].type}' value: '${phraseCode[ptmoCounter].value}') found in struct definition!`)
             }
         }
         return retMemory
@@ -285,7 +289,7 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
             structMemHeader.name = phraseCode[startingPmtoCounter].value
             structMemHeader.asmName = AuxVars.currentPrefix + phraseCode[startingPmtoCounter].value
             structMemHeader.scope = AuxVars.currentScopeName
-            structMemHeader.isDeclared = AuxVars.setIsDeclared
+            structMemHeader.isDeclared = AuxVars.isFunctionArgument
             return [structMemHeader]
         }
 
@@ -297,12 +301,12 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
         // Prepare structMemHeader
         structMemHeader = deepCopy(structTD.MemoryTemplate)
         if (isStructPointer) {
-            structMemHeader.declaration = 'struct_ptr'
+            throw new TypeError(`At line: ${startingLine}. Arrays of struct pointers are not currently supported.`)
         }
         structMemHeader.name = phraseCode[startingPmtoCounter].value
         structMemHeader.asmName = AuxVars.currentPrefix + phraseCode[startingPmtoCounter].value
         structMemHeader.scope = AuxVars.currentScopeName
-        structMemHeader.isDeclared = AuxVars.setIsDeclared
+        structMemHeader.isDeclared = AuxVars.isFunctionArgument
         structMemHeader.type = 'array'
         structMemHeader.typeDefinition = structMemHeader.asmName
         structMemHeader.arrItem = {
@@ -312,10 +316,6 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
             totalSize: 0
         }
 
-        if (isStructPointer === false) {
-            // Update info after using it n arrItem
-            structMemHeader.declaration += '_ptr'
-        }
         structMemHeader.arrItem.totalSize = 1 + structArrDimensions.reduce(function (total, num) {
             return total * num
         }, structMemHeader.size)

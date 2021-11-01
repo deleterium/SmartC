@@ -40,74 +40,65 @@ function codeToOneSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[]): SENTEN
             // end of sentence!
             return [{ type: 'phrase', code: phrase, line: lineOfFirstInstruction }]
         }
-        if (codetrain[AuxVars.currentToken].type === 'Keyword') {
-            switch (codetrain[AuxVars.currentToken].value) {
-            case 'long':
-            case 'const':
-            case 'void':
-            case 'goto':
-            case 'halt':
-            case 'return':
-            case 'sleep':
-            case 'exit':
-                phrase.push(codetrain[AuxVars.currentToken])
-                AuxVars.currentToken++
-                continue
+        switch (codetrain[AuxVars.currentToken].value) {
+        case 'struct':
+            // Handle struct. It can be type:phrase or type:struct
+            if (codetrain[AuxVars.currentToken + 1]?.type === 'CodeDomain') {
+                // Struct definition -> type is 'struct'
+                return structCodeToSentence(AuxVars, codetrain)
             }
-            if (phrase.length > 0) {
-                throw new SyntaxError(`At line: ${phrase[0].line}. Statement including '${codetrain[AuxVars.currentToken].value}' in wrong way. Possible missing ';'.`)
+            // Consider type: 'phrase' with struct variable declaration
+            phrase.push(codetrain[AuxVars.currentToken])
+            AuxVars.currentToken++
+            continue
+        case 'long':
+        case 'const':
+        case 'void':
+        case 'goto':
+        case 'halt':
+        case 'return':
+        case 'sleep':
+        case 'exit':
+            // Handle type:phrase keywords
+            phrase.push(codetrain[AuxVars.currentToken])
+            AuxVars.currentToken++
+            continue
+        }
+        if (codetrain[AuxVars.currentToken].type === 'Keyword' && phrase.length > 0) {
+            throw new SyntaxError(`At line: ${phrase[0].line}. Statement including '${codetrain[AuxVars.currentToken].value}' in wrong way. Possible missing ';'.`)
+        }
+        switch (codetrain[AuxVars.currentToken].value) {
+        // Handle special type:phrase keywords and exceptions
+        case 'if':
+            return ifCodeToSentence(AuxVars, codetrain)
+        case 'while':
+            return whileCodeToSentence(AuxVars, codetrain)
+        case 'for':
+            return forCodeToSentence(AuxVars, codetrain)
+        case 'else':
+            throw new SyntaxError(`At line: ${line}. 'else' not associated with an 'if(){}else{}' sentence`)
+        case 'asm':
+            return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]], line: line }]
+        case 'label':
+            return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]], line: line }]
+        case 'do':
+            return doCodeToSentence(AuxVars, codetrain)
+        case 'break':
+        case 'continue':
+            if (AuxVars.latestLoopId.length === 0) {
+                throw new SyntaxError(`At line: ${line}. '${codetrain[AuxVars.currentToken].value}' outside a loop.`)
             }
-            // Now handle keywords to sentence
-            switch (codetrain[AuxVars.currentToken].value) {
-            case 'if':
-                return ifCodeToSentence(AuxVars, codetrain)
-            case 'while':
-                return whileCodeToSentence(AuxVars, codetrain)
-            case 'for':
-                return forCodeToSentence(AuxVars, codetrain)
-            case 'else':
-                throw new SyntaxError(`At line: ${line}. 'else' not associated with an 'if(){}else{}' sentence`)
-            case 'asm':
-                return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]], line: line }]
-            case 'label':
-                return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]], line: line }]
-            case 'do':
-                return doCodeToSentence(AuxVars, codetrain)
-            case 'struct':
-                if (codetrain[AuxVars.currentToken + 1]?.type === 'CodeDomain') {
-                    // struct definition
-                    return structCodeToSentence(AuxVars, codetrain)
-                }
-                if (codetrain[AuxVars.currentToken + 1]?.type === 'Variable') {
-                    // struct declaration
-                    break
-                }
-                if (codetrain[AuxVars.currentToken + 1]?.value === '*' &&
-                        codetrain[AuxVars.currentToken + 2]?.type === 'Variable') {
-                    // struct pointer declaration
-                    break
-                }
-                throw new SyntaxError(`At line: ${line}. Expecting a variable name or {} for 'struct' sentence.`)
-            case 'break':
-            case 'continue':
-                if (AuxVars.latestLoopId.length === 0) {
-                    throw new SyntaxError(`At line: ${line}. '${codetrain[AuxVars.currentToken].value}' outside a loop.`)
-                }
-                // Just update information and continue on loop
-                codetrain[AuxVars.currentToken].extValue = AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1]
-                break
-            default:
-                throw new SyntaxError(`Internal error: Orphaned token '${codetrain[AuxVars.currentToken].value}'.`)
-            }
+            // Just update information and continue on loop
+            codetrain[AuxVars.currentToken].extValue = AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1]
+            break
         }
         phrase.push(codetrain[AuxVars.currentToken])
         AuxVars.currentToken++
     }
-
     if (phrase.length !== 0) {
-        throw new SyntaxError('At line: ' + codetrain[AuxVars.currentToken - 1].line + ". Missing ';'. ")
+        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken - 1].line}. Missing ';'. `)
     }
-    // Never reach this point
+    // Never
     throw new SyntaxError(`Internal error processing line ${codetrain[AuxVars.currentToken - 1].line}.`)
 }
 

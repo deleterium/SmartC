@@ -1,6 +1,6 @@
 import { SmartC } from '../smartc'
 
-describe('structs (pointer)', () => {
+describe('structs (pointer / arrays)', () => {
     it('should compile: pointer to struct (longs)', () => {
         const code = `struct KOMBI { long driver; long collector; long passenger; } ;
 struct KOMBI car, *pcar;
@@ -80,6 +80,13 @@ d[a]=pcar->passenger[b];`
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    test('should throw: NOT IMPLEMMENTED. Arrays of struct pointers', () => {
+        expect(() => {
+            const code = 'struct KOMBI { long driver; long collector; long passenger; } ; struct KOMBI car, *pcar[2];'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
 })
 
 describe('Logical operations with structs', () => {
@@ -105,6 +112,16 @@ if (a<=car[0].collector) { b--; }`
     })
     it('should compile: variable array struct', () => {
         const code = `struct KOMBI { long driver; long collector; long passenger; } car[2];
+long a, b;
+if (car[b].driver=='Ze') { b++; }
+if (a<=car[b].collector) { b--; }`
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car\n^const SET @car #0000000000000004\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare a\n^declare b\n\nSET @r0 #0000000000000003\nMUL @r0 $b\nSET @r1 $($car + $r0)\nSET @r0 #000000000000655a\nBNE $r1 $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nSET @r0 #0000000000000003\nMUL @r0 $b\nINC @r0\nSET @r1 $($car + $r0)\nBGT $a $r1 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: variable array struct (separated definition)', () => {
+        const code = `struct KOMBI { long driver; long collector; long passenger; }; struct KOMBI car[2];
 long a, b;
 if (car[b].driver=='Ze') { b++; }
 if (a<=car[b].collector) { b--; }`
@@ -154,5 +171,15 @@ if (a<=pcar->collector) { b--; }`
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+})
+
+describe('structs (pointer / arrays) wrong usage', () => {
+    test('should throw: array declaration without struct definition', () => {
+        expect(() => {
+            const code = 'struct KOMBI car[2];'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
     })
 })

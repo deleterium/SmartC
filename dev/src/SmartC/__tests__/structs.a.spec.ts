@@ -159,6 +159,27 @@ d[a]=car[a].passenger[b];`
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: Struct declaration and operations inside a function', () => {
+        const code = `test();
+void test(void) {
+  struct KOMBI { long driver; long collector; long passenger; } car;
+  long a, b, *c, d[2];
+  car.passenger="Ze";
+  car.passenger=a;
+  car.passenger=*c;
+  car.passenger=d[1];
+  car.passenger=d[a];
+  car.passenger=car.collector;
+  a=car.driver;
+  *c=car.driver;
+  d[1]=car.driver;
+  d[a]=car.driver;
+}`
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare test_car_driver\n^declare test_car_collector\n^declare test_car_passenger\n^declare test_a\n^declare test_b\n^declare test_c\n^declare test_d\n^const SET @test_d #000000000000000a\n^declare test_d_0\n^declare test_d_1\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nSET @test_car_passenger #000000000000655a\nSET @test_car_passenger $test_a\nSET @test_car_passenger $($test_c)\nSET @test_car_passenger $test_d_1\nSET @test_car_passenger $($test_d + $test_a)\nSET @test_car_passenger $test_car_collector\nSET @test_a $test_car_driver\nSET @($test_c) $test_car_driver\nSET @test_d_1 $test_car_driver\nSET @($test_d + $test_a) $test_car_driver\nRET\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })
 
 describe('structs definiton and members Wrong usage', () => {
@@ -200,6 +221,55 @@ describe('structs definiton and members Wrong usage', () => {
     test('should throw: Wrong struct instruction', () => {
         expect(() => {
             const code = 'long a; struct { long b; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: incomplete sentence', () => {
+        expect(() => {
+            const code = 'struct 2 f; long a;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: incomplete sentence', () => {
+        expect(() => {
+            const code = 'struct 2 && { long a; };'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: missing ; to end struct', () => {
+        expect(() => {
+            const code = 'struct KOMBI { long a; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: unexpected , in definition', () => {
+        expect(() => {
+            const code = 'struct KOMBI , long a;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: unexpected UnaryOperator in definition', () => {
+        expect(() => {
+            const code = 'struct KOMBI { long driver, collector[4]; }; struct KOMBI &car; long *b; car.collector=b;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: unexpected value in definition', () => {
+        expect(() => {
+            const code = 'struct KOMBI { long driver, collector[4]; }; struct KOMBI ++ car; long *b; car.collector=b;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: Other types of sentence inside members declaration', () => {
+        expect(() => {
+            const code = 'long a; struct KOMBI { long driver; if (a) a++; } car;'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)

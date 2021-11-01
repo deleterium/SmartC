@@ -9,6 +9,7 @@
         int, short, sizeof, signed, static,
         switch, typedef, union, unsigned
 */
+import { assertExpression } from '../repository/repository'
 import { PRE_TOKEN } from '../typings/syntaxTypes'
 
 /**
@@ -242,25 +243,23 @@ export function tokenize (inputSourceCode: string): PRE_TOKEN[] {
             return false
         }
         if (item.pretokenType === 'SPECIAL') {
-            if (item.char === '#') {
-                AuxVars.current++
-                const lines = inputSourceCode.slice(AuxVars.current).split('\n')
-                let i = 0; let val = ''
-                for (; i < lines.length; i++) {
-                    val += lines[i]
-                    AuxVars.current += lines[i].length + 1 // newline!
-                    AuxVars.currentLine++
-                    if (lines[i].endsWith('\\')) {
-                        val = val.slice(0, -1)
-                        continue
-                    }
-                    break
+            assertExpression(item.char === '#',
+                'Internal error at tokenizer.')
+            AuxVars.current++
+            const lines = inputSourceCode.slice(AuxVars.current).split('\n')
+            let i = 0; let val = ''
+            for (; i < lines.length; i++) {
+                val += lines[i]
+                AuxVars.current += lines[i].length + 1 // newline!
+                AuxVars.currentLine++
+                if (lines[i].endsWith('\\')) {
+                    val = val.slice(0, -1)
+                    continue
                 }
-                AuxVars.preTokens.push({ type: 'macro', value: val, line: AuxVars.currentLine - i - 1 })
-                return true
+                break
             }
-            // SPECIAL rule not implemented in tokenizer()
-            throw new TypeError('Internal error')
+            AuxVars.preTokens.push({ type: 'macro', value: val, line: AuxVars.currentLine - i - 1 })
+            return true
         }
         AuxVars.preTokens.push({ type: item.pretokenType, value: AuxVars.currentChar, line: AuxVars.currentLine })
         AuxVars.current++

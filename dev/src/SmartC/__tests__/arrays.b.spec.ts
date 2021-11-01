@@ -90,6 +90,16 @@ describe('Multi dimensional Arrays assignment (right side)', () => {
     })
 })
 
+describe('Array wrong usage:', () => {
+    test('should throw: declaring array with variable size', () => {
+        expect(() => {
+            const code = 'long a;long b[a];'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+})
+
 describe('array.length property', () => {
     it('should compile: get length', () => {
         const code = 'long a, b[4], c[3][3]; struct KOMBI { long driver; long passenger[6]; } car[2]; a=b.length; a=c.length; a=car.length; a=car[1].passenger.length; a=car[a].passenger.length;'

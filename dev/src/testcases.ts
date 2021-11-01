@@ -63,12 +63,16 @@ export function runTestCases (jestTest: boolean = false) : string {
             testMessage = cCompiler.getAssemblyCode()
             testFailed = false
         } catch (e) {
-            testError = e
+            testError = e.message
         }
         if (currentTest[1] === testFailed && testMessage === currentTest[2]) {
             itemPass++
-            return `Pass! (${subItemCount})` +
+            let retString = `Pass! (${subItemCount})` +
                 `Code: <span style='color:blue'>${encodedStr(currentTest[0])}</span>`
+            if (testError.length > 0) {
+                retString += `\n<span style='color:darkgreen'>${testError}</span>`
+            }
+            return retString
         }
         itemFail++
         return `<span style='color:red'>Fail...</span> (${subItemCount})` +

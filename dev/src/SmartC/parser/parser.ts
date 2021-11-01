@@ -380,7 +380,7 @@ export function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
             retToken.params = getTokensUntil('}', retToken.type, retToken.line)
             return retToken
         default:
-            throw new TypeError(`At line: ${currentPreToken.line}. Unknow token found: type: '${currentPreToken.type}' value: '${currentPreToken.value}'.`)
+            throw new TypeError(`Internal error. Unknow token found: type: '${currentPreToken.type}' value: '${currentPreToken.value}'.`)
         }
     }
 

@@ -22,9 +22,23 @@ describe('Keywords wrong usage', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: if wrong usage', () => {
+        expect(() => {
+            const code = 'long a; if { a++; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
     test('should throw: while empty condition', () => {
         expect(() => {
             const code = 'long a; while () { a++; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: while wrong usage', () => {
+        expect(() => {
+            const code = 'long a; while { a++; }'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
@@ -81,6 +95,20 @@ describe('Keywords wrong usage', () => {
     test('should throw: wrong for usage', () => {
         expect(() => {
             const code = 'long a, b; for a++;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong for usage', () => {
+        expect(() => {
+            const code = 'long a, b; for (a=0; a) a++;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong for usage', () => {
+        expect(() => {
+            const code = 'long a, b; for (; if (a) a++; ) a++;'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
@@ -186,6 +214,13 @@ describe('Keywords wrong usage', () => {
     test('should throw: Wrong asm instruction. No ending }', () => {
         expect(() => {
             const code = 'long a; asm { PSH $A;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: declaring variable as void', () => {
+        expect(() => {
+            const code = 'void a;'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)

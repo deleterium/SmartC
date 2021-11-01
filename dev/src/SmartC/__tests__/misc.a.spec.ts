@@ -35,7 +35,28 @@ describe('Miscelaneous', () => {
 describe('Wrong code to check error safeguards', () => {
     test('should throw: unexpected }', () => {
         expect(() => {
-            const code = 'long a; };'
+            const code = '};'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: unexpected ]', () => {
+        expect(() => {
+            const code = '];'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: unexpected )', () => {
+        expect(() => {
+            const code = ');'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: unexpected :', () => {
+        expect(() => {
+            const code = 'long a;: a++;'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)

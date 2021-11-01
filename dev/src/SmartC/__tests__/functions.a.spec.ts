@@ -165,6 +165,27 @@ describe('User defined functions', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: pass two struct pointer as argument', () => {
+        const code = 'struct KOMBI { long driver, collector, passenger; } car1, car2; long a, b; test(&car1, &car2); void test(struct KOMBI * lptr, struct KOMBI * rptr) { lptr-> driver = rptr-> driver; }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car1_driver\n^declare car1_collector\n^declare car1_passenger\n^declare car2_driver\n^declare car2_collector\n^declare car2_passenger\n^declare a\n^declare b\n^declare test_lptr\n^declare test_rptr\n\nSET @r0 #0000000000000006\nPSH $r0\nSET @r0 #0000000000000003\nPSH $r0\nJSR :__fn_test\nFIN\n\n__fn_test:\nPOP @test_lptr\nPOP @test_rptr\nCLR @r1\nSET @r0 $($test_rptr + $r1)\nCLR @r1\nSET @($test_lptr + $r1) $r0\nRET\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: pass struct pointer as second argument', () => {
+        const code = 'struct KOMBI { long driver, collector, passenger; } car; long a, b; test(a, &car); void test(long a, struct KOMBI * sptr) { sptr-> driver = a; }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare a\n^declare b\n^declare test_a\n^declare test_sptr\n\nSET @r0 #0000000000000003\nPSH $r0\nPSH $a\nJSR :__fn_test\nFIN\n\n__fn_test:\nPOP @test_a\nPOP @test_sptr\nCLR @r0\nSET @($test_sptr + $r0) $test_a\nRET\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    test('should throw: pass struct by value as second argument', () => {
+        expect(() => {
+            const code = 'struct KOMBI { long driver, collector, passenger; } car; long a, b; test(a, car); void test(long a, struct KOMBI sptr) { sptr. driver = a; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
     test('should throw: wrong variable types on function arguments', () => {
         expect(() => {
             const code = "struct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b;pcar=&car;\n teste(car);\n void teste(struct KOMBI * value) { value->driver = 'Zé'; }"
@@ -240,7 +261,7 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`
     })
     test('should throw: Wrong arguments', () => {
         expect(() => {
-            const code = 'long a, b; test(b, a); void test(d++) { long c; c++; }'
+            const code = 'long a, b; test(b); void test(d++) { long c; c++; }'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
@@ -248,6 +269,13 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`
     test('should throw: Wrong arguments', () => {
         expect(() => {
             const code = 'long a, b; test(b, a); void test(d) { long c; c++; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: Wrong arguments', () => {
+        expect(() => {
+            const code = 'long a, b; test(b); void test(d; a) { long c; c++; }'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)

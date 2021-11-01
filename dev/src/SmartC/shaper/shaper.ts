@@ -18,7 +18,7 @@ export interface SHAPER_AUXVARS {
     /** current loop name to be used if break or continue keywords are found. */
     latestLoopId: string[]
     /** If true, compilation loop on generator() will not expect the variable to be declared. Used in function arguments. */
-    setIsDeclared: boolean
+    isFunctionArgument: boolean
     /** Variables scope (function name) */
     currentScopeName:string
     /** Prefix to be used in variables names (function name + '_') */
@@ -65,7 +65,7 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
     const AuxVars: SHAPER_AUXVARS = {
         currentToken: 0,
         latestLoopId: [],
-        setIsDeclared: false,
+        isFunctionArgument: false,
         currentScopeName: '',
         currentPrefix: ''
     }
@@ -187,7 +187,7 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
                 usedBoolVal = true
                 break
             }
-            throw new TypeError(`At line: ${Token.line}. Unknow macro property '#${Token.type} ${Token.property}'. Please check valid values on Help page`)
+            throw new TypeError(`At line: ${Token.line}. Unknow macro property '#${Token.type} ${Token.property}'. Do you mean 'APIFunctions'? Check valid values on Help page`)
         case 'program':
             processMacroProgram(Token)
             break
@@ -342,7 +342,7 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
         const NewStructTD = getTypeDefinitionTemplate('struct')
         NewStructTD.name = AuxVars.currentPrefix + structPhrase.name
         NewStructTD.MemoryTemplate.typeDefinition = AuxVars.currentPrefix + structPhrase.name
-        NewStructTD.MemoryTemplate.isDeclared = AuxVars.setIsDeclared
+        NewStructTD.MemoryTemplate.isDeclared = AuxVars.isFunctionArgument
 
         const savedPrefix = AuxVars.currentPrefix
         AuxVars.currentPrefix = ''
@@ -379,7 +379,7 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
         }
         AuxVars.currentScopeName = currentFunction.name
         AuxVars.currentPrefix = AuxVars.currentScopeName + '_'
-        AuxVars.setIsDeclared = true
+        AuxVars.isFunctionArgument = true
         AuxVars.currentToken = 0
         const sentence = codeToSentenceArray(AuxVars, currentFunction.arguments, true)
         if (sentence.length !== 1 || sentence[0].type !== 'phrase' || sentence[0].code === undefined) {
@@ -390,7 +390,7 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
             throw new TypeError(`At line: ${currentFunction.line}. No variables in arguments for function '${currentFunction.name}'. Do you mean 'void'?`)
         }
         Program.memory = Program.memory.concat(currentFunction.argsMemObj)
-        AuxVars.setIsDeclared = false
+        AuxVars.isFunctionArgument = false
 
         delete Program.functions[fnNum].arguments
         delete Program.functions[fnNum].code
