@@ -9,10 +9,27 @@ export type CTestType = [string, boolean|null, string]
 export type AssemblyTestType = [ string, boolean, string, string]
 
 export function runTestCases (jestTest: boolean = false) : string {
-    function encodedStr (rawStr: string) {
-        return rawStr.replace(/[\u00A0-\u9999<>&]/g, function (i) {
-            return '&#' + i.charCodeAt(0) + ';'
-        })
+    let itemPass = 0
+    let itemFail = 0
+    let subItemCount = 0
+
+    function runTestCasesMain () {
+        if (jestTest) {
+            jestTests.forEach(processOneCTest)
+            jestBytecodeTests.forEach(processOneAssemblyTest)
+            if (itemPass !== 4) {
+                return 'Browser test testcases failed.'
+            }
+            return 'Test tescases ok!'
+        }
+        const AssemblyResultTable = bytecodeTests.map(processOneAssemblyTest)
+        const CResultTable = tests.map(processOneCTest)
+
+        return `Tests completed: ${itemPass} Passed; ${itemFail} Failed.\n\n` +
+        '<h3>Assembly tests</h3>' +
+        AssemblyResultTable.join('\n') +
+        '<h3>Full tests</h3>' +
+        CResultTable.join('\n')
     }
 
     function processOneAssemblyTest (currentByteTest: AssemblyTestType, idx: number) {
@@ -81,24 +98,11 @@ export function runTestCases (jestTest: boolean = false) : string {
             `GOT error:  ${testError}`
     }
 
-    let itemPass = 0
-    let itemFail = 0
-    let subItemCount = 0
-
-    if (jestTest) {
-        jestTests.forEach(processOneCTest)
-        jestBytecodeTests.forEach(processOneAssemblyTest)
-        if (itemPass !== 4) {
-            return 'Browser test testcases failed.'
-        }
-        return 'Test tescases ok!'
+    function encodedStr (rawStr: string) {
+        return rawStr.replace(/[\u00A0-\u9999<>&]/g, function (i) {
+            return '&#' + i.charCodeAt(0) + ';'
+        })
     }
-    const AssemblyResultTable = bytecodeTests.map(processOneAssemblyTest)
-    const CResultTable = tests.map(processOneCTest)
 
-    return `Tests completed: ${itemPass} Passed; ${itemFail} Failed.\n\n` +
-        '<h3>Assembly tests</h3>' +
-        AssemblyResultTable.join('\n') +
-        '<h3>Full tests</h3>' +
-        CResultTable.join('\n')
+    return runTestCasesMain()
 }
