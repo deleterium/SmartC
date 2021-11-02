@@ -12,7 +12,7 @@
  * @returns Anything, but not undefined
  * @throws {Typerror} if value is undefined
  */
-export function assertNotUndefined<Type> (argument: Type | undefined, errorMessage: string): Exclude<Type, undefined> {
+export function assertNotUndefined<Type> (argument: Type | undefined, errorMessage: string = 'Internal error.'): Exclude<Type, undefined> {
     if (argument === undefined) {
         throw new TypeError(errorMessage)
     }

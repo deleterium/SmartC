@@ -220,4 +220,11 @@ describe('Keywords right usage', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    it('should compile: Nested of CodeDomains', () => {
+        const code = 'long a;{{a++;}}'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nINC @a\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })

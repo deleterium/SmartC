@@ -58,8 +58,8 @@ export interface SC_FUNCTION {
     argsMemObj: MEMORY_SLOT[]
     /** Temporary, holding function block tokens */
     code?: TOKEN[]
-    /** Definitive sentences for function block. Not used on API Functions */
-    sentences?: SENTENCES[]
+    /** Definitive sentences for function block. */
+    sentences: SENTENCES[]
     /** Line number of function declaration */
     line?: number
     /** Assembly name for API Functions only */

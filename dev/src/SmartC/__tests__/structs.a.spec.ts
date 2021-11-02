@@ -274,4 +274,11 @@ describe('structs definiton and members Wrong usage', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: Wrong use of member operator', () => {
+        expect(() => {
+            const code = 'struct KOMBI { long driver; long collector; long passenger; } car; car..driver=="Ze";'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
 })

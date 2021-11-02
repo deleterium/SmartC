@@ -139,9 +139,51 @@ describe('Wrong code to check error safeguards', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
-    test('Invalid char', () => {
+    test('should throw: Invalid char', () => {
         expect(() => {
             const code = 'long a; a?b;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: Arr modifiers on constants', () => {
+        expect(() => {
+            const code = '2[2]=2;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: Member modifiers on constants', () => {
+        expect(() => {
+            const code = '2.driver =="Ze";'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: Invalid use of unaryOperator', () => {
+        expect(() => {
+            const code = '2!;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: Invalid use of unaryOperator', () => {
+        expect(() => {
+            const code = 'a~;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: Two variables in a row', () => {
+        expect(() => {
+            const code = 'car driver=="Ze";'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: function as modifier', () => {
+        expect(() => {
+            const code = 'a.a()=2;'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
