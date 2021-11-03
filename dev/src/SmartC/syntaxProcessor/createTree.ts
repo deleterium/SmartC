@@ -17,7 +17,7 @@ export function createTree (tokenArray: TOKEN[] | undefined): AST {
         return { type: 'nullASN' }
     }
 
-    const needle = analyzePrecedence(tokenToAst)
+    const needle = findSplitTokenIndex(tokenToAst)
 
     switch (tokenToAst[needle].type) {
     case 'Constant':
@@ -37,37 +37,41 @@ export function createTree (tokenArray: TOKEN[] | undefined): AST {
     case 'UnaryOperator':
         return UnaryOperatorToAST(tokenToAst, needle)
     case 'SetUnaryOperator':
-        return SetUnaryOperatorToAST(tokenToAst, needle)
+        if (needle === 0) {
+            return preSetUnaryToAST(tokenToAst)
+        }
+        if (needle === tokenToAst.length - 1) {
+            return postSetUnaryToAST(tokenToAst)
+        }
+        throw new SyntaxError(`At line: ${tokenToAst[needle].line}. Invalid use of 'SetUnaryOperator' '${tokenToAst[needle].value}'.`)
     default:
         // Never
         throw new SyntaxError(`Internal error at line: ${tokenToAst[0].line}. Token '${tokenToAst[0].type}' with value '${tokenToAst[0].value}' does not match any syntax rules.`)
     }
 }
 
-function analyzePrecedence (tokens: TOKEN[]) : number {
-    let idx = 0
-    // precedente evaluation loop
-    for (let precedenceHeight = 12; precedenceHeight > 0; precedenceHeight--) {
-        if (precedenceHeight === 12 || precedenceHeight === 10 || precedenceHeight === 2) {
-            // Right to left associativity for
-            // 12) Terminator, semi, keywords
-            // 10) Assignment operators
-            //  2) Unary operators
-            for (idx = 0; idx < tokens.length; idx++) {
-                if (tokens[idx].precedence === precedenceHeight) {
-                    return idx
-                }
-            }
-        } else {
-            // Left to right associativity for others
-            for (idx = tokens.length - 1; idx >= 0; idx--) {
-                if (tokens[idx].precedence === precedenceHeight) {
-                    return idx
-                }
-            }
-        }
+/** Finds the position for the next split position. */
+function findSplitTokenIndex (tokens: TOKEN[]) : number {
+    const precedenceOnly = tokens.map(tok => tok.precedence)
+    const maxPrecedence = Math.max(...precedenceOnly)
+    if (maxPrecedence === 0) {
+        // Precedence zero is handled in lookupASN
+        // inside VariableToAST.
+        return 0
     }
-    return 0
+    switch (maxPrecedence) {
+    case 12:
+    case 10:
+    case 2:
+        // Right to left associativity for
+        // 12) Terminator, semi, keywords
+        // 10) Assignment operators
+        //  2) Unary operators
+        return precedenceOnly.indexOf(maxPrecedence)
+    default:
+        // Left to right associativity for others
+        return precedenceOnly.lastIndexOf(maxPrecedence)
+    }
 }
 
 function ConstantToAST (tokens: TOKEN[]) : AST {
@@ -222,42 +226,41 @@ function UnaryOperatorToAST (tokens: TOKEN[], operatorLoc: number) : AST {
     }
 }
 
-function SetUnaryOperatorToAST (tokens: TOKEN[], operatorLoc: number) : AST {
-    if (operatorLoc === 0) {
-        if (tokens.length === 1) {
-            throw new SyntaxError(`At line: ${tokens[0].line}. Missing value to apply 'SetUnaryOperator' '${tokens[0].value}'.`)
-        }
-        if (tokens[1].type !== 'Variable') {
-            throw new SyntaxError(`At line: ${tokens[0].line}. 'SetUnaryOperator' '${tokens[0].value}' expecting a variable, got a '${tokens[1].type}'.`)
-        }
-        for (let j = 1; j < tokens.length; j++) {
-            if (tokens[j].type === 'Variable' || tokens[j].type === 'Member') {
-                continue
-            }
-            throw new SyntaxError('At line: ' + tokens[0].line + ". Can not use 'SetUnaryOperator' with types '" + tokens[j].type + "'.")
-        }
-        return {
-            type: 'exceptionASN',
-            Left: createTree(tokens.slice(1)),
-            Operation: tokens[0]
-        }
+function preSetUnaryToAST (tokens: TOKEN[]) : AST {
+    if (tokens.length === 1) {
+        throw new SyntaxError(`At line: ${tokens[0].line}. Missing value to apply 'SetUnaryOperator' '${tokens[0].value}'.`)
     }
-    if (operatorLoc === tokens.length - 1) {
-        // Process exceptions for post increment and post decrement (left-to-right associativity)
-        if (tokens[0].type !== 'Variable') {
-            throw new SyntaxError(`At line: ${tokens[0].line}. 'SetUnaryOperator' '${tokens[tokens.length - 1].value}' expecting a variable, got a '${tokens[0].type}'.`)
-        }
-        for (let j = 1; j < tokens.length - 1; j++) {
-            if (tokens[j].type === 'Variable' || tokens[j].type === 'Member') {
-                continue
-            }
-            throw new SyntaxError('At line: ' + tokens[0].line + ". Can not use 'SetUnaryOperator' with types  '" + tokens[j].type + "'.")
-        }
-        return {
-            type: 'exceptionASN',
-            Right: createTree(tokens.slice(0, tokens.length - 1)),
-            Operation: tokens[tokens.length - 1]
-        }
+    if (tokens[1].type !== 'Variable') {
+        throw new SyntaxError(`At line: ${tokens[0].line}. 'SetUnaryOperator' '${tokens[0].value}' expecting a variable, got a '${tokens[1].type}'.`)
     }
-    throw new SyntaxError(`At line: ${tokens[operatorLoc].line}. Invalid use of 'SetUnaryOperator' '${tokens[operatorLoc].value}'.`)
+    for (let j = 1; j < tokens.length; j++) {
+        if (tokens[j].type === 'Variable' || tokens[j].type === 'Member') {
+            continue
+        }
+        throw new SyntaxError('At line: ' + tokens[0].line + ". Can not use 'SetUnaryOperator' with types '" + tokens[j].type + "'.")
+    }
+    return {
+        type: 'exceptionASN',
+        Left: createTree(tokens.slice(1)),
+        Operation: tokens[0]
+    }
+}
+
+function postSetUnaryToAST (tokens: TOKEN[]) : AST {
+    const operatorLoc = tokens.length - 1
+    // Process exceptions for post increment and post decrement (left-to-right associativity)
+    if (tokens[0].type !== 'Variable') {
+        throw new SyntaxError(`At line: ${tokens[0].line}. 'SetUnaryOperator' '${tokens[operatorLoc].value}' expecting a variable, got a '${tokens[0].type}'.`)
+    }
+    for (let j = 1; j < tokens.length - 1; j++) {
+        if (tokens[j].type === 'Variable' || tokens[j].type === 'Member') {
+            continue
+        }
+        throw new SyntaxError('At line: ' + tokens[0].line + ". Can not use 'SetUnaryOperator' with types  '" + tokens[j].type + "'.")
+    }
+    return {
+        type: 'exceptionASN',
+        Right: createTree(tokens.slice(0, operatorLoc)),
+        Operation: tokens[operatorLoc]
+    }
 }
