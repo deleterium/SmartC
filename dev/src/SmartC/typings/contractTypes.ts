@@ -58,8 +58,8 @@ export interface SC_FUNCTION {
     argsMemObj: MEMORY_SLOT[]
     /** Temporary, holding function block tokens */
     code?: TOKEN[]
-    /** Definitive sentences for function block. Not used on API Functions */
-    sentences?: SENTENCES[]
+    /** Definitive sentences for function block. */
+    sentences: SENTENCES[]
     /** Line number of function declaration */
     line?: number
     /** Assembly name for API Functions only */
@@ -82,10 +82,8 @@ export interface CONTRACT {
     Global: SC_GLOBAL,
     /** Declared functions */
     functions: SC_FUNCTION[],
-    /** Variables and constants in memory */
+    /** Variables, constants and labels in memory */
     memory: MEMORY_SLOT[],
-    /** All labels used in program */
-    labels: string[],
     /** Extended information for arrays and structs */
     typesDefinitions: TYPE_DEFINITIONS[],
     /** Compiler configurations */

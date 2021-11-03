@@ -2207,26 +2207,9 @@ export function codeGenerate (Program: CONTRACT) {
             search.isDeclared = true
             return JSON.parse(JSON.stringify(search))
         }
-        // else, not in declaration:
         if (search === undefined) {
-            // maybe this is a label. Check! Labels always global
-            const labelSearch = Program.labels.find(obj => obj === varName)
-            if (labelSearch === undefined) {
-                throw new SyntaxError(`At line: ${line}. Using variable '${varName}' before declaration.`)
-            }
-            // return label fakevar
-            return {
-                type: 'label',
-                isDeclared: true,
-                declaration: '',
-                address: -1,
-                asmName: '',
-                name: varName,
-                scope: '',
-                size: 0
-            }
+            throw new SyntaxError(`At line: ${line}. Using variable '${varName}' before declaration.`)
         }
-
         return JSON.parse(JSON.stringify(search))
     }
 
