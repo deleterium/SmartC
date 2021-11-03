@@ -266,7 +266,7 @@ export function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
         {
             sequence: ['plus', 'plus'],
             action (tokenID): TOKEN {
-                return { type: 'SetUnaryOperator', precedence: 2, value: '++', line: preTokens[tokenID].line }
+                return { type: 'SetUnaryOperator', precedence: 1, value: '++', line: preTokens[tokenID].line }
             }
         },
         {
@@ -281,7 +281,7 @@ export function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
         {
             sequence: ['minus', 'minus'],
             action (tokenID): TOKEN {
-                return { type: 'SetUnaryOperator', precedence: 2, value: '--', line: preTokens[tokenID].line }
+                return { type: 'SetUnaryOperator', precedence: 1, value: '--', line: preTokens[tokenID].line }
             }
         },
         {
@@ -369,13 +369,13 @@ export function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
             if (AuxVars.mainLoopIndex > 0 && preTokens[AuxVars.mainLoopIndex - 1].type === 'variable') {
                 retToken = { type: 'Function', value: '', precedence: 0, line: currentPreToken.line }
             } else {
-                retToken = { type: 'CodeCave', value: '', precedence: 1, line: currentPreToken.line }
+                retToken = { type: 'CodeCave', value: '', precedence: 0, line: currentPreToken.line }
             }
             AuxVars.mainLoopIndex++
             retToken.params = getTokensUntil(')', retToken.type, retToken.line)
             return retToken
         case '{':
-            retToken = { type: 'CodeDomain', value: '', precedence: 1, line: currentPreToken.line }
+            retToken = { type: 'CodeDomain', value: '', precedence: 0, line: currentPreToken.line }
             AuxVars.mainLoopIndex++
             retToken.params = getTokensUntil('}', retToken.type, retToken.line)
             return retToken
