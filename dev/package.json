@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/deleterium/SmartC#readme",
   "scripts": {
-    "dev": "node esbuild.config.js",
+    "dev": "TARGET=dev node esbuild.config.js",
     "lint": "npx eslint './src/**/*' && npx tsc",
     "test": "npx jest",
     "test:ci": "npx jest --coverage",

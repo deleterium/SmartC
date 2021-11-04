@@ -1,11 +1,27 @@
 const esbuild = require('esbuild')
 
-esbuild.build({
-    entryPoints: ['./src/index.js'],
-    outfile: 'lib/index.js',
-    bundle: true,
-    minify: true,
-    platform: 'browser',
-    sourcemap: 'both',
-    target: 'es2020'
-}).catch(() => process.exit(1))
+let config
+
+if (process.env.TARGET === 'dev') {
+    config = {
+        entryPoints: ['./src/index.js'],
+        outfile: 'lib/index.js',
+        bundle: true,
+        minify: false,
+        platform: 'browser',
+        sourcemap: 'inline',
+        target: 'es2020'
+    }
+} else {
+    config = {
+        entryPoints: ['./src/index.js'],
+        outfile: 'lib/index.js',
+        bundle: true,
+        minify: true,
+        platform: 'browser',
+        sourcemap: false,
+        target: 'es2020'
+    }
+}
+
+esbuild.build(config).catch(() => process.exit(1))
