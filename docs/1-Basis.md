@@ -43,7 +43,7 @@ Some special features can be enabled/disable via preprocessor directives:
 * `#pragma maxAuxVars N`: Used to tell compiler how many auxiliary variables will be available (they are used as registers). Default value is `3`, min value is `1` and max is `10`. If you are under memory pressure, try to reduce to minimal necessary for compiling. Simple contracts will use around 2 values, but this number depends on nested operations.
 * `#pragma maxConstVars N`: Compiler will create variable from 1 to maxConstVars. Variables will be named 'n1', 'n2', ... 'n10'. It is very usefull to use, because compiler will change all numbers references to these variables and optimize code, making code much much smaller! Default min value is `0` (deactivated) and max is `10`.
 * `#pragma reuseAssignedVar [true/false/1/0/]`: When set, compiler will try to use a variable on left side of and `Assignment` as a register. If variable is also used on right side, the compiler will not reuse it. This can save one assembly instruction for every expression used! Default value is `true` and it is highly recomended to maintain it active.
-* `#pragma version N`: Informs which compiler's version the code was developed. Must be set if not using development version.
+* `#pragma version N`: Informs which compiler's version the code was developed. Must be set if not using development version. To skip this check, set it to `dev`.
 * `#pragma warningToError [true/false/1/0/]`: All warnings to compiler errors. Default value is `true`. Warning messages begin with WARNING, other ones are actually errors.
 * `#pragma outputSourceLineNumber[true/false/1/0/]`: Adds a comment in assembly output with the corresponding line number to the C source code. Very usefull for debug.
 

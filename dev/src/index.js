@@ -43,20 +43,25 @@ window.onload = () => {
 
     detachDeployment().minimize(true)
 
+    const startUpTest = new SmartC({
+        language: 'C',
+        sourceCode: '#pragma version dev\n#pragma maxAuxVars 1\nlong a, b, c; a=b/~c;'
+    })
+
     try {
-        const startUpTest = new SmartC({
-            language: 'C',
-            sourceCode: '#pragma maxAuxVars 1\nlong a, b, c; a=b/~c;'
-        })
         startUpTest.compile()
         if (startUpTest.getMachineCode().MachineCodeHashId === '7488355358104845254') {
             document.getElementById('status_output').innerHTML = '<span class="msg_success">Start up test done!</span>'
-            return
+        } else {
+            document.getElementById('status_output').innerHTML = '<span class="msg_failure">Start up test failed...</span>'
         }
-        document.getElementById('status_output').innerHTML = '<span class="msg_failure">Start up test failed...</span>'
     } catch (e) {
         document.getElementById('status_output').innerHTML = '<span class="msg_failure">Start up test crashed...</span>'
     }
+
+    document.title = document.title.replace('%version%', startUpTest.getCompilerVersion())
+    const h1TitleDom = document.getElementById('h1_title')
+    h1TitleDom.innerText = h1TitleDom.innerText.replace('%version%', startUpTest.getCompilerVersion())
 }
 
 const PageGlobal = {
