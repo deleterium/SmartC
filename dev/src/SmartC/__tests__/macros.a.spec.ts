@@ -157,13 +157,6 @@ describe('#pragma', () => {
             compiler.compile()
         }).toThrowError(/^This compiler is version/)
     })
-    test('should throw: missing compiler version', () => {
-        expect(() => {
-            const code = '#pragma version\nlong a;'
-            const compiler = new SmartC({ language: 'C', sourceCode: code })
-            compiler.compile()
-        }).toThrowError(/^Compiler version not set/)
-    })
     test('should throw: maxAuxVars invalid parameter', () => {
         expect(() => {
             const code = '#pragma maxAuxVars a\nlong a;'

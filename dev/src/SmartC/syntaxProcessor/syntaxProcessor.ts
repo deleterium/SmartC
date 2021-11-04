@@ -13,17 +13,16 @@ import { createTree } from './createTree'
  * precedence and let operations in correct order for assembler.
  * This is parser third and final pass.
  * @param Program to be processed
- * @returns Program processed
+ * @returns {void} but Program will be updated.
  * @throws {TypeError|SyntaxError} on any mistake.
  */
-export function syntaxProcess (Program: CONTRACT) {
+export function syntaxProcess (Program: CONTRACT) : void {
     /* * * Main function! * * */
-    function syntaxProcessMain () : CONTRACT {
+    function syntaxProcessMain () : void {
         Program.Global.sentences.forEach(processSentence)
         Program.functions.forEach(CurrentFunction => {
             CurrentFunction.sentences.forEach(processSentence)
         })
-        return Program
     }
 
     // Process recursively one Sentence object, creating an CodeAST, that was

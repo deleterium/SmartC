@@ -1,8 +1,8 @@
 import { DECLARATION_TYPES, MEMORY_SLOT, SENTENCES, TOKEN, TYPE_DEFINITIONS } from './syntaxTypes'
 
 export interface SC_CONFIG {
-    /** This compiler version!!! */
-    compilerVersion: 'dev',
+    /** Hardcoded compiler version!!! */
+    compilerVersion: string,
     /** Add random string to labels: #pragma enableRandom  */
     enableRandom: boolean,
     /** Add line number to labels: #pragma enableLineLabels */
@@ -15,8 +15,9 @@ export interface SC_CONFIG {
     maxConstVars: number,
     /** Try to reuse variable at left side of assigment: #pragma reuseAssignedVar */
     reuseAssignedVar: boolean,
-    /** Compiler version asked by program: #pragma version */
-    version: string,
+    /** Default version for user's programs. If not on a dev version, user must
+     * specify #pragma version to set source code version */
+    sourcecodeVersion: string,
     /** Warning to error: #pragma warningToError */
     warningToError: boolean,
     /** Support for API Functions: #include APIFunctions */

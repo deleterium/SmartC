@@ -74,7 +74,7 @@ export function runTestCases (jestTest: boolean = false) : string {
         try {
             const cCompiler = new SmartC({
                 language: 'C',
-                sourceCode: currentTest[0]
+                sourceCode: `#pragma version dev\n${currentTest[0]}`
             })
             cCompiler.compile()
             testMessage = cCompiler.getAssemblyCode()

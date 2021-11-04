@@ -25,43 +25,14 @@ export interface SHAPER_AUXVARS {
     currentPrefix: string
 }
 
-/** Translate an array of tokens to an object representing the program.
+/** Translate an array of tokens into the object representing the program.
  * This is the second phase of parser
+ * @param Program Skeleton program to received processed tokens
  * @param tokenAST Array of tokens
- * @returns CONTRACT object in final type, but still incomplete.
+ * @returns {void} but Program will be updated.
  * @throws {TypeError | SyntaxError} at any mistakes
  */
-export function shape (tokenAST: TOKEN[]): CONTRACT {
-    const Program: CONTRACT = {
-        Global: {
-            APIFunctions: [],
-            macros: [],
-            sentences: []
-        },
-        functions: [],
-        memory: [],
-        typesDefinitions: [],
-        // Default configuration for compiler
-        Config: {
-            compilerVersion: 'dev',
-            enableRandom: false,
-            enableLineLabels: false,
-            globalOptimization: false,
-            maxAuxVars: 3,
-            maxConstVars: 0,
-            reuseAssignedVar: true,
-            version: 'dev',
-            warningToError: true,
-            APIFunctions: false,
-            PName: '',
-            PDescription: '',
-            PActivationAmount: '',
-            PUserStackPages: 0,
-            PCodeStackPages: 0,
-            outputSourceLineNumber: false
-        }
-    }
-
+export function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
     const AuxVars: SHAPER_AUXVARS = {
         currentToken: 0,
         latestLoopId: [],
@@ -71,15 +42,10 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
     }
 
     /* * * Main function! * * */
-    function shapeMain () : CONTRACT {
+    function shapeMain () : void {
         splitCode()
         Program.Global.macros.forEach(processMacroControl)
-        if (Program.Config.version === '') {
-            throw new TypeError(`Compiler version not set. Pin current compiler version in your program adding '#pragma version ${Program.Config.compilerVersion}' to code.`)
-        }
-        if (Program.Config.version !== Program.Config.compilerVersion) {
-            throw new TypeError(`This compiler is version '${Program.Config.compilerVersion}'. File needs a compiler version '${Program.Config.version}'. Update '#pragma version' macro or run another SmartC version.`)
-        }
+        checkCompilerVersion()
         Program.typesDefinitions = [getTypeDefinitionTemplate('register'), getTypeDefinitionTemplate('long')]
         Program.memory.push(...addRegistersInMemory(Program.Config.maxAuxVars))
         Program.memory.push(...addConstantsInMemory(Program.Config.maxConstVars))
@@ -91,7 +57,6 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
         validateFunctions()
         validateMemory()
         consolidateMemory()
-        return Program
     }
 
     /**
@@ -229,7 +194,7 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
             Program.Config.globalOptimization = bool
             return true
         case 'version':
-            Program.Config.version = macroToken.value
+            Program.Config.sourcecodeVersion = macroToken.value
             return false
         case 'warningToError':
             Program.Config.warningToError = bool
@@ -277,6 +242,24 @@ export function shape (tokenAST: TOKEN[]): CONTRACT {
             throw new TypeError(`At line: ${macroToken.line}. Program code stack pages must be a number between 0 and 10, included.`)
         default:
             throw new TypeError(`At line: ${macroToken.line}. Unknow macro property: '#${macroToken.type} ${macroToken.property}'. Please check valid values on Help page`)
+        }
+    }
+
+    /** Checks sourcecodeVersion and compiler current version.
+     * @throws {TypeError} if not pass rules checks.
+     */
+    function checkCompilerVersion () : void {
+        if (Program.Config.sourcecodeVersion === '') {
+            if (!Program.Config.compilerVersion.includes('dev')) {
+                throw new TypeError(`Compiler version not set. Pin current compiler version in your program adding '#pragma version ${Program.Config.compilerVersion}' to code.`)
+            }
+            Program.Config.sourcecodeVersion = Program.Config.compilerVersion
+        }
+        if (Program.Config.sourcecodeVersion !== Program.Config.compilerVersion) {
+            if (Program.Config.sourcecodeVersion !== 'dev') {
+                throw new TypeError(`This compiler is version '${Program.Config.compilerVersion}'. File needs a compiler version '${Program.Config.sourcecodeVersion}'. Update '#pragma version' macro or run another SmartC version.`)
+            }
+            Program.Config.sourcecodeVersion = Program.Config.compilerVersion
         }
     }
 

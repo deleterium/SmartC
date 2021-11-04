@@ -36,13 +36,37 @@ import { CONTRACT, MACHINE_OBJECT } from './typings/contractTypes'
 export class SmartC {
     private readonly language
     private readonly sourceCode
-    private preprocessed?: string
-    private tokenized?: PRE_TOKEN[]
-    private parsed?: TOKEN[]
-    private shaped?: CONTRACT
-    private syntaxProcessed?: CONTRACT
     private codeGenerated?: string
     private byteCoded?: MACHINE_OBJECT
+    private Program: CONTRACT = {
+        Global: {
+            APIFunctions: [],
+            macros: [],
+            sentences: []
+        },
+        functions: [],
+        memory: [],
+        typesDefinitions: [],
+        // Default configuration for compiler
+        Config: {
+            compilerVersion: '0.4-dev',
+            enableRandom: false,
+            enableLineLabels: false,
+            globalOptimization: false,
+            maxAuxVars: 3,
+            maxConstVars: 0,
+            reuseAssignedVar: true,
+            sourcecodeVersion: '',
+            warningToError: true,
+            APIFunctions: false,
+            PName: '',
+            PDescription: '',
+            PActivationAmount: '',
+            PUserStackPages: 0,
+            PCodeStackPages: 0,
+            outputSourceLineNumber: false
+        }
+    }
 
     constructor (options: { language: 'C' | 'Assembly', sourceCode: string }) {
         this.language = options.language
@@ -53,17 +77,20 @@ export class SmartC {
      * Triggers compilation process
      * @throws {Error} if compilation is not sucessfull */
     compile () : SmartC {
+        let preprocessed : string
+        let tokenized: PRE_TOKEN[]
+        let parsed: TOKEN[]
         if (this.byteCoded) {
             return this
         }
         switch (this.language) {
         case 'C':
-            this.preprocessed = preprocess(this.sourceCode)
-            this.tokenized = tokenize(this.preprocessed)
-            this.parsed = parse(this.tokenized)
-            this.shaped = shape(this.parsed)
-            this.syntaxProcessed = syntaxProcess(this.shaped)
-            this.codeGenerated = codeGenerate(this.syntaxProcessed)
+            preprocessed = preprocess(this.sourceCode)
+            tokenized = tokenize(preprocessed)
+            parsed = parse(tokenized)
+            shape(this.Program, parsed)
+            syntaxProcess(this.Program)
+            this.codeGenerated = codeGenerate(this.Program)
             break
         case 'Assembly':
             this.codeGenerated = this.sourceCode
@@ -95,5 +122,13 @@ export class SmartC {
             throw new Error('Source code was not compiled.')
         }
         return this.byteCoded
+    }
+
+    /**
+     * Ask for current compiler version
+     * @returns compiler version string
+     */
+    getCompilerVersion () : string {
+        return this.Program.Config.compilerVersion
     }
 }
