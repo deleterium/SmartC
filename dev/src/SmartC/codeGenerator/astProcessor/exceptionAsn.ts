@@ -1,6 +1,6 @@
 import { assertNotUndefined } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
-import { createInstruction } from '../assemblyProcessor/opToAssembly'
+import { createInstruction } from '../assemblyProcessor/createInstruction'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings/codeGeneratorTypes'
 import { genCode } from './genCode'
 

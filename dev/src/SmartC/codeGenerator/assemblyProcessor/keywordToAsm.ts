@@ -1,6 +1,6 @@
 import { TOKEN, MEMORY_SLOT } from '../../typings/syntaxTypes'
 import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
-import { flattenMemory } from './opToAssembly'
+import { flattenMemory } from './createInstruction'
 
 export function keywordToAsm (auxVars: GENCODE_AUXVARS, objoperator: TOKEN, param1?: MEMORY_SLOT, param2?: MEMORY_SLOT, rLogic?:boolean, jpFalse?: string, jpTrue?:string): string {
     if (objoperator.value === 'break' || objoperator.value === 'continue') {

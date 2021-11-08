@@ -1,7 +1,7 @@
 import { deepCopy } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
 import { MEMORY_SLOT, DECLARATION_TYPES, BINARY_ASN } from '../../typings/syntaxTypes'
-import { createSimpleInstruction, createInstruction, setConstAsmCode } from '../assemblyProcessor/opToAssembly'
+import { createSimpleInstruction, createInstruction, setConstAsmCode } from '../assemblyProcessor/createInstruction'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings/codeGeneratorTypes'
 import { utils } from '../utils'
 import { genCode } from './genCode'

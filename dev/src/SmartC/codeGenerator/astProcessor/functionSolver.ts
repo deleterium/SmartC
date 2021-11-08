@@ -1,7 +1,7 @@
 import { assertNotUndefined } from '../../repository/repository'
 import { CONTRACT, SC_FUNCTION } from '../../typings/contractTypes'
 import { LOOKUP_ASN, AST, MEMORY_SLOT } from '../../typings/syntaxTypes'
-import { createSimpleInstruction, createInstruction, createAPICallInstruction } from '../assemblyProcessor/opToAssembly'
+import { createSimpleInstruction, createInstruction, createAPICallInstruction } from '../assemblyProcessor/createInstruction'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings/codeGeneratorTypes'
 import { utils } from '../utils'
 import { genCode } from './genCode'

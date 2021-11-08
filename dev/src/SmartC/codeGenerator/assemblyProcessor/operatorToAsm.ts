@@ -2,7 +2,7 @@
 import { TOKEN, MEMORY_SLOT } from '../../typings/syntaxTypes'
 import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
 import { utils } from '../utils'
-import { createInstruction, flattenMemory } from './opToAssembly'
+import { createInstruction, flattenMemory } from './createInstruction'
 
 export function operatorToAsm (auxVars: GENCODE_AUXVARS, objoperator: TOKEN, param1?: MEMORY_SLOT, param2?: MEMORY_SLOT, rLogic?:boolean, jpFalse?: string, jpTrue?:string): string {
     let retinstr = ''

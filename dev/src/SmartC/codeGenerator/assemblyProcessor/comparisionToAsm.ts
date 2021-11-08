@@ -1,6 +1,6 @@
 import { TOKEN, MEMORY_SLOT } from '../../typings/syntaxTypes'
 import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
-import { flattenMemory } from './opToAssembly'
+import { flattenMemory } from './createInstruction'
 
 export function comparisionToAsm (auxVars: GENCODE_AUXVARS, objoperator: TOKEN, param1?: MEMORY_SLOT, param2?: MEMORY_SLOT, rLogic?:boolean, jpFalse?: string, jpTrue?:string): string {
     let retinstr = ''
