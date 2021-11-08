@@ -4,7 +4,7 @@
 
 import { assertNotUndefined, deepCopy } from '../repository/repository'
 import { CONTRACT } from '../typings/contractTypes'
-import { DECLARATION_TYPES, MEMORY_SLOT, SENTENCES } from '../typings/syntaxTypes'
+import { AST, DECLARATION_TYPES, MEMORY_SLOT, SENTENCES } from '../typings/syntaxTypes'
 import { genCode } from './astProcessor/genCode'
 
 import { optimize } from './optimizer'
@@ -269,7 +269,7 @@ export function codeGenerate (incomingProgram: CONTRACT) {
         }
     }
 
-    function setupGenCode (CodeGenInfo: CODEGEN_INFO, sentenceLine: number /* cgAST?: AST, jumpTarget?: string, jumpNotTarget?:string, isReversedLogic?: boolean */) {
+    function setupGenCode (CodeGenInfo: CODEGEN_INFO, sentenceLine: number /* cgAST?: AST, jumpTarget?: string, jumpNotTarget?:string, isReversedLogic?: boolean */): string {
         const auxVars: GENCODE_AUXVARS = {
             CurrentFunction: incomingProgram.functions[generateUtils.currFunctionIndex],
             memory: incomingProgram.memory,
@@ -358,54 +358,56 @@ export function codeGenerate (incomingProgram: CONTRACT) {
             }
         }
 
-        CodeGenInfo.InitialAST = assertNotUndefined(CodeGenInfo.InitialAST)
-        CodeGenInfo.initialIsReversedLogic = CodeGenInfo.initialIsReversedLogic ?? false
-
-        // Create registers array
-        auxVars.memory.filter(OBJ => /^r\d$/.test(OBJ.asmName)).forEach(MEM => {
-            auxVars.registerInfo.push({
-                inUse: false,
-                Template: MEM
+        function setupGenCodeMain (): string {
+            CodeGenInfo.InitialAST = assertNotUndefined(CodeGenInfo.InitialAST)
+            CodeGenInfo.initialIsReversedLogic = CodeGenInfo.initialIsReversedLogic ?? false
+            // Create registers array
+            auxVars.memory.filter(OBJ => /^r\d$/.test(OBJ.asmName)).forEach(MEM => {
+                auxVars.registerInfo.push({
+                    inUse: false,
+                    Template: MEM
+                })
             })
-        })
-
-        const code = genCode(incomingProgram, auxVars, {
-            RemAST: CodeGenInfo.InitialAST,
-            logicalOp: CodeGenInfo.initialJumpTarget !== undefined,
-            revLogic: CodeGenInfo.initialIsReversedLogic,
-            jumpFalse: CodeGenInfo.initialJumpTarget,
-            jumpTrue: CodeGenInfo.initialJumpNotTarget
-        })
-        if (incomingProgram.Config.warningToError && CodeGenInfo.initialJumpTarget === undefined && code.SolvedMem.type === 'register') {
-            if ((CodeGenInfo.InitialAST.type === 'unaryASN' && CodeGenInfo.InitialAST.Operation.value !== '*') ||
-                (CodeGenInfo.InitialAST.type === 'binaryASN' && (CodeGenInfo.InitialAST.Operation.type === 'Comparision' || CodeGenInfo.InitialAST.Operation.type === 'Operator'))) {
-                throw new TypeError(`At line: ${CodeGenInfo.InitialAST.Operation.line}. Warning: Operation returning a value that is not being used.`)
+            const code = genCode(incomingProgram, auxVars, {
+                RemAST: CodeGenInfo.InitialAST,
+                logicalOp: CodeGenInfo.initialJumpTarget !== undefined,
+                revLogic: CodeGenInfo.initialIsReversedLogic,
+                jumpFalse: CodeGenInfo.initialJumpTarget,
+                jumpTrue: CodeGenInfo.initialJumpNotTarget
+            })
+            validateReturnedVariable(CodeGenInfo.InitialAST, code.SolvedMem)
+            code.asmCode += auxVars.postOperations
+            generateUtils.jumpId = auxVars.jumpId
+            // Check throw conditions that were out-of-scope
+            const analysyCode = code.asmCode.split('\n')
+            code.asmCode = analysyCode.map(line => {
+                if (line.startsWith('JMP :%generateUtils.getLatestLoopId()%')) {
+                    return line.replace('%generateUtils.getLatestLoopId()%', generateUtils.getLatestLoopID())
+                }
+                return line
+            }).join('\n')
+            // optimizations for jumps and labels
+            if (code.asmCode.indexOf(':') >= 0) {
+                if (CodeGenInfo.InitialAST.type === 'endASN') {
+                    if (CodeGenInfo.InitialAST.Token.type === 'Keyword' && CodeGenInfo.InitialAST.Token.value === 'label') {
+                        return code.asmCode // do not optimize!!!
+                    }
+                }
+                code.asmCode = utils.miniOptimizeJumps(code.asmCode)
             }
+            return code.asmCode
         }
 
-        code.asmCode += auxVars.postOperations
-        generateUtils.jumpId = auxVars.jumpId
-
-        // Check throw conditions that were out-of-scope
-        const analysyCode = code.asmCode.split('\n')
-        code.asmCode = analysyCode.map(line => {
-            if (line.startsWith('JMP :%generateUtils.getLatestLoopId()%')) {
-                return line.replace('%generateUtils.getLatestLoopId()%', generateUtils.getLatestLoopID())
-            }
-            return line
-        }).join('\n')
-
-        // optimizations for jumps and labels
-        if (code.asmCode.indexOf(':') >= 0) {
-            if (CodeGenInfo.InitialAST.type === 'endASN') {
-                if (CodeGenInfo.InitialAST.Token.type === 'Keyword' && CodeGenInfo.InitialAST.Token.value === 'label') {
-                    return code.asmCode // do not optimize!!!
+        function validateReturnedVariable (InitAST: AST, RetObj: MEMORY_SLOT) {
+            if (incomingProgram.Config.warningToError && CodeGenInfo.initialJumpTarget === undefined && RetObj.type === 'register') {
+                if ((InitAST.type === 'unaryASN' && InitAST.Operation.value !== '*') ||
+                    (InitAST.type === 'binaryASN' && (InitAST.Operation.type === 'Comparision' || InitAST.Operation.type === 'Operator'))) {
+                    throw new TypeError(`At line: ${InitAST.Operation.line}. Warning: Operation returning a value that is not being used.`)
                 }
             }
-            code.asmCode = utils.miniOptimizeJumps(code.asmCode)
         }
 
-        return code.asmCode
+        return setupGenCodeMain()
     }
 
     return generateMain()
