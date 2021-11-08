@@ -3,7 +3,8 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES } from '../typings/syntaxTypes'
+import { assertNotUndefined } from '../repository/repository'
+import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES, LOOKUP_ASN } from '../typings/syntaxTypes'
 
 /**
  * Simple functions that do not depend external variables.
@@ -275,5 +276,55 @@ export const utils = {
         } while (optimizedLines !== 0)
 
         return tmpCodeLines.join('\n')
+    },
+    /** Traverse an AST searching a variable name. In this case is the
+     *  right side of an assignment. If variable 'name' is found, it
+     *   can not be reused as temporary var (register)
+     */
+    findVarNameInAst (vname: string, ObjAST: AST): boolean {
+        function recursiveFind (InspAst: AST): boolean {
+            let left: boolean, right: boolean
+            switch (InspAst.type) {
+            case 'nullASN':
+                return true
+            case 'endASN':
+                if (InspAst.Token.type === 'Variable' && InspAst.Token.value === vname) {
+                    return false
+                }
+                return true
+            case 'lookupASN':
+                return lookupAsn(InspAst)
+            case 'unaryASN':
+                return recursiveFind(InspAst.Center)
+            case 'binaryASN':
+                left = recursiveFind(InspAst.Left)
+                right = recursiveFind(InspAst.Right)
+                if (left && right) return true
+                return false
+            case 'exceptionASN':
+                if (InspAst.Left !== undefined) {
+                    return recursiveFind(InspAst.Left)
+                }
+                return recursiveFind(assertNotUndefined(InspAst.Right))
+            }
+        }
+        function lookupAsn (InspAst: LOOKUP_ASN): boolean {
+            const CanReuse = InspAst.modifiers.find(CurrentModifier => {
+                if (CurrentModifier.type === 'Array') {
+                    if (recursiveFind(CurrentModifier.Center) === false) {
+                        return true
+                    }
+                }
+                return false
+            })
+            if (CanReuse === undefined) {
+                if (InspAst.Token.type === 'Function' && InspAst.FunctionArgs !== undefined) {
+                    return recursiveFind(InspAst.FunctionArgs)
+                }
+                return true
+            }
+            return false
+        }
+        return recursiveFind(ObjAST)
     }
 }

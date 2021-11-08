@@ -1,6 +1,6 @@
-import { assertNotUndefined, deepCopy } from '../../repository/repository'
+import { deepCopy } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
-import { MEMORY_SLOT, DECLARATION_TYPES, AST, TOKEN_MODIFIER, BINARY_ASN } from '../../typings/syntaxTypes'
+import { MEMORY_SLOT, DECLARATION_TYPES, BINARY_ASN } from '../../typings/syntaxTypes'
 import { createSimpleInstruction, createInstruction, setConstAsmCode } from '../assemblyProcessor/opToAssembly'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings/codeGeneratorTypes'
 import { utils } from '../utils'
@@ -218,7 +218,7 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             Program.Config.reuseAssignedVar === false ||
             Left.type !== 'long' ||
             Left.Offset !== undefined ||
-            !CanReuseAssignedVar(Left.name, CurrentNode.Right)) {
+            !utils.findVarNameInAst(Left.name, CurrentNode.Right)) {
             // Can not reuse assigned var.
             return genCode(Program, AuxVars, {
                 RemAST: CurrentNode.Right,
@@ -484,52 +484,6 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             }
         }
         return false
-    }
-
-    /** Traverse an AST searching a variable name. In this case is the
-     *  right side of an assignment. If variable 'name' is found, it
-     *   can not be reused as temporary var (register)
-     */
-    function CanReuseAssignedVar (vname: string, ObjAST: AST): boolean {
-        let CanReuse: TOKEN_MODIFIER | undefined
-        let left: boolean, right: boolean
-        switch (ObjAST.type) {
-        case 'nullASN':
-            return true
-        case 'endASN':
-            if (ObjAST.Token.type === 'Variable' && ObjAST.Token.value === vname) {
-                return false
-            }
-            return true
-        case 'lookupASN':
-            CanReuse = ObjAST.modifiers.find(CurrentModifier => {
-                if (CurrentModifier.type === 'Array') {
-                    if (CanReuseAssignedVar(vname, CurrentModifier.Center) === false) {
-                        return true
-                    }
-                }
-                return false
-            })
-            if (CanReuse === undefined) {
-                if (ObjAST.Token.type === 'Function' && ObjAST.FunctionArgs !== undefined) {
-                    return CanReuseAssignedVar(vname, ObjAST.FunctionArgs)
-                }
-                return true
-            }
-            return false
-        case 'unaryASN':
-            return CanReuseAssignedVar(vname, ObjAST.Center)
-        case 'binaryASN':
-            left = CanReuseAssignedVar(vname, ObjAST.Left)
-            right = CanReuseAssignedVar(vname, ObjAST.Right)
-            if (left && right) return true
-            return false
-        case 'exceptionASN':
-            if (ObjAST.Left !== undefined) {
-                return CanReuseAssignedVar(vname, ObjAST.Left)
-            }
-            return CanReuseAssignedVar(vname, assertNotUndefined(ObjAST.Right))
-        }
     }
 
     return binaryAsnProcessorMain()
