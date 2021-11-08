@@ -128,7 +128,7 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
         // But if it IS an array, update header
         lovHeader.type = 'array'
         lovHeader.typeDefinition = structPrefix + lovHeader.asmName
-        lovHeader.arrItem = {
+        lovHeader.ArrayItem = {
             type: 'long',
             declaration: lovHeader.declaration,
             typeDefinition: structPrefix + lovHeader.asmName,
@@ -137,18 +137,18 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
         if (isLovPointer === false) {
             lovHeader.declaration += '_ptr'
         }
-        lovHeader.arrItem.totalSize = 1 + lovDimensions.reduce(function (total, num) {
+        lovHeader.ArrayItem.totalSize = 1 + lovDimensions.reduce(function (total, num) {
             return total * num
         }, 1)
 
         // Push items into memory
         const retArrMem = [lovHeader]
-        for (let i = 1; i < lovHeader.arrItem.totalSize; i++) {
+        for (let i = 1; i < lovHeader.ArrayItem.totalSize; i++) {
             const Mem2 = deepCopy(longTD.MemoryTemplate)
             Mem2.name = `${lovHeader.name}_${i - 1}`
             Mem2.asmName = `${lovHeader.asmName}_${i - 1}`
             Mem2.scope = AuxVars.currentScopeName
-            Mem2.declaration = lovHeader.arrItem.declaration
+            Mem2.declaration = lovHeader.ArrayItem.declaration
             retArrMem.push(Mem2)
         }
 
@@ -309,14 +309,14 @@ export function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SH
         structMemHeader.isDeclared = AuxVars.isFunctionArgument
         structMemHeader.type = 'array'
         structMemHeader.typeDefinition = structMemHeader.asmName
-        structMemHeader.arrItem = {
+        structMemHeader.ArrayItem = {
             type: structMemHeader.type,
             declaration: structMemHeader.declaration,
             typeDefinition: AuxVars.currentPrefix + currentStructNameDef,
             totalSize: 0
         }
 
-        structMemHeader.arrItem.totalSize = 1 + structArrDimensions.reduce(function (total, num) {
+        structMemHeader.ArrayItem.totalSize = 1 + structArrDimensions.reduce(function (total, num) {
             return total * num
         }, structMemHeader.size)
 

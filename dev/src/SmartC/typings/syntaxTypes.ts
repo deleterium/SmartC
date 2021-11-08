@@ -57,7 +57,7 @@ export interface MEMORY_SLOT {
     /** For constants: content */
     hexContent?: string
     /** Info about items of array. */
-    arrItem?: {
+    ArrayItem?: {
         /** item base type */
         type: MEMORY_BASE_TYPES,
         /** item base declaration */

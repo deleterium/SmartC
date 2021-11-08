@@ -23,7 +23,7 @@ export function codeToSentenceArray (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[]
  * to one item sentences array */
 function codeToOneSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[]): SENTENCES[] {
     const phrase: TOKEN[] = []
-    const lineOfFirstInstruction = codetrain[0]?.line ?? -1
+    const lineOfFirstInstruction = codetrain[AuxVars.currentToken]?.line ?? -1
 
     if (codetrain[AuxVars.currentToken].type === 'CodeDomain') {
         const savedPosition = AuxVars.currentToken
