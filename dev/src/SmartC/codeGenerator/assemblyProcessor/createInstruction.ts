@@ -184,34 +184,34 @@ export function flattenMemory (auxVars: GENCODE_AUXVARS, StuffedMemory: MEMORY_S
 }
 
 /** Translate one single instruction from ast to assembly code */
-export function createInstruction (auxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, param1?: MEMORY_SLOT, param2?: MEMORY_SLOT, rLogic?:boolean, jpFalse?: string, jpTrue?:string) : string {
+export function createInstruction (AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, MemParam1?: MEMORY_SLOT, MemParam2?: MEMORY_SLOT, rLogic?:boolean, jpFalse?: string, jpTrue?:string) : string {
     let retinstr = ''
 
     switch (OperatorToken.type) {
     case 'Assignment':
-        return assignmentToAsm(auxVars, assertNotUndefined(param1), assertNotUndefined(param2), OperatorToken.line)
+        return assignmentToAsm(AuxVars, assertNotUndefined(MemParam1), assertNotUndefined(MemParam2), OperatorToken.line)
     case 'Operator':
     case 'SetOperator':
-        return operatorToAsm(auxVars, OperatorToken, param1, param2, rLogic, jpFalse, jpTrue)
+        return operatorToAsm(AuxVars, OperatorToken, MemParam1, MemParam2, rLogic, jpFalse, jpTrue)
     case 'UnaryOperator':
     case 'SetUnaryOperator':
-        return unaryOperatorToAsm(OperatorToken, assertNotUndefined(param1))
+        return unaryOperatorToAsm(OperatorToken, assertNotUndefined(MemParam1))
     case 'Comparision':
-        return comparisionToAsm(auxVars, OperatorToken, param1, param2, rLogic, jpFalse, jpTrue)
+        return comparisionToAsm(AuxVars, OperatorToken, MemParam1, MemParam2, rLogic, jpFalse, jpTrue)
     case 'Push': {
-        if (param1 === undefined) {
+        if (MemParam1 === undefined) {
             throw new TypeError(`At line: ${OperatorToken.line}. Missing parameter for PSH. BugReport please.`)
         }
-        const TmpMemObj = flattenMemory(auxVars, param1, OperatorToken.line)
+        const TmpMemObj = flattenMemory(AuxVars, MemParam1, OperatorToken.line)
         retinstr += TmpMemObj.asmCode
         retinstr += 'PSH $' + TmpMemObj.FlatMem.asmName + '\n'
         if (TmpMemObj.isNew === true) {
-            auxVars.freeRegister(TmpMemObj.FlatMem.address)
+            AuxVars.freeRegister(TmpMemObj.FlatMem.address)
         }
         return retinstr
     }
     case 'Keyword':
-        return keywordToAsm(auxVars, OperatorToken, param1, param2, rLogic, jpFalse, jpTrue)
+        return keywordToAsm(AuxVars, OperatorToken, MemParam1)
     default:
         throw new TypeError(`Internal error at line: ${OperatorToken.line}.`)
     }

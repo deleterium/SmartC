@@ -1,59 +1,52 @@
+import { assertNotUndefined } from '../../repository/repository'
 import { TOKEN, MEMORY_SLOT } from '../../typings/syntaxTypes'
 import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
-import { flattenMemory } from './createInstruction'
+import { flattenMemory, FLATTEN_MEMORY_RETURN_OBJECT } from './createInstruction'
 
-export function keywordToAsm (auxVars: GENCODE_AUXVARS, objoperator: TOKEN, param1?: MEMORY_SLOT, param2?: MEMORY_SLOT, rLogic?:boolean, jpFalse?: string, jpTrue?:string): string {
-    if (objoperator.value === 'break' || objoperator.value === 'continue') {
-        return `JMP :%generateUtils.getLatestLoopId()%_${objoperator.value}\n`
-    }
-    if (objoperator.value === 'label') {
-        return objoperator.extValue + ':\n'
-    }
-    if (objoperator.value === 'goto') {
-        if (param1 === undefined) {
-            throw new TypeError(`At line: ${objoperator.line}. Missing parameter for goto. BugReport please.`)
-        }
-        return 'JMP :' + param1.name + '\n'
-    }
-    if (objoperator.value === 'halt') {
+/**
+ * Create instruction for keywords asm, break, continue, exit, goto, halt, label, return and sleep.
+ */
+export function keywordToAsm (AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, FlatMem?: MEMORY_SLOT): string {
+    let TmpMemObj: FLATTEN_MEMORY_RETURN_OBJECT
+    switch (OperatorToken.value) {
+    case 'break':
+    case 'continue':
+        return `JMP :%generateUtils.getLatestLoopId()%_${OperatorToken.value}\n`
+    case 'label':
+        return OperatorToken.extValue + ':\n'
+    case 'goto':
+        return `JMP :${assertNotUndefined(FlatMem).name}\n`
+    case 'halt':
         return 'STP\n'
-    }
-    if (objoperator.value === 'exit') {
+    case 'exit':
         return 'FIN\n'
-    }
-    if (objoperator.value === 'return' || objoperator.value === 'sleep') {
-        if (param1 === undefined) {
-            if (objoperator.value === 'return') {
-                return 'RET\n'
-            }
-            throw new TypeError(`At line: ${objoperator.line}. Missing parameter for sleep. BugReport please.`)
+    case 'return':
+        if (FlatMem === undefined) {
+            return 'RET\n'
         }
-
-        let retinstr = ''
-        const TmpMemObj = flattenMemory(auxVars, param1, objoperator.line)
-        retinstr += TmpMemObj.asmCode
-
-        if (objoperator.value === 'return') {
-            retinstr += 'PSH $' + TmpMemObj.FlatMem.asmName + '\n'
-            retinstr += 'RET\n'
-        } else if (objoperator.value === 'sleep') {
-            retinstr += 'SLP $' + TmpMemObj.FlatMem.asmName + '\n'
-        }
-
-        auxVars.freeRegister(param1.address)
+        TmpMemObj = flattenMemory(AuxVars, FlatMem, OperatorToken.line)
+        TmpMemObj.asmCode += `PSH $${TmpMemObj.FlatMem.asmName}\n`
+        TmpMemObj.asmCode += 'RET\n'
+        AuxVars.freeRegister(FlatMem.address)
         if (TmpMemObj.isNew === true) {
-            auxVars.freeRegister(TmpMemObj.FlatMem.address)
+            AuxVars.freeRegister(TmpMemObj.FlatMem.address)
         }
-        return retinstr
-    }
-    if (objoperator.value === 'asm') {
-        if (objoperator.extValue === undefined) {
-            throw new TypeError(`At line: ${objoperator.line}. Missing extValue for asm. BugReport please.`)
+        return TmpMemObj.asmCode
+    case 'sleep':
+        FlatMem = assertNotUndefined(FlatMem)
+        TmpMemObj = flattenMemory(AuxVars, assertNotUndefined(FlatMem), OperatorToken.line)
+        TmpMemObj.asmCode += `SLP $${TmpMemObj.FlatMem.asmName}\n`
+        AuxVars.freeRegister(FlatMem.address)
+        if (TmpMemObj.isNew === true) {
+            AuxVars.freeRegister(TmpMemObj.FlatMem.address)
         }
-
-        let lines = objoperator.extValue.split('\n')
+        return TmpMemObj.asmCode
+    case 'asm': {
+        let lines = assertNotUndefined(OperatorToken.extValue).split('\n')
         lines = lines.map(value => value.trim())
         return lines.join('\n').trim() + '\n'
     }
-    throw new Error('Internal error.')
+    default:
+        throw new Error('Internal error.')
+    }
 }
