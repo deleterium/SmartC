@@ -195,7 +195,7 @@ export function createInstruction (auxVars: GENCODE_AUXVARS, OperatorToken: TOKE
         return operatorToAsm(auxVars, OperatorToken, param1, param2, rLogic, jpFalse, jpTrue)
     case 'UnaryOperator':
     case 'SetUnaryOperator':
-        return unaryOperatorToAsm(auxVars, OperatorToken, param1, param2, rLogic, jpFalse, jpTrue)
+        return unaryOperatorToAsm(OperatorToken, assertNotUndefined(param1))
     case 'Comparision':
         return comparisionToAsm(auxVars, OperatorToken, param1, param2, rLogic, jpFalse, jpTrue)
     case 'Push': {
