@@ -167,14 +167,14 @@ describe('User defined functions', () => {
     })
     it('should compile: pass two struct pointer as argument', () => {
         const code = 'struct KOMBI { long driver, collector, passenger; } car1, car2; long a, b; test(&car1, &car2); void test(struct KOMBI * lptr, struct KOMBI * rptr) { lptr-> driver = rptr-> driver; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car1_driver\n^declare car1_collector\n^declare car1_passenger\n^declare car2_driver\n^declare car2_collector\n^declare car2_passenger\n^declare a\n^declare b\n^declare test_lptr\n^declare test_rptr\n\nSET @r0 #0000000000000006\nPSH $r0\nSET @r0 #0000000000000003\nPSH $r0\nJSR :__fn_test\nFIN\n\n__fn_test:\nPOP @test_lptr\nPOP @test_rptr\nCLR @r1\nSET @r0 $($test_rptr + $r1)\nCLR @r1\nSET @($test_lptr + $r1) $r0\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car1_driver\n^declare car1_collector\n^declare car1_passenger\n^declare car2_driver\n^declare car2_collector\n^declare car2_passenger\n^declare a\n^declare b\n^declare test_lptr\n^declare test_rptr\n\nSET @r0 #0000000000000006\nPSH $r0\nSET @r0 #0000000000000003\nPSH $r0\nJSR :__fn_test\nFIN\n\n__fn_test:\nPOP @test_lptr\nPOP @test_rptr\nCLR @r1\nSET @r0 $($test_rptr + $r1)\nSET @($test_lptr) $r0\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: pass struct pointer as second argument', () => {
         const code = 'struct KOMBI { long driver, collector, passenger; } car; long a, b; test(a, &car); void test(long a, struct KOMBI * sptr) { sptr-> driver = a; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare a\n^declare b\n^declare test_a\n^declare test_sptr\n\nSET @r0 #0000000000000003\nPSH $r0\nPSH $a\nJSR :__fn_test\nFIN\n\n__fn_test:\nPOP @test_a\nPOP @test_sptr\nCLR @r0\nSET @($test_sptr + $r0) $test_a\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare a\n^declare b\n^declare test_a\n^declare test_sptr\n\nSET @r0 #0000000000000003\nPSH $r0\nPSH $a\nJSR :__fn_test\nFIN\n\n__fn_test:\nPOP @test_a\nPOP @test_sptr\nSET @($test_sptr) $test_a\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -195,7 +195,7 @@ describe('User defined functions', () => {
     })
     it('should compile: check variable types on function arguments', () => {
         const code = "struct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b;pcar=&car;\n teste(pcar);\n void teste(struct KOMBI * value) { value->driver = 'Zé'; }"
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare teste_value\n\nSET @pcar #0000000000000003\nPSH $pcar\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_value\nSET @r0 #0000000000a9c35a\nCLR @r1\nSET @($teste_value + $r1) $r0\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare teste_value\n\nSET @pcar #0000000000000003\nPSH $pcar\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_value\nSET @r0 #0000000000a9c35a\nSET @($teste_value) $r0\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
