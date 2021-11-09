@@ -32,8 +32,20 @@ export type MEMORY_BASE_TYPES = 'register' | 'long' | 'constant' | 'struct' | 's
 /** If constant, it is the number to shift. If variable, it is the address containing the value to shift.
  * Stores information about variable it is pointing to.
  */
-export type OFFSET_MODIFIER = { type: 'constant', value: number, declaration: DECLARATION_TYPES, typeDefinition?: string } |
-    { type: 'variable', addr: number, declaration: DECLARATION_TYPES, typeDefinition?: string }
+export type OFFSET_MODIFIER_CONSTANT = {
+    type: 'constant',
+    value: number,
+    declaration: DECLARATION_TYPES,
+    typeDefinition?: string
+}
+export type OFFSET_MODIFIER_VARIABLE = {
+    type: 'variable',
+    addr: number,
+    declaration:
+    DECLARATION_TYPES,
+    typeDefinition?: string
+}
+export type OFFSET_MODIFIER = OFFSET_MODIFIER_CONSTANT | OFFSET_MODIFIER_VARIABLE
 
 export interface MEMORY_SLOT {
     /** Variable base types: 'register' | 'long' | 'constant' | 'struct' | 'structRef' | 'array' | 'label' | 'void' */

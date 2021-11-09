@@ -15,7 +15,7 @@ export function comparisionToAsm (auxVars: GENCODE_AUXVARS, objoperator: TOKEN, 
     }
 
     const TmpMemObj1 = flattenMemory(auxVars, param1, objoperator.line)
-    retinstr += TmpMemObj1.instructionset
+    retinstr += TmpMemObj1.asmCode
     if (TmpMemObj1.isNew) {
         if (param1.Offset?.type === 'variable') {
             auxVars.freeRegister(param1.Offset.addr)
@@ -25,23 +25,23 @@ export function comparisionToAsm (auxVars: GENCODE_AUXVARS, objoperator: TOKEN, 
 
     if (param2.type === 'constant' && param2.hexContent === '0000000000000000' && (objoperator.value === '!=' || objoperator.value === '==')) {
         retinstr += chooseBranch(objoperator.value, true, rLogic)
-        retinstr += ' $' + TmpMemObj1.MoldedObj.asmName + ' :' + jump + '\n'
+        retinstr += ' $' + TmpMemObj1.FlatMem.asmName + ' :' + jump + '\n'
         if (TmpMemObj1.isNew === true) {
-            auxVars.freeRegister(TmpMemObj1.MoldedObj.address)
+            auxVars.freeRegister(TmpMemObj1.FlatMem.address)
         }
         return retinstr
     }
 
     const TmpMemObj2 = flattenMemory(auxVars, param2, objoperator.line)
-    retinstr += TmpMemObj2.instructionset
+    retinstr += TmpMemObj2.asmCode
     retinstr += chooseBranch(objoperator.value, false, rLogic)
-    retinstr += ' $' + TmpMemObj1.MoldedObj.asmName + ' $' + TmpMemObj2.MoldedObj.asmName + ' :' + jump + '\n'
+    retinstr += ' $' + TmpMemObj1.FlatMem.asmName + ' $' + TmpMemObj2.FlatMem.asmName + ' :' + jump + '\n'
 
     if (TmpMemObj1.isNew === true) {
-        auxVars.freeRegister(TmpMemObj1.MoldedObj.address)
+        auxVars.freeRegister(TmpMemObj1.FlatMem.address)
     }
     if (TmpMemObj2 !== undefined && TmpMemObj2.isNew === true) {
-        auxVars.freeRegister(TmpMemObj2.MoldedObj.address)
+        auxVars.freeRegister(TmpMemObj2.FlatMem.address)
     }
 
     return retinstr

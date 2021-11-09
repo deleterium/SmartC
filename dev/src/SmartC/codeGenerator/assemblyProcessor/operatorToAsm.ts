@@ -22,13 +22,13 @@ export function operatorToAsm (auxVars: GENCODE_AUXVARS, objoperator: TOKEN, par
         throw new TypeError(`At line: ${objoperator.line}. Can not createInstruction. BugReport please.`)
     }
     const TmpMemObj1 = flattenMemory(auxVars, param1, objoperator.line)
-    retinstr += TmpMemObj1.instructionset
+    retinstr += TmpMemObj1.asmCode
 
     if (param2.type === 'constant') {
         allowOptimization = true
     }
     const TmpMemObj2 = flattenMemory(auxVars, param2, objoperator.line)
-    retinstr += TmpMemObj2.instructionset
+    retinstr += TmpMemObj2.asmCode
 
     if (allowOptimization === true) {
         function removeLastButOne () {
@@ -44,50 +44,50 @@ export function operatorToAsm (auxVars: GENCODE_AUXVARS, objoperator: TOKEN, par
         // here we can have optimizations for all operations.
         if (objoperator.value === '+' || objoperator.value === '+=') {
             if (param2.hexContent === '0000000000000000') {
-                auxVars.freeRegister(TmpMemObj2.MoldedObj.address)
+                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
                 return ''
             }
             if (param2.hexContent === '0000000000000001') {
-                auxVars.freeRegister(TmpMemObj2.MoldedObj.address)
+                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
                 removeLastButOne()
-                retinstr += createInstruction(auxVars, utils.genIncToken(), TmpMemObj1.MoldedObj)
+                retinstr += createInstruction(auxVars, utils.genIncToken(), TmpMemObj1.FlatMem)
                 optimized = true
             }
             if (param2.hexContent === '0000000000000002') {
-                auxVars.freeRegister(TmpMemObj2.MoldedObj.address)
+                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
                 removeLastButOne()
                 const OptMem = auxVars.memory.find(MEM => MEM.asmName === 'n2' && MEM.hexContent === '0000000000000002')
                 if (OptMem === undefined) {
-                    retinstr += createInstruction(auxVars, utils.genIncToken(), TmpMemObj1.MoldedObj)
-                    retinstr += createInstruction(auxVars, utils.genIncToken(), TmpMemObj1.MoldedObj)
+                    retinstr += createInstruction(auxVars, utils.genIncToken(), TmpMemObj1.FlatMem)
+                    retinstr += createInstruction(auxVars, utils.genIncToken(), TmpMemObj1.FlatMem)
                     optimized = true
                 }
             }
         } else if (objoperator.value === '-' || objoperator.value === '-=') {
             if (param2.hexContent === '0000000000000000') {
-                auxVars.freeRegister(TmpMemObj2.MoldedObj.address)
+                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
                 return ''
             }
             if (param2.hexContent === '0000000000000001') {
-                auxVars.freeRegister(TmpMemObj2.MoldedObj.address)
+                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
                 removeLastButOne()
-                retinstr += createInstruction(auxVars, utils.genDecToken(), TmpMemObj1.MoldedObj)
+                retinstr += createInstruction(auxVars, utils.genDecToken(), TmpMemObj1.FlatMem)
                 optimized = true
             }
         } else if (objoperator.value === '*' || objoperator.value === '*=') {
             if (param2.hexContent === '0000000000000000') {
-                auxVars.freeRegister(TmpMemObj2.MoldedObj.address)
+                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
                 removeLastButOne()
-                retinstr += createInstruction(auxVars, utils.genAssignmentToken(), TmpMemObj1.MoldedObj, param2)
+                retinstr += createInstruction(auxVars, utils.genAssignmentToken(), TmpMemObj1.FlatMem, param2)
                 optimized = true
             }
             if (param2.hexContent === '0000000000000001') {
-                auxVars.freeRegister(TmpMemObj2.MoldedObj.address)
+                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
                 return ''
             }
         } else if (objoperator.value === '/' || objoperator.value === '/=') {
             if (param2.hexContent === '0000000000000001') {
-                auxVars.freeRegister(TmpMemObj2.MoldedObj.address)
+                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
                 return ''
             }
         }
@@ -118,14 +118,14 @@ export function operatorToAsm (auxVars: GENCODE_AUXVARS, objoperator: TOKEN, par
             throw new TypeError('At line: ' + objoperator.line + '.Operator not supported ' + objoperator.value)
         }
 
-        retinstr += ' @' + TmpMemObj1.MoldedObj.asmName + ' $' + TmpMemObj2.MoldedObj.asmName + '\n'
+        retinstr += ' @' + TmpMemObj1.FlatMem.asmName + ' $' + TmpMemObj2.FlatMem.asmName + '\n'
 
-        auxVars.freeRegister(TmpMemObj2.MoldedObj.address)
+        auxVars.freeRegister(TmpMemObj2.FlatMem.address)
     }
 
     if (TmpMemObj1.isNew === true) {
-        retinstr += createInstruction(auxVars, utils.genAssignmentToken(), param1, TmpMemObj1.MoldedObj)
-        auxVars.freeRegister(TmpMemObj1.MoldedObj.address)
+        retinstr += createInstruction(auxVars, utils.genAssignmentToken(), param1, TmpMemObj1.FlatMem)
+        auxVars.freeRegister(TmpMemObj1.FlatMem.address)
     }
 
     return retinstr

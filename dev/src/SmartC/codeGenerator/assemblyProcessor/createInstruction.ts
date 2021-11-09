@@ -2,6 +2,7 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
+import { assertNotUndefined } from '../../repository/repository'
 import { MEMORY_SLOT, TOKEN } from '../../typings/syntaxTypes'
 import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
 
@@ -12,9 +13,9 @@ import { keywordToAsm } from './keywordToAsm'
 import { operatorToAsm } from './operatorToAsm'
 import { unaryOperatorToAsm } from './unaryOperatorToAsm'
 
-export interface MOLD_OBJECT {
-    MoldedObj: MEMORY_SLOT
-    instructionset: string
+export interface FLATTEN_MEMORY_RETURN_OBJECT {
+    FlatMem: MEMORY_SLOT
+    asmCode: string
     isNew: boolean
 }
 
@@ -22,7 +23,6 @@ export interface MOLD_OBJECT {
 export function setConstAsmCode (progMemory: MEMORY_SLOT[], code: string, line: number) {
     const codelines = code.split('\n')
     const retlines: string[] = []
-
     codelines.forEach(instruction => {
         if (instruction.length === 0) {
             retlines.push('')
@@ -54,11 +54,10 @@ export function setConstAsmCode (progMemory: MEMORY_SLOT[], code: string, line: 
         search.hexContent = parts[2]
         retlines.push('^const ' + instruction)
     })
-
     return retlines.join('\n')
 }
 
-// Creates one simple assembly instruction
+/** Creates one simple assembly instruction */
 export function createSimpleInstruction (instruction: string, param1: string = '') {
     switch (instruction) {
     case 'Jump':
@@ -78,28 +77,25 @@ export function createSimpleInstruction (instruction: string, param1: string = '
     }
 }
 
-export function createAPICallInstruction (astAuxVars: GENCODE_AUXVARS, objoperator: TOKEN, param1: MEMORY_SLOT, param2: MEMORY_SLOT[]) {
-    let retinstr = ''
-    const tempvar: MOLD_OBJECT[] = []
-
-    param2.forEach((varObj) => {
-        const Temp = flattenMemory(astAuxVars, varObj, -1)
-        retinstr += Temp.instructionset
-        tempvar.push(Temp)
+export function createAPICallInstruction (AstAuxVars: GENCODE_AUXVARS, ApiToken: TOKEN, RetMem: MEMORY_SLOT, argsMem: MEMORY_SLOT[]) {
+    let assemblyCode = ''
+    const tempArgsMem: MEMORY_SLOT[] = []
+    argsMem.forEach((VarObj) => {
+        const Temp = flattenMemory(AstAuxVars, VarObj, -1)
+        assemblyCode += Temp.asmCode
+        tempArgsMem.push(Temp.FlatMem)
     })
-
-    retinstr += 'FUN'
-    if (param1.type !== 'void') {
-        retinstr += ' @' + param1.asmName
+    assemblyCode += 'FUN'
+    if (RetMem.type !== 'void') {
+        assemblyCode += ' @' + RetMem.asmName
     }
-    retinstr += ' ' + objoperator.value
-    tempvar.forEach(arg => {
-        retinstr += ' $' + arg.MoldedObj.asmName
+    assemblyCode += ' ' + ApiToken.value
+    tempArgsMem.forEach(Arg => {
+        assemblyCode += ' $' + Arg.asmName
     })
-    retinstr += '\n'
-
-    tempvar.forEach(arg => astAuxVars.freeRegister(arg.MoldedObj.address))
-    return retinstr
+    assemblyCode += '\n'
+    tempArgsMem.forEach(Arg => AstAuxVars.freeRegister(Arg.address))
+    return assemblyCode
 }
 
 /**
@@ -107,129 +103,116 @@ export function createAPICallInstruction (astAuxVars: GENCODE_AUXVARS, objoperat
  * all hardwork done internally. Returns also instructions maybe needed for conversion and a boolean to indicate if it is
  * a new object (that must be free later on).
 */
-export function flattenMemory (auxVars: GENCODE_AUXVARS, ParamMemObj: MEMORY_SLOT, line: number): MOLD_OBJECT {
-    let RetObj: MEMORY_SLOT
+export function flattenMemory (auxVars: GENCODE_AUXVARS, StuffedMemory: MEMORY_SLOT, line: number): FLATTEN_MEMORY_RETURN_OBJECT {
     let retInstructions = ''
-    let retIsNew = false
-    const paramDec = utils.getDeclarationFromMemory(ParamMemObj)
+    const paramDec = utils.getDeclarationFromMemory(StuffedMemory)
 
-    if (ParamMemObj.type === 'constant') {
-        if (ParamMemObj.hexContent === undefined) {
-            throw new TypeError(`At line: ${line}. Missing hexContent parameter. BugReport please.`)
+    function flattenMemoryMain (): FLATTEN_MEMORY_RETURN_OBJECT {
+        if (StuffedMemory.type === 'constant') {
+            return flattenConstant(StuffedMemory.hexContent)
         }
-        if (ParamMemObj.hexContent.length > 17) {
+        if (StuffedMemory.Offset === undefined) {
+            return { FlatMem: StuffedMemory, asmCode: '', isNew: false }
+        }
+        let RetObj: MEMORY_SLOT
+        if (StuffedMemory.Offset.type === 'variable') {
+            RetObj = auxVars.getNewRegister()
+            RetObj.declaration = paramDec
+            retInstructions += `SET @${RetObj.asmName} $($${StuffedMemory.asmName} + $${auxVars.getMemoryObjectByLocation(StuffedMemory.Offset.addr, line).asmName})\n`
+            return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
+        }
+        // StuffedMemory.Offset.type is 'constant'
+        let FlatConstant: FLATTEN_MEMORY_RETURN_OBJECT
+        switch (StuffedMemory.type) {
+        case 'register':
+        case 'long':
+        case 'structRef':
+            RetObj = auxVars.getNewRegister()
+            RetObj.declaration = paramDec
+            // TODO remove this and gain optimization
+            if (StuffedMemory.type !== 'structRef') {
+                if (StuffedMemory.Offset.value === 0) {
+                    retInstructions += `SET @${RetObj.asmName} $($${StuffedMemory.asmName})\n`
+                    return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
+                }
+            }
+            FlatConstant = flattenConstant(StuffedMemory.Offset.value)
+            retInstructions += FlatConstant.asmCode
+            retInstructions += `SET @${RetObj.asmName} $($${StuffedMemory.asmName} + $${FlatConstant.FlatMem.asmName})\n`
+            if (FlatConstant.isNew) {
+                auxVars.freeRegister(FlatConstant.FlatMem.address)
+            }
+            return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
+        case 'array':
+            // Looks like an array but can be converted to regular variable
+            RetObj = auxVars.getMemoryObjectByLocation(utils.addHexContents(StuffedMemory.hexContent, StuffedMemory.Offset.value), line)
+            auxVars.freeRegister(StuffedMemory.address)
+            return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
+        default:
+            throw new TypeError(`Internal error at line: ${line}. Not implemented type in flattenMemory()`)
+        }
+    }
+
+    function flattenConstant (hexParam: string|number|undefined): FLATTEN_MEMORY_RETURN_OBJECT {
+        hexParam = assertNotUndefined(hexParam)
+        let hexString: string
+        if (typeof (hexParam) === 'number') {
+            hexString = hexParam.toString(16)
+        } else {
+            hexString = hexParam
+        }
+        hexString = hexString.padStart(16, '0')
+        if (hexString.length > 17) {
             throw new RangeError(`At line: ${line}. Overflow on long value assignment. Value bigger than 64 bits).`)
         }
-        const OptMem = auxVars.memory.find(MEM => MEM.asmName === 'n' + Number('0x' + ParamMemObj.hexContent) && MEM.hexContent === ParamMemObj.hexContent)
+        const OptMem = auxVars.memory.find(MEM => MEM.asmName === 'n' + Number('0x' + hexString) && MEM.hexContent === hexString)
         if (OptMem) {
-            return { MoldedObj: OptMem, instructionset: '', isNew: false }
+            return { FlatMem: OptMem, asmCode: '', isNew: false }
         }
-        RetObj = auxVars.getNewRegister()
+        const RetObj = auxVars.getNewRegister()
         RetObj.declaration = paramDec
-        if (ParamMemObj.hexContent === '0000000000000000') {
-            retInstructions += `CLR @${RetObj.asmName}\n`
+        let asmInstruction = ''
+        if (hexString === '0000000000000000') {
+            asmInstruction += `CLR @${RetObj.asmName}\n`
         } else {
-            retInstructions += `SET @${RetObj.asmName} #${ParamMemObj.hexContent}\n`
+            asmInstruction += `SET @${RetObj.asmName} #${hexString}\n`
         }
-        return { MoldedObj: RetObj, instructionset: retInstructions, isNew: true }
+        return { FlatMem: RetObj, asmCode: asmInstruction, isNew: true }
     }
 
-    if (ParamMemObj.Offset === undefined) {
-        return { MoldedObj: ParamMemObj, instructionset: '', isNew: false }
-    }
-
-    if (ParamMemObj.type === 'register' || ParamMemObj.type === 'long') {
-        if (ParamMemObj.Offset.type === 'constant') {
-            RetObj = auxVars.getNewRegister()
-            RetObj.declaration = paramDec
-            if (ParamMemObj.Offset.value === 0) {
-                retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName})\n`
-            } else {
-                const FlatConstant = flattenMemory(auxVars, utils.createConstantMemObj(ParamMemObj.Offset.value), line)
-                retInstructions += FlatConstant.instructionset
-                retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${FlatConstant.MoldedObj.asmName})\n`
-                if (FlatConstant.isNew) auxVars.freeRegister(FlatConstant.MoldedObj.address)
-            }
-            retIsNew = true
-        } else { // ParamMemObj.Offset.type === 'variable'
-            RetObj = auxVars.getNewRegister()
-            RetObj.declaration = paramDec
-            retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${auxVars.getMemoryObjectByLocation(ParamMemObj.Offset.addr, line).asmName})\n`
-            retIsNew = true
-        }
-    } else if (ParamMemObj.type === 'array') {
-        if (ParamMemObj.Offset.type === 'constant') { // Looks like an array but can be converted to regular variable
-            RetObj = auxVars.getMemoryObjectByLocation(utils.addHexContents(ParamMemObj.hexContent, ParamMemObj.Offset.value), line)
-            auxVars.freeRegister(ParamMemObj.address)
-            retIsNew = true
-        } else { // ParamMemObj.Offset.type === 'variable'
-            RetObj = auxVars.getNewRegister()
-            RetObj.declaration = paramDec
-            retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${auxVars.getMemoryObjectByLocation(ParamMemObj.Offset.addr, line).asmName})\n`
-            retIsNew = true
-        }
-    } else if (ParamMemObj.type === 'struct') {
-        // Impossible condition because struct variables have their type changed during LOOKUP_ASN processing
-        throw new Error(`At line: ${line}. Strange error. BugReport please.`)
-    } else if (ParamMemObj.type === 'structRef') {
-        if (ParamMemObj.Offset.type === 'constant') {
-            RetObj = auxVars.getNewRegister()
-            RetObj.declaration = paramDec
-            const FlatConstant = flattenMemory(auxVars, utils.createConstantMemObj(ParamMemObj.Offset.value), line)
-            retInstructions += FlatConstant.instructionset
-            retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${FlatConstant.MoldedObj.asmName})\n`
-            if (FlatConstant.isNew) auxVars.freeRegister(FlatConstant.MoldedObj.address)
-            retIsNew = true
-        } else { // ParamMemObj.Offset.type === 'variable') {
-            RetObj = auxVars.getNewRegister()
-            RetObj.declaration = paramDec
-            retInstructions += `SET @${RetObj.asmName} $($${ParamMemObj.asmName} + $${auxVars.getMemoryObjectByLocation(ParamMemObj.Offset.addr, line).asmName})\n`
-            retIsNew = true
-        }
-    } else {
-        throw new TypeError(`At line: ${line}. Not implemented type in flattenMemory(): ParamMemObj.type = '${ParamMemObj.type}'.`)
-    }
-
-    return { MoldedObj: RetObj, instructionset: retInstructions, isNew: retIsNew }
+    return flattenMemoryMain()
 }
 
-// Translate one single instruction from ast to assembly code
-export function createInstruction (auxVars: GENCODE_AUXVARS, objoperator: TOKEN, param1?: MEMORY_SLOT, param2?: MEMORY_SLOT, rLogic?:boolean, jpFalse?: string, jpTrue?:string) : string {
+/** Translate one single instruction from ast to assembly code */
+export function createInstruction (auxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, param1?: MEMORY_SLOT, param2?: MEMORY_SLOT, rLogic?:boolean, jpFalse?: string, jpTrue?:string) : string {
     let retinstr = ''
 
-    if (objoperator.type === 'Assignment') {
-        return assignmentToAsm(auxVars, objoperator, param1, param2, rLogic, jpFalse, jpTrue)
-    }
-
-    if (objoperator.type === 'Operator' || objoperator.type === 'SetOperator') {
-        return operatorToAsm(auxVars, objoperator, param1, param2, rLogic, jpFalse, jpTrue)
-    }
-
-    if (objoperator.type === 'UnaryOperator' || objoperator.type === 'SetUnaryOperator') {
-        return unaryOperatorToAsm(auxVars, objoperator, param1, param2, rLogic, jpFalse, jpTrue)
-    }
-
-    if (objoperator.type === 'Comparision') {
-        return comparisionToAsm(auxVars, objoperator, param1, param2, rLogic, jpFalse, jpTrue)
-    }
-
-    if (objoperator.type === 'Push') {
+    switch (OperatorToken.type) {
+    case 'Assignment':
+        return assignmentToAsm(auxVars, assertNotUndefined(param1), assertNotUndefined(param2), OperatorToken.line)
+    case 'Operator':
+    case 'SetOperator':
+        return operatorToAsm(auxVars, OperatorToken, param1, param2, rLogic, jpFalse, jpTrue)
+    case 'UnaryOperator':
+    case 'SetUnaryOperator':
+        return unaryOperatorToAsm(auxVars, OperatorToken, param1, param2, rLogic, jpFalse, jpTrue)
+    case 'Comparision':
+        return comparisionToAsm(auxVars, OperatorToken, param1, param2, rLogic, jpFalse, jpTrue)
+    case 'Push': {
         if (param1 === undefined) {
-            throw new TypeError(`At line: ${objoperator.line}. Missing parameter for PSH. BugReport please.`)
+            throw new TypeError(`At line: ${OperatorToken.line}. Missing parameter for PSH. BugReport please.`)
         }
-
-        const TmpMemObj = flattenMemory(auxVars, param1, objoperator.line)
-        retinstr += TmpMemObj.instructionset
-        retinstr += 'PSH $' + TmpMemObj.MoldedObj.asmName + '\n'
-
+        const TmpMemObj = flattenMemory(auxVars, param1, OperatorToken.line)
+        retinstr += TmpMemObj.asmCode
+        retinstr += 'PSH $' + TmpMemObj.FlatMem.asmName + '\n'
         if (TmpMemObj.isNew === true) {
-            auxVars.freeRegister(TmpMemObj.MoldedObj.address)
+            auxVars.freeRegister(TmpMemObj.FlatMem.address)
         }
         return retinstr
     }
-
-    if (objoperator.type === 'Keyword') {
-        return keywordToAsm(auxVars, objoperator, param1, param2, rLogic, jpFalse, jpTrue)
+    case 'Keyword':
+        return keywordToAsm(auxVars, OperatorToken, param1, param2, rLogic, jpFalse, jpTrue)
+    default:
+        throw new TypeError(`Internal error at line: ${OperatorToken.line}.`)
     }
-    throw new TypeError('At line: ' + objoperator.line + '. ' + objoperator.type + ' not supported')
 }

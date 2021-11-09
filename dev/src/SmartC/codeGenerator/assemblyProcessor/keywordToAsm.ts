@@ -31,18 +31,18 @@ export function keywordToAsm (auxVars: GENCODE_AUXVARS, objoperator: TOKEN, para
 
         let retinstr = ''
         const TmpMemObj = flattenMemory(auxVars, param1, objoperator.line)
-        retinstr += TmpMemObj.instructionset
+        retinstr += TmpMemObj.asmCode
 
         if (objoperator.value === 'return') {
-            retinstr += 'PSH $' + TmpMemObj.MoldedObj.asmName + '\n'
+            retinstr += 'PSH $' + TmpMemObj.FlatMem.asmName + '\n'
             retinstr += 'RET\n'
         } else if (objoperator.value === 'sleep') {
-            retinstr += 'SLP $' + TmpMemObj.MoldedObj.asmName + '\n'
+            retinstr += 'SLP $' + TmpMemObj.FlatMem.asmName + '\n'
         }
 
         auxVars.freeRegister(param1.address)
         if (TmpMemObj.isNew === true) {
-            auxVars.freeRegister(TmpMemObj.MoldedObj.address)
+            auxVars.freeRegister(TmpMemObj.FlatMem.address)
         }
         return retinstr
     }

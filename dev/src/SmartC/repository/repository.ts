@@ -41,7 +41,7 @@ export function assertNotEqual<T> (argument: T | undefined, param: T, errorMessa
  * @returns true
  * @throws {TypeError} if expression is false
  */
-export function assertExpression (argument: boolean, errorMessage: string): void {
+export function assertExpression (argument: boolean, errorMessage: string = 'Internal error.'): void {
     if (!argument) {
         throw new TypeError(errorMessage)
     }
