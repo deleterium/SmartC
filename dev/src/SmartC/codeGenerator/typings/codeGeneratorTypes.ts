@@ -1,14 +1,14 @@
 import { CONTRACT, SC_FUNCTION } from '../../typings/contractTypes'
 import { AST, DECLARATION_TYPES, MEMORY_SLOT } from '../../typings/syntaxTypes'
 
-export interface GENCODE_SOLVED_OBJECT {
+export type GENCODE_SOLVED_OBJECT = {
     /** Memory object representing solved AST */
     SolvedMem: MEMORY_SLOT
     /** Assembly sourcecode needed to solve AST */
     asmCode: string
 }
 
-export interface GENCODE_ARGS {
+export type GENCODE_ARGS = {
     /** AST to traverse */
     RemAST: AST,
     /** true if wanted return object to be suitable for logical operations */
@@ -21,7 +21,7 @@ export interface GENCODE_ARGS {
     jumpTrue?: string
 }
 
-export interface CODEGENERATE_AUXVARS {
+export type CODEGENERATE_AUXVARS = {
     /** Holds incoming program. To be read-only */
     Program: CONTRACT
     /** Stack saving loops IDs */
@@ -39,13 +39,15 @@ export interface CODEGENERATE_AUXVARS {
     /** Query the value of last loop id */
     getLatestLoopID(): string
 }
-export interface CODEGEN_INFO {
+
+export type CODEGEN_INFO = {
     InitialAST?: AST
     initialJumpTarget?: string
     initialJumpNotTarget?:string
     initialIsReversedLogic?: boolean
 }
-export interface GENCODE_AUXVARS {
+
+export type GENCODE_AUXVARS = {
     /** Current function, or undefined if Global code */
     CurrentFunction: SC_FUNCTION | undefined
     /** A copy of memory that will be used and modified by codeGenerator */

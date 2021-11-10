@@ -5,7 +5,9 @@ import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings
 import { utils } from '../utils'
 import { genCode } from './genCode'
 
-export function endAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS) : GENCODE_SOLVED_OBJECT {
+export function endAsnProcessor (
+    Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
+) : GENCODE_SOLVED_OBJECT {
     let currentNode: END_ASN
 
     function endAsnProcessorMain () : GENCODE_SOLVED_OBJECT {
@@ -57,18 +59,30 @@ export function endAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, Sc
                 logicalOp: false,
                 revLogic: ScopeInfo.revLogic
             })
-            asmCode += createInstruction(AuxVars, utils.genNotEqualToken(), SolvedMem, utils.createConstantMemObj(0), ScopeInfo.revLogic, ScopeInfo.jumpFalse, ScopeInfo.jumpTrue)
+            asmCode += createInstruction(
+                AuxVars,
+                utils.genNotEqualToken(),
+                SolvedMem,
+                utils.createConstantMemObj(0),
+                ScopeInfo.revLogic,
+                ScopeInfo.jumpFalse,
+                ScopeInfo.jumpTrue
+            )
             AuxVars.freeRegister(SolvedMem.address)
             return { SolvedMem: utils.createVoidMemObj(), asmCode: asmCode }
         }
-        const retMemObj = AuxVars.getMemoryObjectByName(currentNode.Token.value, currentNode.Token.line, AuxVars.isDeclaration)
+        const retMemObj = AuxVars.getMemoryObjectByName(
+            currentNode.Token.value,
+            currentNode.Token.line,
+            AuxVars.isDeclaration
+        )
         return { SolvedMem: retMemObj, asmCode: '' }
     }
 
     function keywordProc () : GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.logicalOp) {
-            throw new TypeError(`Internal error at line: ${currentNode.Token.line}. ` +
-                `Invalid use of keyword '${currentNode.Token.value}'.`)
+            throw new Error(`Internal error at line: ${currentNode.Token.line}. ` +
+            `Invalid use of keyword '${currentNode.Token.value}'.`)
         }
         switch (currentNode.Token.value) {
         case 'break':
@@ -84,13 +98,13 @@ export function endAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, Sc
         case 'return':
             // this is 'return;'
             if (AuxVars.CurrentFunction === undefined) {
-                throw new TypeError(`At line: ${currentNode.Token.line}.` +
-                    " Can not use 'return' in global statements.")
+                throw new Error(`At line: ${currentNode.Token.line}.` +
+                " Can not use 'return' in global statements.")
             }
             if (AuxVars.CurrentFunction.declaration !== 'void') {
-                throw new TypeError(`At line: ${currentNode.Token.line}.` +
-                    ` Function '${AuxVars.CurrentFunction.name}'` +
-                    ` must return a '${AuxVars.CurrentFunction.declaration}' value.`)
+                throw new Error(`At line: ${currentNode.Token.line}.` +
+                ` Function '${AuxVars.CurrentFunction.name}'` +
+                ` must return a '${AuxVars.CurrentFunction.declaration}' value.`)
             }
             if (AuxVars.CurrentFunction.name === 'main' || AuxVars.CurrentFunction.name === 'catch') {
                 return {

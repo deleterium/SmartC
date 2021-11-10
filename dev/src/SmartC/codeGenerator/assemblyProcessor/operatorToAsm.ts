@@ -10,10 +10,7 @@ import { createInstruction, flattenMemory } from './createInstruction'
  * @returns the assembly code necessary for the assignment to happen
  */
 export function operatorToAsm (
-    AuxVars: GENCODE_AUXVARS,
-    OperatorToken: TOKEN,
-    LeftMem: MEMORY_SLOT,
-    RightMem: MEMORY_SLOT
+    AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, LeftMem: MEMORY_SLOT, RightMem: MEMORY_SLOT
 ) : string {
     const FlatLeft = flattenMemory(AuxVars, LeftMem, OperatorToken.line)
     const FlatRight = flattenMemory(AuxVars, RightMem, OperatorToken.line)

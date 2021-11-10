@@ -4,14 +4,16 @@ import { createInstruction } from '../assemblyProcessor/createInstruction'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings/codeGeneratorTypes'
 import { genCode } from './genCode'
 
-export function exceptionAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS): GENCODE_SOLVED_OBJECT {
+export function exceptionAsnProcessor (
+    Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
+) : GENCODE_SOLVED_OBJECT {
     if (ScopeInfo.RemAST.type !== 'exceptionASN') {
-        throw new TypeError('Internal error.')
+        throw new Error('Internal error.')
     }
     const CurrentNode = ScopeInfo.RemAST
     if (ScopeInfo.jumpFalse !== undefined) {
         throw new SyntaxError(`At line: ${CurrentNode.Operation.line}.` +
-            ' Can not use SetUnaryOperator (++ or --) during logical operations with branches')
+        ' Can not use SetUnaryOperator (++ or --) during logical operations with branches')
     }
     if (CurrentNode.Left !== undefined) {
         const LGenObj = genCode(Program, AuxVars, {

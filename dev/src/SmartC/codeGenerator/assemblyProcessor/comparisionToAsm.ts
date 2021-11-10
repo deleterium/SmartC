@@ -6,13 +6,8 @@ import { flattenMemory } from './createInstruction'
  * @returns the assembly code necessary for branch operations
  */
 export function comparisionToAsm (
-    AuxVars: GENCODE_AUXVARS,
-    OperatorToken: TOKEN,
-    LeftMem: MEMORY_SLOT,
-    RightMem: MEMORY_SLOT,
-    rLogic:boolean,
-    jpFalse: string,
-    jpTrue:string
+    AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, LeftMem: MEMORY_SLOT, RightMem: MEMORY_SLOT,
+    rLogic:boolean, jpFalse: string, jpTrue:string
 ): string {
     let assemblyCode = ''
     let jumpToLabel = jpFalse

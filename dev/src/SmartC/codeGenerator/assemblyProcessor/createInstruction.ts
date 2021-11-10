@@ -79,10 +79,7 @@ export function createSimpleInstruction (instruction: string, param1: string = '
 
 /** Create assembly code for one api function call */
 export function createAPICallInstruction (
-    AstAuxVars: GENCODE_AUXVARS,
-    ApiToken: TOKEN,
-    RetMem: MEMORY_SLOT,
-    argsMem: MEMORY_SLOT[]
+    AstAuxVars: GENCODE_AUXVARS, ApiToken: TOKEN, RetMem: MEMORY_SLOT, argsMem: MEMORY_SLOT[]
 ) : string {
     let assemblyCode = ''
     const tempArgsMem: MEMORY_SLOT[] = []
@@ -109,9 +106,7 @@ export function createAPICallInstruction (
  * conversion and a boolean to indicate if it is a new object (that must be free later on).
 */
 export function flattenMemory (
-    AuxVars: GENCODE_AUXVARS,
-    StuffedMemory: MEMORY_SLOT,
-    line: number
+    AuxVars: GENCODE_AUXVARS, StuffedMemory: MEMORY_SLOT, line: number
 ) : FLATTEN_MEMORY_RETURN_OBJECT {
     const paramDec = utils.getDeclarationFromMemory(StuffedMemory)
 
@@ -199,13 +194,8 @@ export function flattenMemory (
 
 /** Translate one single instruction from ast to assembly code */
 export function createInstruction (
-    AuxVars: GENCODE_AUXVARS,
-    OperatorToken: TOKEN,
-    MemParam1?: MEMORY_SLOT,
-    MemParam2?: MEMORY_SLOT,
-    rLogic?:boolean,
-    jpFalse?: string,
-    jpTrue?:string
+    AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, MemParam1?: MEMORY_SLOT, MemParam2?: MEMORY_SLOT,
+    rLogic?:boolean, jpFalse?: string, jpTrue?:string
 ) : string {
     switch (OperatorToken.type) {
     case 'Assignment':

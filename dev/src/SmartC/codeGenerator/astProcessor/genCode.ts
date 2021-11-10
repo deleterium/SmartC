@@ -13,7 +13,9 @@ import { lookupAsnProcessor } from './lookupAsn'
 import { unaryAsnProcessor } from './unaryAsn'
 
 /** Manages the functions to process Abstract Syntax Nodes */
-export function genCode (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS): GENCODE_SOLVED_OBJECT {
+export function genCode (
+    Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
+) : GENCODE_SOLVED_OBJECT {
     switch (ScopeInfo.RemAST.type) {
     case 'nullASN':
         return { SolvedMem: utils.createVoidMemObj(), asmCode: '' }

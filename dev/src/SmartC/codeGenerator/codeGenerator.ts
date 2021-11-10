@@ -269,7 +269,7 @@ export function codeGenerate (incomingProgram: CONTRACT) {
         }
     }
 
-    function setupGenCode (CodeGenInfo: CODEGEN_INFO, sentenceLine: number /* cgAST?: AST, jumpTarget?: string, jumpNotTarget?:string, isReversedLogic?: boolean */): string {
+    function setupGenCode (CodeGenInfo: CODEGEN_INFO, sentenceLine: number) : string {
         const auxVars: GENCODE_AUXVARS = {
             CurrentFunction: incomingProgram.functions[generateUtils.currFunctionIndex],
             memory: incomingProgram.memory,
@@ -291,7 +291,8 @@ export function codeGenerate (incomingProgram: CONTRACT) {
             getNewRegister (line: number = sentenceLine) {
                 const id = this.registerInfo.find(OBJ => OBJ.inUse === false)
                 if (id === undefined) {
-                    throw new RangeError(`At line: ${line}. No more registers available. Try to reduce nested operations or increase 'maxAuxVars'.`)
+                    throw new RangeError(`At line: ${line}. ` +
+                    "No more registers available. Try to reduce nested operations or increase 'maxAuxVars'.")
                 }
                 id.inUse = true
                 return deepCopy(id.Template)
@@ -309,10 +310,14 @@ export function codeGenerate (incomingProgram: CONTRACT) {
                 this.postOperations = ''
                 return ret
             },
-            getMemoryObjectByName (varName: string, line: number = sentenceLine, varDeclaration: DECLARATION_TYPES = ''): MEMORY_SLOT {
+            getMemoryObjectByName (
+                varName: string, line: number = sentenceLine, varDeclaration: DECLARATION_TYPES = ''
+            ) : MEMORY_SLOT {
                 let MemFound: MEMORY_SLOT | undefined
                 if (this.CurrentFunction !== undefined) { // find function scope variable
-                    MemFound = this.memory.find(obj => obj.name === varName && obj.scope === this.CurrentFunction?.name)
+                    MemFound = this.memory.find(obj => {
+                        return obj.name === varName && obj.scope === this.CurrentFunction?.name
+                    })
                 }
                 if (MemFound === undefined) {
                     // do a global scope search
@@ -389,7 +394,8 @@ export function codeGenerate (incomingProgram: CONTRACT) {
             // optimizations for jumps and labels
             if (code.asmCode.indexOf(':') >= 0) {
                 if (CodeGenInfo.InitialAST.type === 'endASN') {
-                    if (CodeGenInfo.InitialAST.Token.type === 'Keyword' && CodeGenInfo.InitialAST.Token.value === 'label') {
+                    if (CodeGenInfo.InitialAST.Token.type === 'Keyword' &&
+                        CodeGenInfo.InitialAST.Token.value === 'label') {
                         return code.asmCode // do not optimize!!!
                     }
                 }
@@ -399,10 +405,14 @@ export function codeGenerate (incomingProgram: CONTRACT) {
         }
 
         function validateReturnedVariable (InitAST: AST, RetObj: MEMORY_SLOT) {
-            if (incomingProgram.Config.warningToError && CodeGenInfo.initialJumpTarget === undefined && RetObj.type === 'register') {
+            if (incomingProgram.Config.warningToError &&
+                CodeGenInfo.initialJumpTarget === undefined &&
+                RetObj.type === 'register') {
                 if ((InitAST.type === 'unaryASN' && InitAST.Operation.value !== '*') ||
-                    (InitAST.type === 'binaryASN' && (InitAST.Operation.type === 'Comparision' || InitAST.Operation.type === 'Operator'))) {
-                    throw new TypeError(`At line: ${InitAST.Operation.line}. Warning: Operation returning a value that is not being used.`)
+                    (InitAST.type === 'binaryASN' &&
+                        (InitAST.Operation.type === 'Comparision' || InitAST.Operation.type === 'Operator'))) {
+                    throw new TypeError(`At line: ${InitAST.Operation.line}. ` +
+                    'Warning: Operation returning a value that is not being used.')
                 }
             }
         }

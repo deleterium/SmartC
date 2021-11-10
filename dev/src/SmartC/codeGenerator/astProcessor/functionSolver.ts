@@ -1,17 +1,21 @@
 import { assertNotUndefined } from '../../repository/repository'
 import { CONTRACT, SC_FUNCTION } from '../../typings/contractTypes'
 import { LOOKUP_ASN, AST, MEMORY_SLOT } from '../../typings/syntaxTypes'
-import { createSimpleInstruction, createInstruction, createAPICallInstruction } from '../assemblyProcessor/createInstruction'
+import {
+    createSimpleInstruction, createInstruction, createAPICallInstruction
+} from '../assemblyProcessor/createInstruction'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings/codeGeneratorTypes'
 import { utils } from '../utils'
 import { genCode } from './genCode'
 
-export function functionSolver (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS): GENCODE_SOLVED_OBJECT {
+export function functionSolver (
+    Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
+) : GENCODE_SOLVED_OBJECT {
     let CurrentNode: LOOKUP_ASN
 
     function functionSolverMain (): GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.RemAST.type !== 'lookupASN' || ScopeInfo.RemAST.Token.type !== 'Function') {
-            throw new TypeError('Internal error.')
+            throw new Error('Internal error.')
         }
         CurrentNode = ScopeInfo.RemAST
         const fnName = assertNotUndefined(CurrentNode.Token.extValue)
@@ -24,7 +28,7 @@ export function functionSolver (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, Sco
         if (ApiToCall) {
             return apiFunctionSolver(ApiToCall, subSentences)
         }
-        throw new TypeError(`At line: ${CurrentNode.Token.line}. Function '${fnName}' not declared.`)
+        throw new Error(`At line: ${CurrentNode.Token.line}. Function '${fnName}' not declared.`)
     }
 
     function userFunctionSolver (FunctionToCall: SC_FUNCTION, rawArgs: AST[]) : GENCODE_SOLVED_OBJECT {
@@ -49,7 +53,7 @@ export function functionSolver (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, Sco
             rawArgs.pop()
         }
         if (rawArgs.length !== FunctionToCall.argsMemObj.length) {
-            throw new TypeError(`At line: ${CurrentNode.Token.line}.` +
+            throw new Error(`At line: ${CurrentNode.Token.line}.` +
             ` Wrong number of arguments for function '${FunctionToCall.name}'.` +
             ` It must have '${FunctionToCall.argsMemObj.length}' args.`)
         }
@@ -63,7 +67,7 @@ export function functionSolver (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, Sco
             const fnArg = FunctionToCall.argsMemObj[i]
             if (utils.isNotValidDeclarationOp(fnArg.declaration, ArgGenObj.SolvedMem)) {
                 if (Program.Config.warningToError) {
-                    throw new TypeError(`At line: ${CurrentNode.Token.line}.` +
+                    throw new Error(`At line: ${CurrentNode.Token.line}.` +
                     ` Warning: Function parameter type is different from variable: '${fnArg.declaration}'` +
                     ` and '${ArgGenObj.SolvedMem.declaration}'.`)
                 }
@@ -71,7 +75,11 @@ export function functionSolver (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, Sco
                 utils.setMemoryDeclaration(ArgGenObj.SolvedMem, fnArg.declaration)
             }
             returnAssemblyCode += ArgGenObj.asmCode
-            returnAssemblyCode += createInstruction(AuxVars, utils.genPushToken(CurrentNode.Token.line), ArgGenObj.SolvedMem)
+            returnAssemblyCode += createInstruction(
+                AuxVars,
+                utils.genPushToken(CurrentNode.Token.line),
+                ArgGenObj.SolvedMem
+            )
             AuxVars.freeRegister(ArgGenObj.SolvedMem.address)
         }
         // Create instruction
@@ -99,11 +107,11 @@ export function functionSolver (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, Sco
         return { SolvedMem: FnRetObj, asmCode: returnAssemblyCode }
     }
 
-    function apiFunctionSolver (apiToCall: SC_FUNCTION, rawArgs: AST[]) : GENCODE_SOLVED_OBJECT {
+    function apiFunctionSolver (ApiToCall: SC_FUNCTION, rawArgs: AST[]) : GENCODE_SOLVED_OBJECT {
         let FnRetObj: MEMORY_SLOT
         const processedArgs: MEMORY_SLOT [] = []
         let returnAssemblyCode = ''
-        if (apiToCall.declaration === 'void') {
+        if (ApiToCall.declaration === 'void') {
             FnRetObj = utils.createVoidMemObj()
         } else {
             FnRetObj = AuxVars.getNewRegister() // reserve tempvar for return type
@@ -111,21 +119,21 @@ export function functionSolver (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, Sco
         if (rawArgs[0].type === 'nullASN') {
             rawArgs.pop()
         }
-        if (rawArgs.length !== apiToCall.argsMemObj.length) {
-            throw new TypeError(`At line: ${CurrentNode.Token.line}.` +
-            ` Wrong number of arguments for function '${apiToCall.name}'.` +
-            ` It must have '${apiToCall.argsMemObj.length}' args.`)
+        if (rawArgs.length !== ApiToCall.argsMemObj.length) {
+            throw new Error(`At line: ${CurrentNode.Token.line}.` +
+            ` Wrong number of arguments for function '${ApiToCall.name}'.` +
+            ` It must have '${ApiToCall.argsMemObj.length}' args.`)
         }
-        rawArgs.forEach(rawSentence => {
+        rawArgs.forEach(RawSentence => {
             const ArgGenObj = genCode(Program, AuxVars, {
-                RemAST: rawSentence,
+                RemAST: RawSentence,
                 logicalOp: false,
                 revLogic: false
             })
             returnAssemblyCode += ArgGenObj.asmCode
             if (utils.getDeclarationFromMemory(ArgGenObj.SolvedMem) !== 'long') {
                 if (Program.Config.warningToError) {
-                    throw new TypeError(`At line: ${CurrentNode.Token.line}.` +
+                    throw new Error(`At line: ${CurrentNode.Token.line}.` +
                     ' Warning: API Function parameter type is different from variable: ' +
                     ` 'long' and '${ArgGenObj.SolvedMem.declaration}'.`)
                 }
@@ -134,7 +142,12 @@ export function functionSolver (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, Sco
             }
             processedArgs.push(ArgGenObj.SolvedMem)
         })
-        returnAssemblyCode += createAPICallInstruction(AuxVars, utils.genAPICallToken(CurrentNode.Token.line, apiToCall.asmName), FnRetObj, processedArgs)
+        returnAssemblyCode += createAPICallInstruction(
+            AuxVars,
+            utils.genAPICallToken(CurrentNode.Token.line, ApiToCall.asmName),
+            FnRetObj,
+            processedArgs
+        )
         processedArgs.forEach(varnm => AuxVars.freeRegister(varnm.address))
         return { SolvedMem: FnRetObj, asmCode: returnAssemblyCode }
     }

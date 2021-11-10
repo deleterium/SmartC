@@ -1,26 +1,34 @@
 import { assertNotUndefined } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
-import { MEMORY_SLOT, ARRAY_TYPE_DEFINITION, STRUCT_TYPE_DEFINITION, DECLARATION_TYPES, LOOKUP_ASN, TOKEN_MODIFIER } from '../../typings/syntaxTypes'
+import {
+    MEMORY_SLOT, ARRAY_TYPE_DEFINITION, STRUCT_TYPE_DEFINITION, DECLARATION_TYPES, LOOKUP_ASN, TOKEN_MODIFIER
+} from '../../typings/syntaxTypes'
 import { createInstruction } from '../assemblyProcessor/createInstruction'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings/codeGeneratorTypes'
 import { utils } from '../utils'
 import { functionSolver } from './functionSolver'
 import { genCode } from './genCode'
 
-export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS): GENCODE_SOLVED_OBJECT {
+export function lookupAsnProcessor (
+    Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
+) : GENCODE_SOLVED_OBJECT {
     let arrayIndex = -1
     let CurrentNode: LOOKUP_ASN
 
     function lookupAsnProcessorMain () : GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.RemAST.type !== 'lookupASN') {
-            throw new TypeError('Internal error.')
+            throw new Error('Internal error.')
         }
         CurrentNode = ScopeInfo.RemAST
         let StartObj: GENCODE_SOLVED_OBJECT
         switch (CurrentNode.Token.type) {
         case 'Variable':
             StartObj = {
-                SolvedMem: AuxVars.getMemoryObjectByName(CurrentNode.Token.value, CurrentNode.Token.line, AuxVars.isDeclaration),
+                SolvedMem: AuxVars.getMemoryObjectByName(
+                    CurrentNode.Token.value,
+                    CurrentNode.Token.line,
+                    AuxVars.isDeclaration
+                ),
                 asmCode: ''
             }
             break
@@ -28,27 +36,37 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             StartObj = functionSolver(Program, AuxVars, ScopeInfo)
             break
         default:
-            throw new TypeError(`Internal error at line: ${CurrentNode.Token.line}.` +
-                ` Modifiers on '${CurrentNode.Token.type}' not implemmented.`)
+            throw new Error(`Internal error at line: ${CurrentNode.Token.line}.` +
+            ` Modifiers on '${CurrentNode.Token.type}' not implemmented.`)
         }
         if (CurrentNode.modifiers.length !== 0 && StartObj.SolvedMem.type === 'void') {
-            throw new TypeError(`At line: ${CurrentNode.Token.line}.` +
-                ' Function returning void value can not have modifiers.')
+            throw new Error(`At line: ${CurrentNode.Token.line}.` +
+            ' Function returning void value can not have modifiers.')
         }
         const EndObj = CurrentNode.modifiers.reduce(modifierProcessor, StartObj)
         if (ScopeInfo.logicalOp === true) {
             if (EndObj.SolvedMem.type === 'void') {
-                throw new TypeError(`At line: ${CurrentNode.Token.line}.` +
-                    ' Function returning void value can not be used in conditionals decision.')
+                throw new Error(`At line: ${CurrentNode.Token.line}.` +
+                ' Function returning void value can not be used in conditionals decision.')
             }
-            EndObj.asmCode += createInstruction(AuxVars, utils.genNotEqualToken(), EndObj.SolvedMem, utils.createConstantMemObj(0), ScopeInfo.revLogic, ScopeInfo.jumpFalse, ScopeInfo.jumpTrue)
+            EndObj.asmCode += createInstruction(
+                AuxVars,
+                utils.genNotEqualToken(),
+                EndObj.SolvedMem,
+                utils.createConstantMemObj(0),
+                ScopeInfo.revLogic,
+                ScopeInfo.jumpFalse,
+                ScopeInfo.jumpTrue
+            )
             AuxVars.freeRegister(EndObj.SolvedMem.address)
             return { SolvedMem: utils.createVoidMemObj(), asmCode: EndObj.asmCode }
         }
         return EndObj
     }
 
-    function modifierProcessor (PreviousRetObj: GENCODE_SOLVED_OBJECT, CurrentModifier: TOKEN_MODIFIER) : GENCODE_SOLVED_OBJECT {
+    function modifierProcessor (
+        PreviousRetObj: GENCODE_SOLVED_OBJECT, CurrentModifier: TOKEN_MODIFIER
+    ) : GENCODE_SOLVED_OBJECT {
         switch (CurrentModifier.type) {
         case 'MemberByVal':
         case 'MemberByRef':
@@ -58,10 +76,12 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
         }
     }
 
-    function memberProcessor (Previous: GENCODE_SOLVED_OBJECT, CurrentModifier: TOKEN_MODIFIER) : GENCODE_SOLVED_OBJECT {
+    function memberProcessor (
+        Previous: GENCODE_SOLVED_OBJECT, CurrentModifier: TOKEN_MODIFIER
+    ) : GENCODE_SOLVED_OBJECT {
         if (CurrentModifier.Center.type !== 'Variable') {
-            throw new TypeError(`At line: ${CurrentNode.Token.line}.` +
-                ' Can not use variables as struct members.')
+            throw new Error(`At line: ${CurrentNode.Token.line}.` +
+            ' Can not use variables as struct members.')
         }
         const memberName = CurrentModifier.Center.value
         if (memberName === 'length' && CurrentModifier.type === 'MemberByVal') {
@@ -85,8 +105,8 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
         arrayIndex = -1
         if (CurrentModifier.type === 'MemberByRef') {
             if (utils.getDeclarationFromMemory(Previous.SolvedMem) !== 'struct_ptr') {
-                throw new TypeError(`At line: ${CurrentNode.Token.line}. ` +
-                    ` Variable '${Previous.SolvedMem.name}' not defined as struct pointer. Try to use '.' instead.`)
+                throw new Error(`At line: ${CurrentNode.Token.line}. ` +
+                ` Variable '${Previous.SolvedMem.name}' not defined as struct pointer. Try to use '.' instead.`)
             }
             if (Previous.SolvedMem.Offset === undefined) {
                 Previous.SolvedMem.Offset = {
@@ -103,7 +123,12 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
                     const TmpMemObj = AuxVars.getNewRegister()
                     TmpMemObj.declaration = Previous.SolvedMem.Offset.declaration
                     TmpMemObj.typeDefinition = Previous.SolvedMem.Offset.typeDefinition
-                    Previous.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, Previous.SolvedMem)
+                    Previous.asmCode += createInstruction(
+                        AuxVars,
+                        utils.genAssignmentToken(),
+                        TmpMemObj,
+                        Previous.SolvedMem
+                    )
                     TmpMemObj.Offset = {
                         type: 'constant',
                         value: TypeD.structAccumulatedSize[memberIdx][1],
@@ -121,12 +146,12 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
                 return Previous
             }
             // else Previous.MemObj.Offset.type is "variable"
-            throw new TypeError(`Internal error at line: ${CurrentNode.Token.line}. Inspection needed.`)
+            throw new Error(`Internal error at line: ${CurrentNode.Token.line}. Inspection needed.`)
         }
         // from now on CurrentModifier.type is 'MemberByVal') {
         if (utils.getDeclarationFromMemory(Previous.SolvedMem) === 'struct_ptr') {
-            throw new TypeError(`At line: ${CurrentNode.Token.line}.` +
-                " Using wrong member notation. Try to use '->' instead.")
+            throw new Error(`At line: ${CurrentNode.Token.line}.` +
+            " Using wrong member notation. Try to use '->' instead.")
         }
         if (Previous.SolvedMem.Offset === undefined) {
             Previous.SolvedMem = AuxVars.getMemoryObjectByLocation(Number('0x' + Previous.SolvedMem.hexContent) +
@@ -150,13 +175,13 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
     function memberLengthProc (Memory: MEMORY_SLOT) : GENCODE_SOLVED_OBJECT {
         const TypeD = getArrayTypeDefinition(Memory)
         if (TypeD === undefined) {
-            throw new TypeError(`At line: ${CurrentNode.Token.line}.` +
-                ` Array type definition not found for variable '${Memory.name}'.`)
+            throw new Error(`At line: ${CurrentNode.Token.line}.` +
+            ` Array type definition not found for variable '${Memory.name}'.`)
         }
         const len = TypeD.MemoryTemplate.ArrayItem?.totalSize
         if (len === undefined) {
-            throw new TypeError(`At line: ${CurrentNode.Token.line}.` +
-                ` Array total size not found for '${Memory.name}'.`)
+            throw new Error(`At line: ${CurrentNode.Token.line}.` +
+            ` Array total size not found for '${Memory.name}'.`)
         }
         if (Memory.Offset?.type === 'variable') {
             AuxVars.freeRegister(Memory.Offset.addr)
@@ -176,8 +201,8 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             typeName = Memory.Offset.typeDefinition
         }
         if (typeName === undefined) {
-            throw new TypeError(`At line: ${CurrentNode.Token.line}. ` +
-                `Variable '${Memory.name}' has no struct type definition`)
+            throw new Error(`At line: ${CurrentNode.Token.line}. ` +
+            `Variable '${Memory.name}' has no struct type definition`)
         }
         const StructTypeDefinition = Program.typesDefinitions.find(Obj =>
             Obj.type === 'struct' && Obj.name === typeName
@@ -189,14 +214,16 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
         let memberIdx = -1
         memberIdx = TypeD.structAccumulatedSize.findIndex(item => item[0] === memberName)
         if (memberIdx === -1) {
-            throw new TypeError(`At line: ${CurrentNode.Token.line}. ` +
-                `Member '${memberName}' not found on struct type definition.`)
+            throw new Error(`At line: ${CurrentNode.Token.line}. ` +
+            `Member '${memberName}' not found on struct type definition.`)
         }
         return memberIdx
     }
 
     // Previous object will be updated and returned.
-    function arrayProcessor (Previous: GENCODE_SOLVED_OBJECT, CurrentModifier: TOKEN_MODIFIER) : GENCODE_SOLVED_OBJECT {
+    function arrayProcessor (
+        Previous: GENCODE_SOLVED_OBJECT, CurrentModifier: TOKEN_MODIFIER
+    ) : GENCODE_SOLVED_OBJECT {
         // When dealing multi dimensional arrays, this index will keep increasing
         arrayIndex++
         if (CurrentModifier.type !== 'Array') {
@@ -209,7 +236,9 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             if (Previous.SolvedMem.Offset === undefined) {
                 Previous.SolvedMem.ArrayItem = {
                     type: Previous.SolvedMem.type,
-                    declaration: Previous.SolvedMem.declaration === 'void_ptr' ? 'long' : Previous.SolvedMem.declaration.slice(0, -4) as DECLARATION_TYPES,
+                    declaration: Previous.SolvedMem.declaration === 'void_ptr'
+                        ? 'long'
+                        : Previous.SolvedMem.declaration.slice(0, -4) as DECLARATION_TYPES,
                     typeDefinition: '',
                     totalSize: 0
                 }
@@ -217,7 +246,9 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
                 // Copy information from Offset
                 Previous.SolvedMem.ArrayItem = {
                     type: 'long',
-                    declaration: Previous.SolvedMem.Offset.declaration === 'void_ptr' ? 'long' : Previous.SolvedMem.Offset.declaration.slice(0, -4) as DECLARATION_TYPES,
+                    declaration: Previous.SolvedMem.Offset.declaration === 'void_ptr'
+                        ? 'long'
+                        : Previous.SolvedMem.Offset.declaration.slice(0, -4) as DECLARATION_TYPES,
                     typeDefinition: Previous.SolvedMem.Offset.typeDefinition,
                     totalSize: 0
                 }
@@ -257,8 +288,8 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             return TypeDefinition.arrayMultiplierDim[desiredDimension]
         }
         if (utils.getDeclarationFromMemory(Memory).includes('_ptr') === false) {
-            throw new TypeError(`At line: ${CurrentNode.Token.line}.` +
-                ` Array type definition not found. Is '${Memory}' declared as array or pointer?`)
+            throw new Error(`At line: ${CurrentNode.Token.line}.` +
+            ` Array type definition not found. Is '${Memory}' declared as array or pointer?`)
         }
         return 1 // allow use of array notation on pointer variables.
     }
@@ -270,10 +301,14 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
         if (Memory.Offset) {
             typeDef = Memory.Offset?.typeDefinition
         }
-        return Program.typesDefinitions.find(obj => obj.type === 'array' && obj.name === typeDef) as ARRAY_TYPE_DEFINITION | undefined
+        return Program.typesDefinitions.find(obj => {
+            return obj.type === 'array' && obj.name === typeDef
+        }) as ARRAY_TYPE_DEFINITION | undefined
     }
 
-    function arrProcOffsetUndef (Previous: GENCODE_SOLVED_OBJECT, Param: MEMORY_SLOT, multiplier: number): GENCODE_SOLVED_OBJECT {
+    function arrProcOffsetUndef (
+        Previous: GENCODE_SOLVED_OBJECT, Param: MEMORY_SLOT, multiplier: number
+    ) : GENCODE_SOLVED_OBJECT {
         const paramType = getMemoryType(Param.address)
         let TmpMemObj: MEMORY_SLOT
         if (Previous.SolvedMem.ArrayItem === undefined) {
@@ -295,7 +330,12 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
                 declaration: Previous.SolvedMem.ArrayItem.declaration,
                 typeDefinition: Previous.SolvedMem.ArrayItem.typeDefinition
             }
-            Previous.asmCode += createInstruction(AuxVars, utils.genMulToken(CurrentNode.Token.line), Param, utils.createConstantMemObj(multiplier))
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genMulToken(CurrentNode.Token.line),
+                Param,
+                utils.createConstantMemObj(multiplier)
+            )
             return Previous
         case 'regularVariable':
             if (multiplier === 1) {
@@ -308,7 +348,9 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
                 return Previous
             }
             TmpMemObj = AuxVars.getNewRegister()
-            Previous.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(multiplier))
+            Previous.asmCode += createInstruction(
+                AuxVars, utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(multiplier)
+            )
             Previous.asmCode += createInstruction(AuxVars, utils.genMulToken(CurrentNode.Token.line), TmpMemObj, Param)
             Previous.SolvedMem.Offset = {
                 type: 'variable',
@@ -320,7 +362,9 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
         }
     }
 
-    function arrProcOffsetConstant (Previous: GENCODE_SOLVED_OBJECT, Param: MEMORY_SLOT, multiplier: number): GENCODE_SOLVED_OBJECT {
+    function arrProcOffsetConstant (
+        Previous: GENCODE_SOLVED_OBJECT, Param: MEMORY_SLOT, multiplier: number
+    ) : GENCODE_SOLVED_OBJECT {
         const paramType = getMemoryType(Param.address)
         let TmpMemObj: MEMORY_SLOT
         if (Previous.SolvedMem.ArrayItem === undefined || Previous.SolvedMem.Offset?.type !== 'constant') {
@@ -333,8 +377,18 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             Previous.SolvedMem.Offset.typeDefinition = Previous.SolvedMem.ArrayItem.typeDefinition
             return Previous
         case 'register':
-            Previous.asmCode += createInstruction(AuxVars, utils.genMulToken(CurrentNode.Token.line), Param, utils.createConstantMemObj(multiplier))
-            Previous.asmCode += createInstruction(AuxVars, utils.genAddToken(CurrentNode.Token.line), Param, utils.createConstantMemObj(Previous.SolvedMem.Offset.value))
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genMulToken(CurrentNode.Token.line),
+                Param,
+                utils.createConstantMemObj(multiplier)
+            )
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genAddToken(CurrentNode.Token.line),
+                Param,
+                utils.createConstantMemObj(Previous.SolvedMem.Offset.value)
+            )
             Previous.SolvedMem.Offset = {
                 type: 'variable',
                 addr: Param.address,
@@ -354,8 +408,18 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             }
             TmpMemObj = AuxVars.getNewRegister()
             Previous.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, Param)
-            Previous.asmCode += createInstruction(AuxVars, utils.genMulToken(CurrentNode.Token.line), TmpMemObj, utils.createConstantMemObj(multiplier))
-            Previous.asmCode += createInstruction(AuxVars, utils.genAddToken(CurrentNode.Token.line), TmpMemObj, utils.createConstantMemObj(Previous.SolvedMem.Offset.value))
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genMulToken(CurrentNode.Token.line),
+                TmpMemObj,
+                utils.createConstantMemObj(multiplier)
+            )
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genAddToken(CurrentNode.Token.line),
+                TmpMemObj,
+                utils.createConstantMemObj(Previous.SolvedMem.Offset.value)
+            )
             Previous.SolvedMem.Offset = {
                 type: 'variable',
                 addr: TmpMemObj.address,
@@ -366,7 +430,9 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
         }
     }
 
-    function arrProcOffsetRegister (Previous: GENCODE_SOLVED_OBJECT, Param: MEMORY_SLOT, multiplier: number): GENCODE_SOLVED_OBJECT {
+    function arrProcOffsetRegister (
+        Previous: GENCODE_SOLVED_OBJECT, Param: MEMORY_SLOT, multiplier: number
+    ) : GENCODE_SOLVED_OBJECT {
         const paramType = getMemoryType(Param.address)
         let TmpMemObj: MEMORY_SLOT
         if (Previous.SolvedMem.Offset === undefined || Previous.SolvedMem.Offset.type !== 'variable') {
@@ -375,29 +441,61 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
         switch (paramType) {
         case 'constant': {
             multiplier *= Number('0x' + Param.hexContent)
-            Previous.asmCode += createInstruction(AuxVars, utils.genAddToken(CurrentNode.Token.line), AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line), utils.createConstantMemObj(multiplier))
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genAddToken(CurrentNode.Token.line),
+                AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line),
+                utils.createConstantMemObj(multiplier)
+            )
             return Previous
         }
         case 'register':
-            Previous.asmCode += createInstruction(AuxVars, utils.genMulToken(CurrentNode.Token.line), Param, utils.createConstantMemObj(multiplier))
-            Previous.asmCode += createInstruction(AuxVars, utils.genAddToken(CurrentNode.Token.line), AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line), Param)
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genMulToken(CurrentNode.Token.line),
+                Param,
+                utils.createConstantMemObj(multiplier)
+            )
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genAddToken(CurrentNode.Token.line),
+                AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line),
+                Param
+            )
             AuxVars.freeRegister(Param.address)
             return Previous
         case 'regularVariable':
             if (multiplier === 1) {
-                Previous.asmCode += createInstruction(AuxVars, utils.genAddToken(CurrentNode.Token.line), AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line), Param)
+                Previous.asmCode += createInstruction(
+                    AuxVars,
+                    utils.genAddToken(CurrentNode.Token.line),
+                    AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line),
+                    Param
+                )
                 return Previous
             }
             TmpMemObj = AuxVars.getNewRegister()
             Previous.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, Param)
-            Previous.asmCode += createInstruction(AuxVars, utils.genMulToken(CurrentNode.Token.line), TmpMemObj, utils.createConstantMemObj(multiplier))
-            Previous.asmCode += createInstruction(AuxVars, utils.genAddToken(CurrentNode.Token.line), AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line), TmpMemObj)
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genMulToken(CurrentNode.Token.line),
+                TmpMemObj,
+                utils.createConstantMemObj(multiplier)
+            )
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genAddToken(CurrentNode.Token.line),
+                AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line),
+                TmpMemObj
+            )
             AuxVars.freeRegister(TmpMemObj.address)
             return Previous
         }
     }
 
-    function arrProcOffsetVariable (Previous: GENCODE_SOLVED_OBJECT, Param: MEMORY_SLOT, multiplier: number): GENCODE_SOLVED_OBJECT {
+    function arrProcOffsetVariable (
+        Previous: GENCODE_SOLVED_OBJECT, Param: MEMORY_SLOT, multiplier: number
+    ) : GENCODE_SOLVED_OBJECT {
         const paramType = getMemoryType(Param.address)
         let TmpMemObj: MEMORY_SLOT
         if (Previous.SolvedMem.Offset?.type !== 'variable') {
@@ -409,21 +507,55 @@ export function lookupAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
                 return Previous
             }
             TmpMemObj = AuxVars.getNewRegister()
-            Previous.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(Param.hexContent))
-            Previous.asmCode += createInstruction(AuxVars, utils.genMulToken(CurrentNode.Token.line), TmpMemObj, utils.createConstantMemObj(multiplier))
-            Previous.asmCode += createInstruction(AuxVars, utils.genAddToken(CurrentNode.Token.line), TmpMemObj, AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line))
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genAssignmentToken(),
+                TmpMemObj,
+                utils.createConstantMemObj(Param.hexContent)
+            )
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genMulToken(CurrentNode.Token.line),
+                TmpMemObj,
+                utils.createConstantMemObj(multiplier)
+            )
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genAddToken(CurrentNode.Token.line),
+                TmpMemObj,
+                AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line)
+            )
             Previous.SolvedMem.Offset.addr = TmpMemObj.address
             return Previous
         case 'register':
-            Previous.asmCode += createInstruction(AuxVars, utils.genMulToken(CurrentNode.Token.line), Param, utils.createConstantMemObj(multiplier))
-            Previous.asmCode += createInstruction(AuxVars, utils.genAddToken(CurrentNode.Token.line), Param, AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line))
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genMulToken(CurrentNode.Token.line),
+                Param, utils.createConstantMemObj(multiplier)
+            )
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genAddToken(CurrentNode.Token.line),
+                Param,
+                AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line)
+            )
             Previous.SolvedMem.Offset.addr = Param.address
             return Previous
         case 'regularVariable':
             TmpMemObj = AuxVars.getNewRegister()
             Previous.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, Param)
-            Previous.asmCode += createInstruction(AuxVars, utils.genMulToken(CurrentNode.Token.line), TmpMemObj, utils.createConstantMemObj(multiplier))
-            Previous.asmCode += createInstruction(AuxVars, utils.genAddToken(CurrentNode.Token.line), TmpMemObj, AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line))
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genMulToken(CurrentNode.Token.line),
+                TmpMemObj,
+                utils.createConstantMemObj(multiplier)
+            )
+            Previous.asmCode += createInstruction(
+                AuxVars,
+                utils.genAddToken(CurrentNode.Token.line),
+                TmpMemObj,
+                AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line)
+            )
             Previous.SolvedMem.Offset.addr = TmpMemObj.address
             return Previous
         }

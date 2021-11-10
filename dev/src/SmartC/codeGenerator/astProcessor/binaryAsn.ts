@@ -6,12 +6,16 @@ import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings
 import { utils } from '../utils'
 import { genCode } from './genCode'
 
-export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS): GENCODE_SOLVED_OBJECT {
-    let instructionstrain = ''
+/** Process one binary abstract syntax node */
+export function binaryAsnProcessor (
+    Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
+) : GENCODE_SOLVED_OBJECT {
+    let assemblyCode = ''
     let CurrentNode : BINARY_ASN
+
     function binaryAsnProcessorMain () : GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.RemAST.type !== 'binaryASN') {
-            throw new TypeError('Internal error.')
+            throw new Error('Internal error.')
         }
         CurrentNode = ScopeInfo.RemAST
         switch (CurrentNode.Operation.type) {
@@ -31,8 +35,8 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
 
     function delimiterProc () : GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.jumpFalse !== undefined) {
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}.` +
-                ' It is not possible to evaluate multiple sentences in logical operations.')
+            throw new Error(`At line: ${CurrentNode.Operation.line}.` +
+            ' It is not possible to evaluate multiple sentences in logical operations.')
         }
         const LGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Left,
@@ -41,8 +45,7 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        instructionstrain += LGenObj.asmCode
-        instructionstrain += AuxVars.getPostOperations()
+        LGenObj.asmCode += AuxVars.getPostOperations()
         const RGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Right,
             logicalOp: false,
@@ -50,11 +53,11 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        instructionstrain += RGenObj.asmCode
+        LGenObj.asmCode += RGenObj.asmCode
+        LGenObj.asmCode += AuxVars.getPostOperations()
         // Note: RGenObj always have MemObj, because jumpTarget is undefined.
         AuxVars.freeRegister(RGenObj.SolvedMem.address)
-        instructionstrain += AuxVars.getPostOperations()
-        return { SolvedMem: LGenObj.SolvedMem, asmCode: instructionstrain }
+        return LGenObj
     }
 
     function operatorProc () : GENCODE_SOLVED_OBJECT {
@@ -65,7 +68,7 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        instructionstrain += LGenObj.asmCode
+        assemblyCode += LGenObj.asmCode
         let RGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Right,
             logicalOp: false,
@@ -73,15 +76,19 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        instructionstrain += RGenObj.asmCode
+        assemblyCode += RGenObj.asmCode
         // Error handling
         if (LGenObj.SolvedMem.type === 'void' || RGenObj.SolvedMem.type === 'void') {
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}. Can not make operations with void values.`)
+            throw new Error(`At line: ${CurrentNode.Operation.line}. Can not make operations with void values.`)
         }
         // Optimizations 1
-        const PossibleRetObj = OperatorOptConstantConstant(LGenObj.SolvedMem, RGenObj.SolvedMem, CurrentNode.Operation.value)
+        const PossibleRetObj = OperatorOptConstantConstant(
+            LGenObj.SolvedMem,
+            RGenObj.SolvedMem,
+            CurrentNode.Operation.value
+        )
         if (PossibleRetObj) {
-            return { SolvedMem: PossibleRetObj, asmCode: instructionstrain }
+            return { SolvedMem: PossibleRetObj, asmCode: assemblyCode }
         }
         // Optimizations 2
         if (OperatorOptBySwap(LGenObj.SolvedMem, RGenObj.SolvedMem, CurrentNode.Operation.value)) {
@@ -94,35 +101,44 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
         if (LGenObj.SolvedMem.type !== 'register') {
             TmpMemObj = AuxVars.getNewRegister()
             TmpMemObj.declaration = utils.getDeclarationFromMemory(LGenObj.SolvedMem)
-            instructionstrain += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, LGenObj.SolvedMem)
+            assemblyCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, LGenObj.SolvedMem)
             AuxVars.freeRegister(LGenObj.SolvedMem.address)
         } else {
             TmpMemObj = LGenObj.SolvedMem
         }
         // Pointer verifications 1
-        if (utils.getDeclarationFromMemory(RGenObj.SolvedMem).includes('_ptr') && !TmpMemObj.declaration.includes('_ptr')) {
+        if (utils.getDeclarationFromMemory(RGenObj.SolvedMem).includes('_ptr') &&
+            !TmpMemObj.declaration.includes('_ptr')) {
             // Operation with pointers
             TmpMemObj.declaration += '_ptr'
         }
         // Pointer verifications 2
         if (TmpMemObj.declaration.includes('_ptr')) {
             if (CurrentNode.Operation.value !== '+' && CurrentNode.Operation.value !== '-') {
-                throw new TypeError(`At line: ${CurrentNode.Operation.line}. ` +
-                    "Operation not allowed on pointers. Only '+', '-', '++' and '--' are.")
+                throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
+                "Operation not allowed on pointers. Only '+', '-', '++' and '--' are.")
             }
         }
         // Create instruction
-        instructionstrain += createInstruction(AuxVars, CurrentNode.Operation, TmpMemObj, RGenObj.SolvedMem)
+        assemblyCode += createInstruction(AuxVars, CurrentNode.Operation, TmpMemObj, RGenObj.SolvedMem)
         // Handle logical operation
         if (ScopeInfo.logicalOp === true) {
-            instructionstrain += createInstruction(AuxVars, utils.genNotEqualToken(), TmpMemObj, utils.createConstantMemObj(0), ScopeInfo.revLogic, ScopeInfo.jumpFalse, ScopeInfo.jumpTrue)
+            assemblyCode += createInstruction(
+                AuxVars,
+                utils.genNotEqualToken(),
+                TmpMemObj,
+                utils.createConstantMemObj(0),
+                ScopeInfo.revLogic,
+                ScopeInfo.jumpFalse,
+                ScopeInfo.jumpTrue
+            )
             AuxVars.freeRegister(RGenObj.SolvedMem.address)
             AuxVars.freeRegister(TmpMemObj.address)
-            return { SolvedMem: utils.createVoidMemObj(), asmCode: instructionstrain }
+            return { SolvedMem: utils.createVoidMemObj(), asmCode: assemblyCode }
         }
         // Return arithmetic result
         AuxVars.freeRegister(RGenObj.SolvedMem.address)
-        return { SolvedMem: TmpMemObj, asmCode: instructionstrain }
+        return { SolvedMem: TmpMemObj, asmCode: assemblyCode }
     }
 
     function assignmentProc () : GENCODE_SOLVED_OBJECT {
@@ -136,7 +152,7 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        instructionstrain += LGenObj.asmCode
+        assemblyCode += LGenObj.asmCode
         AuxVars.isLeftSideOfAssignment = false
         assignmentLeftSideErrorTests(LGenObj.SolvedMem)
         // Clear isDeclaration before right side evaluation.
@@ -146,70 +162,83 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             AuxVars.isDeclaration = ''
         }
         // If it is an array item we know, change to the item
-        if (LGenObj.SolvedMem.type === 'array' && LGenObj.SolvedMem.Offset !== undefined && LGenObj.SolvedMem.Offset.type === 'constant') {
-            LGenObj.SolvedMem = AuxVars.getMemoryObjectByLocation(utils.addHexContents(LGenObj.SolvedMem.hexContent, LGenObj.SolvedMem.Offset.value))
+        if (LGenObj.SolvedMem.type === 'array' &&
+            LGenObj.SolvedMem.Offset?.type === 'constant') {
+            LGenObj.SolvedMem = AuxVars.getMemoryObjectByLocation(
+                utils.addHexContents(LGenObj.SolvedMem.hexContent, LGenObj.SolvedMem.Offset.value)
+            )
         }
         // Get right side gencode object
         const RGenObj = assignmentRightSideSolver(LGenObj.SolvedMem)
-        instructionstrain += RGenObj.asmCode
+        assemblyCode += RGenObj.asmCode
         // Restore isDeclaration value
         AuxVars.isDeclaration = savedDeclaration
         // Error check for Right side
         if (RGenObj.SolvedMem.type === 'void') {
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}. ` +
-                `Invalid right value for '${CurrentNode.Operation.type}'. Possible void value.`)
+            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
+            `Invalid right value for '${CurrentNode.Operation.type}'. Possible void value.`)
         }
         // Check declaration types
-        assignmentDeclarationTests(LGenObj.SolvedMem, RGenObj.SolvedMem, CurrentNode.Operation.value, CurrentNode.Operation.line)
+        assignmentDeclarationTests(
+            LGenObj.SolvedMem,
+            RGenObj.SolvedMem,
+            CurrentNode.Operation.value,
+            CurrentNode.Operation.line
+        )
         // Create instruction
-        instructionstrain += createInstruction(AuxVars, CurrentNode.Operation, LGenObj.SolvedMem, RGenObj.SolvedMem)
+        assemblyCode += createInstruction(AuxVars, CurrentNode.Operation, LGenObj.SolvedMem, RGenObj.SolvedMem)
         // Process use of 'const' keyword
         if (AuxVars.isConstSentence === true) {
-            return assignmentConstSolver(LGenObj.SolvedMem, RGenObj.SolvedMem, instructionstrain, CurrentNode.Operation.line)
+            return assignmentConstSolver(
+                LGenObj.SolvedMem,
+                RGenObj.SolvedMem,
+                assemblyCode,
+                CurrentNode.Operation.line
+            )
         }
         AuxVars.freeRegister(RGenObj.SolvedMem.address)
-        return { SolvedMem: LGenObj.SolvedMem, asmCode: instructionstrain }
+        return { SolvedMem: LGenObj.SolvedMem, asmCode: assemblyCode }
     }
 
     function assignmentStartErrorTests () : void {
         if (ScopeInfo.jumpFalse !== undefined) {
-            throw new SyntaxError(`At line: ${CurrentNode.Operation.line}. ` +
-                'Can not use assignment during logical operations with branches')
+            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
+            'Can not use assignment during logical operations with branches')
         }
         if (CurrentNode.Left.type === 'binaryASN' ||
             (CurrentNode.Left.type === 'unaryASN' && CurrentNode.Left.Operation.value !== '*')) {
-            throw new SyntaxError(`At line: ${CurrentNode.Operation.line}. Invalid left value for assignment.`)
+            throw new Error(`At line: ${CurrentNode.Operation.line}. Invalid left value for assignment.`)
         }
     }
 
     function assignmentLeftSideErrorTests (Left: MEMORY_SLOT) : void {
         if (Left.type === 'void') {
-            throw new SyntaxError(`At line: ${CurrentNode.Operation.line}. Trying to assign a void variable.`)
+            throw new Error(`At line: ${CurrentNode.Operation.line}. Trying to assign a void variable.`)
         }
         if (Left.address === -1) {
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}. ` +
-                `Invalid left value for ${CurrentNode.Operation.type}.`)
+            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
+            `Invalid left value for ${CurrentNode.Operation.type}.`)
         }
         if (Left.type === 'array' && AuxVars.hasVoidArray === false) {
             if (Left.Offset === undefined) {
                 // Array assignment base type
-                throw new TypeError(`At line: ${CurrentNode.Operation.line}. ` +
-                    `Invalid left value for '${CurrentNode.Operation.type}'. Can not reassign an array.`)
+                throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
+                `Invalid left value for '${CurrentNode.Operation.type}'. Can not reassign an array.`)
             }
         } else if (Left.Offset &&
             Left.Offset.declaration.includes('_ptr') &&
             Left.Offset.typeDefinition !== undefined &&
             AuxVars.hasVoidArray === false) {
             // Array assignment inside struct
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}. ` +
-                `Invalid left value for '${CurrentNode.Operation.type}'. Can not reassign an array.`)
+            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
+            `Invalid left value for '${CurrentNode.Operation.type}'. Can not reassign an array.`)
         }
         if (AuxVars.hasVoidArray &&
             (CurrentNode.Right.type !== 'endASN' ||
             (CurrentNode.Right.type === 'endASN' &&
             CurrentNode.Right.Token.type !== 'Constant'))) {
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}. ` +
-                'Invalid right value for multi-array assignment. It must be a constant.')
+            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
+            'Invalid right value for multi-array assignment. It must be a constant.')
         }
     }
 
@@ -270,15 +299,18 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
         return RetGenObj
     }
 
-    function assignmentDeclarationTests (Left: MEMORY_SLOT, Right: MEMORY_SLOT, operVal: string, line: number) : void {
+    function assignmentDeclarationTests (
+        Left: MEMORY_SLOT, Right: MEMORY_SLOT, operVal: string, line: number
+    ) : void {
         if (utils.isNotValidDeclarationOp(utils.getDeclarationFromMemory(Left), Right)) {
             const lDecl = utils.getDeclarationFromMemory(Left)
             const rDecl = utils.getDeclarationFromMemory(Right)
             // Allow SetOperator and pointer operation
             if (!(lDecl === rDecl + '_ptr' && (operVal === '+=' || operVal === '-='))) {
                 if (Program.Config.warningToError) {
-                    throw new TypeError(`At line: ${line}.` +
-                        ` Warning: Left and right values does not match. Values are: '${Left.declaration}' and '${Right.declaration}'.`)
+                    throw new Error(`At line: ${line}.` +
+                    ' Warning: Left and right values does not match.' +
+                    ` Values are: '${Left.declaration}' and '${Right.declaration}'.`)
                 }
                 // Override declaration protection rules
                 Left.declaration = Right.declaration
@@ -286,10 +318,12 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
         }
     }
 
-    function assignmentConstSolver (Left: MEMORY_SLOT, Right: MEMORY_SLOT, assemblyInstructions: string, line: number) : GENCODE_SOLVED_OBJECT {
+    function assignmentConstSolver (
+        Left: MEMORY_SLOT, Right: MEMORY_SLOT, assemblyInstructions: string, line: number
+    ) : GENCODE_SOLVED_OBJECT {
         if (Right.address !== -1 || Right.type !== 'constant' || Right.hexContent === undefined) {
-            throw new TypeError(`At line: ${line}. ` +
-                "Right side of an assigment with 'const' keyword must be a constant.")
+            throw new Error(`At line: ${line}. ` +
+            "Right side of an assigment with 'const' keyword must be a constant.")
         }
         // Inspect ASM code and change accordingly
         assemblyInstructions = setConstAsmCode(AuxVars.memory, assemblyInstructions, line)
@@ -317,7 +351,7 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
         }
     }
 
-    function logicalToArithmeticOpProc () : GENCODE_SOLVED_OBJECT { // need to transform arithmetic to logical
+    function logicalToArithmeticOpProc () : GENCODE_SOLVED_OBJECT {
         const rnd = AuxVars.getNewJumpID(CurrentNode.Operation.line)
         const idCompSF = '__CMP_' + rnd + '_sF' // set false
         const idCompST = '__CMP_' + rnd + '_sT' // set true
@@ -336,10 +370,20 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
         })
         const TmpMemObj = AuxVars.getNewRegister()
         asmCode += createSimpleInstruction('Label', swapLogic ? idCompSF : idCompST)
-        asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(swapLogic ? 0 : 1))
+        asmCode += createInstruction(
+            AuxVars,
+            utils.genAssignmentToken(),
+            TmpMemObj,
+            utils.createConstantMemObj(swapLogic ? 0 : 1)
+        )
         asmCode += createSimpleInstruction('Jump', idEnd)
         asmCode += createSimpleInstruction('Label', swapLogic ? idCompST : idCompSF)
-        asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(swapLogic ? 1 : 0))
+        asmCode += createInstruction(
+            AuxVars,
+            utils.genAssignmentToken(),
+            TmpMemObj,
+            utils.createConstantMemObj(swapLogic ? 1 : 0)
+        )
         asmCode += createSimpleInstruction('Label', idEnd)
         AuxVars.freeRegister(RedoAsLogical.address)
         return { SolvedMem: TmpMemObj, asmCode: asmCode }
@@ -355,11 +399,19 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             jumpFalse: idNextStmt,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        instructionstrain += LGenObj.asmCode
+        assemblyCode += LGenObj.asmCode
         if (AuxVars.isTemp(LGenObj.SolvedMem.address)) { // maybe it was an arithmetic operation
-            instructionstrain += createInstruction(AuxVars, utils.genNotEqualToken(), LGenObj.SolvedMem, utils.createConstantMemObj(0), true, ScopeInfo.jumpFalse, ScopeInfo.jumpTrue)
+            assemblyCode += createInstruction(
+                AuxVars,
+                utils.genNotEqualToken(),
+                LGenObj.SolvedMem,
+                utils.createConstantMemObj(0),
+                true,
+                ScopeInfo.jumpFalse,
+                ScopeInfo.jumpTrue
+            )
         }
-        instructionstrain += createSimpleInstruction('Label', idNextStmt)
+        assemblyCode += createSimpleInstruction('Label', idNextStmt)
         const RGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Right,
             logicalOp: true,
@@ -367,12 +419,20 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        instructionstrain += RGenObj.asmCode
+        assemblyCode += RGenObj.asmCode
         if (AuxVars.isTemp(RGenObj.SolvedMem.address)) { // maybe it was an arithmetic operation
-            instructionstrain += createInstruction(AuxVars, utils.genNotEqualToken(), RGenObj.SolvedMem, utils.createConstantMemObj(0), true, ScopeInfo.jumpFalse, ScopeInfo.jumpTrue)
+            assemblyCode += createInstruction(
+                AuxVars,
+                utils.genNotEqualToken(),
+                RGenObj.SolvedMem,
+                utils.createConstantMemObj(0),
+                true,
+                ScopeInfo.jumpFalse,
+                ScopeInfo.jumpTrue
+            )
         }
-        instructionstrain += createSimpleInstruction('Jump', ScopeInfo.jumpFalse)
-        return { SolvedMem: utils.createVoidMemObj(), asmCode: instructionstrain }
+        assemblyCode += createSimpleInstruction('Jump', ScopeInfo.jumpFalse)
+        return { SolvedMem: utils.createVoidMemObj(), asmCode: assemblyCode }
     }
 
     function andLogicalOpProc () : GENCODE_SOLVED_OBJECT {
@@ -385,11 +445,19 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: idNextStmt
         })
-        instructionstrain += LGenObj.asmCode
+        assemblyCode += LGenObj.asmCode
         if (AuxVars.isTemp(LGenObj.SolvedMem.address)) { // maybe it was an arithmetic operation
-            instructionstrain += createInstruction(AuxVars, utils.genNotEqualToken(), LGenObj.SolvedMem, utils.createConstantMemObj(0), false, ScopeInfo.jumpFalse, ScopeInfo.jumpTrue)
+            assemblyCode += createInstruction(
+                AuxVars,
+                utils.genNotEqualToken(),
+                LGenObj.SolvedMem,
+                utils.createConstantMemObj(0),
+                false,
+                ScopeInfo.jumpFalse,
+                ScopeInfo.jumpTrue
+            )
         }
-        instructionstrain += createSimpleInstruction('Label', idNextStmt)
+        assemblyCode += createSimpleInstruction('Label', idNextStmt)
         const RGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Right,
             logicalOp: true,
@@ -397,12 +465,20 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        instructionstrain += RGenObj.asmCode
+        assemblyCode += RGenObj.asmCode
         if (AuxVars.isTemp(RGenObj.SolvedMem.address)) { // maybe it was an arithmetic operation
-            instructionstrain += createInstruction(AuxVars, utils.genNotEqualToken(), RGenObj.SolvedMem, utils.createConstantMemObj(0), false, ScopeInfo.jumpFalse, ScopeInfo.jumpTrue)
+            assemblyCode += createInstruction(
+                AuxVars,
+                utils.genNotEqualToken(),
+                RGenObj.SolvedMem,
+                utils.createConstantMemObj(0),
+                false,
+                ScopeInfo.jumpFalse,
+                ScopeInfo.jumpTrue
+            )
         }
-        instructionstrain += createSimpleInstruction('Jump', ScopeInfo.jumpTrue)
-        return { SolvedMem: utils.createVoidMemObj(), asmCode: instructionstrain }
+        assemblyCode += createSimpleInstruction('Jump', ScopeInfo.jumpTrue)
+        return { SolvedMem: utils.createVoidMemObj(), asmCode: assemblyCode }
     }
 
     function defaultLogicalOpProc () : GENCODE_SOLVED_OBJECT {
@@ -411,20 +487,30 @@ export function binaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS,
             logicalOp: false,
             revLogic: ScopeInfo.revLogic
         }) // ScopeInfo.jumpFalse and ScopeInfo.jumpTrue must be undefined to evaluate expressions
-        instructionstrain += LGenObj.asmCode
+        assemblyCode += LGenObj.asmCode
         const RGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Right,
             logicalOp: false,
             revLogic: ScopeInfo.revLogic
         }) // ScopeInfo.jumpFalse and ScopeInfo.jumpTrue must be undefined to evaluate expressions
-        instructionstrain += RGenObj.asmCode
-        instructionstrain += createInstruction(AuxVars, CurrentNode.Operation, LGenObj.SolvedMem, RGenObj.SolvedMem, ScopeInfo.revLogic, ScopeInfo.jumpFalse, ScopeInfo.jumpTrue)
+        assemblyCode += RGenObj.asmCode
+        assemblyCode += createInstruction(
+            AuxVars,
+            CurrentNode.Operation,
+            LGenObj.SolvedMem,
+            RGenObj.SolvedMem,
+            ScopeInfo.revLogic,
+            ScopeInfo.jumpFalse,
+            ScopeInfo.jumpTrue
+        )
         AuxVars.freeRegister(LGenObj.SolvedMem.address)
         AuxVars.freeRegister(RGenObj.SolvedMem.address)
-        return { SolvedMem: utils.createVoidMemObj(), asmCode: instructionstrain }
+        return { SolvedMem: utils.createVoidMemObj(), asmCode: assemblyCode }
     }
 
-    function OperatorOptConstantConstant (Left: MEMORY_SLOT, Right: MEMORY_SLOT, operatorVal: string) : MEMORY_SLOT | undefined {
+    function OperatorOptConstantConstant (
+        Left: MEMORY_SLOT, Right: MEMORY_SLOT, operatorVal: string
+    ) : MEMORY_SLOT | undefined {
         // If left and right side are constants, do the math now for basic operations
         if (Left.type === 'constant' && Right.type === 'constant') {
             switch (operatorVal) {

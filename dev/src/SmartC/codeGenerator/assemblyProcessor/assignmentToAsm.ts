@@ -9,10 +9,7 @@ import { flattenMemory, FLATTEN_MEMORY_RETURN_OBJECT } from './createInstruction
  * @returns the assembly code necessary for the assignment to happen
  */
 export function assignmentToAsm (
-    auxVars: GENCODE_AUXVARS,
-    Left: MEMORY_SLOT,
-    Right: MEMORY_SLOT,
-    operationLine: number
+    auxVars: GENCODE_AUXVARS, Left: MEMORY_SLOT, Right: MEMORY_SLOT, operationLine: number
 ) : string {
     /** Main function */
     function assignmentToAsmMain (): string {

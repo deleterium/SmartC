@@ -6,7 +6,9 @@ import { flattenMemory, FLATTEN_MEMORY_RETURN_OBJECT } from './createInstruction
 /**
  * Create instruction for keywords asm, break, continue, exit, goto, halt, label, return and sleep.
  */
-export function keywordToAsm (AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, FlatMem?: MEMORY_SLOT): string {
+export function keywordToAsm (
+    AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, FlatMem?: MEMORY_SLOT
+): string {
     let TmpMemObj: FLATTEN_MEMORY_RETURN_OBJECT
     switch (OperatorToken.value) {
     case 'break':
