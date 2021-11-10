@@ -4,10 +4,16 @@ import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
 import { utils } from '../utils'
 import { flattenMemory, FLATTEN_MEMORY_RETURN_OBJECT } from './createInstruction'
 
-/** Create assembly intructions for an assignment.
+/**
+ * Create assembly intructions for an assignment.
  * @returns the assembly code necessary for the assignment to happen
  */
-export function assignmentToAsm (auxVars: GENCODE_AUXVARS, Left: MEMORY_SLOT, Right: MEMORY_SLOT, operationLine: number) : string {
+export function assignmentToAsm (
+    auxVars: GENCODE_AUXVARS,
+    Left: MEMORY_SLOT,
+    Right: MEMORY_SLOT,
+    operationLine: number
+) : string {
     /** Main function */
     function assignmentToAsmMain (): string {
         switch (Left.type) {
@@ -104,7 +110,9 @@ export function assignmentToAsm (auxVars: GENCODE_AUXVARS, Left: MEMORY_SLOT, Ri
 
     /** Left type is 'register', 'long' or 'structRef', with offset undefined. Right type is 'register', 'long' or
      * 'structRef' with offset constant. Create assembly instruction. */
-    function leftRegularOffsetUndefinedAndRightRegularOffsetConstantToAsm (RightOffset: OFFSET_MODIFIER_CONSTANT): string {
+    function leftRegularOffsetUndefinedAndRightRegularOffsetConstantToAsm (
+        RightOffset: OFFSET_MODIFIER_CONSTANT
+    ) : string {
         if (RightOffset.value === 0) {
             return `SET @${Left.asmName} $($${Right.asmName})\n`
         }
@@ -182,7 +190,9 @@ export function assignmentToAsm (auxVars: GENCODE_AUXVARS, Left: MEMORY_SLOT, Ri
         let assemblyCode = ''
         for (let i = 0; i < arraySize; i++) {
             const newLeft = auxVars.getMemoryObjectByLocation(utils.addHexContents(Left.hexContent, i), operationLine)
-            const newRight = utils.createConstantMemObj(paddedLong.slice(16 * (arraySize - i - 1), 16 * (arraySize - i)))
+            const newRight = utils.createConstantMemObj(
+                paddedLong.slice(16 * (arraySize - i - 1), 16 * (arraySize - i))
+            )
             assemblyCode += assignmentToAsm(auxVars, newLeft, newRight, operationLine)
         }
         return assemblyCode

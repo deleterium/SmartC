@@ -13,7 +13,7 @@ export function keywordToAsm (AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, Fl
     case 'continue':
         return `JMP :%generateUtils.getLatestLoopId()%_${OperatorToken.value}\n`
     case 'label':
-        return OperatorToken.extValue + ':\n'
+        return `${OperatorToken.extValue}:\n`
     case 'goto':
         return `JMP :${assertNotUndefined(FlatMem).name}\n`
     case 'halt':

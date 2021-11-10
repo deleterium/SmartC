@@ -5,16 +5,22 @@ import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
 import { utils } from '../utils'
 import { createInstruction, flattenMemory } from './createInstruction'
 
-/** Create assembly intructions for binary operators or SetOperators.
+/**
+ * Create assembly intructions for binary operators or SetOperators.
  * @returns the assembly code necessary for the assignment to happen
  */
-export function operatorToAsm (AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, LeftMem: MEMORY_SLOT, RightMem: MEMORY_SLOT) : string {
+export function operatorToAsm (
+    AuxVars: GENCODE_AUXVARS,
+    OperatorToken: TOKEN,
+    LeftMem: MEMORY_SLOT,
+    RightMem: MEMORY_SLOT
+) : string {
     const FlatLeft = flattenMemory(AuxVars, LeftMem, OperatorToken.line)
     const FlatRight = flattenMemory(AuxVars, RightMem, OperatorToken.line)
 
     function operatorToAsmMain () {
         assertExpression(LeftMem.type !== 'constant')
-        let retinstr = ''
+        let assemblyCode = ''
         if (RightMem.type === 'constant') {
             const optimizationResult = testOptimizations()
             if (optimizationResult === undefined) {
@@ -24,64 +30,21 @@ export function operatorToAsm (AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, L
             if (optimizationResult.length > 0) {
                 if (FlatLeft.isNew === true) {
                     AuxVars.freeRegister(FlatRight.FlatMem.address)
-                    retinstr += createInstruction(AuxVars, utils.genAssignmentToken(), LeftMem, FlatLeft.FlatMem)
+                    assemblyCode = createInstruction(AuxVars, utils.genAssignmentToken(), LeftMem, FlatLeft.FlatMem)
                     AuxVars.freeRegister(FlatLeft.FlatMem.address)
                 }
-                return FlatLeft.asmCode + optimizationResult + retinstr
+                return FlatLeft.asmCode + optimizationResult + assemblyCode
             }
         }
         // No optimization was possible, do regular operations
-        switch (OperatorToken.value) {
-        case '+':
-        case '+=':
-            retinstr += 'ADD'
-            break
-        case '-':
-        case '-=':
-            retinstr += 'SUB'
-            break
-        case '*':
-        case '*=':
-            retinstr += 'MUL'
-            break
-        case '/':
-        case '/=':
-            retinstr += 'DIV'
-            break
-        case '|':
-        case '|=':
-            retinstr += 'BOR'
-            break
-        case '&':
-        case '&=':
-            retinstr += 'AND'
-            break
-        case '^':
-        case '^=':
-            retinstr += 'XOR'
-            break
-        case '%':
-        case '%=':
-            retinstr += 'MOD'
-            break
-        case '<<':
-        case '<<=':
-            retinstr += 'SHL'
-            break
-        case '>>':
-        case '>>=':
-            retinstr += 'SHR'
-            break
-        default:
-            throw new TypeError(`Internal error at line: ${OperatorToken.line}.`)
-        }
-        retinstr += ` @${FlatLeft.FlatMem.asmName} $${FlatRight.FlatMem.asmName}\n`
+        assemblyCode = chooseOperator(OperatorToken.value) +
+            ` @${FlatLeft.FlatMem.asmName} $${FlatRight.FlatMem.asmName}\n`
         AuxVars.freeRegister(FlatRight.FlatMem.address)
         if (FlatLeft.isNew === true) {
-            retinstr += createInstruction(AuxVars, utils.genAssignmentToken(), LeftMem, FlatLeft.FlatMem)
+            assemblyCode += createInstruction(AuxVars, utils.genAssignmentToken(), LeftMem, FlatLeft.FlatMem)
             AuxVars.freeRegister(FlatLeft.FlatMem.address)
         }
-        return FlatLeft.asmCode + FlatRight.asmCode + retinstr
+        return FlatLeft.asmCode + FlatRight.asmCode + assemblyCode
     }
 
     /** Check and do optimization on a constant right side.
@@ -143,4 +106,41 @@ export function operatorToAsm (AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, L
     }
 
     return operatorToAsmMain()
+}
+
+function chooseOperator (value: string) : string {
+    switch (value) {
+    case '+':
+    case '+=':
+        return 'ADD'
+    case '-':
+    case '-=':
+        return 'SUB'
+    case '*':
+    case '*=':
+        return 'MUL'
+    case '/':
+    case '/=':
+        return 'DIV'
+    case '|':
+    case '|=':
+        return 'BOR'
+    case '&':
+    case '&=':
+        return 'AND'
+    case '^':
+    case '^=':
+        return 'XOR'
+    case '%':
+    case '%=':
+        return 'MOD'
+    case '<<':
+    case '<<=':
+        return 'SHL'
+    case '>>':
+    case '>>=':
+        return 'SHR'
+    default:
+        throw new Error('Internal error.')
+    }
 }

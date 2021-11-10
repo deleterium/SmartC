@@ -11,7 +11,6 @@ import { assignmentToAsm } from './assignmentToAsm'
 import { comparisionToAsm } from './comparisionToAsm'
 import { keywordToAsm } from './keywordToAsm'
 import { operatorToAsm } from './operatorToAsm'
-import { unaryOperatorToAsm } from './unaryOperatorToAsm'
 
 export interface FLATTEN_MEMORY_RETURN_OBJECT {
     FlatMem: MEMORY_SLOT
@@ -42,14 +41,15 @@ export function setConstAsmCode (progMemory: MEMORY_SLOT[], code: string, line: 
                 retlines.push(`^const SET @${setpart[1]} #${BigInt(setpart[2]).toString(16).padStart(16, '0')}`)
                 return
             }
-            throw new TypeError(`At line: ${line}. No operations can be done during 'const' assignment.`)
+            throw new Error(`At line: ${line}. No operations can be done during 'const' assignment.`)
         }
         const search = progMemory.find(obj => obj.asmName === parts[1])
         if (search === undefined) {
-            throw new TypeError(`At line: ${line}. Variable ${parts[1]} not found in memory.`)
+            throw new Error(`At line: ${line}. Variable ${parts[1]} not found in memory.`)
         }
         if (search.hexContent !== undefined) {
-            throw new TypeError(`At line: ${line}. Left side of an assigment with 'const' keyword already has been set.`)
+            throw new Error(`At line: ${line}. ` +
+            "Left side of an assigment with 'const' keyword already has been set.")
         }
         search.hexContent = parts[2]
         retlines.push('^const ' + instruction)
@@ -73,11 +73,17 @@ export function createSimpleInstruction (instruction: string, param1: string = '
     case 'Function':
         return `JSR :__fn_${param1}\n`
     default:
-        throw new TypeError(`Unknow simple instruction: ${instruction}`)
+        throw new Error(`Unknow simple instruction: ${instruction}`)
     }
 }
 
-export function createAPICallInstruction (AstAuxVars: GENCODE_AUXVARS, ApiToken: TOKEN, RetMem: MEMORY_SLOT, argsMem: MEMORY_SLOT[]) {
+/** Create assembly code for one api function call */
+export function createAPICallInstruction (
+    AstAuxVars: GENCODE_AUXVARS,
+    ApiToken: TOKEN,
+    RetMem: MEMORY_SLOT,
+    argsMem: MEMORY_SLOT[]
+) : string {
     let assemblyCode = ''
     const tempArgsMem: MEMORY_SLOT[] = []
     argsMem.forEach((VarObj) => {
@@ -87,27 +93,30 @@ export function createAPICallInstruction (AstAuxVars: GENCODE_AUXVARS, ApiToken:
     })
     assemblyCode += 'FUN'
     if (RetMem.type !== 'void') {
-        assemblyCode += ' @' + RetMem.asmName
+        assemblyCode += ` @${RetMem.asmName}`
     }
-    assemblyCode += ' ' + ApiToken.value
+    assemblyCode += ` ${ApiToken.value}`
     tempArgsMem.forEach(Arg => {
-        assemblyCode += ' $' + Arg.asmName
+        assemblyCode += ` $${Arg.asmName}`
     })
-    assemblyCode += '\n'
     tempArgsMem.forEach(Arg => AstAuxVars.freeRegister(Arg.address))
-    return assemblyCode
+    return assemblyCode + '\n'
 }
 
 /**
- * From ParamMemObj create an memory object suitable for assembly operations (a regular long variable). Do do rely in createInstruction,
- * all hardwork done internally. Returns also instructions maybe needed for conversion and a boolean to indicate if it is
- * a new object (that must be free later on).
+ * From ParamMemObj create an memory object suitable for assembly operations (a regular long variable).
+ * Do do rely in createInstruction, all hardwork done internally. Returns also instructions maybe needed for
+ * conversion and a boolean to indicate if it is a new object (that must be free later on).
 */
-export function flattenMemory (auxVars: GENCODE_AUXVARS, StuffedMemory: MEMORY_SLOT, line: number): FLATTEN_MEMORY_RETURN_OBJECT {
-    let retInstructions = ''
+export function flattenMemory (
+    AuxVars: GENCODE_AUXVARS,
+    StuffedMemory: MEMORY_SLOT,
+    line: number
+) : FLATTEN_MEMORY_RETURN_OBJECT {
     const paramDec = utils.getDeclarationFromMemory(StuffedMemory)
 
     function flattenMemoryMain (): FLATTEN_MEMORY_RETURN_OBJECT {
+        let retInstructions = ''
         if (StuffedMemory.type === 'constant') {
             return flattenConstant(StuffedMemory.hexContent)
         }
@@ -116,9 +125,10 @@ export function flattenMemory (auxVars: GENCODE_AUXVARS, StuffedMemory: MEMORY_S
         }
         let RetObj: MEMORY_SLOT
         if (StuffedMemory.Offset.type === 'variable') {
-            RetObj = auxVars.getNewRegister()
+            RetObj = AuxVars.getNewRegister()
             RetObj.declaration = paramDec
-            retInstructions += `SET @${RetObj.asmName} $($${StuffedMemory.asmName} + $${auxVars.getMemoryObjectByLocation(StuffedMemory.Offset.addr, line).asmName})\n`
+            const offsetVarName = AuxVars.getMemoryObjectByLocation(StuffedMemory.Offset.addr, line).asmName
+            retInstructions += `SET @${RetObj.asmName} $($${StuffedMemory.asmName} + $${offsetVarName})\n`
             return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
         }
         // StuffedMemory.Offset.type is 'constant'
@@ -127,7 +137,7 @@ export function flattenMemory (auxVars: GENCODE_AUXVARS, StuffedMemory: MEMORY_S
         case 'register':
         case 'long':
         case 'structRef':
-            RetObj = auxVars.getNewRegister()
+            RetObj = AuxVars.getNewRegister()
             RetObj.declaration = paramDec
             // TODO remove this and gain optimization
             if (StuffedMemory.type !== 'structRef') {
@@ -140,16 +150,18 @@ export function flattenMemory (auxVars: GENCODE_AUXVARS, StuffedMemory: MEMORY_S
             retInstructions += FlatConstant.asmCode
             retInstructions += `SET @${RetObj.asmName} $($${StuffedMemory.asmName} + $${FlatConstant.FlatMem.asmName})\n`
             if (FlatConstant.isNew) {
-                auxVars.freeRegister(FlatConstant.FlatMem.address)
+                AuxVars.freeRegister(FlatConstant.FlatMem.address)
             }
             return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
         case 'array':
             // Looks like an array but can be converted to regular variable
-            RetObj = auxVars.getMemoryObjectByLocation(utils.addHexContents(StuffedMemory.hexContent, StuffedMemory.Offset.value), line)
-            auxVars.freeRegister(StuffedMemory.address)
+            RetObj = AuxVars.getMemoryObjectByLocation(
+                utils.addHexContents(StuffedMemory.hexContent, StuffedMemory.Offset.value), line
+            )
+            AuxVars.freeRegister(StuffedMemory.address)
             return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
         default:
-            throw new TypeError(`Internal error at line: ${line}. Not implemented type in flattenMemory()`)
+            throw new Error(`Internal error at line: ${line}. Not implemented type in flattenMemory()`)
         }
     }
 
@@ -163,13 +175,15 @@ export function flattenMemory (auxVars: GENCODE_AUXVARS, StuffedMemory: MEMORY_S
         }
         hexString = hexString.padStart(16, '0')
         if (hexString.length > 17) {
-            throw new RangeError(`At line: ${line}. Overflow on long value assignment. Value bigger than 64 bits).`)
+            throw new Error(`At line: ${line}. Overflow on long value assignment. Value bigger than 64 bits).`)
         }
-        const OptMem = auxVars.memory.find(MEM => MEM.asmName === 'n' + Number('0x' + hexString) && MEM.hexContent === hexString)
+        const OptMem = AuxVars.memory.find(MEM => {
+            return MEM.asmName === 'n' + Number('0x' + hexString) && MEM.hexContent === hexString
+        })
         if (OptMem) {
             return { FlatMem: OptMem, asmCode: '', isNew: false }
         }
-        const RetObj = auxVars.getNewRegister()
+        const RetObj = AuxVars.getNewRegister()
         RetObj.declaration = paramDec
         let asmInstruction = ''
         if (hexString === '0000000000000000') {
@@ -184,12 +198,23 @@ export function flattenMemory (auxVars: GENCODE_AUXVARS, StuffedMemory: MEMORY_S
 }
 
 /** Translate one single instruction from ast to assembly code */
-export function createInstruction (AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, MemParam1?: MEMORY_SLOT, MemParam2?: MEMORY_SLOT, rLogic?:boolean, jpFalse?: string, jpTrue?:string) : string {
-    let retinstr = ''
-
+export function createInstruction (
+    AuxVars: GENCODE_AUXVARS,
+    OperatorToken: TOKEN,
+    MemParam1?: MEMORY_SLOT,
+    MemParam2?: MEMORY_SLOT,
+    rLogic?:boolean,
+    jpFalse?: string,
+    jpTrue?:string
+) : string {
     switch (OperatorToken.type) {
     case 'Assignment':
-        return assignmentToAsm(AuxVars, assertNotUndefined(MemParam1), assertNotUndefined(MemParam2), OperatorToken.line)
+        return assignmentToAsm(
+            AuxVars,
+            assertNotUndefined(MemParam1),
+            assertNotUndefined(MemParam2),
+            OperatorToken.line
+        )
     case 'Operator':
     case 'SetOperator':
         return operatorToAsm(AuxVars, OperatorToken, assertNotUndefined(MemParam1), assertNotUndefined(MemParam2))
@@ -207,20 +232,30 @@ export function createInstruction (AuxVars: GENCODE_AUXVARS, OperatorToken: TOKE
             assertNotUndefined(jpTrue)
         )
     case 'Push': {
-        if (MemParam1 === undefined) {
-            throw new TypeError(`At line: ${OperatorToken.line}. Missing parameter for PSH. BugReport please.`)
+        const FlatParam = flattenMemory(AuxVars, assertNotUndefined(MemParam1), OperatorToken.line)
+        FlatParam.asmCode += `PSH $${FlatParam.FlatMem.asmName}\n`
+        if (FlatParam.isNew === true) {
+            AuxVars.freeRegister(FlatParam.FlatMem.address)
         }
-        const TmpMemObj = flattenMemory(AuxVars, MemParam1, OperatorToken.line)
-        retinstr += TmpMemObj.asmCode
-        retinstr += 'PSH $' + TmpMemObj.FlatMem.asmName + '\n'
-        if (TmpMemObj.isNew === true) {
-            AuxVars.freeRegister(TmpMemObj.FlatMem.address)
-        }
-        return retinstr
+        return FlatParam.asmCode
     }
     case 'Keyword':
         return keywordToAsm(AuxVars, OperatorToken, MemParam1)
     default:
-        throw new TypeError(`Internal error at line: ${OperatorToken.line}.`)
+        throw new Error(`Internal error at line: ${OperatorToken.line}.`)
+    }
+}
+
+/** Create instruction for SetUnaryOperator `++`, `--`. Create instruction for Unary operator `~` and `+`. */
+function unaryOperatorToAsm (OperatorToken: TOKEN, Variable: MEMORY_SLOT): string {
+    switch (OperatorToken.value) {
+    case '++':
+        return `INC @${Variable.asmName}\n`
+    case '--':
+        return `DEC @${Variable.asmName}\n`
+    case '~':
+        return `NOT @${Variable.asmName}\n`
+    default:
+        throw new Error(`Internal error at line: ${OperatorToken.line}.`)
     }
 }
