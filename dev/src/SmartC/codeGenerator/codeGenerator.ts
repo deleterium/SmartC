@@ -13,13 +13,13 @@ import { utils } from './utils'
 
 /**
  * Code generator. Translates a Program into assembly source code
- * @param incomingProgram object holding information
+ * @param Program object holding information
  * @returns assembly source code
  */
-export function codeGenerate (incomingProgram: CONTRACT) {
+export function codeGenerate (Program: CONTRACT) {
     // holds variables needed during compilation
     const generateUtils: CODEGENERATE_AUXVARS = {
-        Program: incomingProgram,
+        Program: Program,
         latestLoopId: [],
         jumpId: 0,
         assemblyCode: '',
@@ -47,29 +47,24 @@ export function codeGenerate (incomingProgram: CONTRACT) {
     function generateMain () {
         // add Config Info
         configDeclarationGenerator()
-
         // add variables declaration
-        incomingProgram.memory.forEach(assemblerDeclarationGenerator)
+        Program.memory.forEach(assemblerDeclarationGenerator)
         writeAsmLine('') // blank line to be nice to debugger!
-
         // First instruction is add error handling function
-        if (incomingProgram.functions.findIndex(obj => obj.name === 'catch') !== -1) {
+        if (Program.functions.findIndex(obj => obj.name === 'catch') !== -1) {
             writeAsmLine('ERR :__fn_catch')
         }
-
         // Add code for global sentences
         generateUtils.currFunctionIndex = -1
-        incomingProgram.Global.sentences.forEach(compileSentence)
-
+        Program.Global.sentences.forEach(compileSentence)
         // jump to main function, or program ends.
-        if (incomingProgram.functions.find(obj => obj.name === 'main') === undefined) {
+        if (Program.functions.find(obj => obj.name === 'main') === undefined) {
             writeAsmLine('FIN')
         } else {
             writeAsmLine('JMP :__fn_main')
         }
-
         // For every function:
-        incomingProgram.functions.forEach((currentFunction, index) => {
+        Program.functions.forEach((currentFunction, index) => {
             generateUtils.currFunctionIndex = index
             writeAsmLine('') // blank line to be nice to debugger!
             functionHeaderGenerator()
@@ -77,20 +72,17 @@ export function codeGenerate (incomingProgram: CONTRACT) {
             if (currentFunction.sentences !== undefined) {
                 currentFunction.sentences.forEach(compileSentence)
             }
-
             functionTailGenerator()
         })
-
         // Optimize code;
-        if (incomingProgram.Config.globalOptimization) {
-            return optimize(generateUtils.assemblyCode, incomingProgram.Config.maxConstVars)
+        if (Program.Config.globalOptimization) {
+            return optimize(generateUtils.assemblyCode, Program.Config.maxConstVars)
         }
-
         return generateUtils.assemblyCode
     }
 
     function writeAsmLine (lineContent: string, sourceCodeLine: number = 0) {
-        if (incomingProgram.Config.outputSourceLineNumber === true &&
+        if (Program.Config.outputSourceLineNumber === true &&
             sourceCodeLine !== 0 &&
             sourceCodeLine !== generateUtils.currSourceLine) {
             generateUtils.assemblyCode += `^comment line ${sourceCodeLine}\n`
@@ -98,11 +90,12 @@ export function codeGenerate (incomingProgram: CONTRACT) {
         }
         generateUtils.assemblyCode += lineContent + '\n'
     }
+
     function writeAsmCode (lines: string, sourceCodeLine: number = 0) {
         if (lines.length === 0) {
             return
         }
-        if (incomingProgram.Config.outputSourceLineNumber === true &&
+        if (Program.Config.outputSourceLineNumber === true &&
             sourceCodeLine !== 0 &&
             sourceCodeLine !== generateUtils.currSourceLine) {
             generateUtils.assemblyCode += `^comment line ${sourceCodeLine}\n`
@@ -113,20 +106,20 @@ export function codeGenerate (incomingProgram: CONTRACT) {
 
     /** Add content of macro 'program' information to assembly code */
     function configDeclarationGenerator () {
-        if (incomingProgram.Config.PName !== '') {
-            writeAsmLine(`^program name ${incomingProgram.Config.PName}`)
+        if (Program.Config.PName !== '') {
+            writeAsmLine(`^program name ${Program.Config.PName}`)
         }
-        if (incomingProgram.Config.PDescription !== '') {
-            writeAsmLine(`^program description ${incomingProgram.Config.PDescription}`)
+        if (Program.Config.PDescription !== '') {
+            writeAsmLine(`^program description ${Program.Config.PDescription}`)
         }
-        if (incomingProgram.Config.PActivationAmount !== '') {
-            writeAsmLine('^program activationAmount ' + incomingProgram.Config.PActivationAmount)
+        if (Program.Config.PActivationAmount !== '') {
+            writeAsmLine('^program activationAmount ' + Program.Config.PActivationAmount)
         }
-        if (incomingProgram.Config.PUserStackPages !== 0) {
-            writeAsmLine(`^program userStackPages ${incomingProgram.Config.PUserStackPages}`)
+        if (Program.Config.PUserStackPages !== 0) {
+            writeAsmLine(`^program userStackPages ${Program.Config.PUserStackPages}`)
         }
-        if (incomingProgram.Config.PCodeStackPages !== 0) {
-            writeAsmLine(`^program codeStackPages ${incomingProgram.Config.PCodeStackPages}`)
+        if (Program.Config.PCodeStackPages !== 0) {
+            writeAsmLine(`^program codeStackPages ${Program.Config.PCodeStackPages}`)
         }
     }
 
@@ -144,14 +137,14 @@ export function codeGenerate (incomingProgram: CONTRACT) {
      *  Handle function initialization
     */
     function functionHeaderGenerator () {
-        const fname = incomingProgram.functions[generateUtils.currFunctionIndex].name
+        const fname = Program.functions[generateUtils.currFunctionIndex].name
         if (fname === 'main' || fname === 'catch') {
-            writeAsmLine(`__fn_${fname}:`, incomingProgram.functions[generateUtils.currFunctionIndex].line)
+            writeAsmLine(`__fn_${fname}:`, Program.functions[generateUtils.currFunctionIndex].line)
             writeAsmLine('PCS')
             return
         }
-        writeAsmLine(`__fn_${fname}:`, incomingProgram.functions[generateUtils.currFunctionIndex].line)
-        incomingProgram.functions[generateUtils.currFunctionIndex].argsMemObj.forEach(Obj => {
+        writeAsmLine(`__fn_${fname}:`, Program.functions[generateUtils.currFunctionIndex].line)
+        Program.functions[generateUtils.currFunctionIndex].argsMemObj.forEach(Obj => {
             writeAsmLine(`POP @${Obj.asmName}`)
         })
     }
@@ -160,7 +153,7 @@ export function codeGenerate (incomingProgram: CONTRACT) {
      * Handle function end
      */
     function functionTailGenerator () {
-        const fname = incomingProgram.functions[generateUtils.currFunctionIndex].name
+        const fname = Program.functions[generateUtils.currFunctionIndex].name
         if (fname === 'main' || fname === 'catch') {
             if (generateUtils.assemblyCode.lastIndexOf('FIN') + 4 !== generateUtils.assemblyCode.length) {
                 writeAsmLine('FIN')
@@ -168,44 +161,48 @@ export function codeGenerate (incomingProgram: CONTRACT) {
             return
         }
         if (generateUtils.assemblyCode.lastIndexOf('RET') + 4 !== generateUtils.assemblyCode.length) {
-            if (incomingProgram.functions[generateUtils.currFunctionIndex].declaration === 'void') {
+            if (Program.functions[generateUtils.currFunctionIndex].declaration === 'void') {
                 writeAsmLine('RET')
-            } else { // return zero to prevent stack overflow
-                writeAsmLine('CLR @r0')
-                writeAsmLine('PSH $r0')
-                writeAsmLine('RET')
+                return
             }
+            // return zero to prevent stack overflow
+            writeAsmLine('CLR @r0')
+            writeAsmLine('PSH $r0')
+            writeAsmLine('RET')
         }
     }
 
     /** Hot stuff!!! Assemble sentences!! */
     function compileSentence (Sentence: SENTENCES) {
-        let sentenceID:string
-
+        let sentenceID: string
+        let assemblyCode: string
         switch (Sentence.type) {
         case 'phrase':
-            writeAsmCode(setupGenCode({
-                InitialAST: Sentence.CodeAST
-            }, Sentence.line), Sentence.line)
+            writeAsmCode(
+                setupGenCode({ InitialAST: Sentence.CodeAST }, Sentence.line),
+                Sentence.line
+            )
             break
         case 'ifEndif':
             sentenceID = '__if' + generateUtils.getNewJumpID(Sentence.line)
-            writeAsmCode(setupGenCode({
+            assemblyCode = setupGenCode({
                 InitialAST: Sentence.ConditionAST,
                 initialJumpTarget: sentenceID + '_endif',
                 initialJumpNotTarget: sentenceID + '_start'
-            }, Sentence.line), Sentence.line)
+            }, Sentence.line)
+            writeAsmCode(assemblyCode, Sentence.line)
             writeAsmLine(sentenceID + '_start:')
             Sentence.trueBlock.forEach(compileSentence)
             writeAsmLine(sentenceID + '_endif:')
             break
         case 'ifElse':
             sentenceID = '__if' + generateUtils.getNewJumpID(Sentence.line)
-            writeAsmCode(setupGenCode({
+            assemblyCode = setupGenCode({
                 InitialAST: Sentence.ConditionAST,
                 initialJumpTarget: sentenceID + '_else',
                 initialJumpNotTarget: sentenceID + '_start'
-            }, Sentence.line), Sentence.line)
+            }, Sentence.line)
+            writeAsmCode(assemblyCode, Sentence.line)
             writeAsmLine(sentenceID + '_start:')
             Sentence.trueBlock.forEach(compileSentence)
             writeAsmLine('JMP :' + sentenceID + '_endif')
@@ -216,11 +213,12 @@ export function codeGenerate (incomingProgram: CONTRACT) {
         case 'while':
             sentenceID = '__loop' + generateUtils.getNewJumpID(Sentence.line)
             writeAsmLine(sentenceID + '_continue:', Sentence.line)
-            writeAsmCode(setupGenCode({
+            assemblyCode = setupGenCode({
                 InitialAST: Sentence.ConditionAST,
                 initialJumpTarget: sentenceID + '_break',
                 initialJumpNotTarget: sentenceID + '_start'
-            }, Sentence.line))
+            }, Sentence.line)
+            writeAsmCode(assemblyCode)
             writeAsmLine(sentenceID + '_start:')
             generateUtils.latestLoopId.push(sentenceID)
             Sentence.trueBlock.forEach(compileSentence)
@@ -234,33 +232,37 @@ export function codeGenerate (incomingProgram: CONTRACT) {
             generateUtils.latestLoopId.push(sentenceID)
             Sentence.trueBlock.forEach(compileSentence)
             generateUtils.latestLoopId.pop()
-            writeAsmCode(setupGenCode({
+            assemblyCode = setupGenCode({
                 InitialAST: Sentence.ConditionAST,
                 initialJumpTarget: sentenceID + '_break',
                 initialJumpNotTarget: sentenceID + '_continue',
                 initialIsReversedLogic: true
-            }, Sentence.line))
+            }, Sentence.line)
+            writeAsmCode(assemblyCode)
             writeAsmLine(sentenceID + '_break:')
             break
         case 'for':
             sentenceID = '__loop' + generateUtils.getNewJumpID(Sentence.line)
-            writeAsmCode(setupGenCode({
+            assemblyCode = setupGenCode({
                 InitialAST: Sentence.threeSentences[0].CodeAST
-            }, Sentence.line), Sentence.line)
+            }, Sentence.line)
+            writeAsmCode(assemblyCode, Sentence.line)
             writeAsmLine(sentenceID + '_condition:')
-            writeAsmCode(setupGenCode({
+            assemblyCode = setupGenCode({
                 InitialAST: Sentence.threeSentences[1].CodeAST,
                 initialJumpTarget: sentenceID + '_break',
                 initialJumpNotTarget: sentenceID + '_start'
-            }, Sentence.line), Sentence.line)
+            }, Sentence.line)
+            writeAsmCode(assemblyCode, Sentence.line)
             writeAsmLine(sentenceID + '_start:')
             generateUtils.latestLoopId.push(sentenceID)
             Sentence.trueBlock.forEach(compileSentence)
             generateUtils.latestLoopId.pop()
             writeAsmLine(sentenceID + '_continue:')
-            writeAsmCode(setupGenCode({
+            assemblyCode = setupGenCode({
                 InitialAST: Sentence.threeSentences[2].CodeAST
-            }, Sentence.line), Sentence.line)
+            }, Sentence.line)
+            writeAsmCode(assemblyCode, Sentence.line)
             writeAsmLine('JMP :' + sentenceID + '_condition')
             writeAsmLine(sentenceID + '_break:')
             break
@@ -269,10 +271,11 @@ export function codeGenerate (incomingProgram: CONTRACT) {
         }
     }
 
+    /** Set initial values for functino genCode, that will traverse ans solve an AST */
     function setupGenCode (CodeGenInfo: CODEGEN_INFO, sentenceLine: number) : string {
         const auxVars: GENCODE_AUXVARS = {
-            CurrentFunction: incomingProgram.functions[generateUtils.currFunctionIndex],
-            memory: incomingProgram.memory,
+            CurrentFunction: Program.functions[generateUtils.currFunctionIndex],
+            memory: Program.memory,
             jumpId: generateUtils.jumpId,
             registerInfo: [],
             postOperations: '',
@@ -352,10 +355,10 @@ export function codeGenerate (incomingProgram: CONTRACT) {
             },
             getNewJumpID (line: number) {
                 let id = ''
-                if (incomingProgram.Config.enableLineLabels) {
+                if (Program.Config.enableLineLabels) {
                     id += line + '_'
                 }
-                if (incomingProgram.Config.enableRandom === true) {
+                if (Program.Config.enableRandom === true) {
                     return id + Math.random().toString(36).substr(2, 5)
                 }
                 this.jumpId++
@@ -373,7 +376,7 @@ export function codeGenerate (incomingProgram: CONTRACT) {
                     Template: MEM
                 })
             })
-            const code = genCode(incomingProgram, auxVars, {
+            const code = genCode(Program, auxVars, {
                 RemAST: CodeGenInfo.InitialAST,
                 logicalOp: CodeGenInfo.initialJumpTarget !== undefined,
                 revLogic: CodeGenInfo.initialIsReversedLogic,
@@ -405,7 +408,7 @@ export function codeGenerate (incomingProgram: CONTRACT) {
         }
 
         function validateReturnedVariable (InitAST: AST, RetObj: MEMORY_SLOT) {
-            if (incomingProgram.Config.warningToError &&
+            if (Program.Config.warningToError &&
                 CodeGenInfo.initialJumpTarget === undefined &&
                 RetObj.type === 'register') {
                 if ((InitAST.type === 'unaryASN' && InitAST.Operation.value !== '*') ||
