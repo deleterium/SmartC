@@ -192,7 +192,7 @@ export function createInstruction (AuxVars: GENCODE_AUXVARS, OperatorToken: TOKE
         return assignmentToAsm(AuxVars, assertNotUndefined(MemParam1), assertNotUndefined(MemParam2), OperatorToken.line)
     case 'Operator':
     case 'SetOperator':
-        return operatorToAsm(AuxVars, OperatorToken, MemParam1, MemParam2, rLogic, jpFalse, jpTrue)
+        return operatorToAsm(AuxVars, OperatorToken, assertNotUndefined(MemParam1), assertNotUndefined(MemParam2))
     case 'UnaryOperator':
     case 'SetUnaryOperator':
         return unaryOperatorToAsm(OperatorToken, assertNotUndefined(MemParam1))

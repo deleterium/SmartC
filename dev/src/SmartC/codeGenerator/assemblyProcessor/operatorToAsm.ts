@@ -1,132 +1,146 @@
 
+import { assertExpression } from '../../repository/repository'
 import { TOKEN, MEMORY_SLOT } from '../../typings/syntaxTypes'
 import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
 import { utils } from '../utils'
 import { createInstruction, flattenMemory } from './createInstruction'
 
-export function operatorToAsm (auxVars: GENCODE_AUXVARS, objoperator: TOKEN, param1?: MEMORY_SLOT, param2?: MEMORY_SLOT, rLogic?:boolean, jpFalse?: string, jpTrue?:string): string {
-    let retinstr = ''
+/** Create assembly intructions for binary operators or SetOperators.
+ * @returns the assembly code necessary for the assignment to happen
+ */
+export function operatorToAsm (AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, LeftMem: MEMORY_SLOT, RightMem: MEMORY_SLOT) : string {
+    const FlatLeft = flattenMemory(AuxVars, LeftMem, OperatorToken.line)
+    const FlatRight = flattenMemory(AuxVars, RightMem, OperatorToken.line)
 
-    let allowOptimization = false
-    let optimized = false
-
-    if (objoperator.type !== 'Operator' && objoperator.type !== 'SetOperator') {
-        throw new Error('Internal error')
-    }
-
-    if (param1 === undefined || param2 === undefined) {
-        throw new TypeError(`At line: ${objoperator.line}. Missing parameters. BugReport please.`)
-    }
-
-    if (param1.type === 'constant') {
-        throw new TypeError(`At line: ${objoperator.line}. Can not createInstruction. BugReport please.`)
-    }
-    const TmpMemObj1 = flattenMemory(auxVars, param1, objoperator.line)
-    retinstr += TmpMemObj1.asmCode
-
-    if (param2.type === 'constant') {
-        allowOptimization = true
-    }
-    const TmpMemObj2 = flattenMemory(auxVars, param2, objoperator.line)
-    retinstr += TmpMemObj2.asmCode
-
-    if (allowOptimization === true) {
-        function removeLastButOne () {
-            if (retinstr.length > 0) {
-                const codes = retinstr.split('\n')
-                codes.pop()
-                codes.pop()
-                codes.push('')
-                retinstr = codes.join('\n')
+    function operatorToAsmMain () {
+        assertExpression(LeftMem.type !== 'constant')
+        let retinstr = ''
+        if (RightMem.type === 'constant') {
+            const optimizationResult = testOptimizations()
+            if (optimizationResult === undefined) {
+                AuxVars.freeRegister(FlatRight.FlatMem.address)
+                return ''
+            }
+            if (optimizationResult.length > 0) {
+                if (FlatLeft.isNew === true) {
+                    AuxVars.freeRegister(FlatRight.FlatMem.address)
+                    retinstr += createInstruction(AuxVars, utils.genAssignmentToken(), LeftMem, FlatLeft.FlatMem)
+                    AuxVars.freeRegister(FlatLeft.FlatMem.address)
+                }
+                return FlatLeft.asmCode + optimizationResult + retinstr
             }
         }
+        // No optimization was possible, do regular operations
+        switch (OperatorToken.value) {
+        case '+':
+        case '+=':
+            retinstr += 'ADD'
+            break
+        case '-':
+        case '-=':
+            retinstr += 'SUB'
+            break
+        case '*':
+        case '*=':
+            retinstr += 'MUL'
+            break
+        case '/':
+        case '/=':
+            retinstr += 'DIV'
+            break
+        case '|':
+        case '|=':
+            retinstr += 'BOR'
+            break
+        case '&':
+        case '&=':
+            retinstr += 'AND'
+            break
+        case '^':
+        case '^=':
+            retinstr += 'XOR'
+            break
+        case '%':
+        case '%=':
+            retinstr += 'MOD'
+            break
+        case '<<':
+        case '<<=':
+            retinstr += 'SHL'
+            break
+        case '>>':
+        case '>>=':
+            retinstr += 'SHR'
+            break
+        default:
+            throw new TypeError(`Internal error at line: ${OperatorToken.line}.`)
+        }
+        retinstr += ` @${FlatLeft.FlatMem.asmName} $${FlatRight.FlatMem.asmName}\n`
+        AuxVars.freeRegister(FlatRight.FlatMem.address)
+        if (FlatLeft.isNew === true) {
+            retinstr += createInstruction(AuxVars, utils.genAssignmentToken(), LeftMem, FlatLeft.FlatMem)
+            AuxVars.freeRegister(FlatLeft.FlatMem.address)
+        }
+        return FlatLeft.asmCode + FlatRight.asmCode + retinstr
+    }
+
+    /** Check and do optimization on a constant right side.
+     * Returns undefined if optimization is do nothing
+     * Returns empty string if no optimization was found
+     * Returns assembly code with optimized code
+     */
+    function testOptimizations () : string|undefined {
         // if add new condition here, add also in checkOperatorOptimization code oKSx4ab
         // here we can have optimizations for all operations.
-        if (objoperator.value === '+' || objoperator.value === '+=') {
-            if (param2.hexContent === '0000000000000000') {
-                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
-                return ''
-            }
-            if (param2.hexContent === '0000000000000001') {
-                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
-                removeLastButOne()
-                retinstr += createInstruction(auxVars, utils.genIncToken(), TmpMemObj1.FlatMem)
-                optimized = true
-            }
-            if (param2.hexContent === '0000000000000002') {
-                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
-                removeLastButOne()
-                const OptMem = auxVars.memory.find(MEM => MEM.asmName === 'n2' && MEM.hexContent === '0000000000000002')
-                if (OptMem === undefined) {
-                    retinstr += createInstruction(auxVars, utils.genIncToken(), TmpMemObj1.FlatMem)
-                    retinstr += createInstruction(auxVars, utils.genIncToken(), TmpMemObj1.FlatMem)
-                    optimized = true
+        switch (OperatorToken.value) {
+        case '+':
+        case '+=':
+            switch (RightMem.hexContent) {
+            case '0000000000000000':
+                return
+            case '0000000000000001':
+                AuxVars.freeRegister(FlatRight.FlatMem.address)
+                return createInstruction(AuxVars, utils.genIncToken(), FlatLeft.FlatMem)
+            case '0000000000000002':
+                AuxVars.freeRegister(FlatRight.FlatMem.address)
+                if (!AuxVars.memory.find(MEM => MEM.asmName === 'n2' && MEM.hexContent === '0000000000000002')) {
+                    return createInstruction(AuxVars, utils.genIncToken(), FlatLeft.FlatMem) +
+                    createInstruction(AuxVars, utils.genIncToken(), FlatLeft.FlatMem)
                 }
             }
-        } else if (objoperator.value === '-' || objoperator.value === '-=') {
-            if (param2.hexContent === '0000000000000000') {
-                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
-                return ''
+            return ''
+        case '-':
+        case '-=':
+            if (RightMem.hexContent === '0000000000000000') {
+                return
             }
-            if (param2.hexContent === '0000000000000001') {
-                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
-                removeLastButOne()
-                retinstr += createInstruction(auxVars, utils.genDecToken(), TmpMemObj1.FlatMem)
-                optimized = true
+            if (RightMem.hexContent === '0000000000000001') {
+                AuxVars.freeRegister(FlatRight.FlatMem.address)
+                return createInstruction(AuxVars, utils.genDecToken(), FlatLeft.FlatMem)
             }
-        } else if (objoperator.value === '*' || objoperator.value === '*=') {
-            if (param2.hexContent === '0000000000000000') {
-                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
-                removeLastButOne()
-                retinstr += createInstruction(auxVars, utils.genAssignmentToken(), TmpMemObj1.FlatMem, param2)
-                optimized = true
+            return ''
+        case '*':
+        case '*=':
+            if (RightMem.hexContent === '0000000000000001') {
+                AuxVars.freeRegister(FlatRight.FlatMem.address)
+                return
             }
-            if (param2.hexContent === '0000000000000001') {
-                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
-                return ''
+            if (RightMem.hexContent === '0000000000000000') {
+                AuxVars.freeRegister(FlatRight.FlatMem.address)
+                return createInstruction(AuxVars, utils.genAssignmentToken(), FlatLeft.FlatMem, RightMem)
             }
-        } else if (objoperator.value === '/' || objoperator.value === '/=') {
-            if (param2.hexContent === '0000000000000001') {
-                auxVars.freeRegister(TmpMemObj2.FlatMem.address)
-                return ''
+            return ''
+        case '/':
+        case '/=':
+            if (RightMem.hexContent === '0000000000000001') {
+                AuxVars.freeRegister(FlatRight.FlatMem.address)
+                return
             }
+            return ''
+        default:
+            return ''
         }
     }
 
-    if (optimized === false) {
-        if (objoperator.value === '+' || objoperator.value === '+=') {
-            retinstr += 'ADD'
-        } else if (objoperator.value === '-' || objoperator.value === '-=') {
-            retinstr += 'SUB'
-        } else if (objoperator.value === '*' || objoperator.value === '*=') {
-            retinstr += 'MUL'
-        } else if (objoperator.value === '/' || objoperator.value === '/=') {
-            retinstr += 'DIV'
-        } else if (objoperator.value === '|' || objoperator.value === '|=') {
-            retinstr += 'BOR'
-        } else if (objoperator.value === '&' || objoperator.value === '&=') {
-            retinstr += 'AND'
-        } else if (objoperator.value === '^' || objoperator.value === '^=') {
-            retinstr += 'XOR'
-        } else if (objoperator.value === '%' || objoperator.value === '%=') {
-            retinstr += 'MOD'
-        } else if (objoperator.value === '<<' || objoperator.value === '<<=') {
-            retinstr += 'SHL'
-        } else if (objoperator.value === '>>' || objoperator.value === '>>=') {
-            retinstr += 'SHR'
-        } else {
-            throw new TypeError('At line: ' + objoperator.line + '.Operator not supported ' + objoperator.value)
-        }
-
-        retinstr += ' @' + TmpMemObj1.FlatMem.asmName + ' $' + TmpMemObj2.FlatMem.asmName + '\n'
-
-        auxVars.freeRegister(TmpMemObj2.FlatMem.address)
-    }
-
-    if (TmpMemObj1.isNew === true) {
-        retinstr += createInstruction(auxVars, utils.genAssignmentToken(), param1, TmpMemObj1.FlatMem)
-        auxVars.freeRegister(TmpMemObj1.FlatMem.address)
-    }
-
-    return retinstr
+    return operatorToAsmMain()
 }
