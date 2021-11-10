@@ -18,10 +18,8 @@ export const utils = {
                 throw new TypeError('Only integer numbers in createConstantMemObj().')
             }
             param = value.toString(16).padStart(16, '0').slice(-16)
-        } else if (typeof (value) === 'string') {
-            param = value.padStart(16, '0').slice(-16)
         } else {
-            throw new TypeError('Unknow value arrived at createConstantMemObj().')
+            param = value.padStart(16, '0').slice(-16)
         }
         return {
             address: -1,
@@ -70,76 +68,65 @@ export const utils = {
         return { type: 'Comparision', precedence: 6, value: '!=', line: -1 }
     },
     genAPICallToken (line: number, name?: string): TOKEN {
-        if (name === undefined) {
-            throw new TypeError('Wrong APICall name in genAPICallToken')
-        }
-        return { type: 'APICall', precedence: 0, value: name, line: line }
+        return { type: 'APICall', precedence: 0, value: assertNotUndefined(name), line: line }
     },
     genPushToken (line: number): TOKEN {
         return { type: 'Push', precedence: 12, value: '', line: line }
     },
-    mulHexContents (param1?: number|string, param2?: number|string) {
+    mulHexContents (param1: number|string = 'Error', param2: number|string = 'Error') {
         let n1: bigint, n2: bigint
         if (typeof (param1) === 'number') {
             n1 = BigInt(param1)
-        } else if (typeof (param1) === 'string') {
+        } else {
             n1 = BigInt('0x' + param1)
-        } else throw new TypeError('Wrong type in mulHexContents')
-
+        }
         if (typeof (param2) === 'number') {
             n2 = BigInt(param2)
-        } else if (typeof (param2) === 'string') {
+        } else {
             n2 = BigInt('0x' + param2)
-        } else throw new TypeError('Wrong type in mulHexContents')
-
+        }
         return (n1 * n2).toString(16).padStart(16, '0').slice(-16)
     },
-    divHexContents (param1?: number|string, param2?: number|string) {
+    divHexContents (param1: number|string = 'Error', param2: number|string = 'Error') {
         let n1: bigint, n2: bigint
         if (typeof (param1) === 'number') {
             n1 = BigInt(param1)
-        } else if (typeof (param1) === 'string') {
+        } else {
             n1 = BigInt('0x' + param1)
-        } else throw new TypeError('Wrong type in divHexContents')
-
+        }
         if (typeof (param2) === 'number') {
             n2 = BigInt(param2)
-        } else if (typeof (param2) === 'string') {
+        } else {
             n2 = BigInt('0x' + param2)
-        } else throw new TypeError('Wrong type in divHexContents')
-
+        }
         return (n1 / n2).toString(16).padStart(16, '0').slice(-16)
     },
-    addHexContents (param1?: number|string, param2?: number|string) {
+    addHexContents (param1: number|string = 'Error', param2: number|string = 'Error') {
         let n1: bigint, n2: bigint
         if (typeof (param1) === 'number') {
             n1 = BigInt(param1)
-        } else if (typeof (param1) === 'string') {
+        } else {
             n1 = BigInt('0x' + param1)
-        } else throw new TypeError('Wrong type in addHexContents')
-
+        }
         if (typeof (param2) === 'number') {
             n2 = BigInt(param2)
-        } else if (typeof (param2) === 'string') {
+        } else {
             n2 = BigInt('0x' + param2)
-        } else throw new TypeError('Wrong type in addHexContents')
-
+        }
         return (n1 + n2).toString(16).padStart(16, '0').slice(-16)
     },
-    subHexContents (param1?: number|string, param2?: number|string) {
+    subHexContents (param1: number|string = 'Error', param2: number|string = 'Error') {
         let n1: bigint, n2: bigint
         if (typeof (param1) === 'number') {
             n1 = BigInt(param1)
-        } else if (typeof (param1) === 'string') {
+        } else {
             n1 = BigInt('0x' + param1)
-        } else throw new TypeError('Wrong type in addHexContents')
-
+        }
         if (typeof (param2) === 'number') {
             n2 = BigInt(param2)
-        } else if (typeof (param2) === 'string') {
+        } else {
             n2 = BigInt('0x' + param2)
-        } else throw new TypeError('Wrong type in addHexContents')
-
+        }
         let sub = n1 - n2
         if (sub < 0) {
             sub += 18446744073709551616n
@@ -149,17 +136,16 @@ export const utils = {
     /** Splits an AST into array of AST based on delimiters */
     splitASTOnDelimiters (Obj: AST) {
         const ret: AST[] = []
-
-        function recursiveSplit (recursiveAST: AST) {
-            if (recursiveAST.type === 'endASN' || recursiveAST.type === 'lookupASN') {
-                ret.push(recursiveAST)
+        function recursiveSplit (RecursiveAST: AST) {
+            if (RecursiveAST.type === 'endASN' || RecursiveAST.type === 'lookupASN') {
+                ret.push(RecursiveAST)
                 return
             }
-            if (recursiveAST.type === 'binaryASN' && recursiveAST.Operation.type === 'Delimiter') {
-                recursiveSplit(recursiveAST.Left)
-                recursiveSplit(recursiveAST.Right)
+            if (RecursiveAST.type === 'binaryASN' && RecursiveAST.Operation.type === 'Delimiter') {
+                recursiveSplit(RecursiveAST.Left)
+                recursiveSplit(RecursiveAST.Right)
             } else {
-                ret.push(recursiveAST)
+                ret.push(RecursiveAST)
             }
         }
         recursiveSplit(Obj)
@@ -173,17 +159,18 @@ export const utils = {
      */
     isNotValidDeclarationOp (desiredDeclaration: DECLARATION_TYPES, MemoObj: MEMORY_SLOT) {
         const memoDeclaration = this.getDeclarationFromMemory(MemoObj)
-
         if (desiredDeclaration === 'void' || memoDeclaration === 'void') {
             return true
         }
         if (desiredDeclaration === memoDeclaration) {
             return false
         }
-        if (desiredDeclaration === 'void_ptr' && (memoDeclaration === 'long_ptr' || memoDeclaration === 'struct_ptr')) {
+        if (desiredDeclaration === 'void_ptr' &&
+            (memoDeclaration === 'long_ptr' || memoDeclaration === 'struct_ptr')) {
             return false
         }
-        if (memoDeclaration === 'void_ptr' && (desiredDeclaration === 'long_ptr' || desiredDeclaration === 'struct_ptr')) {
+        if (memoDeclaration === 'void_ptr' &&
+            (desiredDeclaration === 'long_ptr' || desiredDeclaration === 'struct_ptr')) {
             return false
         }
         if (desiredDeclaration.includes('_ptr') && MemoObj.type === 'constant') {
@@ -195,9 +182,8 @@ export const utils = {
     getDeclarationFromMemory (MemoObj: MEMORY_SLOT): DECLARATION_TYPES {
         if (MemoObj.Offset === undefined) {
             return MemoObj.declaration
-        } else {
-            return MemoObj.Offset.declaration
         }
+        return MemoObj.Offset.declaration
     },
     setMemoryDeclaration (MemoObj: MEMORY_SLOT, dec: DECLARATION_TYPES) {
         if (MemoObj.Offset === undefined) {
