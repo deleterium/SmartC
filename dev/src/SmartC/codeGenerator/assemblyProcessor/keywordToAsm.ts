@@ -1,12 +1,12 @@
 import { assertNotUndefined } from '../../repository/repository'
 import { TOKEN, MEMORY_SLOT } from '../../typings/syntaxTypes'
-import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
-import { flattenMemory, FLATTEN_MEMORY_RETURN_OBJECT } from './createInstruction'
+import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_AUXVARS } from '../codeGeneratorTypes'
+import { flattenMemory } from './createInstruction'
 
 /**
  * Create instruction for keywords asm, break, continue, exit, goto, halt, label, return and sleep.
  */
-export function keywordToAsm (
+export default function keywordToAsm (
     AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, FlatMem?: MEMORY_SLOT
 ): string {
     let TmpMemObj: FLATTEN_MEMORY_RETURN_OBJECT

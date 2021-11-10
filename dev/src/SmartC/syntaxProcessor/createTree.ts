@@ -1,7 +1,3 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 import { assertNotUndefined } from '../repository/repository'
 import { AST, LOOKUP_ASN, TOKEN } from '../typings/syntaxTypes'
 
@@ -9,7 +5,7 @@ import { AST, LOOKUP_ASN, TOKEN } from '../typings/syntaxTypes'
  * Traverse an array of tokens to create a real AST based on
  * simple operations. Uses precedence values to decide the operations order.
  */
-export function createTree (tokenArray: TOKEN[] | undefined): AST {
+export default function createTree (tokenArray: TOKEN[] | undefined): AST {
     const tokenToAst = assertNotUndefined(tokenArray,
         'Internal error. Undefined AST to create syntactic tree')
 

@@ -2,23 +2,21 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
-import { assertNotUndefined, deepCopy } from '../repository/repository'
 import { CONTRACT } from '../typings/contractTypes'
-import { AST, DECLARATION_TYPES, MEMORY_SLOT, SENTENCES } from '../typings/syntaxTypes'
-import { genCode } from './astProcessor/genCode'
+import { MEMORY_SLOT, SENTENCES } from '../typings/syntaxTypes'
+import setupGenCode from './astProcessor/setupGenCode'
 
 import { optimize } from './optimizer'
-import { CODEGENERATE_AUXVARS, CODEGEN_INFO, GENCODE_AUXVARS } from './typings/codeGeneratorTypes'
-import { utils } from './utils'
+import { GLOBAL_AUXVARS } from './codeGeneratorTypes'
 
 /**
  * Code generator. Translates a Program into assembly source code
  * @param Program object holding information
  * @returns assembly source code
  */
-export function codeGenerate (Program: CONTRACT) {
+export default function codeGenerate (Program: CONTRACT) {
     // holds variables needed during compilation
-    const generateUtils: CODEGENERATE_AUXVARS = {
+    const GlobalCodeVars: GLOBAL_AUXVARS = {
         Program: Program,
         latestLoopId: [],
         jumpId: 0,
@@ -55,7 +53,7 @@ export function codeGenerate (Program: CONTRACT) {
             writeAsmLine('ERR :__fn_catch')
         }
         // Add code for global sentences
-        generateUtils.currFunctionIndex = -1
+        GlobalCodeVars.currFunctionIndex = -1
         Program.Global.sentences.forEach(compileSentence)
         // jump to main function, or program ends.
         if (Program.functions.find(obj => obj.name === 'main') === undefined) {
@@ -65,7 +63,7 @@ export function codeGenerate (Program: CONTRACT) {
         }
         // For every function:
         Program.functions.forEach((currentFunction, index) => {
-            generateUtils.currFunctionIndex = index
+            GlobalCodeVars.currFunctionIndex = index
             writeAsmLine('') // blank line to be nice to debugger!
             functionHeaderGenerator()
             // add code for functions sentences.
@@ -76,19 +74,19 @@ export function codeGenerate (Program: CONTRACT) {
         })
         // Optimize code;
         if (Program.Config.globalOptimization) {
-            return optimize(generateUtils.assemblyCode, Program.Config.maxConstVars)
+            return optimize(GlobalCodeVars.assemblyCode, Program.Config.maxConstVars)
         }
-        return generateUtils.assemblyCode
+        return GlobalCodeVars.assemblyCode
     }
 
     function writeAsmLine (lineContent: string, sourceCodeLine: number = 0) {
         if (Program.Config.outputSourceLineNumber === true &&
             sourceCodeLine !== 0 &&
-            sourceCodeLine !== generateUtils.currSourceLine) {
-            generateUtils.assemblyCode += `^comment line ${sourceCodeLine}\n`
-            generateUtils.currSourceLine = sourceCodeLine
+            sourceCodeLine !== GlobalCodeVars.currSourceLine) {
+            GlobalCodeVars.assemblyCode += `^comment line ${sourceCodeLine}\n`
+            GlobalCodeVars.currSourceLine = sourceCodeLine
         }
-        generateUtils.assemblyCode += lineContent + '\n'
+        GlobalCodeVars.assemblyCode += lineContent + '\n'
     }
 
     function writeAsmCode (lines: string, sourceCodeLine: number = 0) {
@@ -97,11 +95,11 @@ export function codeGenerate (Program: CONTRACT) {
         }
         if (Program.Config.outputSourceLineNumber === true &&
             sourceCodeLine !== 0 &&
-            sourceCodeLine !== generateUtils.currSourceLine) {
-            generateUtils.assemblyCode += `^comment line ${sourceCodeLine}\n`
-            generateUtils.currSourceLine = sourceCodeLine
+            sourceCodeLine !== GlobalCodeVars.currSourceLine) {
+            GlobalCodeVars.assemblyCode += `^comment line ${sourceCodeLine}\n`
+            GlobalCodeVars.currSourceLine = sourceCodeLine
         }
-        generateUtils.assemblyCode += lines
+        GlobalCodeVars.assemblyCode += lines
     }
 
     /** Add content of macro 'program' information to assembly code */
@@ -137,14 +135,14 @@ export function codeGenerate (Program: CONTRACT) {
      *  Handle function initialization
     */
     function functionHeaderGenerator () {
-        const fname = Program.functions[generateUtils.currFunctionIndex].name
+        const fname = Program.functions[GlobalCodeVars.currFunctionIndex].name
         if (fname === 'main' || fname === 'catch') {
-            writeAsmLine(`__fn_${fname}:`, Program.functions[generateUtils.currFunctionIndex].line)
+            writeAsmLine(`__fn_${fname}:`, Program.functions[GlobalCodeVars.currFunctionIndex].line)
             writeAsmLine('PCS')
             return
         }
-        writeAsmLine(`__fn_${fname}:`, Program.functions[generateUtils.currFunctionIndex].line)
-        Program.functions[generateUtils.currFunctionIndex].argsMemObj.forEach(Obj => {
+        writeAsmLine(`__fn_${fname}:`, Program.functions[GlobalCodeVars.currFunctionIndex].line)
+        Program.functions[GlobalCodeVars.currFunctionIndex].argsMemObj.forEach(Obj => {
             writeAsmLine(`POP @${Obj.asmName}`)
         })
     }
@@ -153,15 +151,15 @@ export function codeGenerate (Program: CONTRACT) {
      * Handle function end
      */
     function functionTailGenerator () {
-        const fname = Program.functions[generateUtils.currFunctionIndex].name
+        const fname = Program.functions[GlobalCodeVars.currFunctionIndex].name
         if (fname === 'main' || fname === 'catch') {
-            if (generateUtils.assemblyCode.lastIndexOf('FIN') + 4 !== generateUtils.assemblyCode.length) {
+            if (GlobalCodeVars.assemblyCode.lastIndexOf('FIN') + 4 !== GlobalCodeVars.assemblyCode.length) {
                 writeAsmLine('FIN')
             }
             return
         }
-        if (generateUtils.assemblyCode.lastIndexOf('RET') + 4 !== generateUtils.assemblyCode.length) {
-            if (Program.functions[generateUtils.currFunctionIndex].declaration === 'void') {
+        if (GlobalCodeVars.assemblyCode.lastIndexOf('RET') + 4 !== GlobalCodeVars.assemblyCode.length) {
+            if (Program.functions[GlobalCodeVars.currFunctionIndex].declaration === 'void') {
                 writeAsmLine('RET')
                 return
             }
@@ -179,13 +177,13 @@ export function codeGenerate (Program: CONTRACT) {
         switch (Sentence.type) {
         case 'phrase':
             writeAsmCode(
-                setupGenCode({ InitialAST: Sentence.CodeAST }, Sentence.line),
+                setupGenCode(GlobalCodeVars, { InitialAST: Sentence.CodeAST }, Sentence.line),
                 Sentence.line
             )
             break
         case 'ifEndif':
-            sentenceID = '__if' + generateUtils.getNewJumpID(Sentence.line)
-            assemblyCode = setupGenCode({
+            sentenceID = '__if' + GlobalCodeVars.getNewJumpID(Sentence.line)
+            assemblyCode = setupGenCode(GlobalCodeVars, {
                 InitialAST: Sentence.ConditionAST,
                 initialJumpTarget: sentenceID + '_endif',
                 initialJumpNotTarget: sentenceID + '_start'
@@ -196,8 +194,8 @@ export function codeGenerate (Program: CONTRACT) {
             writeAsmLine(sentenceID + '_endif:')
             break
         case 'ifElse':
-            sentenceID = '__if' + generateUtils.getNewJumpID(Sentence.line)
-            assemblyCode = setupGenCode({
+            sentenceID = '__if' + GlobalCodeVars.getNewJumpID(Sentence.line)
+            assemblyCode = setupGenCode(GlobalCodeVars, {
                 InitialAST: Sentence.ConditionAST,
                 initialJumpTarget: sentenceID + '_else',
                 initialJumpNotTarget: sentenceID + '_start'
@@ -211,28 +209,28 @@ export function codeGenerate (Program: CONTRACT) {
             writeAsmLine(sentenceID + '_endif:')
             break
         case 'while':
-            sentenceID = '__loop' + generateUtils.getNewJumpID(Sentence.line)
+            sentenceID = '__loop' + GlobalCodeVars.getNewJumpID(Sentence.line)
             writeAsmLine(sentenceID + '_continue:', Sentence.line)
-            assemblyCode = setupGenCode({
+            assemblyCode = setupGenCode(GlobalCodeVars, {
                 InitialAST: Sentence.ConditionAST,
                 initialJumpTarget: sentenceID + '_break',
                 initialJumpNotTarget: sentenceID + '_start'
             }, Sentence.line)
             writeAsmCode(assemblyCode)
             writeAsmLine(sentenceID + '_start:')
-            generateUtils.latestLoopId.push(sentenceID)
+            GlobalCodeVars.latestLoopId.push(sentenceID)
             Sentence.trueBlock.forEach(compileSentence)
-            generateUtils.latestLoopId.pop()
+            GlobalCodeVars.latestLoopId.pop()
             writeAsmLine('JMP :' + sentenceID + '_continue')
             writeAsmLine(sentenceID + '_break:')
             break
         case 'do':
-            sentenceID = '__loop' + generateUtils.getNewJumpID(Sentence.line)
+            sentenceID = '__loop' + GlobalCodeVars.getNewJumpID(Sentence.line)
             writeAsmLine(sentenceID + '_continue:', Sentence.line)
-            generateUtils.latestLoopId.push(sentenceID)
+            GlobalCodeVars.latestLoopId.push(sentenceID)
             Sentence.trueBlock.forEach(compileSentence)
-            generateUtils.latestLoopId.pop()
-            assemblyCode = setupGenCode({
+            GlobalCodeVars.latestLoopId.pop()
+            assemblyCode = setupGenCode(GlobalCodeVars, {
                 InitialAST: Sentence.ConditionAST,
                 initialJumpTarget: sentenceID + '_break',
                 initialJumpNotTarget: sentenceID + '_continue',
@@ -242,24 +240,24 @@ export function codeGenerate (Program: CONTRACT) {
             writeAsmLine(sentenceID + '_break:')
             break
         case 'for':
-            sentenceID = '__loop' + generateUtils.getNewJumpID(Sentence.line)
-            assemblyCode = setupGenCode({
+            sentenceID = '__loop' + GlobalCodeVars.getNewJumpID(Sentence.line)
+            assemblyCode = setupGenCode(GlobalCodeVars, {
                 InitialAST: Sentence.threeSentences[0].CodeAST
             }, Sentence.line)
             writeAsmCode(assemblyCode, Sentence.line)
             writeAsmLine(sentenceID + '_condition:')
-            assemblyCode = setupGenCode({
+            assemblyCode = setupGenCode(GlobalCodeVars, {
                 InitialAST: Sentence.threeSentences[1].CodeAST,
                 initialJumpTarget: sentenceID + '_break',
                 initialJumpNotTarget: sentenceID + '_start'
             }, Sentence.line)
             writeAsmCode(assemblyCode, Sentence.line)
             writeAsmLine(sentenceID + '_start:')
-            generateUtils.latestLoopId.push(sentenceID)
+            GlobalCodeVars.latestLoopId.push(sentenceID)
             Sentence.trueBlock.forEach(compileSentence)
-            generateUtils.latestLoopId.pop()
+            GlobalCodeVars.latestLoopId.pop()
             writeAsmLine(sentenceID + '_continue:')
-            assemblyCode = setupGenCode({
+            assemblyCode = setupGenCode(GlobalCodeVars, {
                 InitialAST: Sentence.threeSentences[2].CodeAST
             }, Sentence.line)
             writeAsmCode(assemblyCode, Sentence.line)
@@ -269,172 +267,6 @@ export function codeGenerate (Program: CONTRACT) {
         case 'struct':
             // Nothing to do here
         }
-    }
-
-    /** Set initial values for functino genCode, that will traverse ans solve an AST */
-    function setupGenCode (CodeGenInfo: CODEGEN_INFO, sentenceLine: number) : string {
-        const auxVars: GENCODE_AUXVARS = {
-            CurrentFunction: Program.functions[generateUtils.currFunctionIndex],
-            memory: Program.memory,
-            jumpId: generateUtils.jumpId,
-            registerInfo: [],
-            postOperations: '',
-            isDeclaration: '',
-            isLeftSideOfAssignment: false,
-            isConstSentence: false,
-            hasVoidArray: false,
-            isTemp: auxvarsIsTemp,
-            getNewRegister: auxvarsGetNewRegister,
-            freeRegister: auxvarsFreeRegister,
-            getPostOperations: auxvarsGetPostOperations,
-            getMemoryObjectByName: auxvarsGetMemoryObjectByName,
-            getMemoryObjectByLocation: auxvarsGetMemoryObjectByLocation,
-            getNewJumpID: auxvarsGetNewJumpID
-        }
-
-        function setupGenCodeMain (): string {
-            CodeGenInfo.InitialAST = assertNotUndefined(CodeGenInfo.InitialAST)
-            CodeGenInfo.initialIsReversedLogic = CodeGenInfo.initialIsReversedLogic ?? false
-            // Create registers array
-            auxVars.memory.filter(OBJ => /^r\d$/.test(OBJ.asmName)).forEach(MEM => {
-                auxVars.registerInfo.push({
-                    inUse: false,
-                    Template: MEM
-                })
-            })
-            const code = genCode(Program, auxVars, {
-                RemAST: CodeGenInfo.InitialAST,
-                logicalOp: CodeGenInfo.initialJumpTarget !== undefined,
-                revLogic: CodeGenInfo.initialIsReversedLogic,
-                jumpFalse: CodeGenInfo.initialJumpTarget,
-                jumpTrue: CodeGenInfo.initialJumpNotTarget
-            })
-            validateReturnedVariable(CodeGenInfo.InitialAST, code.SolvedMem)
-            code.asmCode += auxVars.postOperations
-            generateUtils.jumpId = auxVars.jumpId
-            // Check throw conditions that were out-of-scope
-            const analysyCode = code.asmCode.split('\n')
-            code.asmCode = analysyCode.map(line => {
-                if (line.startsWith('JMP :%generateUtils.getLatestLoopId()%')) {
-                    return line.replace('%generateUtils.getLatestLoopId()%', generateUtils.getLatestLoopID())
-                }
-                return line
-            }).join('\n')
-            // optimizations for jumps and labels
-            if (code.asmCode.indexOf(':') >= 0) {
-                if (CodeGenInfo.InitialAST.type === 'endASN') {
-                    if (CodeGenInfo.InitialAST.Token.type === 'Keyword' &&
-                        CodeGenInfo.InitialAST.Token.value === 'label') {
-                        return code.asmCode // do not optimize!!!
-                    }
-                }
-                code.asmCode = utils.miniOptimizeJumps(code.asmCode)
-            }
-            return code.asmCode
-        }
-
-        function validateReturnedVariable (InitAST: AST, RetObj: MEMORY_SLOT) {
-            if (Program.Config.warningToError &&
-                CodeGenInfo.initialJumpTarget === undefined &&
-                RetObj.type === 'register') {
-                if ((InitAST.type === 'unaryASN' && InitAST.Operation.value !== '*') ||
-                    (InitAST.type === 'binaryASN' &&
-                        (InitAST.Operation.type === 'Comparision' || InitAST.Operation.type === 'Operator'))) {
-                    throw new TypeError(`At line: ${InitAST.Operation.line}. ` +
-                    'Warning: Operation returning a value that is not being used.')
-                }
-            }
-        }
-
-        function auxvarsIsTemp (loc: number) : boolean {
-            if (loc === -1) return false
-            const id = auxVars.registerInfo.find(OBJ => OBJ.Template.address === loc)
-            if (id?.inUse === true) {
-                return true
-            }
-            return false
-        }
-
-        function auxvarsGetNewRegister (line: number = sentenceLine): MEMORY_SLOT {
-            const id = auxVars.registerInfo.find(OBJ => OBJ.inUse === false)
-            if (id === undefined) {
-                throw new RangeError(`At line: ${line}. ` +
-                "No more registers available. Try to reduce nested operations or increase 'maxAuxVars'.")
-            }
-            id.inUse = true
-            return deepCopy(id.Template)
-        }
-
-        function auxvarsFreeRegister (loc: number|undefined): void {
-            if (loc === undefined || loc === -1) {
-                return
-            }
-            const id = auxVars.registerInfo.find(OBJ => OBJ.Template.address === loc)
-            if (id === undefined) return
-            id.inUse = false
-        }
-
-        function auxvarsGetPostOperations (): string {
-            const ret = auxVars.postOperations
-            auxVars.postOperations = ''
-            return ret
-        }
-
-        function auxvarsGetMemoryObjectByName (
-            varName: string, line: number = sentenceLine, varDeclaration: DECLARATION_TYPES = ''
-        ) : MEMORY_SLOT {
-            let MemFound: MEMORY_SLOT | undefined
-            if (auxVars.CurrentFunction !== undefined) { // find function scope variable
-                MemFound = auxVars.memory.find(obj => {
-                    return obj.name === varName && obj.scope === auxVars.CurrentFunction?.name
-                })
-            }
-            if (MemFound === undefined) {
-                // do a global scope search
-                MemFound = auxVars.memory.find(obj => obj.name === varName && obj.scope === '')
-            }
-            if (MemFound === undefined) {
-                throw new Error(`At line: ${line}. Using variable '${varName}' before declaration.`)
-            }
-            if (varDeclaration !== '') { // we are in declarations sentence
-                MemFound.isDeclared = true
-                return deepCopy(MemFound)
-            }
-            return deepCopy(MemFound)
-        }
-
-        function auxvarsGetMemoryObjectByLocation (loc: number|string, line: number = sentenceLine): MEMORY_SLOT {
-            let addr:number
-            switch (typeof (loc)) {
-            case 'number':
-                addr = loc
-                break
-            case 'string':
-                addr = parseInt(loc, 16)
-                break
-            default:
-                throw new TypeError('Internal error. Wrong type in getMemoryObjectByLocation.')
-            }
-            const search = auxVars.memory.find(obj => obj.address === addr)
-            if (search === undefined) {
-                throw new SyntaxError(`At line: ${line}. No variable found at address '0x${addr}'.`)
-            }
-            return deepCopy(search)
-        }
-
-        function auxvarsGetNewJumpID (line: number) : string {
-            let id = ''
-            if (Program.Config.enableLineLabels) {
-                id += line + '_'
-            }
-            if (Program.Config.enableRandom === true) {
-                return id + Math.random().toString(36).substr(2, 5)
-            }
-            auxVars.jumpId++
-            return id + auxVars.jumpId.toString(36)
-        }
-
-        return setupGenCodeMain()
     }
 
     return generateMain()

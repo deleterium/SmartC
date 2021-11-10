@@ -4,19 +4,13 @@
 
 import { assertNotUndefined } from '../../repository/repository'
 import { MEMORY_SLOT, TOKEN } from '../../typings/syntaxTypes'
-import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
+import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_AUXVARS } from '../codeGeneratorTypes'
 
-import { utils } from '../utils'
-import { assignmentToAsm } from './assignmentToAsm'
-import { comparisionToAsm } from './comparisionToAsm'
-import { keywordToAsm } from './keywordToAsm'
-import { operatorToAsm } from './operatorToAsm'
-
-export type FLATTEN_MEMORY_RETURN_OBJECT = {
-    FlatMem: MEMORY_SLOT
-    asmCode: string
-    isNew: boolean
-}
+import utils from '../utils'
+import assignmentToAsm from './assignmentToAsm'
+import comparisionToAsm from './comparisionToAsm'
+import keywordToAsm from './keywordToAsm'
+import operatorToAsm from './operatorToAsm'
 
 /** Transforms a instruction into const instruction */
 export function setConstAsmCode (progMemory: MEMORY_SLOT[], code: string, line: number) {

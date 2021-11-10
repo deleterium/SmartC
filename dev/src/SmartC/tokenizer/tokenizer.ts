@@ -18,7 +18,7 @@ import { PRE_TOKEN } from '../typings/syntaxTypes'
  * @param inputSourceCode source code text
  * @returns array of pre tokens
  */
-export function tokenize (inputSourceCode: string): PRE_TOKEN[] {
+export default function tokenize (inputSourceCode: string): PRE_TOKEN[] {
     type SIMPLE_PRETOKEN_SPECS = {
         char: string
         pretokenType: 'equal'|'star'|'not'|'bracket'|'minus'|'plus'|'backslash'|

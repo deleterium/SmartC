@@ -1,4 +1,4 @@
-import { preprocess } from '../preprocessor'
+import preprocess from '../preprocessor'
 
 describe('preprocessor right tests', () => {
     it('#define test', () => {

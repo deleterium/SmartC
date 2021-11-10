@@ -3,17 +3,17 @@
 // License: BSD 3-Clause License
 
 import { CONTRACT } from '../../typings/contractTypes'
-import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings/codeGeneratorTypes'
+import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 
-import { utils } from '../utils'
-import { binaryAsnProcessor } from './binaryAsn'
-import { endAsnProcessor } from './endAsn'
-import { exceptionAsnProcessor } from './exceptionAsn'
-import { lookupAsnProcessor } from './lookupAsn'
-import { unaryAsnProcessor } from './unaryAsn'
+import utils from '../utils'
+import binaryAsnProcessor from './binaryAsn'
+import endAsnProcessor from './endAsn'
+import exceptionAsnProcessor from './exceptionAsn'
+import lookupAsnProcessor from './lookupAsn'
+import unaryAsnProcessor from './unaryAsn'
 
 /** Manages the functions to process Abstract Syntax Nodes */
-export function genCode (
+export default function genCode (
     Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
 ) : GENCODE_SOLVED_OBJECT {
     switch (ScopeInfo.RemAST.type) {

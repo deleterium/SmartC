@@ -5,7 +5,7 @@
 import { CONTRACT } from '../typings/contractTypes'
 import { SENTENCES } from '../typings/syntaxTypes'
 import { assertNotUndefined } from '../repository/repository'
-import { createTree } from './createTree'
+import createTree from './createTree'
 
 /**
  * Traverse Program transforming some sentences properties from arrays of
@@ -16,7 +16,7 @@ import { createTree } from './createTree'
  * @returns {void} but Program will be updated.
  * @throws {TypeError|SyntaxError} on any mistake.
  */
-export function syntaxProcess (Program: CONTRACT) : void {
+export default function syntaxProcess (Program: CONTRACT) : void {
     /* * * Main function! * * */
     function syntaxProcessMain () : void {
         Program.Global.sentences.forEach(processSentence)

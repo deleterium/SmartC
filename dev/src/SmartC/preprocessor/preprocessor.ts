@@ -7,7 +7,7 @@
  * @param sourcecode Source code input
  * @returns preprocessed string
  */
-export function preprocess (sourcecode: string) {
+export default function preprocess (sourcecode: string) {
     const preprocessorCodes: {
         regex: RegExp
         type: 'DEFINE_NULL' | 'DEFINE_VAL' | 'UNDEF' | 'IFDEF' | 'IFNDEF' | 'ELSE' | 'ENDIF' | 'MATCHES_ALL'

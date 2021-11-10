@@ -2,12 +2,12 @@ import { deepCopy } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
 import { MEMORY_SLOT, DECLARATION_TYPES, BINARY_ASN } from '../../typings/syntaxTypes'
 import { createSimpleInstruction, createInstruction, setConstAsmCode } from '../assemblyProcessor/createInstruction'
-import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings/codeGeneratorTypes'
-import { utils } from '../utils'
-import { genCode } from './genCode'
+import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
+import utils from '../utils'
+import genCode from './genCode'
 
 /** Process one binary abstract syntax node */
-export function binaryAsnProcessor (
+export default function binaryAsnProcessor (
     Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
 ) : GENCODE_SOLVED_OBJECT {
     let assemblyCode = ''

@@ -1,14 +1,14 @@
 import { assertExpression, assertNotUndefined } from '../../repository/repository'
 import { MEMORY_SLOT, OFFSET_MODIFIER_CONSTANT } from '../../typings/syntaxTypes'
-import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
-import { utils } from '../utils'
-import { flattenMemory, FLATTEN_MEMORY_RETURN_OBJECT } from './createInstruction'
+import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_AUXVARS } from '../codeGeneratorTypes'
+import utils from '../utils'
+import { flattenMemory } from './createInstruction'
 
 /**
  * Create assembly intructions for an assignment.
  * @returns the assembly code necessary for the assignment to happen
  */
-export function assignmentToAsm (
+export default function assignmentToAsm (
     auxVars: GENCODE_AUXVARS, Left: MEMORY_SLOT, Right: MEMORY_SLOT, operationLine: number
 ) : string {
     /** Main function */

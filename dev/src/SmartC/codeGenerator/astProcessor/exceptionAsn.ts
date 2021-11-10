@@ -1,10 +1,10 @@
 import { assertNotUndefined } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
 import { createInstruction } from '../assemblyProcessor/createInstruction'
-import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings/codeGeneratorTypes'
-import { genCode } from './genCode'
+import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
+import genCode from './genCode'
 
-export function exceptionAsnProcessor (
+export default function exceptionAsnProcessor (
     Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
 ) : GENCODE_SOLVED_OBJECT {
     if (ScopeInfo.RemAST.type !== 'exceptionASN') {

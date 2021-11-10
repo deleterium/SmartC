@@ -11,7 +11,7 @@ import { stringToHexstring, ReedSalomonAddressDecode } from '../repository/repos
  * @returns Array of TOKENS. Recursive on Arr, CodeCave and CodeDomain types
  * @throws {TypeError | SyntaxError} at any mistakes
  */
-export function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
+export default function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
     type TOKEN_SPEC = {
         sequence: string[]
         action(item: number): TOKEN

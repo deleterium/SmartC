@@ -1,11 +1,11 @@
 import { TOKEN, MEMORY_SLOT } from '../../typings/syntaxTypes'
-import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
+import { GENCODE_AUXVARS } from '../codeGeneratorTypes'
 import { flattenMemory } from './createInstruction'
 
 /** Create assembly intructions for comparisions.
  * @returns the assembly code necessary for branch operations
  */
-export function comparisionToAsm (
+export default function comparisionToAsm (
     AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, LeftMem: MEMORY_SLOT, RightMem: MEMORY_SLOT,
     rLogic:boolean, jpFalse: string, jpTrue:string
 ): string {

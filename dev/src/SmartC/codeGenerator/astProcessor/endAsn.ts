@@ -1,11 +1,11 @@
 import { CONTRACT } from '../../typings/contractTypes'
 import { END_ASN } from '../../typings/syntaxTypes'
 import { createSimpleInstruction, createInstruction } from '../assemblyProcessor/createInstruction'
-import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings/codeGeneratorTypes'
-import { utils } from '../utils'
-import { genCode } from './genCode'
+import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
+import utils from '../utils'
+import genCode from './genCode'
 
-export function endAsnProcessor (
+export default function endAsnProcessor (
     Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
 ) : GENCODE_SOLVED_OBJECT {
     let currentNode: END_ASN

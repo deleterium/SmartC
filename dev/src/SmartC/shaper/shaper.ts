@@ -10,20 +10,9 @@ import {
 } from '../typings/syntaxTypes'
 import { assertNotUndefined, deepCopy } from '../repository/repository'
 import { APITableTemplate, getTypeDefinitionTemplate } from './templates'
-import { codeToSentenceArray } from './sentencesProcessor'
-import { phraseToMemoryObject } from './memoryProcessor'
-
-export type SHAPER_AUXVARS = {
-    currentToken: number
-    /** current loop name to be used if break or continue keywords are found. */
-    latestLoopId: string[]
-    /** If true, compilation loop on generator() will not expect the variable to be declared. Used in function arguments. */
-    isFunctionArgument: boolean
-    /** Variables scope (function name) */
-    currentScopeName:string
-    /** Prefix to be used in variables names (function name + '_') */
-    currentPrefix: string
-}
+import codeToSentenceArray from './sentencesProcessor'
+import phraseToMemoryObject from './memoryProcessor'
+import { SHAPER_AUXVARS } from './shaperTypings'
 
 /** Translate an array of tokens into the object representing the program.
  * This is the second phase of parser
@@ -32,7 +21,7 @@ export type SHAPER_AUXVARS = {
  * @returns {void} but Program will be updated.
  * @throws {TypeError | SyntaxError} at any mistakes
  */
-export function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
+export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
     const AuxVars: SHAPER_AUXVARS = {
         currentToken: 0,
         latestLoopId: [],

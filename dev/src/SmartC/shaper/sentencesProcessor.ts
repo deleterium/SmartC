@@ -4,11 +4,11 @@
 
 import { assertNotEqual } from '../repository/repository'
 import { TOKEN, SENTENCES, SENTENCE_PHRASE, SENTENCE_STRUCT } from '../typings/syntaxTypes'
-import { SHAPER_AUXVARS } from './shaper'
+import { SHAPER_AUXVARS } from './shaperTypings'
 
 /** Expect one or more sentences in codetrain and converts it
  * to items in sentences array */
-export function codeToSentenceArray (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = [], addTerminator: boolean = false) : SENTENCES[] {
+export default function codeToSentenceArray (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = [], addTerminator: boolean = false) : SENTENCES[] {
     if (addTerminator) {
         codetrain.push({ type: 'Terminator', value: ';', precedence: 11, line: -1 })
     }

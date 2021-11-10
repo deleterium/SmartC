@@ -4,12 +4,12 @@ import {
     MEMORY_SLOT, ARRAY_TYPE_DEFINITION, STRUCT_TYPE_DEFINITION, DECLARATION_TYPES, LOOKUP_ASN, TOKEN_MODIFIER
 } from '../../typings/syntaxTypes'
 import { createInstruction } from '../assemblyProcessor/createInstruction'
-import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings/codeGeneratorTypes'
-import { utils } from '../utils'
-import { functionSolver } from './functionSolver'
-import { genCode } from './genCode'
+import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
+import utils from '../utils'
+import functionSolver from './functionSolver'
+import genCode from './genCode'
 
-export function lookupAsnProcessor (
+export default function lookupAsnProcessor (
     Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
 ) : GENCODE_SOLVED_OBJECT {
     let arrayIndex = -1

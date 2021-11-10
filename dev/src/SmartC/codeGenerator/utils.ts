@@ -9,9 +9,9 @@ import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES, LOOKUP_ASN } from '../typin
 /**
  * Simple functions that do not depend external variables.
  */
-export const utils = {
+export default {
     /** Creates a constant Memory Object */
-    createConstantMemObj (value: number|string = ''): MEMORY_SLOT {
+    createConstantMemObj (value: number | string = ''): MEMORY_SLOT {
         let param: string
         if (typeof (value) === 'number') {
             if (value % 1 !== 0) {
@@ -73,7 +73,7 @@ export const utils = {
     genPushToken (line: number): TOKEN {
         return { type: 'Push', precedence: 12, value: '', line: line }
     },
-    mulHexContents (param1: number|string = 'Error', param2: number|string = 'Error') {
+    mulHexContents (param1: number | string = 'Error', param2: number | string = 'Error') {
         let n1: bigint, n2: bigint
         if (typeof (param1) === 'number') {
             n1 = BigInt(param1)
@@ -87,7 +87,7 @@ export const utils = {
         }
         return (n1 * n2).toString(16).padStart(16, '0').slice(-16)
     },
-    divHexContents (param1: number|string = 'Error', param2: number|string = 'Error') {
+    divHexContents (param1: number | string = 'Error', param2: number | string = 'Error') {
         let n1: bigint, n2: bigint
         if (typeof (param1) === 'number') {
             n1 = BigInt(param1)
@@ -101,7 +101,7 @@ export const utils = {
         }
         return (n1 / n2).toString(16).padStart(16, '0').slice(-16)
     },
-    addHexContents (param1: number|string = 'Error', param2: number|string = 'Error') {
+    addHexContents (param1: number | string = 'Error', param2: number | string = 'Error') {
         let n1: bigint, n2: bigint
         if (typeof (param1) === 'number') {
             n1 = BigInt(param1)
@@ -115,7 +115,7 @@ export const utils = {
         }
         return (n1 + n2).toString(16).padStart(16, '0').slice(-16)
     },
-    subHexContents (param1: number|string = 'Error', param2: number|string = 'Error') {
+    subHexContents (param1: number | string = 'Error', param2: number | string = 'Error') {
         let n1: bigint, n2: bigint
         if (typeof (param1) === 'number') {
             n1 = BigInt(param1)
@@ -285,7 +285,9 @@ export const utils = {
             case 'binaryASN':
                 left = recursiveFind(InspAst.Left)
                 right = recursiveFind(InspAst.Right)
-                if (left && right) return true
+                if (left && right) {
+                    return true
+                }
                 return false
             case 'exceptionASN':
                 if (InspAst.Left !== undefined) {

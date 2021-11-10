@@ -3,7 +3,7 @@
 // License: BSD 3-Clause License
 
 import { MACHINE_OBJECT } from '../typings/contractTypes'
-import { hashMachineCode } from './hashMachineCode'
+import hashMachineCode from './hashMachineCode'
 
 /**
  * Transforms assembly code into machine code
@@ -12,7 +12,7 @@ import { hashMachineCode } from './hashMachineCode'
  * smart contract deployment.
  * @throws {Error} on any source code mistake.
  */
-export function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
+export default function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
     // Local types
     type MEMORY_INFO = {
         name: string

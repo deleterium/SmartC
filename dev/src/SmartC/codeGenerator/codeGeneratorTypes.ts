@@ -1,27 +1,7 @@
-import { CONTRACT, SC_FUNCTION } from '../../typings/contractTypes'
-import { AST, DECLARATION_TYPES, MEMORY_SLOT } from '../../typings/syntaxTypes'
+import { CONTRACT, SC_FUNCTION } from '../typings/contractTypes'
+import { AST, DECLARATION_TYPES, MEMORY_SLOT } from '../typings/syntaxTypes'
 
-export type GENCODE_SOLVED_OBJECT = {
-    /** Memory object representing solved AST */
-    SolvedMem: MEMORY_SLOT
-    /** Assembly sourcecode needed to solve AST */
-    asmCode: string
-}
-
-export type GENCODE_ARGS = {
-    /** AST to traverse */
-    RemAST: AST,
-    /** true if wanted return object to be suitable for logical operations */
-    logicalOp: boolean,
-    /** true if wanted to reverse logic for logical operations */
-    revLogic: boolean,
-    /** Label to jump if logical operation is false */
-    jumpFalse?: string,
-    /** Label to jump if logical operatio is true */
-    jumpTrue?: string
-}
-
-export type CODEGENERATE_AUXVARS = {
+export type GLOBAL_AUXVARS = {
     /** Holds incoming program. To be read-only */
     Program: CONTRACT
     /** Stack saving loops IDs */
@@ -40,24 +20,37 @@ export type CODEGENERATE_AUXVARS = {
     getLatestLoopID(): string
 }
 
-export type CODEGEN_INFO = {
+export type SETUPGENCODE_ARGS = {
     InitialAST?: AST
     initialJumpTarget?: string
     initialJumpNotTarget?:string
     initialIsReversedLogic?: boolean
 }
 
+export type GENCODE_ARGS = {
+    /** AST to traverse */
+    RemAST: AST,
+    /** true if wanted return object to be suitable for logical operations */
+    logicalOp: boolean,
+    /** true if wanted to reverse logic for logical operations */
+    revLogic: boolean,
+    /** Label to jump if logical operation is false */
+    jumpFalse?: string,
+    /** Label to jump if logical operatio is true */
+    jumpTrue?: string
+}
+
 export type GENCODE_AUXVARS = {
     /** Current function, or undefined if Global code */
     CurrentFunction: SC_FUNCTION | undefined
-    /** A copy of memory that will be used and modified by codeGenerator */
+    /** Program memory that will be used and (and property isDeclared can be modified) by codeGenerator */
     memory: MEMORY_SLOT[]
     /** Auxiliary variables used as registers */
     registerInfo: {
         inUse: boolean
         Template: MEMORY_SLOT
     }[]
-    /** Auto incrementing index for labels generation for auxvars scope */
+    /** Auto incrementing index for labels generation in genCode scope */
     jumpId: number
     /** Post increment or decrement that shall be included at last */
     postOperations: string
@@ -90,6 +83,19 @@ export type GENCODE_AUXVARS = {
      * if not found, throws exception with line number.
      */
     getMemoryObjectByLocation (loc: number|string, line?: number): MEMORY_SLOT
-    /** Get a new jump id according to current Configs (auxvars scope) */
+    /** Get a new jump id according to current Configs (genCode scope) */
     getNewJumpID(currLine: number): string
+}
+
+export type GENCODE_SOLVED_OBJECT = {
+    /** Memory object representing solved AST */
+    SolvedMem: MEMORY_SLOT
+    /** Assembly sourcecode needed to solve AST */
+    asmCode: string
+}
+
+export type FLATTEN_MEMORY_RETURN_OBJECT = {
+    FlatMem: MEMORY_SLOT
+    asmCode: string
+    isNew: boolean
 }

@@ -4,11 +4,11 @@ import { LOOKUP_ASN, AST, MEMORY_SLOT } from '../../typings/syntaxTypes'
 import {
     createSimpleInstruction, createInstruction, createAPICallInstruction
 } from '../assemblyProcessor/createInstruction'
-import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../typings/codeGeneratorTypes'
-import { utils } from '../utils'
-import { genCode } from './genCode'
+import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
+import utils from '../utils'
+import genCode from './genCode'
 
-export function functionSolver (
+export default function functionSolver (
     Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
 ) : GENCODE_SOLVED_OBJECT {
     let CurrentNode: LOOKUP_ASN

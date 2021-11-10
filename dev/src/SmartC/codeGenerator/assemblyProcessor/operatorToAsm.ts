@@ -1,15 +1,15 @@
 
 import { assertExpression } from '../../repository/repository'
 import { TOKEN, MEMORY_SLOT } from '../../typings/syntaxTypes'
-import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
-import { utils } from '../utils'
+import { GENCODE_AUXVARS } from '../codeGeneratorTypes'
+import utils from '../utils'
 import { createInstruction, flattenMemory } from './createInstruction'
 
 /**
  * Create assembly intructions for binary operators or SetOperators.
  * @returns the assembly code necessary for the assignment to happen
  */
-export function operatorToAsm (
+export default function operatorToAsm (
     AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, LeftMem: MEMORY_SLOT, RightMem: MEMORY_SLOT
 ) : string {
     const FlatLeft = flattenMemory(AuxVars, LeftMem, OperatorToken.line)
