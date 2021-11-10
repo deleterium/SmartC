@@ -19,7 +19,7 @@ import { PRE_TOKEN } from '../typings/syntaxTypes'
  * @returns array of pre tokens
  */
 export function tokenize (inputSourceCode: string): PRE_TOKEN[] {
-    interface SIMPLE_PRETOKEN_SPECS {
+    type SIMPLE_PRETOKEN_SPECS = {
         char: string
         pretokenType: 'equal'|'star'|'not'|'bracket'|'minus'|'plus'|'backslash'|
         'forwardslash'|'dot'|'less'|'greater'|'pipe'|'and'|'percent'|'caret'|'comma'|
@@ -54,7 +54,7 @@ export function tokenize (inputSourceCode: string): PRE_TOKEN[] {
         { char: '#', pretokenType: 'SPECIAL' }
     ]
 
-    interface SINGLE_PRETOKEN_SPECS {
+    type SINGLE_PRETOKEN_SPECS = {
             start: RegExp
             pretokenType: 'NONE'|'numberDec'|'numberHex'|'keyword'|'ASM'|'STRUCT'|'variable'
             addLength: number
@@ -102,7 +102,7 @@ export function tokenize (inputSourceCode: string): PRE_TOKEN[] {
         }
     ]
 
-    interface DOUBLE_PRETOKEN_SPECS {
+    type DOUBLE_PRETOKEN_SPECS = {
             start: RegExp
             end: RegExp
             pretokenType: 'NONE' | 'string'

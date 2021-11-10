@@ -13,8 +13,8 @@ import { hashMachineCode } from './hashMachineCode'
  * @throws {Error} on any source code mistake.
  */
 export function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
-    // Local interfaces
-    interface MEMORY_INFO {
+    // Local types
+    type MEMORY_INFO = {
         name: string
         value: bigint
     }
@@ -27,11 +27,11 @@ export function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
      *     L: Long value
      */
     type INSTRUCTION_PARAM_TYPES = 'O' | 'B' | 'J' | 'F' | 'I' | 'L';
-    interface INSTRUCTION_CODE_VALUES {
+    type INSTRUCTION_CODE_VALUES = {
         type: INSTRUCTION_PARAM_TYPES
         value: bigint
     }
-    interface CODE_INSTRUCTION {
+    type CODE_INSTRUCTION = {
         /** Line source code */
         source: string
         /** Address of current compiled instruction (in bytes) */
@@ -49,7 +49,7 @@ export function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
         /** Compiled hex string for current instruction */
         compiledInstruction: string
     }
-    interface ASM_OBJECT {
+    type ASM_OBJECT = {
         /** Memory name and starting values */
         memory: MEMORY_INFO[]
         /** All code and details */
@@ -74,7 +74,7 @@ export function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
         /** hexstring for memory starting values */
         bytedata: string
     }
-    interface OPCODE_RULE {
+    type OPCODE_RULE = {
         /** Instruction code */
         opCode: number
         /** Instruction name */

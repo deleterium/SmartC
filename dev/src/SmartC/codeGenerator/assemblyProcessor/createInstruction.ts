@@ -12,7 +12,7 @@ import { comparisionToAsm } from './comparisionToAsm'
 import { keywordToAsm } from './keywordToAsm'
 import { operatorToAsm } from './operatorToAsm'
 
-export interface FLATTEN_MEMORY_RETURN_OBJECT {
+export type FLATTEN_MEMORY_RETURN_OBJECT = {
     FlatMem: MEMORY_SLOT
     asmCode: string
     isNew: boolean

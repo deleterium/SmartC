@@ -1,6 +1,6 @@
 import { DECLARATION_TYPES, MEMORY_SLOT, SENTENCES, TOKEN, TYPE_DEFINITIONS } from './syntaxTypes'
 
-export interface SC_CONFIG {
+export type SC_CONFIG = {
     /** Hardcoded compiler version!!! */
     compilerVersion: string,
     /** Add random string to labels: #pragma enableRandom  */
@@ -36,7 +36,7 @@ export interface SC_CONFIG {
     outputSourceLineNumber: boolean,
 }
 
-export interface SC_MACRO {
+export type SC_MACRO = {
     /** pragma, program or include */
     type: string
     /** Macro property, only one word */
@@ -46,7 +46,7 @@ export interface SC_MACRO {
     line: number
 }
 
-export interface SC_FUNCTION {
+export type SC_FUNCTION = {
     /** type of function declaration */
     declaration: DECLARATION_TYPES
     /** type definition if is a struct function */
@@ -67,7 +67,7 @@ export interface SC_FUNCTION {
     asmName?: string
 }
 
-export interface SC_GLOBAL {
+export type SC_GLOBAL = {
     /** Definitions for API functions */
     APIFunctions: SC_FUNCTION[]
     /** macros values */
@@ -78,7 +78,7 @@ export interface SC_GLOBAL {
     sentences: SENTENCES[]
 }
 
-export interface CONTRACT {
+export type CONTRACT = {
     /** Global statements and information */
     Global: SC_GLOBAL,
     /** Declared functions */
@@ -91,7 +91,7 @@ export interface CONTRACT {
     Config: SC_CONFIG,
 }
 
-export interface MACHINE_OBJECT {
+export type MACHINE_OBJECT = {
     /** Number of data pages (Memory size) */
     DataPages: number
     /** Number of code stack pages (code stack size) */

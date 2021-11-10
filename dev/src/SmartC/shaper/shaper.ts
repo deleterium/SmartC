@@ -13,7 +13,7 @@ import { APITableTemplate, getTypeDefinitionTemplate } from './templates'
 import { codeToSentenceArray } from './sentencesProcessor'
 import { phraseToMemoryObject } from './memoryProcessor'
 
-export interface SHAPER_AUXVARS {
+export type SHAPER_AUXVARS = {
     currentToken: number
     /** current loop name to be used if break or continue keywords are found. */
     latestLoopId: string[]

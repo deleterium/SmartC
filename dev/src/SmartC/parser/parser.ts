@@ -12,7 +12,7 @@ import { stringToHexstring, ReedSalomonAddressDecode } from '../repository/repos
  * @throws {TypeError | SyntaxError} at any mistakes
  */
 export function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
-    interface TOKEN_SPEC {
+    type TOKEN_SPEC = {
         sequence: string[]
         action(item: number): TOKEN
     }
