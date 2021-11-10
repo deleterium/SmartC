@@ -283,87 +283,13 @@ export function codeGenerate (Program: CONTRACT) {
             isLeftSideOfAssignment: false,
             isConstSentence: false,
             hasVoidArray: false,
-            isTemp (loc) {
-                if (loc === -1) return false
-                const id = this.registerInfo.find(OBJ => OBJ.Template.address === loc)
-                if (id?.inUse === true) {
-                    return true
-                }
-                return false
-            },
-            getNewRegister (line: number = sentenceLine) {
-                const id = this.registerInfo.find(OBJ => OBJ.inUse === false)
-                if (id === undefined) {
-                    throw new RangeError(`At line: ${line}. ` +
-                    "No more registers available. Try to reduce nested operations or increase 'maxAuxVars'.")
-                }
-                id.inUse = true
-                return deepCopy(id.Template)
-            },
-            freeRegister (loc) {
-                if (loc === undefined || loc === -1) {
-                    return
-                }
-                const id = this.registerInfo.find(OBJ => OBJ.Template.address === loc)
-                if (id === undefined) return
-                id.inUse = false
-            },
-            getPostOperations () {
-                const ret = this.postOperations
-                this.postOperations = ''
-                return ret
-            },
-            getMemoryObjectByName (
-                varName: string, line: number = sentenceLine, varDeclaration: DECLARATION_TYPES = ''
-            ) : MEMORY_SLOT {
-                let MemFound: MEMORY_SLOT | undefined
-                if (this.CurrentFunction !== undefined) { // find function scope variable
-                    MemFound = this.memory.find(obj => {
-                        return obj.name === varName && obj.scope === this.CurrentFunction?.name
-                    })
-                }
-                if (MemFound === undefined) {
-                    // do a global scope search
-                    MemFound = this.memory.find(obj => obj.name === varName && obj.scope === '')
-                }
-                if (MemFound === undefined) {
-                    throw new Error(`At line: ${line}. Using variable '${varName}' before declaration.`)
-                }
-                if (varDeclaration !== '') { // we are in declarations sentence
-                    MemFound.isDeclared = true
-                    return deepCopy(MemFound)
-                }
-                return deepCopy(MemFound)
-            },
-            getMemoryObjectByLocation (loc: number|string, line: number = sentenceLine): MEMORY_SLOT {
-                let addr:number
-                switch (typeof (loc)) {
-                case 'number':
-                    addr = loc
-                    break
-                case 'string':
-                    addr = parseInt(loc, 16)
-                    break
-                default:
-                    throw new TypeError('Internal error. Wrong type in getMemoryObjectByLocation.')
-                }
-                const search = this.memory.find(obj => obj.address === addr)
-                if (search === undefined) {
-                    throw new SyntaxError(`At line: ${line}. No variable found at address '0x${addr}'.`)
-                }
-                return deepCopy(search)
-            },
-            getNewJumpID (line: number) {
-                let id = ''
-                if (Program.Config.enableLineLabels) {
-                    id += line + '_'
-                }
-                if (Program.Config.enableRandom === true) {
-                    return id + Math.random().toString(36).substr(2, 5)
-                }
-                this.jumpId++
-                return id + this.jumpId.toString(36)
-            }
+            isTemp: auxvarsIsTemp,
+            getNewRegister: auxvarsGetNewRegister,
+            freeRegister: auxvarsFreeRegister,
+            getPostOperations: auxvarsGetPostOperations,
+            getMemoryObjectByName: auxvarsGetMemoryObjectByName,
+            getMemoryObjectByLocation: auxvarsGetMemoryObjectByLocation,
+            getNewJumpID: auxvarsGetNewJumpID
         }
 
         function setupGenCodeMain (): string {
@@ -418,6 +344,94 @@ export function codeGenerate (Program: CONTRACT) {
                     'Warning: Operation returning a value that is not being used.')
                 }
             }
+        }
+
+        function auxvarsIsTemp (loc: number) : boolean {
+            if (loc === -1) return false
+            const id = auxVars.registerInfo.find(OBJ => OBJ.Template.address === loc)
+            if (id?.inUse === true) {
+                return true
+            }
+            return false
+        }
+
+        function auxvarsGetNewRegister (line: number = sentenceLine): MEMORY_SLOT {
+            const id = auxVars.registerInfo.find(OBJ => OBJ.inUse === false)
+            if (id === undefined) {
+                throw new RangeError(`At line: ${line}. ` +
+                "No more registers available. Try to reduce nested operations or increase 'maxAuxVars'.")
+            }
+            id.inUse = true
+            return deepCopy(id.Template)
+        }
+
+        function auxvarsFreeRegister (loc: number|undefined): void {
+            if (loc === undefined || loc === -1) {
+                return
+            }
+            const id = auxVars.registerInfo.find(OBJ => OBJ.Template.address === loc)
+            if (id === undefined) return
+            id.inUse = false
+        }
+
+        function auxvarsGetPostOperations (): string {
+            const ret = auxVars.postOperations
+            auxVars.postOperations = ''
+            return ret
+        }
+
+        function auxvarsGetMemoryObjectByName (
+            varName: string, line: number = sentenceLine, varDeclaration: DECLARATION_TYPES = ''
+        ) : MEMORY_SLOT {
+            let MemFound: MEMORY_SLOT | undefined
+            if (auxVars.CurrentFunction !== undefined) { // find function scope variable
+                MemFound = auxVars.memory.find(obj => {
+                    return obj.name === varName && obj.scope === auxVars.CurrentFunction?.name
+                })
+            }
+            if (MemFound === undefined) {
+                // do a global scope search
+                MemFound = auxVars.memory.find(obj => obj.name === varName && obj.scope === '')
+            }
+            if (MemFound === undefined) {
+                throw new Error(`At line: ${line}. Using variable '${varName}' before declaration.`)
+            }
+            if (varDeclaration !== '') { // we are in declarations sentence
+                MemFound.isDeclared = true
+                return deepCopy(MemFound)
+            }
+            return deepCopy(MemFound)
+        }
+
+        function auxvarsGetMemoryObjectByLocation (loc: number|string, line: number = sentenceLine): MEMORY_SLOT {
+            let addr:number
+            switch (typeof (loc)) {
+            case 'number':
+                addr = loc
+                break
+            case 'string':
+                addr = parseInt(loc, 16)
+                break
+            default:
+                throw new TypeError('Internal error. Wrong type in getMemoryObjectByLocation.')
+            }
+            const search = auxVars.memory.find(obj => obj.address === addr)
+            if (search === undefined) {
+                throw new SyntaxError(`At line: ${line}. No variable found at address '0x${addr}'.`)
+            }
+            return deepCopy(search)
+        }
+
+        function auxvarsGetNewJumpID (line: number) : string {
+            let id = ''
+            if (Program.Config.enableLineLabels) {
+                id += line + '_'
+            }
+            if (Program.Config.enableRandom === true) {
+                return id + Math.random().toString(36).substr(2, 5)
+            }
+            auxVars.jumpId++
+            return id + auxVars.jumpId.toString(36)
         }
 
         return setupGenCodeMain()
