@@ -2,77 +2,72 @@ import { TOKEN, MEMORY_SLOT } from '../../typings/syntaxTypes'
 import { GENCODE_AUXVARS } from '../typings/codeGeneratorTypes'
 import { flattenMemory } from './createInstruction'
 
-export function comparisionToAsm (auxVars: GENCODE_AUXVARS, objoperator: TOKEN, param1?: MEMORY_SLOT, param2?: MEMORY_SLOT, rLogic?:boolean, jpFalse?: string, jpTrue?:string): string {
-    let retinstr = ''
-
-    if (param1 === undefined || param2 === undefined || rLogic === undefined || jpFalse === undefined || jpTrue === undefined) {
-        throw new TypeError(`At line: ${objoperator.line}. Missing parameters. BugReport please.`)
-    }
-
-    let jump = jpFalse
+/** Create assembly intructions for comparisions.
+ * @returns the assembly code necessary for branch operations
+ */
+export function comparisionToAsm (AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, LeftMem: MEMORY_SLOT, RightMem: MEMORY_SLOT, rLogic:boolean, jpFalse: string, jpTrue:string): string {
+    let assemblyCode = ''
+    let jumpToLabel = jpFalse
     if (rLogic) {
-        jump = jpTrue
+        jumpToLabel = jpTrue
     }
-
-    const TmpMemObj1 = flattenMemory(auxVars, param1, objoperator.line)
-    retinstr += TmpMemObj1.asmCode
-    if (TmpMemObj1.isNew) {
-        if (param1.Offset?.type === 'variable') {
-            auxVars.freeRegister(param1.Offset.addr)
+    const FlatLeft = flattenMemory(AuxVars, LeftMem, OperatorToken.line)
+    if (FlatLeft.isNew) {
+        if (LeftMem.Offset?.type === 'variable') {
+            AuxVars.freeRegister(LeftMem.Offset.addr)
         }
-        auxVars.freeRegister(param1.address)
+        AuxVars.freeRegister(LeftMem.address)
     }
-
-    if (param2.type === 'constant' && param2.hexContent === '0000000000000000' && (objoperator.value === '!=' || objoperator.value === '==')) {
-        retinstr += chooseBranch(objoperator.value, true, rLogic)
-        retinstr += ' $' + TmpMemObj1.FlatMem.asmName + ' :' + jump + '\n'
-        if (TmpMemObj1.isNew === true) {
-            auxVars.freeRegister(TmpMemObj1.FlatMem.address)
+    if (RightMem.type === 'constant' && RightMem.hexContent === '0000000000000000' &&
+        (OperatorToken.value === '==' || OperatorToken.value === '!=')) {
+        assemblyCode += chooseBranchZero(OperatorToken.value, rLogic)
+        assemblyCode += ` $${FlatLeft.FlatMem.asmName} :${jumpToLabel}\n`
+        if (FlatLeft.isNew === true) {
+            AuxVars.freeRegister(FlatLeft.FlatMem.address)
         }
-        return retinstr
+        return FlatLeft.asmCode + assemblyCode
     }
-
-    const TmpMemObj2 = flattenMemory(auxVars, param2, objoperator.line)
-    retinstr += TmpMemObj2.asmCode
-    retinstr += chooseBranch(objoperator.value, false, rLogic)
-    retinstr += ' $' + TmpMemObj1.FlatMem.asmName + ' $' + TmpMemObj2.FlatMem.asmName + ' :' + jump + '\n'
-
-    if (TmpMemObj1.isNew === true) {
-        auxVars.freeRegister(TmpMemObj1.FlatMem.address)
+    const FlatRight = flattenMemory(AuxVars, RightMem, OperatorToken.line)
+    assemblyCode += chooseBranch(OperatorToken.value, rLogic)
+    assemblyCode += ` $${FlatLeft.FlatMem.asmName} $${FlatRight.FlatMem.asmName} :${jumpToLabel}\n`
+    if (FlatLeft.isNew === true) {
+        AuxVars.freeRegister(FlatLeft.FlatMem.address)
     }
-    if (TmpMemObj2 !== undefined && TmpMemObj2.isNew === true) {
-        auxVars.freeRegister(TmpMemObj2.FlatMem.address)
+    if (FlatRight.isNew === true) {
+        AuxVars.freeRegister(FlatRight.FlatMem.address)
     }
-
-    return retinstr
+    return FlatLeft.asmCode + FlatRight.asmCode + assemblyCode
 }
 
-function chooseBranch (value: string, useBZR: boolean, cbRevLogic: boolean) {
-    if (useBZR) {
-        if (cbRevLogic) {
-            if (value === '==') return 'BZR'
-            if (value === '!=') return 'BNZ'
-        } else {
-            if (value === '==') return 'BNZ'
-            if (value === '!=') return 'BZR'
-        }
-        throw new TypeError(`Invalid use of Branch Zero: ${value}`)
-    } else {
-        if (cbRevLogic) {
-            if (value === '>') return 'BGT'
-            if (value === '>=') return 'BGE'
-            if (value === '<') return 'BLT'
-            if (value === '<=') return 'BLE'
-            if (value === '==') return 'BEQ'
-            if (value === '!=') return 'BNE'
-        } else {
-            if (value === '>') return 'BLE'
-            if (value === '>=') return 'BLT'
-            if (value === '<') return 'BGE'
-            if (value === '<=') return 'BGT'
-            if (value === '==') return 'BNE'
-            if (value === '!=') return 'BEQ'
-        }
+function chooseBranch (value: string, cbRevLogic: boolean): string {
+    let operator = ''
+    switch (value) {
+    case '>': operator = 'BLE'; break
+    case '<': operator = 'BGE'; break
+    case '>=': operator = 'BLT'; break
+    case '<=': operator = 'BGT'; break
+    case '==': operator = 'BNE'; break
+    case '!=': operator = 'BEQ'; break
     }
-    throw new TypeError(`Unknow branch operation: ${value}`)
+    if (cbRevLogic === false) {
+        return operator
+    }
+    switch (value) {
+    case '>': return 'BGT'
+    case '<': return 'BLT'
+    case '>=': return 'BGE'
+    case '<=': return 'BLE'
+    case '==': return 'BEQ'
+    case '!=': return 'BNE'
+    }
+    return 'Internal error.'
+}
+
+function chooseBranchZero (value: '=='|'!=', cbRevLogic: boolean) : string {
+    if (cbRevLogic) {
+        if (value === '==') return 'BZR'
+        return 'BNZ'
+    }
+    if (value === '==') return 'BNZ'
+    return 'BZR'
 }

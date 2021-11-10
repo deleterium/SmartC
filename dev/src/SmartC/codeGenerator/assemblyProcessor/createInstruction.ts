@@ -197,7 +197,15 @@ export function createInstruction (AuxVars: GENCODE_AUXVARS, OperatorToken: TOKE
     case 'SetUnaryOperator':
         return unaryOperatorToAsm(OperatorToken, assertNotUndefined(MemParam1))
     case 'Comparision':
-        return comparisionToAsm(AuxVars, OperatorToken, MemParam1, MemParam2, rLogic, jpFalse, jpTrue)
+        return comparisionToAsm(
+            AuxVars,
+            OperatorToken,
+            assertNotUndefined(MemParam1),
+            assertNotUndefined(MemParam2),
+            assertNotUndefined(rLogic),
+            assertNotUndefined(jpFalse),
+            assertNotUndefined(jpTrue)
+        )
     case 'Push': {
         if (MemParam1 === undefined) {
             throw new TypeError(`At line: ${OperatorToken.line}. Missing parameter for PSH. BugReport please.`)
