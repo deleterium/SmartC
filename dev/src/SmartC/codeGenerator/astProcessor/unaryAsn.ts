@@ -11,7 +11,7 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
 
     function unaryAsnProcessorMain () : GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.RemAST.type !== 'unaryASN') {
-            throw new TypeError('Internal error.')
+            throw new Error('Internal error.')
         }
         CurrentNode = ScopeInfo.RemAST
         switch (CurrentNode.Operation.type) {
@@ -108,11 +108,11 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
         if (declar.includes('_ptr') === false) {
             if (Program.Config.warningToError) {
                 if (CurrentNode.Center.type === 'endASN' || CurrentNode.Center.type === 'lookupASN') {
-                    throw new TypeError(`At line: ${CurrentNode.Operation.line}.` +
+                    throw new Error(`At line: ${CurrentNode.Operation.line}.` +
                         ` Warning: Trying to read/set content of variable ${CurrentNode.Center.Token.value}` +
                         ' that is not declared as pointer.')
                 }
-                throw new TypeError(`At line: ${CurrentNode.Operation.line}.` +
+                throw new Error(`At line: ${CurrentNode.Operation.line}.` +
                     ' Warning: Trying to read/set content of a value that is not declared as pointer.')
             }
             utils.setMemoryDeclaration(CGenObj.SolvedMem, (declar + '_ptr') as DECLARATION_TYPES)
@@ -183,24 +183,24 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
 
     function addressOfOpProc () : GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.jumpFalse !== undefined) {
-            throw new SyntaxError(`At line: ${CurrentNode.Operation.line}. ` +
+            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
                 "Can not use UnaryOperator '&' during logical operations with branches.")
         }
         let { SolvedMem: RetMem, asmCode } = traverseNotLogical()
         let TmpMemObj: MEMORY_SLOT
         switch (RetMem.type) {
         case 'void':
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}. ` +
+            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
                 'Trying to get address of void value.')
         case 'register':
             if (Program.Config.warningToError) {
-                throw new TypeError(`At line: ${CurrentNode.Operation.line}. ` +
+                throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
                     'Warning: Returning address of a register.')
             }
             TmpMemObj = utils.createConstantMemObj(RetMem.address)
             break
         case 'constant':
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}. ` +
+            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
                 'Trying to get address of a constant value.')
         case 'array':
             if (RetMem.Offset !== undefined) {
@@ -225,7 +225,7 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
             break
         case 'structRef':
             if (RetMem.Offset !== undefined) {
-                throw new TypeError(`At line: ${CurrentNode.Operation.line}. ` +
+                throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
                     "Get address of 'structRef' with offset not implemented. ")
             }
             TmpMemObj = utils.createConstantMemObj(RetMem.address)
@@ -236,9 +236,9 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
             TmpMemObj.declaration = 'long'
             break
         case 'label':
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}. Trying to get address of a Label`)
+            throw new Error(`At line: ${CurrentNode.Operation.line}. Trying to get address of a Label`)
         default:
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}. ` +
+            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
                 `Get address of '${RetMem.type}' not implemented.`)
         }
         if (!TmpMemObj.declaration.includes('_ptr')) {
@@ -266,30 +266,30 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
             // nothing to do here
             return { SolvedMem: utils.createVoidMemObj(), asmCode: '' }
         default:
-            throw new TypeError(`Internal error: At line: ${CurrentNode.Operation.line}. ` +
+            throw new Error(`Internal error: At line: ${CurrentNode.Operation.line}. ` +
                 `Invalid use of keyword '${CurrentNode.Operation.value}'`)
         }
     }
 
     function returnKeyProc () : GENCODE_SOLVED_OBJECT {
         if (AuxVars.CurrentFunction === undefined) {
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}.` +
+            throw new Error(`At line: ${CurrentNode.Operation.line}.` +
                 " Can not use 'return' in global statements.")
         }
         if (AuxVars.CurrentFunction.declaration === 'void') {
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}.` +
+            throw new Error(`At line: ${CurrentNode.Operation.line}.` +
                 ` Function '${AuxVars.CurrentFunction.name}' must return` +
                 ` a ${AuxVars.CurrentFunction.declaration}' value.`)
         }
         if (AuxVars.CurrentFunction.name === 'main' || AuxVars.CurrentFunction.name === 'catch') {
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}. ` +
+            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
                 ` Special function ${AuxVars.CurrentFunction.name} must return void value.`)
         }
         const CGenObj = traverseNotLogical()
         CGenObj.asmCode += AuxVars.getPostOperations()
         if (utils.isNotValidDeclarationOp(AuxVars.CurrentFunction.declaration, CGenObj.SolvedMem)) {
             if (Program.Config.warningToError) {
-                throw new TypeError(`At line: ${CurrentNode.Operation.line}.` +
+                throw new Error(`At line: ${CurrentNode.Operation.line}.` +
                     ` Warning: Function ${AuxVars.CurrentFunction.name} must return` +
                     ` '${AuxVars.CurrentFunction.declaration}' value, but it is returning '${CGenObj.SolvedMem.declaration}'.`)
             }
@@ -305,7 +305,7 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
         const CGenObj = traverseNotLogical()
         CGenObj.asmCode += AuxVars.getPostOperations()
         if (CGenObj.SolvedMem.type !== 'label') {
-            throw new TypeError(`At line: ${CurrentNode.Operation.line}. Argument for keyword 'goto' is not a label.`)
+            throw new Error(`At line: ${CurrentNode.Operation.line}. Argument for keyword 'goto' is not a label.`)
         }
         CGenObj.asmCode += createInstruction(AuxVars, CurrentNode.Operation, CGenObj.SolvedMem)
         AuxVars.freeRegister(CGenObj.SolvedMem.address)

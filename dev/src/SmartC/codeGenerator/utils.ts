@@ -15,7 +15,7 @@ export default {
         let param: string
         if (typeof (value) === 'number') {
             if (value % 1 !== 0) {
-                throw new TypeError('Only integer numbers in createConstantMemObj().')
+                throw new Error('Only integer numbers in createConstantMemObj().')
             }
             param = value.toString(16).padStart(16, '0').slice(-16)
         } else {

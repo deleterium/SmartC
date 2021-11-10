@@ -9,7 +9,7 @@ import { stringToHexstring, ReedSalomonAddressDecode } from '../repository/repos
 /** Translate an array of pre tokens to an array of tokens. First phase of parsing.
  * @param tokens Array of pre-tokens
  * @returns Array of TOKENS. Recursive on Arr, CodeCave and CodeDomain types
- * @throws {TypeError | SyntaxError} at any mistakes
+ * @throws {Error} at any mistakes
  */
 export default function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
     type TOKEN_SPEC = {
@@ -359,7 +359,7 @@ export default function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
         case ']':
         case ')':
         case '}':
-            throw new SyntaxError(`At line: ${currentPreToken.line}. Unexpected closing '${currentPreToken.value}'.`)
+            throw new Error(`At line: ${currentPreToken.line}. Unexpected closing '${currentPreToken.value}'.`)
         case '[':
             retToken = { type: 'Arr', value: '', precedence: 0, line: currentPreToken.line }
             AuxVars.mainLoopIndex++
@@ -380,7 +380,7 @@ export default function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
             retToken.params = getTokensUntil('}', retToken.type, retToken.line)
             return retToken
         default:
-            throw new TypeError(`Internal error. Unknow token found: type: '${currentPreToken.type}' value: '${currentPreToken.value}'.`)
+            throw new Error(`Internal error. Unknow token found: type: '${currentPreToken.type}' value: '${currentPreToken.value}'.`)
         }
     }
 
@@ -392,7 +392,7 @@ export default function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
             returnedTokens.push(getNextToken())
             // getNextToken will increase mainLoopIndex for loop
             if (AuxVars.mainLoopIndex >= preTokens.length) {
-                throw new SyntaxError(`At line: end of file. Missing closing '${endChar}' for for '${parentType}' started at line: ${line}.`)
+                throw new Error(`At line: end of file. Missing closing '${endChar}' for for '${parentType}' started at line: ${line}.`)
             }
         }
         // discard closing char

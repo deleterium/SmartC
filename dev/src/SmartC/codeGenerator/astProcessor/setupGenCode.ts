@@ -76,7 +76,7 @@ export default function setupGenCode (
             if ((InitAST.type === 'unaryASN' && InitAST.Operation.value !== '*') ||
                     (InitAST.type === 'binaryASN' &&
                         (InitAST.Operation.type === 'Comparision' || InitAST.Operation.type === 'Operator'))) {
-                throw new TypeError(`At line: ${InitAST.Operation.line}. ` +
+                throw new Error(`At line: ${InitAST.Operation.line}. ` +
                     'Warning: Operation returning a value that is not being used.')
             }
         }
@@ -94,7 +94,7 @@ export default function setupGenCode (
     function auxvarsGetNewRegister (line: number = sentenceLine): MEMORY_SLOT {
         const id = AuxVars.registerInfo.find(OBJ => OBJ.inUse === false)
         if (id === undefined) {
-            throw new RangeError(`At line: ${line}. ` +
+            throw new Error(`At line: ${line}. ` +
                 "No more registers available. Try to reduce nested operations or increase 'maxAuxVars'.")
         }
         id.inUse = true
@@ -149,11 +149,11 @@ export default function setupGenCode (
             addr = parseInt(loc, 16)
             break
         default:
-            throw new TypeError('Internal error. Wrong type in getMemoryObjectByLocation.')
+            throw new Error('Internal error. Wrong type in getMemoryObjectByLocation.')
         }
         const search = AuxVars.memory.find(obj => obj.address === addr)
         if (search === undefined) {
-            throw new SyntaxError(`At line: ${line}. No variable found at address '0x${addr}'.`)
+            throw new Error(`At line: ${line}. No variable found at address '0x${addr}'.`)
         }
         return deepCopy(search)
     }

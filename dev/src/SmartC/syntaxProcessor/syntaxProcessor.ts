@@ -14,7 +14,7 @@ import createTree from './createTree'
  * This is parser third and final pass.
  * @param Program to be processed
  * @returns {void} but Program will be updated.
- * @throws {TypeError|SyntaxError} on any mistake.
+ * @throws {Error|Error} on any mistake.
  */
 export default function syntaxProcess (Program: CONTRACT) : void {
     /* * * Main function! * * */
@@ -43,7 +43,7 @@ export default function syntaxProcess (Program: CONTRACT) : void {
         case 'while':
         case 'do':
             if (assertNotUndefined(SentenceObj.condition).length === 0) {
-                throw new SyntaxError(`At line ${SentenceObj.line}. Sentence condition can not be empty`)
+                throw new Error(`At line ${SentenceObj.line}. Sentence condition can not be empty`)
             }
             SentenceObj.ConditionAST = createTree(SentenceObj.condition)
             delete SentenceObj.condition

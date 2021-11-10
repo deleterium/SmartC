@@ -40,7 +40,7 @@ export function getTypeDefinitionTemplate<T extends 'register'|'long'|'struct'> 
         retObj.MemoryTemplate.declaration = 'struct'
         break
     default:
-        throw new TypeError('Internal error')
+        throw new Error('Internal error')
     }
     return retObj as ObjectTypeDefinition<T>
 }

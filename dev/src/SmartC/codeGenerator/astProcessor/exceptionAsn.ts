@@ -12,7 +12,7 @@ export default function exceptionAsnProcessor (
     }
     const CurrentNode = ScopeInfo.RemAST
     if (ScopeInfo.jumpFalse !== undefined) {
-        throw new SyntaxError(`At line: ${CurrentNode.Operation.line}.` +
+        throw new Error(`At line: ${CurrentNode.Operation.line}.` +
         ' Can not use SetUnaryOperator (++ or --) during logical operations with branches')
     }
     if (CurrentNode.Left !== undefined) {

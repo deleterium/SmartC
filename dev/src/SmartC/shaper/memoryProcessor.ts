@@ -71,7 +71,7 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
             switch (phraseCode[ptmoCounter].type) {
             case 'Delimiter':
                 if (keywordIndex + 1 === ptmoCounter) {
-                    throw new TypeError(`At line: ${phraseCode[ptmoCounter].line}. Delimiter ',' not expected.`)
+                    throw new Error(`At line: ${phraseCode[ptmoCounter].line}. Delimiter ',' not expected.`)
                 }
                 ptmoCounter++
                 valid = true
@@ -111,7 +111,7 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
         lovHeader.scope = AuxVars.currentScopeName
         if (definition === 'void') {
             if (isLovPointer === false) {
-                throw new TypeError(`At line: ${phraseCode[startingPmtoCounter].line}. Can not declare variables as void.`)
+                throw new Error(`At line: ${phraseCode[startingPmtoCounter].line}. Can not declare variables as void.`)
             }
             lovHeader.declaration = 'void_ptr'
         } else { // phraseCode[keywordIndex].value === 'long'
@@ -175,7 +175,7 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
     /** Inspect one item to get array dimension */
     function getArraySize (tkn: TOKEN[] = [], line: number = -1) {
         if (tkn.length !== 1 || tkn[0].type !== 'Constant') {
-            throw new TypeError('At line: ' + line + '. Wrong array declaration. Only constant size declarations allowed.')
+            throw new Error('At line: ' + line + '. Wrong array declaration. Only constant size declarations allowed.')
         }
         return parseInt(tkn[0].value, 16)
     }
@@ -224,7 +224,7 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
             switch (phraseCode[ptmoCounter].type) {
             case 'Delimiter':
                 if (keywordIndex + 1 === ptmoCounter) {
-                    throw new TypeError(`At line: ${line}. Delimiter ',' not expected.`)
+                    throw new Error(`At line: ${line}. Delimiter ',' not expected.`)
                 }
                 ptmoCounter++
                 isPointer = false
@@ -238,16 +238,16 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
                     ptmoCounter++
                     break
                 }
-                throw new TypeError(`At line: ${line}. Invalid element (value: '${phraseCode[ptmoCounter].value}') found in struct definition.`)
+                throw new Error(`At line: ${line}. Invalid element (value: '${phraseCode[ptmoCounter].value}') found in struct definition.`)
             case 'Variable':
                 if (AuxVars.isFunctionArgument && !isPointer) {
-                    throw new TypeError(`At line: ${line}. Passing struct by value as argument is not supported. Pass by reference.`)
+                    throw new Error(`At line: ${line}. Passing struct by value as argument is not supported. Pass by reference.`)
                 }
                 retMemory.push(...structToMemoryObject(structNameDef, phraseCode[keywordIndex].line))
                 ptmoCounter++
                 break
             default:
-                throw new TypeError(`At line: ${line}. Invalid element (type: '${phraseCode[ptmoCounter].type}' value: '${phraseCode[ptmoCounter].value}') found in struct definition!`)
+                throw new Error(`At line: ${line}. Invalid element (type: '${phraseCode[ptmoCounter].type}' value: '${phraseCode[ptmoCounter].value}') found in struct definition!`)
             }
         }
         return retMemory
@@ -268,7 +268,7 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
             // It IS NOT array of structs
             if (isStructPointer === false) {
                 if (structTD === undefined) {
-                    throw new TypeError(`At line: ${startingLine}. Could not find type definition for 'struct' '${currentStructNameDef}'.`)
+                    throw new Error(`At line: ${startingLine}. Could not find type definition for 'struct' '${currentStructNameDef}'.`)
                 }
                 return createMemoryObjectFromSTD(currentStructNameDef, phraseCode[ptmoCounter].value, isStructPointer)
             }
@@ -295,13 +295,13 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
 
         // It IS array of structs
         if (structTD === undefined) {
-            throw new TypeError(`At line: ${startingLine}. Could not find type definition for 'struct' '${currentStructNameDef}'.`)
+            throw new Error(`At line: ${startingLine}. Could not find type definition for 'struct' '${currentStructNameDef}'.`)
         }
 
         // Prepare structMemHeader
         structMemHeader = deepCopy(structTD.MemoryTemplate)
         if (isStructPointer) {
-            throw new TypeError(`At line: ${startingLine}. Arrays of struct pointers are not currently supported.`)
+            throw new Error(`At line: ${startingLine}. Arrays of struct pointers are not currently supported.`)
         }
         structMemHeader.name = phraseCode[startingPmtoCounter].value
         structMemHeader.asmName = AuxVars.currentPrefix + phraseCode[startingPmtoCounter].value

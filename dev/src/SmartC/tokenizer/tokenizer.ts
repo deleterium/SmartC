@@ -168,7 +168,7 @@ export default function tokenize (inputSourceCode: string): PRE_TOKEN[] {
             if (simpleTokensSpecs.find(findAndProcessSimpleTokens)) {
                 continue
             }
-            throw new TypeError(`At line: ${AuxVars.currentLine}. Forbidden character found: '${AuxVars.currentChar}'.`)
+            throw new Error(`At line: ${AuxVars.currentLine}. Forbidden character found: '${AuxVars.currentChar}'.`)
         }
         return AuxVars.preTokens
     }
@@ -181,7 +181,7 @@ export default function tokenize (inputSourceCode: string): PRE_TOKEN[] {
         const endParts = ruleN.end.exec(AuxVars.remainingText.slice(ruleN.startLength))
         AuxVars.current += ruleN.startLength
         if (endParts === null) {
-            throw new TypeError(`At line: ${AuxVars.currentLine}. ${ruleN.errorMsg}`)
+            throw new Error(`At line: ${AuxVars.currentLine}. ${ruleN.errorMsg}`)
         }
         if (ruleN.pretokenType === 'NONE') {
             AuxVars.currentLine += (endParts[1].match(/\n/g) || '').length
@@ -207,11 +207,11 @@ export default function tokenize (inputSourceCode: string): PRE_TOKEN[] {
         case 'ASM': {
             const asmParts = /^(asm[^\w]*\{)([\s\S]*)/.exec(AuxVars.remainingText)
             if (asmParts === null) {
-                throw new TypeError(`At line: ${AuxVars.currentLine}. Error parsing 'asm { ... }' keyword`)
+                throw new Error(`At line: ${AuxVars.currentLine}. Error parsing 'asm { ... }' keyword`)
             }
             const endLocation = asmParts[2].indexOf('}')
             if (endLocation === -1) {
-                throw new TypeError(`At line: ${AuxVars.currentLine}. Ending '}' not found for 'asm { ... }' keyword.`)
+                throw new Error(`At line: ${AuxVars.currentLine}. Ending '}' not found for 'asm { ... }' keyword.`)
             }
             const asmText = asmParts[2].slice(0, endLocation)
             const asmCode = asmParts[1] + asmText + '}'
@@ -223,7 +223,7 @@ export default function tokenize (inputSourceCode: string): PRE_TOKEN[] {
         case 'STRUCT': {
             const structParts = /^(struct\s+(\w+))/.exec(AuxVars.remainingText)
             if (structParts === null) {
-                throw new TypeError(`At line: ${AuxVars.currentLine}. 'struct' keyword must be followed by a type name`)
+                throw new Error(`At line: ${AuxVars.currentLine}. 'struct' keyword must be followed by a type name`)
             }
             AuxVars.preTokens.push({ type: 'keyword', value: 'struct', line: AuxVars.currentLine, extValue: structParts[2] })
             AuxVars.currentLine += (structParts[1].match(/\n/g) || '').length

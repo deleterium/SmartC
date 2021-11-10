@@ -40,10 +40,10 @@ export default function preprocess (sourcecode: string) {
         const lines = sourcecode.split('\n')
         const retLines = lines.map(processLine)
         if (ifActive.length !== 1) {
-            throw new SyntaxError("At line: EOF. Unmatched directive '#ifdef' or '#ifndef'.")
+            throw new Error("At line: EOF. Unmatched directive '#ifdef' or '#ifndef'.")
         }
         if (ifActive[0].flipped === true) {
-            throw new SyntaxError("At line: EOF. Unmatched directives '#else'.")
+            throw new Error("At line: EOF. Unmatched directives '#else'.")
         }
         return retLines.join('\n')
     }
@@ -76,7 +76,7 @@ export default function preprocess (sourcecode: string) {
         let idx: number
 
         if (currentIfLevel < 0) {
-            throw new SyntaxError(`At line: ${lineNo}. Unmatched '#endif' directive.`)
+            throw new Error(`At line: ${lineNo}. Unmatched '#endif' directive.`)
         }
         if (ifActive.length === 0) {
             // Skew between currentIfLevel and ifActive.length
@@ -105,7 +105,7 @@ export default function preprocess (sourcecode: string) {
             return ''
         case 'ELSE':
             if (lastIfInfo.flipped === true) {
-                throw new SyntaxError(`At line: ${lineNo + 1}. Unmatched '#else' directive.`)
+                throw new Error(`At line: ${lineNo + 1}. Unmatched '#else' directive.`)
             }
             lastIfInfo.flipped = true
             lastIfInfo.active = !lastIfInfo.active
