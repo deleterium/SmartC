@@ -23,7 +23,6 @@ import { SHAPER_AUXVARS } from './shaperTypes'
  */
 export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     const AuxVars: SHAPER_AUXVARS = {
-        currentToken: 0,
         latestLoopId: [],
         isFunctionArgument: false,
         currentScopeName: '',
@@ -57,61 +56,61 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     function splitCode () : void {
         Program.Global.code = []
 
-        for (AuxVars.currentToken = 0; AuxVars.currentToken < tokenAST.length; AuxVars.currentToken++) {
-            if (tokenAST[AuxVars.currentToken].type === 'Keyword' &&
-                tokenAST[AuxVars.currentToken + 1]?.type === 'Variable' &&
-                tokenAST[AuxVars.currentToken + 2]?.type === 'Function' &&
-                tokenAST[AuxVars.currentToken + 3]?.type === 'CodeDomain') {
+        for (let tokenIndex = 0; tokenIndex < tokenAST.length; tokenIndex++) {
+            if (tokenAST[tokenIndex].type === 'Keyword' &&
+                tokenAST[tokenIndex + 1]?.type === 'Variable' &&
+                tokenAST[tokenIndex + 2]?.type === 'Function' &&
+                tokenAST[tokenIndex + 3]?.type === 'CodeDomain') {
                 // Function found. Does not return pointer
-                if (tokenAST[AuxVars.currentToken].value === 'struct') {
-                    throw new Error(`At line: ${tokenAST[AuxVars.currentToken].line}.` +
+                if (tokenAST[tokenIndex].value === 'struct') {
+                    throw new Error(`At line: ${tokenAST[tokenIndex].line}.` +
                     ' Function returning a struct currently not implemented.')
                 }
 
                 Program.functions.push({
                     argsMemObj: [],
                     sentences: [],
-                    declaration: tokenAST[AuxVars.currentToken].value as DECLARATION_TYPES,
-                    line: tokenAST[AuxVars.currentToken + 1].line,
-                    name: tokenAST[AuxVars.currentToken + 1].value,
-                    arguments: tokenAST[AuxVars.currentToken + 2].params,
-                    code: tokenAST[AuxVars.currentToken + 3].params
+                    declaration: tokenAST[tokenIndex].value as DECLARATION_TYPES,
+                    line: tokenAST[tokenIndex + 1].line,
+                    name: tokenAST[tokenIndex + 1].value,
+                    arguments: tokenAST[tokenIndex + 2].params,
+                    code: tokenAST[tokenIndex + 3].params
                 })
-                AuxVars.currentToken += 3
+                tokenIndex += 3
                 continue
             }
-            if (tokenAST[AuxVars.currentToken].type === 'Keyword' &&
-                tokenAST[AuxVars.currentToken + 1]?.type === 'UnaryOperator' &&
-                tokenAST[AuxVars.currentToken + 1]?.value === '*' &&
-                tokenAST[AuxVars.currentToken + 2]?.type === 'Variable' &&
-                tokenAST[AuxVars.currentToken + 3]?.type === 'Function' &&
-                tokenAST[AuxVars.currentToken + 4]?.type === 'CodeDomain') {
+            if (tokenAST[tokenIndex].type === 'Keyword' &&
+                tokenAST[tokenIndex + 1]?.type === 'UnaryOperator' &&
+                tokenAST[tokenIndex + 1]?.value === '*' &&
+                tokenAST[tokenIndex + 2]?.type === 'Variable' &&
+                tokenAST[tokenIndex + 3]?.type === 'Function' &&
+                tokenAST[tokenIndex + 4]?.type === 'CodeDomain') {
                 Program.functions.push(
                     {
                         argsMemObj: [],
                         sentences: [],
-                        declaration: (tokenAST[AuxVars.currentToken].value + '_ptr') as DECLARATION_TYPES,
-                        typeDefinition: tokenAST[AuxVars.currentToken].extValue,
-                        line: tokenAST[AuxVars.currentToken + 2].line,
-                        name: tokenAST[AuxVars.currentToken + 2].value,
-                        arguments: tokenAST[AuxVars.currentToken + 3].params,
-                        code: tokenAST[AuxVars.currentToken + 4].params
+                        declaration: (tokenAST[tokenIndex].value + '_ptr') as DECLARATION_TYPES,
+                        typeDefinition: tokenAST[tokenIndex].extValue,
+                        line: tokenAST[tokenIndex + 2].line,
+                        name: tokenAST[tokenIndex + 2].value,
+                        arguments: tokenAST[tokenIndex + 3].params,
+                        code: tokenAST[tokenIndex + 4].params
                     })
-                AuxVars.currentToken += 4
+                tokenIndex += 4
                 continue
             }
-            if (tokenAST[AuxVars.currentToken].type === 'Macro') {
-                const fields = tokenAST[AuxVars.currentToken].value.replace(/\s\s+/g, ' ').split(' ')
+            if (tokenAST[tokenIndex].type === 'Macro') {
+                const fields = tokenAST[tokenIndex].value.replace(/\s\s+/g, ' ').split(' ')
                 Program.Global.macros.push({
                     type: fields[0],
                     property: fields[1],
                     value: fields.slice(2).join(' '),
-                    line: tokenAST[AuxVars.currentToken].line
+                    line: tokenAST[tokenIndex].line
                 })
                 continue
             }
             // Not function neither macro, so it is global statement
-            Program.Global.code.push(tokenAST[AuxVars.currentToken])
+            Program.Global.code.push(tokenAST[tokenIndex])
         }
     }
 
@@ -310,7 +309,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     function processGlobalCode () : void {
         AuxVars.currentScopeName = ''
         AuxVars.currentPrefix = ''
-        AuxVars.currentToken = 0
         Program.Global.sentences = sentencesProcessor(AuxVars, Program.Global.code)
         createMemoryTable(Program.Global.sentences)
         delete Program.Global.code
@@ -372,7 +370,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     /** Process/checks function arguments and code, transforming them
      * into argsMemObj and sentences properties  */
     function processFunctionCodeAndArguments (currentFunction: SC_FUNCTION, fnNum: number) {
-        AuxVars.currentToken = 0
         currentFunction.sentences = sentencesProcessor(AuxVars, currentFunction.code)
 
         let expectVoid = false
@@ -384,7 +381,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         AuxVars.currentScopeName = currentFunction.name
         AuxVars.currentPrefix = AuxVars.currentScopeName + '_'
         AuxVars.isFunctionArgument = true
-        AuxVars.currentToken = 0
         const sentence = sentencesProcessor(AuxVars, currentFunction.arguments, true)
         if (sentence.length !== 1 || sentence[0].type !== 'phrase' || sentence[0].code === undefined) {
             throw new Error(`At line: ${currentFunction.line}.` +

@@ -1,5 +1,4 @@
 export type SHAPER_AUXVARS = {
-    currentToken: number
     /** current loop name to be used if break or continue keywords are found. */
     latestLoopId: string[]
     /** If true, compilation loop on generator() will not expect the variable
