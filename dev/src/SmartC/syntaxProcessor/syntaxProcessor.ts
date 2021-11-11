@@ -14,7 +14,7 @@ import createTree from './createTree'
  * This is parser third and final pass.
  * @param Program to be processed
  * @returns {void} but Program will be updated.
- * @throws {Error|Error} on any mistake.
+ * @throws {Error} on any mistake.
  */
 export default function syntaxProcessor (Program: CONTRACT) : void {
     /* * * Main function! * * */

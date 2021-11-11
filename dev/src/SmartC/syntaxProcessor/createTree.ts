@@ -8,13 +8,10 @@ import { AST, LOOKUP_ASN, TOKEN } from '../typings/syntaxTypes'
 export default function createTree (tokenArray: TOKEN[] | undefined): AST {
     const tokenToAst = assertNotUndefined(tokenArray,
         'Internal error. Undefined AST to create syntactic tree')
-
     if (tokenToAst.length === 0) {
         return { type: 'nullASN' }
     }
-
     const needle = findSplitTokenIndex(tokenToAst)
-
     switch (tokenToAst[needle].type) {
     case 'Constant':
         return ConstantToAST(tokenToAst)
@@ -52,12 +49,11 @@ export default function createTree (tokenArray: TOKEN[] | undefined): AST {
 function findSplitTokenIndex (tokens: TOKEN[]) : number {
     const precedenceOnly = tokens.map(tok => tok.precedence)
     const maxPrecedence = Math.max(...precedenceOnly)
-    if (maxPrecedence === 0) {
+    switch (maxPrecedence) {
+    case 0:
         // Precedence zero is handled in lookupASN
         // inside VariableToAST.
         return 0
-    }
-    switch (maxPrecedence) {
     case 12:
     case 10:
     case 2:
