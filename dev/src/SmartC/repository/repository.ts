@@ -95,9 +95,7 @@ export function deepCopy<T1> (source: T1): T1 {
  */
 export function stringToHexstring (inStr: string) : string {
     const byarr : number [] = []
-
     if (inStr.length === 0) byarr.push(0)
-
     let i = 0
     while (i < inStr.length) {
         const charCode = inStr.charCodeAt(i)
@@ -192,12 +190,10 @@ export function ReedSalomonAddressDecode (RSString: string, currLine: number) : 
         if (validChars.length !== 17 || !isCodewordValid(codeword)) {
             throw new Error(`At line: ${currLine}. Error decoding address: S-${RSString}`)
         }
-
         // base32 to bigint conversion. Disregard checking bytes on indexes above 13.
         const accountId = codeword.slice(0, 13).reduce((previousValue, currentValue, currentIndex) => {
             return previousValue + (BigInt(currentValue) * (1n << (5n * BigInt(currentIndex))))
         }, 0n)
-
         if (accountId >= 18446744073709551616n) {
             throw new Error(`At line: ${currLine}. Error decoding address: S-${RSString}`)
         }
