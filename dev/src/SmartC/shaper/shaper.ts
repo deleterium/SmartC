@@ -55,7 +55,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
      * */
     function splitCode () : void {
         Program.Global.code = []
-
         for (let tokenIndex = 0; tokenIndex < tokenAST.length; tokenIndex++) {
             if (tokenAST[tokenIndex].type === 'Keyword' &&
                 tokenAST[tokenIndex + 1]?.type === 'Variable' &&
@@ -66,7 +65,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                     throw new Error(`At line: ${tokenAST[tokenIndex].line}.` +
                     ' Function returning a struct currently not implemented.')
                 }
-
                 Program.functions.push({
                     argsMemObj: [],
                     sentences: [],
@@ -85,17 +83,16 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 tokenAST[tokenIndex + 2]?.type === 'Variable' &&
                 tokenAST[tokenIndex + 3]?.type === 'Function' &&
                 tokenAST[tokenIndex + 4]?.type === 'CodeDomain') {
-                Program.functions.push(
-                    {
-                        argsMemObj: [],
-                        sentences: [],
-                        declaration: (tokenAST[tokenIndex].value + '_ptr') as DECLARATION_TYPES,
-                        typeDefinition: tokenAST[tokenIndex].extValue,
-                        line: tokenAST[tokenIndex + 2].line,
-                        name: tokenAST[tokenIndex + 2].value,
-                        arguments: tokenAST[tokenIndex + 3].params,
-                        code: tokenAST[tokenIndex + 4].params
-                    })
+                Program.functions.push({
+                    argsMemObj: [],
+                    sentences: [],
+                    declaration: (tokenAST[tokenIndex].value + '_ptr') as DECLARATION_TYPES,
+                    typeDefinition: tokenAST[tokenIndex].extValue,
+                    line: tokenAST[tokenIndex + 2].line,
+                    name: tokenAST[tokenIndex + 2].value,
+                    arguments: tokenAST[tokenIndex + 3].params,
+                    code: tokenAST[tokenIndex + 4].params
+                })
                 tokenIndex += 4
                 continue
             }
@@ -119,7 +116,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         let boolVal: boolean | undefined
         let throwBoolVal = false
         let usedBoolVal = false
-
         switch (Token.value) {
         case undefined:
         case '':
@@ -135,7 +131,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             boolVal = true
             throwBoolVal = true
         }
-
         switch (Token.type) {
         case 'pragma':
             usedBoolVal = processMacroPragma(Token, boolVal)
@@ -164,21 +159,21 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     }
 
     /** Process all macro pragma options. Return true if bool was used in assignment. */
-    function processMacroPragma (macroToken: SC_MACRO, bool: boolean): boolean {
-        const num = parseInt(macroToken.value)
-        switch (macroToken.property) {
+    function processMacroPragma (MacroToken: SC_MACRO, bool: boolean): boolean {
+        const num = parseInt(MacroToken.value)
+        switch (MacroToken.property) {
         case 'maxAuxVars':
             if (num >= 1 && num <= 10) {
                 Program.Config.maxAuxVars = num
                 return false
             }
-            throw new Error(`At line: ${macroToken.line}. Value out of permitted range 1..10.`)
+            throw new Error(`At line: ${MacroToken.line}. Value out of permitted range 1..10.`)
         case 'maxConstVars':
             if (num >= 0 && num <= 10) {
                 Program.Config.maxConstVars = num
                 return false
             }
-            throw new Error(`At line: ${macroToken.line}. Value out of permitted range 0..10.`)
+            throw new Error(`At line: ${MacroToken.line}. Value out of permitted range 0..10.`)
         case 'reuseAssignedVar':
             Program.Config.reuseAssignedVar = bool
             return true
@@ -192,7 +187,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             Program.Config.globalOptimization = bool
             return true
         case 'version':
-            Program.Config.sourcecodeVersion = macroToken.value
+            Program.Config.sourcecodeVersion = MacroToken.value
             return false
         case 'warningToError':
             Program.Config.warningToError = bool
@@ -201,52 +196,52 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             Program.Config.outputSourceLineNumber = bool
             return true
         default:
-            throw new Error(`At line: ${macroToken.line}.` +
-            ` Unknow macro property: '#${macroToken.type} ${macroToken.property}'.` +
+            throw new Error(`At line: ${MacroToken.line}.` +
+            ` Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +
             ' Please check valid values on Help page')
         }
     }
 
     /** Process all macro Program options */
-    function processMacroProgram (macroToken: SC_MACRO) : void {
-        switch (macroToken.property) {
+    function processMacroProgram (MacroToken: SC_MACRO) : void {
+        switch (MacroToken.property) {
         case 'name':
-            if (/^[0-9a-zA-Z]{1,30}$/.test(macroToken.value)) {
-                Program.Config.PName = macroToken.value
+            if (/^[0-9a-zA-Z]{1,30}$/.test(MacroToken.value)) {
+                Program.Config.PName = MacroToken.value
                 return
             }
-            throw new Error(`At line: ${macroToken.line}.` +
+            throw new Error(`At line: ${MacroToken.line}.` +
             ' Program name must contains only letters [a-z][A-Z][0-9], from 1 to 30 chars.')
         case 'description':
-            if (macroToken.value.length >= 1000) {
-                throw new Error(`At line: ${macroToken.line}.` +
-                ` Program description max lenght is 1000 chars. It is ${macroToken.value.length} chars.`)
+            if (MacroToken.value.length >= 1000) {
+                throw new Error(`At line: ${MacroToken.line}.` +
+                ` Program description max lenght is 1000 chars. It is ${MacroToken.value.length} chars.`)
             }
-            Program.Config.PDescription = macroToken.value
+            Program.Config.PDescription = MacroToken.value
             return
         case 'activationAmount':
-            if (/^[0-9_]{1,20}$/.test(macroToken.value)) {
-                Program.Config.PActivationAmount = macroToken.value.replace(/_/g, '')
+            if (/^[0-9_]{1,20}$/.test(MacroToken.value)) {
+                Program.Config.PActivationAmount = MacroToken.value.replace(/_/g, '')
                 return
             }
-            throw new Error(`At line: ${macroToken.line}. Program activation must be only numbers or '_'.`)
+            throw new Error(`At line: ${MacroToken.line}. Program activation must be only numbers or '_'.`)
         case 'userStackPages':
-            if (/^\d\s*$|^10\s*$/.test(macroToken.value)) {
-                Program.Config.PUserStackPages = Number(macroToken.value)
+            if (/^\d\s*$|^10\s*$/.test(MacroToken.value)) {
+                Program.Config.PUserStackPages = Number(MacroToken.value)
                 return
             }
-            throw new Error(`At line: ${macroToken.line}.` +
+            throw new Error(`At line: ${MacroToken.line}.` +
             ' Program user stack pages must be a number between 0 and 10, included.')
         case 'codeStackPages':
-            if (/^\d\s*$|^10\s*$/.test(macroToken.value)) {
-                Program.Config.PCodeStackPages = Number(macroToken.value)
+            if (/^\d\s*$|^10\s*$/.test(MacroToken.value)) {
+                Program.Config.PCodeStackPages = Number(MacroToken.value)
                 return
             }
-            throw new Error(`At line: ${macroToken.line}.` +
+            throw new Error(`At line: ${MacroToken.line}.` +
             ' Program code stack pages must be a number between 0 and 10, included.')
         default:
-            throw new Error(`At line: ${macroToken.line}.` +
-            ` Unknow macro property: '#${macroToken.type} ${macroToken.property}'.` +
+            throw new Error(`At line: ${MacroToken.line}.` +
+            ` Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +
             ' Please check valid values on Help page')
         }
     }
@@ -274,10 +269,10 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     }
 
     function addRegistersInMemory (howMany: number) : MEMORY_SLOT[] {
-        const registerTD = getRegisterTypeDefinition()
+        const RegisterTD = getRegisterTypeDefinition()
         const retObj: MEMORY_SLOT[] = []
         for (let i = 0; i < howMany; i++) {
-            const MemTemplate = deepCopy(registerTD.MemoryTemplate)
+            const MemTemplate = deepCopy(RegisterTD.MemoryTemplate)
             MemTemplate.name = `r${i}`
             MemTemplate.asmName = `r${i}`
             retObj.push(MemTemplate)
@@ -286,17 +281,17 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     }
 
     function getRegisterTypeDefinition () : REGISTER_TYPE_DEFINITION {
-        const search = Program.typesDefinitions.find(obj => {
+        const FoundTD = Program.typesDefinitions.find(obj => {
             return obj.type === 'register'
         }) as (REGISTER_TYPE_DEFINITION | undefined)
-        return assertNotUndefined(search, 'Internal error.')
+        return assertNotUndefined(FoundTD, 'Internal error.')
     }
 
     function addConstantsInMemory (howMany: number) : MEMORY_SLOT[] {
-        const registerTD = getRegisterTypeDefinition()
+        const RegisterTD = getRegisterTypeDefinition()
         const retObj: MEMORY_SLOT[] = []
         for (let i = 1; i <= howMany; i++) {
-            const MemTemplate = deepCopy(registerTD.MemoryTemplate)
+            const MemTemplate = deepCopy(RegisterTD.MemoryTemplate)
             MemTemplate.name = `n${i}`
             MemTemplate.asmName = `n${i}`
             MemTemplate.hexContent = i.toString(16).padStart(16, '0')
@@ -317,49 +312,46 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     /** Not recursive. Only top level declarations allowed.
      *  This creates only global variables or function scope variables. */
     function createMemoryTable (sntcs: SENTENCES[] = []) {
-        sntcs.forEach(function (phrs) {
-            if (phrs.type === 'phrase' && phrs.code !== undefined) {
-                Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, phrs.code))
+        sntcs.forEach((Phrs) => {
+            if (Phrs.type === 'phrase' && Phrs.code !== undefined) {
+                Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, Phrs.code))
                 return
             }
-            if (phrs.type === 'struct' && phrs.Phrase.code !== undefined) {
-                structToTypeDefinition(phrs)
-                Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, phrs.Phrase.code))
+            if (Phrs.type === 'struct' && Phrs.Phrase.code !== undefined) {
+                structToTypeDefinition(Phrs)
+                Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, Phrs.Phrase.code))
             }
         })
     }
 
     /** From a struct sentence, create and store a Struct Type Definition
      * in `Program.typesDefinitions` property */
-    function structToTypeDefinition (structPhrase: SENTENCE_STRUCT) {
+    function structToTypeDefinition (StructPhrase: SENTENCE_STRUCT) {
         // create struct type definition
         const NewStructTD = getTypeDefinitionTemplate('struct')
-        NewStructTD.name = AuxVars.currentPrefix + structPhrase.name
-        NewStructTD.MemoryTemplate.typeDefinition = AuxVars.currentPrefix + structPhrase.name
+        NewStructTD.name = AuxVars.currentPrefix + StructPhrase.name
+        NewStructTD.MemoryTemplate.typeDefinition = AuxVars.currentPrefix + StructPhrase.name
         NewStructTD.MemoryTemplate.isDeclared = AuxVars.isFunctionArgument
-
         const savedPrefix = AuxVars.currentPrefix
         AuxVars.currentPrefix = ''
-        structPhrase.members.forEach(struphrs => {
-            if (struphrs.type !== 'phrase') {
-                throw new Error(`At line: ${struphrs.line}. Invalid sentence in struct members.`)
+        StructPhrase.members.forEach(StruPhrs => {
+            if (StruPhrs.type !== 'phrase') {
+                throw new Error(`At line: ${StruPhrs.line}. Invalid sentence in struct members.`)
             }
-            if (struphrs.code !== undefined) {
+            if (StruPhrs.code !== undefined) {
                 NewStructTD.structMembers.push(...memoryProcessor(
                     Program.typesDefinitions,
                     AuxVars,
-                    struphrs.code,
-                    structPhrase.name + '_'
+                    StruPhrs.code,
+                    StructPhrase.name + '_'
                 ))
             }
         })
-
         NewStructTD.MemoryTemplate.size = NewStructTD.structMembers.length
-
         let accumulatedSize = 0
-        NewStructTD.structMembers.forEach(function (memb) {
-            NewStructTD.structAccumulatedSize.push([memb.name, accumulatedSize])
-            if (memb.type !== 'struct') { // Remeber to change here code yolj1A
+        NewStructTD.structMembers.forEach((MemberMem) => {
+            NewStructTD.structAccumulatedSize.push([MemberMem.name, accumulatedSize])
+            if (MemberMem.type !== 'struct') { // Remeber to change here code yolj1A
                 accumulatedSize++
             }
         })
@@ -369,35 +361,32 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
 
     /** Process/checks function arguments and code, transforming them
      * into argsMemObj and sentences properties  */
-    function processFunctionCodeAndArguments (currentFunction: SC_FUNCTION, fnNum: number) {
-        currentFunction.sentences = sentencesProcessor(AuxVars, currentFunction.code)
-
+    function processFunctionCodeAndArguments (CurrentFunction: SC_FUNCTION, fnNum: number) {
+        CurrentFunction.sentences = sentencesProcessor(AuxVars, CurrentFunction.code)
         let expectVoid = false
-        if (currentFunction.arguments?.length === 1 &&
-            currentFunction.arguments[0].type === 'Keyword' &&
-            currentFunction.arguments[0].value === 'void') {
+        if (CurrentFunction.arguments?.length === 1 &&
+            CurrentFunction.arguments[0].type === 'Keyword' &&
+            CurrentFunction.arguments[0].value === 'void') {
             expectVoid = true
         }
-        AuxVars.currentScopeName = currentFunction.name
+        AuxVars.currentScopeName = CurrentFunction.name
         AuxVars.currentPrefix = AuxVars.currentScopeName + '_'
         AuxVars.isFunctionArgument = true
-        const sentence = sentencesProcessor(AuxVars, currentFunction.arguments, true)
+        const sentence = sentencesProcessor(AuxVars, CurrentFunction.arguments, true)
         if (sentence.length !== 1 || sentence[0].type !== 'phrase' || sentence[0].code === undefined) {
-            throw new Error(`At line: ${currentFunction.line}.` +
-            `Wrong arguments for function '${currentFunction.name}'.`)
+            throw new Error(`At line: ${CurrentFunction.line}.` +
+            `Wrong arguments for function '${CurrentFunction.name}'.`)
         }
-        currentFunction.argsMemObj = memoryProcessor(Program.typesDefinitions, AuxVars, sentence[0].code)
-        if (currentFunction.argsMemObj.length === 0 && expectVoid === false) {
-            throw new Error(`At line: ${currentFunction.line}.` +
-            ` No variables in arguments for function '${currentFunction.name}'. Do you mean 'void'?`)
+        CurrentFunction.argsMemObj = memoryProcessor(Program.typesDefinitions, AuxVars, sentence[0].code)
+        if (CurrentFunction.argsMemObj.length === 0 && expectVoid === false) {
+            throw new Error(`At line: ${CurrentFunction.line}.` +
+            ` No variables in arguments for function '${CurrentFunction.name}'. Do you mean 'void'?`)
         }
-        Program.memory = Program.memory.concat(currentFunction.argsMemObj)
+        Program.memory = Program.memory.concat(CurrentFunction.argsMemObj)
         AuxVars.isFunctionArgument = false
-
         delete Program.functions[fnNum].arguments
         delete Program.functions[fnNum].code
-
-        createMemoryTable(currentFunction.sentences)
+        createMemoryTable(CurrentFunction.sentences)
     }
 
     /** Checks variables for double definitions and against label names */
@@ -448,23 +437,23 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
 
     /** Fills the correct address of memory objects. */
     function consolidateMemory () {
-        let counter = 0
-        Program.memory.forEach(function (thisvar) {
-            switch (thisvar.type) {
+        let memoryAddress = 0
+        Program.memory.forEach((CurrMem) => {
+            switch (CurrMem.type) {
             case 'struct':
                 // Remeber to change here code yolj1A
-                thisvar.hexContent = counter.toString(16).padStart(16, '0')
+                CurrMem.hexContent = memoryAddress.toString(16).padStart(16, '0')
                 return
             case 'array':
-                thisvar.address = counter
-                counter++
-                thisvar.hexContent = counter.toString(16).padStart(16, '0')
+                CurrMem.address = memoryAddress
+                memoryAddress++
+                CurrMem.hexContent = memoryAddress.toString(16).padStart(16, '0')
                 return
             case 'label':
                 return
             default:
-                thisvar.address = counter
-                counter++
+                CurrMem.address = memoryAddress
+                memoryAddress++
             }
         })
     }
