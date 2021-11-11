@@ -6,17 +6,17 @@
 import { PRE_TOKEN, TOKEN, TOKEN_TYPES } from '../typings/syntaxTypes'
 import { stringToHexstring, ReedSalomonAddressDecode } from '../repository/repository'
 
+type TOKEN_SPEC = {
+    sequence: string[]
+    action(item: number): TOKEN
+}
+
 /** Translate an array of pre tokens to an array of tokens. First phase of parsing.
  * @param tokens Array of pre-tokens
  * @returns Array of TOKENS. Recursive on Arr, CodeCave and CodeDomain types
  * @throws {Error} at any mistakes
  */
 export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
-    type TOKEN_SPEC = {
-        sequence: string[]
-        action(item: number): TOKEN
-    }
-
     // This object stores a recipe to transform one or more pre_tokens into one
     //   token. All non-recursive items are here. The order they are
     //   arrange are important to decide in cases where same element token can be
@@ -65,46 +65,46 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
         {
             sequence: ['keyword'],
             action (tokenID): TOKEN {
-                const node: TOKEN = {
+                const Node: TOKEN = {
                     type: 'Keyword',
                     precedence: 12,
                     value: preTokens[tokenID].value,
                     line: preTokens[tokenID].line
                 }
                 if (preTokens[tokenID].value === 'asm' || preTokens[tokenID].value === 'struct') {
-                    node.extValue = preTokens[tokenID].extValue
+                    Node.extValue = preTokens[tokenID].extValue
                 }
-                return node
+                return Node
             }
         },
         {
             sequence: ['numberDec'],
             action (tokenID): TOKEN {
-                const ptkn = preTokens[tokenID]
-                let val = BigInt(ptkn.value.replace(/_/g, '')).toString(16)
+                const PreTkn = preTokens[tokenID]
+                let val = BigInt(PreTkn.value.replace(/_/g, '')).toString(16)
                 val = val.padStart((Math.floor((val.length - 1) / 16) + 1) * 16, '0')
-                return { type: 'Constant', precedence: 0, value: val, line: ptkn.line }
+                return { type: 'Constant', precedence: 0, value: val, line: PreTkn.line }
             }
         },
         {
             sequence: ['numberHex'],
             action (tokenID): TOKEN {
-                const ptkn = preTokens[tokenID]
-                let val = ptkn.value.replace(/_/g, '').toLowerCase()
+                const PreTkn = preTokens[tokenID]
+                let val = PreTkn.value.replace(/_/g, '').toLowerCase()
                 val = val.padStart((Math.floor((val.length - 1) / 16) + 1) * 16, '0')
-                return { type: 'Constant', precedence: 0, value: val, line: ptkn.line }
+                return { type: 'Constant', precedence: 0, value: val, line: PreTkn.line }
             }
         },
         {
             sequence: ['string'],
             action (tokenID): TOKEN {
-                const ptkn = preTokens[tokenID]
-                let val = stringToHexstring(ptkn.value)
-                const parts = /^(BURST-|S-|TS-)([0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{5})/.exec(ptkn.value)
+                const PreTkn = preTokens[tokenID]
+                let val = stringToHexstring(PreTkn.value)
+                const parts = /^(BURST-|S-|TS-)([0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{5})/.exec(PreTkn.value)
                 if (parts !== null) {
-                    val = ReedSalomonAddressDecode(parts[2], ptkn.line)
+                    val = ReedSalomonAddressDecode(parts[2], PreTkn.line)
                 }
-                return { type: 'Constant', precedence: 0, value: val, line: ptkn.line }
+                return { type: 'Constant', precedence: 0, value: val, line: PreTkn.line }
             }
         },
         // multi-tokens easy
@@ -343,7 +343,6 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
             }
         }
     ]
-
     const AuxVars = {
         mainLoopIndex: 0
     }
@@ -359,45 +358,43 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
 
     // Process element preTokens started at position mainLoopIndex (outer scope) and returns a functional token
     function getNextToken () {
-        const currentPreToken = preTokens[AuxVars.mainLoopIndex]
-        let retToken: TOKEN
-
+        const CurrentPreToken = preTokens[AuxVars.mainLoopIndex]
+        let RetToken: TOKEN
         // take care of not recursive tokens
-        const foundRule = notRecursiveTokensSpecs.find(matchRule)
-        if (foundRule !== undefined) {
-            retToken = foundRule.action(AuxVars.mainLoopIndex)
-            AuxVars.mainLoopIndex += foundRule.sequence.length
-            return retToken
+        const FoundRule = notRecursiveTokensSpecs.find(matchRule)
+        if (FoundRule !== undefined) {
+            RetToken = FoundRule.action(AuxVars.mainLoopIndex)
+            AuxVars.mainLoopIndex += FoundRule.sequence.length
+            return RetToken
         }
-
         // take care of recursive tokens
-        switch (currentPreToken.value) {
+        switch (CurrentPreToken.value) {
         case ']':
         case ')':
         case '}':
-            throw new Error(`At line: ${currentPreToken.line}. Unexpected closing '${currentPreToken.value}'.`)
+            throw new Error(`At line: ${CurrentPreToken.line}. Unexpected closing '${CurrentPreToken.value}'.`)
         case '[':
-            retToken = { type: 'Arr', value: '', precedence: 0, line: currentPreToken.line }
+            RetToken = { type: 'Arr', value: '', precedence: 0, line: CurrentPreToken.line }
             AuxVars.mainLoopIndex++
-            retToken.params = getTokensUntil(']', retToken.type, retToken.line)
-            return retToken
+            RetToken.params = getTokensUntil(']', RetToken.type, RetToken.line)
+            return RetToken
         case '(':
             if (AuxVars.mainLoopIndex > 0 && preTokens[AuxVars.mainLoopIndex - 1].type === 'variable') {
-                retToken = { type: 'Function', value: '', precedence: 0, line: currentPreToken.line }
+                RetToken = { type: 'Function', value: '', precedence: 0, line: CurrentPreToken.line }
             } else {
-                retToken = { type: 'CodeCave', value: '', precedence: 0, line: currentPreToken.line }
+                RetToken = { type: 'CodeCave', value: '', precedence: 0, line: CurrentPreToken.line }
             }
             AuxVars.mainLoopIndex++
-            retToken.params = getTokensUntil(')', retToken.type, retToken.line)
-            return retToken
+            RetToken.params = getTokensUntil(')', RetToken.type, RetToken.line)
+            return RetToken
         case '{':
-            retToken = { type: 'CodeDomain', value: '', precedence: 0, line: currentPreToken.line }
+            RetToken = { type: 'CodeDomain', value: '', precedence: 0, line: CurrentPreToken.line }
             AuxVars.mainLoopIndex++
-            retToken.params = getTokensUntil('}', retToken.type, retToken.line)
-            return retToken
+            RetToken.params = getTokensUntil('}', RetToken.type, RetToken.line)
+            return RetToken
         default:
             throw new Error('Internal error. Unknow token found: ' +
-            `type: '${currentPreToken.type}' value: '${currentPreToken.value}'.`)
+            `type: '${CurrentPreToken.type}' value: '${CurrentPreToken.value}'.`)
         }
     }
 
@@ -418,9 +415,9 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
         return returnedTokens
     }
 
-    function matchRule (ruleN: TOKEN_SPEC) {
-        for (let i = 0; i < ruleN.sequence.length; i++) {
-            if (preTokens[AuxVars.mainLoopIndex + i]?.type === ruleN.sequence[i]) continue
+    function matchRule (RuleN: TOKEN_SPEC) {
+        for (let i = 0; i < RuleN.sequence.length; i++) {
+            if (preTokens[AuxVars.mainLoopIndex + i]?.type === RuleN.sequence[i]) continue
             return false // proceed to next rule
         }
         return true // all sequence matched!
