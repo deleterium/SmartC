@@ -12,6 +12,32 @@
 import { assertExpression } from '../repository/repository'
 import { PRE_TOKEN } from '../typings/syntaxTypes'
 
+type SIMPLE_PRETOKEN_SPECS = {
+    char: string
+    pretokenType: 'equal'|'star'|'not'|'bracket'|'minus'|'plus'|'backslash'|
+    'forwardslash'|'dot'|'less'|'greater'|'pipe'|'and'|'percent'|'caret'|'comma'|
+    'semi'|'tilde'|'grave'|'paren'|'colon'|'curly'|'SPECIAL'
+}
+type SINGLE_PRETOKEN_SPECS = {
+    start: RegExp
+    pretokenType: 'NONE'|'numberDec'|'numberHex'|'keyword'|'ASM'|'STRUCT'|'variable'
+    addLength: number
+}
+type DOUBLE_PRETOKEN_SPECS = {
+    start: RegExp
+    end: RegExp
+    pretokenType: 'NONE' | 'string'
+    startLength: number
+    removeTrailing: number
+    errorMsg: string
+}
+type TOKENIZER_AUXVARS = {
+    currentChar: string
+    remainingText: string
+    current: number
+    preTokens: PRE_TOKEN[]
+    currentLine: number
+}
 /**
  * Transforms inputSourceCode into an array of pre tokens.
  * This array is not recursive.
@@ -19,12 +45,6 @@ import { PRE_TOKEN } from '../typings/syntaxTypes'
  * @returns array of pre tokens
  */
 export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
-    type SIMPLE_PRETOKEN_SPECS = {
-        char: string
-        pretokenType: 'equal'|'star'|'not'|'bracket'|'minus'|'plus'|'backslash'|
-        'forwardslash'|'dot'|'less'|'greater'|'pipe'|'and'|'percent'|'caret'|'comma'|
-        'semi'|'tilde'|'grave'|'paren'|'colon'|'curly'|'SPECIAL'
-    }
     const simpleTokensSpecs : SIMPLE_PRETOKEN_SPECS[] = [
         { char: '=', pretokenType: 'equal' },
         { char: '*', pretokenType: 'star' },
@@ -53,12 +73,6 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         { char: '}', pretokenType: 'curly' },
         { char: '#', pretokenType: 'SPECIAL' }
     ]
-
-    type SINGLE_PRETOKEN_SPECS = {
-            start: RegExp
-            pretokenType: 'NONE'|'numberDec'|'numberHex'|'keyword'|'ASM'|'STRUCT'|'variable'
-            addLength: number
-    }
     const regexSingleTokensSpecs : SINGLE_PRETOKEN_SPECS[] = [
         { // comment single line
             start: /^(\/\/.*)/,
@@ -101,16 +115,6 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             addLength: 0
         }
     ]
-
-    type DOUBLE_PRETOKEN_SPECS = {
-            start: RegExp
-            end: RegExp
-            pretokenType: 'NONE' | 'string'
-            startLength: number
-            removeTrailing: number
-            errorMsg: string
-    }
-
     const regexDoubleTokensSpecs : DOUBLE_PRETOKEN_SPECS [] = [
         { // multi line comments
             start: /^\/\*/,
@@ -137,14 +141,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             errorMsg: "Missing \"'\" to end string."
         }
     ]
-
-    const AuxVars : {
-        currentChar: string
-        remainingText: string
-        current: number
-        preTokens: PRE_TOKEN[]
-        currentLine: number
-    } = {
+    const AuxVars: TOKENIZER_AUXVARS = {
         currentChar: '',
         remainingText: '',
         current: 0,
@@ -174,24 +171,24 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         return AuxVars.preTokens
     }
 
-    function findAndProcessDoubleTokens (ruleN: DOUBLE_PRETOKEN_SPECS) {
-        const startParts = ruleN.start.exec(AuxVars.remainingText)
+    function findAndProcessDoubleTokens (RuleDouble: DOUBLE_PRETOKEN_SPECS) : boolean {
+        const startParts = RuleDouble.start.exec(AuxVars.remainingText)
         if (startParts === null) {
             return false
         }
-        const endParts = ruleN.end.exec(AuxVars.remainingText.slice(ruleN.startLength))
-        AuxVars.current += ruleN.startLength
+        const endParts = RuleDouble.end.exec(AuxVars.remainingText.slice(RuleDouble.startLength))
+        AuxVars.current += RuleDouble.startLength
         if (endParts === null) {
-            throw new Error(`At line: ${AuxVars.currentLine}. ${ruleN.errorMsg}`)
+            throw new Error(`At line: ${AuxVars.currentLine}. ${RuleDouble.errorMsg}`)
         }
-        if (ruleN.pretokenType === 'NONE') {
+        if (RuleDouble.pretokenType === 'NONE') {
             AuxVars.currentLine += (endParts[1].match(/\n/g) || '').length
             AuxVars.current += endParts[1].length
             return true// breaks find function
         }
         AuxVars.preTokens.push({
-            type: ruleN.pretokenType,
-            value: endParts[1].slice(0, -ruleN.removeTrailing),
+            type: RuleDouble.pretokenType,
+            value: endParts[1].slice(0, -RuleDouble.removeTrailing),
             line: AuxVars.currentLine
         })
         AuxVars.currentLine += (endParts[1].match(/\n/g) || '').length
@@ -199,15 +196,15 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         return true// breaks find function
     }
 
-    function findAndProcessSingleTokens (ruleN: SINGLE_PRETOKEN_SPECS) {
-        const startParts = ruleN.start.exec(AuxVars.remainingText)
+    function findAndProcessSingleTokens (RuleSingle: SINGLE_PRETOKEN_SPECS) : boolean {
+        const startParts = RuleSingle.start.exec(AuxVars.remainingText)
         if (startParts === null) {
             return false
         }
-        switch (ruleN.pretokenType) {
+        switch (RuleSingle.pretokenType) {
         case 'NONE':
             AuxVars.currentLine += (startParts[1].match(/\n/g) || '').length
-            AuxVars.current += startParts[1].length + ruleN.addLength
+            AuxVars.current += startParts[1].length + RuleSingle.addLength
             return true
         case 'ASM': {
             const asmParts = /^(asm[^\w]*\{)([\s\S]*)/.exec(AuxVars.remainingText)
@@ -243,19 +240,19 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             return true
         }
         default:
-            AuxVars.preTokens.push({ type: ruleN.pretokenType, value: startParts[1], line: AuxVars.currentLine })
+            AuxVars.preTokens.push({ type: RuleSingle.pretokenType, value: startParts[1], line: AuxVars.currentLine })
             AuxVars.currentLine += (startParts[1].match(/\n/g) || '').length
-            AuxVars.current += startParts[1].length + ruleN.addLength
+            AuxVars.current += startParts[1].length + RuleSingle.addLength
             return true
         }
     }
 
-    function findAndProcessSimpleTokens (item: SIMPLE_PRETOKEN_SPECS) : boolean {
-        if (item.char !== AuxVars.currentChar) {
+    function findAndProcessSimpleTokens (SimpleItem: SIMPLE_PRETOKEN_SPECS) : boolean {
+        if (SimpleItem.char !== AuxVars.currentChar) {
             return false
         }
-        if (item.pretokenType === 'SPECIAL') {
-            assertExpression(item.char === '#',
+        if (SimpleItem.pretokenType === 'SPECIAL') {
+            assertExpression(SimpleItem.char === '#',
                 'Internal error at tokenizer.')
             AuxVars.current++
             const lines = inputSourceCode.slice(AuxVars.current).split('\n')
@@ -273,7 +270,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             AuxVars.preTokens.push({ type: 'macro', value: val, line: AuxVars.currentLine - i - 1 })
             return true
         }
-        AuxVars.preTokens.push({ type: item.pretokenType, value: AuxVars.currentChar, line: AuxVars.currentLine })
+        AuxVars.preTokens.push({ type: SimpleItem.pretokenType, value: AuxVars.currentChar, line: AuxVars.currentLine })
         AuxVars.current++
         return true
     }
