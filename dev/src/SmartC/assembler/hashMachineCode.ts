@@ -1,7 +1,3 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 /* LICENSE notes for function binb_sha256:
  *
  * A JavaScript implementation of the RSA Data Security, Inc. MD5 Message

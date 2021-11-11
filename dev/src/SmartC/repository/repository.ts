@@ -1,7 +1,3 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 // Note: Use assert or failIf only in cases for internal error or debug purposes.
 // Using them with regular error messages will lead to condition not beeing checked
 // in coverage report.

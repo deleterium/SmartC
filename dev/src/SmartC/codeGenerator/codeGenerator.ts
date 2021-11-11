@@ -1,7 +1,3 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 import { CONTRACT } from '../typings/contractTypes'
 import { MEMORY_SLOT, SENTENCES } from '../typings/syntaxTypes'
 import setupGenCode from './astProcessor/setupGenCode'

@@ -1,7 +1,3 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 import { assertNotUndefined } from '../repository/repository'
 import { MACHINE_OBJECT } from '../typings/contractTypes'
 import hashMachineCode from './hashMachineCode'

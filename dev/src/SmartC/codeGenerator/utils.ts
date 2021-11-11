@@ -1,8 +1,3 @@
-
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 import { assertNotUndefined } from '../repository/repository'
 import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES, LOOKUP_ASN } from '../typings/syntaxTypes'
 

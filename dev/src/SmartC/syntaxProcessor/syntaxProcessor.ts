@@ -1,7 +1,3 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 import { CONTRACT } from '../typings/contractTypes'
 import { SENTENCES } from '../typings/syntaxTypes'
 import { assertNotUndefined } from '../repository/repository'

@@ -1,8 +1,3 @@
-
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 import { PRE_TOKEN, TOKEN, TOKEN_TYPES } from '../typings/syntaxTypes'
 import { stringToHexstring, ReedSalomonAddressDecode } from '../repository/repository'
 

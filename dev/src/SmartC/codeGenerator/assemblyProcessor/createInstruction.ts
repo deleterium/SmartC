@@ -1,7 +1,3 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 import { assertNotUndefined } from '../../repository/repository'
 import { MEMORY_SLOT, TOKEN } from '../../typings/syntaxTypes'
 import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_AUXVARS } from '../codeGeneratorTypes'

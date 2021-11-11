@@ -1,14 +1,3 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
-/*  Keywords forbidden:
-        auto, double, float, register, volatile
-    Keywords not implemented:
-        case, char, default, enum, extern,
-        int, short, sizeof, signed, static,
-        switch, typedef, union, unsigned
-*/
 import { assertExpression } from '../repository/repository'
 import { PRE_TOKEN } from '../typings/syntaxTypes'
 

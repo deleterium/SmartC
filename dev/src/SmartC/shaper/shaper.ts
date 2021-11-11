@@ -1,7 +1,3 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 import { CONTRACT, SC_FUNCTION, SC_MACRO } from '../typings/contractTypes'
 import {
     TOKEN, DECLARATION_TYPES, SENTENCES, SENTENCE_STRUCT,

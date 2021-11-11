@@ -1,7 +1,3 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 import { assertNotEqual } from '../repository/repository'
 
 type PREPROCESSOR_RULE = {
