@@ -2,91 +2,99 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
+import { assertNotUndefined } from '../repository/repository'
 import { MACHINE_OBJECT } from '../typings/contractTypes'
 import hashMachineCode from './hashMachineCode'
 
+type MEMORY_INFO = {
+    name: string
+    value: bigint
+}
+/**
+ *     O: OpCode --
+ *     B: Branch (byte index) --
+ *     J: Jump (integer index) --
+ *     F: API Function Code (short index) --
+ *     I: Variable (Integer index) --
+ *     L: Long value
+ */
+type INSTRUCTION_PARAM_TYPES = 'O' | 'B' | 'J' | 'F' | 'I' | 'L';
+type INSTRUCTION_CODE_VALUES = {
+    type: INSTRUCTION_PARAM_TYPES
+    value: bigint
+}
+type CODE_INSTRUCTION = {
+    /** Line source code */
+    source: string
+    /** Address of current compiled instruction (in bytes) */
+    address: number
+    /** Label for current instruction */
+    station: string
+    /** If current instruction has jumps, indicate label of destinantion */
+    jumpLabel?: string
+    /** If current instruction is branch, indicate label of destinantion */
+    branchLabel?: string
+    /** Current instruction size (in bytes) */
+    size: number
+    /** Opcode and its params */
+    instructionValues: INSTRUCTION_CODE_VALUES[]
+    /** Compiled hex string for current instruction */
+    compiledInstruction: string
+}
+type ASM_OBJECT = {
+    /** Memory name and starting values */
+    memory: MEMORY_INFO[]
+    /** All code and details */
+    code: CODE_INSTRUCTION[]
+    /** All labels and address */
+    labels: {
+        label: string
+        address: number
+    }[]
+    /** Program Name */
+    PName: string
+    /** Program description */
+    PDescription: string
+    /** Program activation amount */
+    PActivationAmount: string
+    /** Selected size for user stack */
+    PUserStackPages: number
+    /** Selected size for code stack */
+    PCodeStackPages: number
+    /** hexstring of compiled program */
+    bytecode: string
+    /** hexstring for memory starting values */
+    bytedata: string
+}
+type OPCODE_RULE = {
+    /** Instruction code */
+    opCode: number
+    /** Instruction name */
+    name: string
+    /** Instruction size (in bytes) */
+    size: number
+    /** Type of instruction arguments and number */
+    argsType: INSTRUCTION_PARAM_TYPES[]
+    /** Matching regex rule to instruction */
+    regex: RegExp
+}
+type APICODE_RULE = {
+    /** API Function name */
+    name: string
+    /** API Function code */
+    apiCode: number
+    /** Matching opcode to API Function */
+    opCode: number
+}
+
 /**
  * Transforms assembly code into machine code
- * @param assemblySourceCode string
+ * @param assemblyCode string
  * @returns {MACHINE_OBJECT} with all details needed for
  * smart contract deployment.
  * @throws {Error} on any source code mistake.
  */
-export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
-    // Local types
-    type MEMORY_INFO = {
-        name: string
-        value: bigint
-    }
-    /**
-     *     O: OpCode --
-     *     B: Branch (byte index) --
-     *     J: Jump (integer index) --
-     *     F: API Function Code (short index) --
-     *     I: Variable (Integer index) --
-     *     L: Long value
-     */
-    type INSTRUCTION_PARAM_TYPES = 'O' | 'B' | 'J' | 'F' | 'I' | 'L';
-    type INSTRUCTION_CODE_VALUES = {
-        type: INSTRUCTION_PARAM_TYPES
-        value: bigint
-    }
-    type CODE_INSTRUCTION = {
-        /** Line source code */
-        source: string
-        /** Address of current compiled instruction (in bytes) */
-        address: number
-        /** Label for current instruction */
-        station: string
-        /** If current instruction has jumps, indicate label of destinantion */
-        jumpLabel?: string
-        /** If current instruction is branch, indicate label of destinantion */
-        branchLabel?: string
-        /** Current instruction size (in bytes) */
-        size: number
-        /** Opcode and its params */
-        instructionValues: INSTRUCTION_CODE_VALUES[]
-        /** Compiled hex string for current instruction */
-        compiledInstruction: string
-    }
-    type ASM_OBJECT = {
-        /** Memory name and starting values */
-        memory: MEMORY_INFO[]
-        /** All code and details */
-        code: CODE_INSTRUCTION[]
-        /** All labels and address */
-        labels: {
-            label: string
-            address: number
-        }[]
-        /** Program Name */
-        PName: string
-        /** Program description */
-        PDescription: string
-        /** Program activation amount */
-        PActivationAmount: string
-        /** Selected size for user stack */
-        PUserStackPages: number
-        /** Selected size for code stack */
-        PCodeStackPages: number
-        /** hexstring of compiled program */
-        bytecode: string
-        /** hexstring for memory starting values */
-        bytedata: string
-    }
-    type OPCODE_RULE = {
-        /** Instruction code */
-        opCode: number
-        /** Instruction name */
-        name: string
-        /** Instruction size (in bytes) */
-        size: number
-        /** Type of instruction arguments and number */
-        argsType: INSTRUCTION_PARAM_TYPES[]
-        /** Matching regex rule to instruction */
-        regex: RegExp
-    }
-
+export default function assembler (assemblyCode: string): MACHINE_OBJECT {
     const opCodeTable: OPCODE_RULE[] = [
         { opCode: 0xf0, name: 'blank', size: 0, argsType: [], regex: /^\s*$/ },
         { opCode: 0xf1, name: 'label', size: 0, argsType: [], regex: /^\s*(\w+):\s*$/ },
@@ -142,14 +150,7 @@ export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
         { opCode: 0x37, name: 'EXT_FUN_RET_DAT_2', size: 15, argsType: ['F', 'I', 'I', 'I'], regex: /^\s*FUN\s+@(\w+)\s+(\w+)\s+\$(\w+)\s+\$(\w+)\s*$/ },
         { opCode: 0x7f, name: 'NOP', size: 1, argsType: [], regex: /^\s*NOP\s*$/ }
     ]
-    const apiCodeTable: {
-        /** API Function name */
-        name: string
-        /** API Function code */
-        apiCode: number
-        /** Matching opcode to API Function */
-        opCode: number
-    }[] = [
+    const apiCodeTable: APICODE_RULE[] = [
         { name: 'get_A1', apiCode: 0x0100, opCode: 0x35 },
         { name: 'get_A2', apiCode: 0x0101, opCode: 0x35 },
         { name: 'get_A3', apiCode: 0x0102, opCode: 0x35 },
@@ -219,7 +220,6 @@ export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
         { name: 'send_A_to_Address_in_B', apiCode: 0x0405, opCode: 0x32 },
         { name: 'add_Minutes_to_Timestamp', apiCode: 0x0406, opCode: 0x37 }
     ]
-
     const AsmObj: ASM_OBJECT = {
         memory: [],
         code: [],
@@ -233,56 +233,39 @@ export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
         bytedata: ''
     }
 
-    function genCodeInstr (): CODE_INSTRUCTION {
-        return {
-            source: '',
-            address: -1,
-            station: '',
-            size: 0,
-            instructionValues: [],
-            compiledInstruction: ''
-        }
-    }
-
     /* * * Main function! * * */
-    function bytecodeMain (): MACHINE_OBJECT {
+    function assemblerMain (): MACHINE_OBJECT {
         // process line by line
-        const line = assemblySourceCode.split('\n')
-
+        const line = assemblyCode.split('\n')
         // first pass, fill address, opcodes, apicodes, constants
         line.forEach((codeLine, idx) => {
-            for (const currOpCodeTable of opCodeTable) {
-                const parts = currOpCodeTable.regex.exec(codeLine)
+            for (const CurrRule of opCodeTable) {
+                const parts = CurrRule.regex.exec(codeLine)
                 if (parts !== null) {
-                    process(parts, currOpCodeTable)
+                    process(parts, CurrRule)
                     return
                 }
             }
-
-            throw new Error(`bytecode() error #1. No rule found to process line ${idx}: "${codeLine}".`)
+            throw new Error(`assembler() error #1. No rule found to process line ${idx}: "${codeLine}".`)
         })
-
         // second pass, solve branches offsets
         do {
             AsmObj.labels = []
             let currAddr = 0
             // Rebuild AsmObj.labels
-            AsmObj.code.forEach(element => {
-                element.address = currAddr
-                if (element.station.length !== 0) {
-                    AsmObj.labels.push({ label: element.station, address: currAddr })
+            AsmObj.code.forEach(Element => {
+                Element.address = currAddr
+                if (Element.station.length !== 0) {
+                    AsmObj.labels.push({ label: Element.station, address: currAddr })
                 }
-                currAddr += element.size
+                currAddr += Element.size
             })
         } while (!AsmObj.code.every(checkBranches))
-
         // third pass, push jump an branches.
         AsmObj.code.forEach(fillJumpsAndBranches)
-
         // last pass, join all contents in little endian notation (code and data)
         AsmObj.code.forEach(finishHim)
         AsmObj.bytedata = fatality(AsmObj.memory)
-
         return buildRetObj()
     }
 
@@ -296,12 +279,11 @@ export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
     }
 
     /** Process one matched instruction */
-    function process (parts: RegExpExecArray, instruction: OPCODE_RULE) {
+    function process (parts: RegExpExecArray, Instruction: OPCODE_RULE) {
         // Create a new object
         const CodeObj = genCodeInstr()
         CodeObj.source = parts[0]
-
-        switch (instruction.opCode) {
+        switch (Instruction.opCode) {
         case 0xF0:
             // blank line
             return
@@ -340,20 +322,18 @@ export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
                 AsmObj.PCodeStackPages = Number(parts[2].trim())
                 break
             default:
-                throw new Error(`bytecode() error #7. Unknow '^program' directive: '${parts[1]}'`)
+                throw new Error(`assembler() error #7. Unknow '^program' directive: '${parts[1]}'`)
             }
             return
         }
-
-        CodeObj.size = instruction.size
-        CodeObj.instructionValues.push({ type: 'O', value: BigInt(instruction.opCode) })
-
+        CodeObj.size = Instruction.size
+        CodeObj.instructionValues.push({ type: 'O', value: BigInt(Instruction.opCode) })
         let i = 0
-        if (instruction.opCode >= 0x35 && instruction.opCode <= 0x37) {
+        if (Instruction.opCode >= 0x35 && Instruction.opCode <= 0x37) {
             // 0x35, 0x36 and 0x37 are exceptions for args order, treat now
             CodeObj.instructionValues.push({
                 type: 'F',
-                value: BigInt(getApiCode(parts[2], instruction.opCode, CodeObj.source))
+                value: BigInt(getApiCode(parts[2], Instruction.opCode, CodeObj.source))
             })
             CodeObj.instructionValues.push({
                 type: 'I',
@@ -361,9 +341,9 @@ export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
             })
             i = 2
         }
-        for (; i < instruction.argsType.length; i++) {
+        for (; i < Instruction.argsType.length; i++) {
             // process generic instructions
-            switch (instruction.argsType[i]) {
+            switch (Instruction.argsType[i]) {
             case 'I':
                 CodeObj.instructionValues.push({ type: 'I', value: BigInt(getMemoryAddress(parts[i + 1])) })
                 break
@@ -382,7 +362,7 @@ export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
                 // function name for opCodes 0x32, 0x33, 0x34
                 CodeObj.instructionValues.push({
                     type: 'F',
-                    value: BigInt(getApiCode(parts[1], instruction.opCode, CodeObj.source))
+                    value: BigInt(getApiCode(parts[1], Instruction.opCode, CodeObj.source))
                 })
                 break
             }
@@ -394,65 +374,76 @@ export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
         AsmObj.code.push(CodeObj)
     }
 
+    /** Returns a skeleton code instruction object */
+    function genCodeInstr (): CODE_INSTRUCTION {
+        return {
+            source: '',
+            address: -1,
+            station: '',
+            size: 0,
+            instructionValues: [],
+            compiledInstruction: ''
+        }
+    }
+
     /** Finds and return an API Code for a given name, or throws if not found */
     function getApiCode (nameToSearch: string, currOpCode: number, currentCodeLine:string) : number {
-        const query = apiCodeTable.find(obj => obj.name === nameToSearch && obj.opCode === currOpCode)
+        const query = apiCodeTable.find(Obj => Obj.name === nameToSearch && Obj.opCode === currOpCode)
         if (query) {
             return query.apiCode
         }
-        throw new Error(`bytecode() error #2. API function not found. Instruction: '${currentCodeLine}'`)
+        throw new Error(`assembler() error #2. API function not found. Instruction: '${currentCodeLine}'`)
     }
 
     /**
      * Check if branches offsets are in range. If not, update AsmObj
      * inverting branches and adding jump instruction.
-     * @param currItem Current instruction to update address
+     * @param CurrItem Current instruction to update address
      * @param idx Current index of asmObj
      * @returns true if instruction is not branch or if branch offset
      * is in range. False if AsmObj was modified and process need to
      * be restarted.
      */
-    function checkBranches (currItem: CODE_INSTRUCTION, idx: number) {
-        if (currItem.branchLabel !== undefined) {
-            const search = AsmObj.labels.find(obj => obj.label === currItem.branchLabel)
-            if (search === undefined) {
-                throw new Error(`bytecode() error #4. Unknow label ${currItem.branchLabel}. Instruction: '${currItem.source}'`)
+    function checkBranches (CurrItem: CODE_INSTRUCTION, idx: number) {
+        if (CurrItem.branchLabel !== undefined) {
+            const FoundLabel = AsmObj.labels.find(obj => obj.label === CurrItem.branchLabel)
+            if (FoundLabel === undefined) {
+                throw new Error('assembler() error #4.' +
+                ` Unknow label ${CurrItem.branchLabel}. Instruction: '${CurrItem.source}'`)
             }
-            const offset = search.address - currItem.address
-
+            const offset = FoundLabel.address - CurrItem.address
             if (offset < -128 || offset > 127) {
                 // We have branch offset overflow: solve it!
                 // create jump operation
                 const JumpCode = genCodeInstr()
-                JumpCode.source = `JUMP: ${currItem.source}`
+                JumpCode.source = `JUMP: ${CurrItem.source}`
                 JumpCode.size = 5
-                JumpCode.jumpLabel = currItem.branchLabel
+                JumpCode.jumpLabel = CurrItem.branchLabel
                 JumpCode.instructionValues.push({ type: 'O', value: 0x1an })
-
                 // change opCode
-                switch (currItem.instructionValues[0].value) {
-                case 0x1bn: currItem.instructionValues[0].value = 0x1en; break // BZR_DAT -> BNZ_DAT
-                case 0x1en: currItem.instructionValues[0].value = 0x1bn; break // BNZ_DAT -> BZR_DAT
-                case 0x1fn: currItem.instructionValues[0].value = 0x22n; break // BGT_DAT -> BLE_DAT
-                case 0x22n: currItem.instructionValues[0].value = 0x1fn; break // BLE_DAT -> BGT_DAT
-                case 0x21n: currItem.instructionValues[0].value = 0x20n; break // BGE_DAT -> BLT_DAT
-                case 0x20n: currItem.instructionValues[0].value = 0x21n; break // BLT_DAT -> BGE_DAT
-                case 0x23n: currItem.instructionValues[0].value = 0x24n; break // BEQ_DAT -> BNE_DAT
-                case 0x24n: currItem.instructionValues[0].value = 0x23n; break // BNE_DAT -> BEQ_DAT
+                switch (CurrItem.instructionValues[0].value) {
+                case 0x1bn: CurrItem.instructionValues[0].value = 0x1en; break // BZR_DAT -> BNZ_DAT
+                case 0x1en: CurrItem.instructionValues[0].value = 0x1bn; break // BNZ_DAT -> BZR_DAT
+                case 0x1fn: CurrItem.instructionValues[0].value = 0x22n; break // BGT_DAT -> BLE_DAT
+                case 0x22n: CurrItem.instructionValues[0].value = 0x1fn; break // BLE_DAT -> BGT_DAT
+                case 0x21n: CurrItem.instructionValues[0].value = 0x20n; break // BGE_DAT -> BLT_DAT
+                case 0x20n: CurrItem.instructionValues[0].value = 0x21n; break // BLT_DAT -> BGE_DAT
+                case 0x23n: CurrItem.instructionValues[0].value = 0x24n; break // BEQ_DAT -> BNE_DAT
+                case 0x24n: CurrItem.instructionValues[0].value = 0x23n; break // BNE_DAT -> BEQ_DAT
                 }
                 // change branch destination
-                currItem.branchLabel = `__${currItem.address}`
+                CurrItem.branchLabel = `__${CurrItem.address}`
                 if (AsmObj.code[idx + 1].station.length !== 0) {
                     // station already filled, add a new code for label
                     const LabelCode = genCodeInstr()
-                    LabelCode.source = `JUMP: ${currItem.source}`
+                    LabelCode.source = `JUMP: ${CurrItem.source}`
                     LabelCode.size = 0
-                    LabelCode.station = `__${currItem.address}`
+                    LabelCode.station = `__${CurrItem.address}`
                     // insert jump+label operation
                     AsmObj.code.splice(idx + 1, 0, JumpCode, LabelCode)
                 } else {
                     // station is free, no need to add a new code for label
-                    AsmObj.code[idx + 1].station = `__${currItem.address}`
+                    AsmObj.code[idx + 1].station = `__${CurrItem.address}`
                     // insert jump operation
                     AsmObj.code.splice(idx + 1, 0, JumpCode)
                 }
@@ -467,25 +458,21 @@ export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
     /**
      * Get values from 'branchLabel' or 'jumpLabel' and pushes into
      * 'content' and 'content_type'
-     * @param currItem Current instruction
+     * @param CurrItem Current instruction
      */
-    function fillJumpsAndBranches (currItem: CODE_INSTRUCTION) {
-        if (currItem.branchLabel !== undefined) {
-            const search = AsmObj.labels.find(obj => obj.label === currItem.branchLabel)
-            if (search === undefined) {
-                // did not find a label that was insert automatically?
-                throw new Error('Internal error.')
+    function fillJumpsAndBranches (CurrItem: CODE_INSTRUCTION) {
+        if (CurrItem.branchLabel !== undefined) {
+            const FoundLabel = assertNotUndefined(AsmObj.labels.find(obj => obj.label === CurrItem.branchLabel))
+            const offset = FoundLabel.address - CurrItem.address
+            CurrItem.instructionValues.push({ type: 'B', value: BigInt(offset) })
+            delete CurrItem.branchLabel
+        } else if (CurrItem.jumpLabel !== undefined) {
+            const FoundLabel = AsmObj.labels.find(obj => obj.label === CurrItem.jumpLabel)
+            if (FoundLabel === undefined) {
+                throw new Error(`assembler() error #5: Unknow jump label ${CurrItem.jumpLabel}. Source: "${CurrItem.source}"`)
             }
-            const offset = search.address - currItem.address
-            currItem.instructionValues.push({ type: 'B', value: BigInt(offset) })
-            delete currItem.branchLabel
-        } else if (currItem.jumpLabel !== undefined) {
-            const search = AsmObj.labels.find(obj => obj.label === currItem.jumpLabel)
-            if (search === undefined) {
-                throw new Error(`bytecode() error #5: Unknow jump label ${currItem.jumpLabel}. Source: "${currItem.source}"`)
-            }
-            currItem.instructionValues.push({ type: 'J', value: BigInt(search.address) })
-            delete currItem.jumpLabel
+            CurrItem.instructionValues.push({ type: 'J', value: BigInt(FoundLabel.address) })
+            delete CurrItem.jumpLabel
         }
     }
 
@@ -495,14 +482,14 @@ export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
         if (AsmObj.PCodeStackPages > 0) {
             cspages = AsmObj.PCodeStackPages
         } else {
-            if (assemblySourceCode.indexOf('JSR ') !== -1 || assemblySourceCode.indexOf('RET') !== -1) {
+            if (assemblyCode.indexOf('JSR ') !== -1 || assemblyCode.indexOf('RET') !== -1) {
                 cspages = 1
             }
         }
         if (AsmObj.PUserStackPages > 0) {
             uspages = AsmObj.PUserStackPages
         } else {
-            if (assemblySourceCode.indexOf('POP ') !== -1 || assemblySourceCode.indexOf('PSH ') !== -1) {
+            if (assemblyCode.indexOf('POP ') !== -1 || assemblyCode.indexOf('PSH ') !== -1) {
                 uspages = 1
             }
         }
@@ -528,13 +515,13 @@ export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
 
     /**
      * Translate obj.content to obj.hexstring
-     * @param currItem Current instruction object
+     * @param CurrItem Current instruction object
      */
-    function finishHim (currItem: CODE_INSTRUCTION) {
-        currItem.instructionValues.forEach(instrObj => {
-            currItem.compiledInstruction += number2hexstring(instrObj.value, instrObj.type)
+    function finishHim (CurrItem: CODE_INSTRUCTION) {
+        CurrItem.instructionValues.forEach(InstrObj => {
+            CurrItem.compiledInstruction += number2hexstring(InstrObj.value, InstrObj.type)
         })
-        AsmObj.bytecode += currItem.compiledInstruction
+        AsmObj.bytecode += CurrItem.compiledInstruction
     }
 
     /** Finds last non zero memory value and returns hexstring with memory values from zero until last non zero. */
@@ -562,7 +549,6 @@ export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
     function number2hexstring (value: bigint, valType: INSTRUCTION_PARAM_TYPES) {
         let bytes = 0
         let retString = ''
-
         switch (valType) {
         case 'O':
             return value.toString(16).padStart(2, '0')
@@ -578,14 +564,12 @@ export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
         case 'L':
             bytes = 8
         }
-
         for (let i = 0, base = 256n; i < bytes; i++) {
             retString += (value % base).toString(16).padStart(2, '0')
             value = value / base
         }
-
         return retString
     }
 
-    return bytecodeMain()
+    return assemblerMain()
 }
