@@ -30,80 +30,66 @@ export default function sentencesProcessor (
     function processOneSentence (): SENTENCES[] {
         const phrase: TOKEN[] = []
         const lineOfFirstInstruction = codetrain[currentToken]?.line ?? -1
-
+        // Analysis for start tokens
         if (codetrain[currentToken].type === 'CodeDomain') {
-            const temp = sentencesProcessor(AuxVars, codetrain[currentToken].params)
-            return temp
+            return sentencesProcessor(AuxVars, codetrain[currentToken].params)
         }
-
-        // One sentence ending with terminator (or maybe another loop/conditional)
+        switch (codetrain[currentToken].value) {
+        // These keywords must start one sentence.
+        case 'if':
+            return ifCodeToSentence()
+        case 'while':
+            return whileCodeToSentence()
+        case 'for':
+            return forCodeToSentence()
+        case 'else':
+            throw new Error(`At line: ${lineOfFirstInstruction}. 'else' not associated with an 'if(){}else{}' sentence`)
+        case 'asm':
+        case 'label':
+            return [{ type: 'phrase', code: [codetrain[currentToken]], line: lineOfFirstInstruction }]
+        case 'do':
+            return doCodeToSentence()
+        case 'break':
+        case 'continue':
+            if (AuxVars.latestLoopId.length === 0) {
+                throw new Error(`At line: ${lineOfFirstInstruction}. '${codetrain[currentToken].value}' outside a loop.`)
+            }
+            if (codetrain[currentToken + 1]?.type === 'Terminator') {
+                currentToken++
+                codetrain[currentToken - 1].extValue = AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1]
+                return [{ type: 'phrase', code: [codetrain[currentToken - 1]], line: lineOfFirstInstruction }]
+            }
+            throw new Error(`At line: ${lineOfFirstInstruction}. Missing ';' after '${codetrain[currentToken].value}' keyword.`)
+        case 'struct':
+            // Handle struct. It can be type:phrase or type:struct. handle here only type:struct
+            if (codetrain[currentToken + 1]?.type === 'CodeDomain') {
+                return structCodeToSentence()
+            }
+        }
+        // Analysis for type:phrase
         while (currentToken < codetrain.length) {
-            const line = codetrain[currentToken].line
             if (codetrain[currentToken].type === 'Terminator') {
                 // end of sentence!
                 return [{ type: 'phrase', code: phrase, line: lineOfFirstInstruction }]
             }
             switch (codetrain[currentToken].value) {
-            case 'struct':
-                // Handle struct. It can be type:phrase or type:struct
-                if (codetrain[currentToken + 1]?.type === 'CodeDomain') {
-                    // Struct definition -> type is 'struct'
-                    return structCodeToSentence()
-                }
-                // Consider type: 'phrase' with struct variable declaration
-                phrase.push(codetrain[currentToken])
-                currentToken++
-                continue
-            case 'long':
-            case 'const':
-            case 'void':
-            case 'goto':
-            case 'halt':
-            case 'return':
-            case 'sleep':
-            case 'exit':
-                // Handle type:phrase keywords
-                phrase.push(codetrain[currentToken])
-                currentToken++
-                continue
-            }
-            if (codetrain[currentToken].type === 'Keyword' && phrase.length > 0) {
-                throw new Error(`At line: ${phrase[0].line}.` +
-                ` Statement including '${codetrain[currentToken].value}' in wrong way. Possible missing ';'.`)
-            }
-            switch (codetrain[currentToken].value) {
-            // Handle special type:phrase keywords and exceptions
             case 'if':
-                return ifCodeToSentence()
             case 'while':
-                return whileCodeToSentence()
             case 'for':
-                return forCodeToSentence()
             case 'else':
-                throw new Error(`At line: ${line}. 'else' not associated with an 'if(){}else{}' sentence`)
             case 'asm':
-                return [{ type: 'phrase', code: [codetrain[currentToken]], line: line }]
             case 'label':
-                return [{ type: 'phrase', code: [codetrain[currentToken]], line: line }]
             case 'do':
-                return doCodeToSentence()
             case 'break':
             case 'continue':
-                if (AuxVars.latestLoopId.length === 0) {
-                    throw new Error(`At line: ${line}. '${codetrain[currentToken].value}' outside a loop.`)
-                }
-                // Just update information and continue on loop
-                codetrain[currentToken].extValue = AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1]
-                break
+                // These keywords must start a sentence treated before. Throw if found now.
+                throw new Error(`At line: ${codetrain[currentToken].line}.` +
+                ` Statement including '${codetrain[currentToken].value}' in wrong way. Possible missing ';' before it.`)
             }
             phrase.push(codetrain[currentToken])
             currentToken++
         }
-        if (phrase.length !== 0) {
-            throw new Error(`At line: ${codetrain[currentToken - 1].line}. Missing ';'. `)
-        }
-        // Never
-        throw new Error(`Internal error processing line ${codetrain[currentToken - 1].line}.`)
+        throw new Error(`At line: ${codetrain[currentToken - 1].line}. Missing ';'. `)
     }
 
     function ifCodeToSentence () : SENTENCES[] {
