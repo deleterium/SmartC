@@ -132,7 +132,10 @@ export default function preprocess (sourcecode: string) {
         case 'DEFINE_VAL':
             idx = preprocessorReplacements.findIndex(obj => obj.cname === PrepRule.parts[1])
             if (idx === -1) {
-                preprocessorReplacements.push({ cname: PrepRule.parts[1], value: replaceDefines(PrepRule.parts[2]).trim() })
+                preprocessorReplacements.push({
+                    cname: PrepRule.parts[1],
+                    value: replaceDefines(PrepRule.parts[2]).trim()
+                })
                 return ''
             }
             preprocessorReplacements[idx].value = PrepRule.parts[2].trim()

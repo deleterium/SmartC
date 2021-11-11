@@ -3,20 +3,25 @@
 // License: BSD 3-Clause License
 
 import { assertExpression, assertNotEqual, assertNotUndefined, deepCopy } from '../repository/repository'
-import { ARRAY_TYPE_DEFINITION, MEMORY_SLOT, STRUCT_TYPE_DEFINITION, TOKEN, TYPE_DEFINITIONS } from '../typings/syntaxTypes'
+import {
+    ARRAY_TYPE_DEFINITION, MEMORY_SLOT, STRUCT_TYPE_DEFINITION, TOKEN, TYPE_DEFINITIONS
+} from '../typings/syntaxTypes'
 import { SHAPER_AUXVARS } from './shaperTypings'
 import { getMemoryTemplate, getTypeDefinitionTemplate } from './templates'
 
 /** Process a tokens sequence from a Sentence phrase and return the variables
  * that were defined, in Memory object form
- * @param ProgramTD Side effect: Program.typesDefinitions will receive new arrays definitions, if declared in code.
+ * @param ProgramTD Side effect: Program.typesDefinitions will receive
+ * new arrays definitions, if declared in code.
  * @param AuxVars Read only. It contains information about current function beeing processed.
  * @param phraseCode Code to be analyzed
  * @param structPrefix Optional. If processing struct members, set as struct name + '_'.
  * @returns Array of memory objects declared
  * @throws {Error} on any mistakes
  */
-export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], AuxVars: SHAPER_AUXVARS, phraseCode: TOKEN [], structPrefix: string = ''): MEMORY_SLOT[] {
+export default function phraseToMemoryObject (
+    ProgramTD: TYPE_DEFINITIONS[], AuxVars: SHAPER_AUXVARS, phraseCode: TOKEN [], structPrefix: string = ''
+): MEMORY_SLOT[] {
     let ptmoCounter = 0
 
     /* * * Main function * * */
@@ -111,7 +116,8 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
         lovHeader.scope = AuxVars.currentScopeName
         if (definition === 'void') {
             if (isLovPointer === false) {
-                throw new Error(`At line: ${phraseCode[startingPmtoCounter].line}. Can not declare variables as void.`)
+                throw new Error(`At line: ${phraseCode[startingPmtoCounter].line}.` +
+                ' Can not declare variables as void.')
             }
             lovHeader.declaration = 'void_ptr'
         } else { // phraseCode[keywordIndex].value === 'long'
@@ -175,7 +181,8 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
     /** Inspect one item to get array dimension */
     function getArraySize (tkn: TOKEN[] = [], line: number = -1) {
         if (tkn.length !== 1 || tkn[0].type !== 'Constant') {
-            throw new Error('At line: ' + line + '. Wrong array declaration. Only constant size declarations allowed.')
+            throw new Error(`At line: ${line}.` +
+            ' Wrong array declaration. Only constant size declarations allowed.')
         }
         return parseInt(tkn[0].value, 16)
     }
@@ -215,7 +222,11 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
         const keywordIndex = ptmoCounter
         assertExpression(phraseCode[ptmoCounter].value === 'struct',
             'Internal error.')
-        const structNameDef = assertNotEqual(phraseCode[keywordIndex].extValue, '', 'Internal error. Unknow type definition')
+        const structNameDef = assertNotEqual(
+            phraseCode[keywordIndex].extValue,
+            '',
+            'Internal error. Unknow type definition'
+        )
 
         ptmoCounter++
         while (ptmoCounter < phraseCode.length) {
@@ -238,16 +249,20 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
                     ptmoCounter++
                     break
                 }
-                throw new Error(`At line: ${line}. Invalid element (value: '${phraseCode[ptmoCounter].value}') found in struct definition.`)
+                throw new Error(`At line: ${line}.` +
+                ` Invalid element (value: '${phraseCode[ptmoCounter].value}') found in struct definition.`)
             case 'Variable':
                 if (AuxVars.isFunctionArgument && !isPointer) {
-                    throw new Error(`At line: ${line}. Passing struct by value as argument is not supported. Pass by reference.`)
+                    throw new Error(`At line: ${line}.` +
+                    ' Passing struct by value as argument is not supported. Pass by reference.')
                 }
                 retMemory.push(...structToMemoryObject(structNameDef, phraseCode[keywordIndex].line))
                 ptmoCounter++
                 break
             default:
-                throw new Error(`At line: ${line}. Invalid element (type: '${phraseCode[ptmoCounter].type}' value: '${phraseCode[ptmoCounter].value}') found in struct definition!`)
+                throw new Error(`At line: ${line}.` +
+                ` Invalid element (type: '${phraseCode[ptmoCounter].type}' ` +
+                ` value: '${phraseCode[ptmoCounter].value}') found in struct definition!`)
             }
         }
         return retMemory
@@ -268,7 +283,8 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
             // It IS NOT array of structs
             if (isStructPointer === false) {
                 if (structTD === undefined) {
-                    throw new Error(`At line: ${startingLine}. Could not find type definition for 'struct' '${currentStructNameDef}'.`)
+                    throw new Error(`At line: ${startingLine}.` +
+                    ` Could not find type definition for 'struct' '${currentStructNameDef}'.`)
                 }
                 return createMemoryObjectFromSTD(currentStructNameDef, phraseCode[ptmoCounter].value, isStructPointer)
             }
@@ -295,7 +311,8 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
 
         // It IS array of structs
         if (structTD === undefined) {
-            throw new Error(`At line: ${startingLine}. Could not find type definition for 'struct' '${currentStructNameDef}'.`)
+            throw new Error(`At line: ${startingLine}.` +
+            ` Could not find type definition for 'struct' '${currentStructNameDef}'.`)
         }
 
         // Prepare structMemHeader
@@ -324,7 +341,11 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
         retStructMemory.push(structMemHeader)
         for (let x = 0, i = 0; x < structArrDimensions.length; x++) {
             for (let y = 0; y < structArrDimensions[x]; y++) {
-                retStructMemory.push(...createMemoryObjectFromSTD(currentStructNameDef, phraseCode[ptmoCounter - structArrDimensions.length].value + '_' + i, isStructPointer))
+                retStructMemory.push(...createMemoryObjectFromSTD(
+                    currentStructNameDef,
+                    phraseCode[ptmoCounter - structArrDimensions.length].value + '_' + i,
+                    isStructPointer
+                ))
                 i++
             }
         }
@@ -337,16 +358,22 @@ export default function phraseToMemoryObject (ProgramTD: TYPE_DEFINITIONS[], Aux
 
     /** Find and return a struct type definiton with a given structTypeName */
     function findSTD (structTypeName: string = ''): STRUCT_TYPE_DEFINITION | undefined {
-        let search = ProgramTD.find(obj => obj.type === 'struct' && obj.name === structTypeName) as (STRUCT_TYPE_DEFINITION | undefined)
+        let search = ProgramTD.find(obj => {
+            return obj.type === 'struct' && obj.name === structTypeName
+        }) as (STRUCT_TYPE_DEFINITION | undefined)
         if (search === undefined && AuxVars.currentPrefix.length > 0) {
-            search = ProgramTD.find(obj => obj.type === 'struct' && obj.name === AuxVars.currentPrefix + structTypeName) as (STRUCT_TYPE_DEFINITION | undefined)
+            search = ProgramTD.find(obj => {
+                return obj.type === 'struct' && obj.name === AuxVars.currentPrefix + structTypeName
+            }) as (STRUCT_TYPE_DEFINITION | undefined)
         }
         return search
     }
 
     /** Create an array of memory objects from a given structTypeName.
      * The memory objects will be named variableName. */
-    function createMemoryObjectFromSTD (structTypeName: string, variableName: string, ispointer: boolean) : MEMORY_SLOT[] {
+    function createMemoryObjectFromSTD (
+        structTypeName: string, variableName: string, ispointer: boolean
+    ) : MEMORY_SLOT[] {
         const structTD = assertNotUndefined(findSTD(structTypeName),
             'Internal error.')
         const newmemory = [deepCopy(structTD.MemoryTemplate)]

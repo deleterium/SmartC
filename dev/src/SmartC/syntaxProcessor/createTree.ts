@@ -39,10 +39,12 @@ export default function createTree (tokenArray: TOKEN[] | undefined): AST {
         if (needle === tokenToAst.length - 1) {
             return postSetUnaryToAST(tokenToAst)
         }
-        throw new Error(`At line: ${tokenToAst[needle].line}. Invalid use of 'SetUnaryOperator' '${tokenToAst[needle].value}'.`)
+        throw new Error(`At line: ${tokenToAst[needle].line}.` +
+        ` Invalid use of 'SetUnaryOperator' '${tokenToAst[needle].value}'.`)
     default:
         // Never
-        throw new Error(`Internal error at line: ${tokenToAst[0].line}. Token '${tokenToAst[0].type}' with value '${tokenToAst[0].value}' does not match any syntax rules.`)
+        throw new Error(`Internal error at line: ${tokenToAst[0].line}.` +
+        ` Token '${tokenToAst[0].type}' with value '${tokenToAst[0].value}' does not match any syntax rules.`)
     }
 }
 
@@ -110,10 +112,12 @@ function VariableToAST (tokens: TOKEN[]) : AST {
             if (tokens[idx + 1]?.type === 'Variable') {
                 break
             }
-            throw new Error(`At line: ${tokens[idx].line}. Expecting a variable for '${tokens[idx].value}' modifier.`)
+            throw new Error(`At line: ${tokens[idx].line}.` +
+            ` Expecting a variable for '${tokens[idx].value}' modifier.`)
         case 'Variable':
             if (tokens[idx - 1].type !== 'Member') {
-                throw new Error(`At line: ${tokens[idx].line}. Probable missing ';'. Expecting a member modifier before '${tokens[idx].value}'.`)
+                throw new Error(`At line: ${tokens[idx].line}.` +
+                ` Probable missing ';'. Expecting a member modifier before '${tokens[idx].value}'.`)
             }
 
             if (tokens[idx - 1].value === '.') {
@@ -129,7 +133,8 @@ function VariableToAST (tokens: TOKEN[]) : AST {
             })
             break
         default:
-            throw new Error(`At line: ${tokens[idx].line}. Probable missing ';'. Invalid type of variable modifier: '${tokens[idx].type}'.`)
+            throw new Error(`At line: ${tokens[idx].line}.` +
+            ` Probable missing ';'. Invalid type of variable modifier: '${tokens[idx].type}'.`)
         }
     }
     return retNode
@@ -146,10 +151,12 @@ function CodeCaveToAST (tokens: TOKEN[]) : AST {
 
 function BinariesToAST (tokens: TOKEN[], operatorLoc: number) : AST {
     if (operatorLoc === 0) {
-        throw new Error(`At line: ${tokens[0].line}. Missing left value for binary operator '${tokens[operatorLoc].value}'.`)
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` Missing left value for binary operator '${tokens[operatorLoc].value}'.`)
     }
     if (operatorLoc === tokens.length - 1) {
-        throw new Error(`At line: ${tokens[0].line}. Missing right value for binary operator '${tokens[operatorLoc].value}'.`)
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` Missing right value for binary operator '${tokens[operatorLoc].value}'.`)
     }
     return {
         type: 'binaryASN',
@@ -161,7 +168,8 @@ function BinariesToAST (tokens: TOKEN[], operatorLoc: number) : AST {
 
 function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
     if (keywordLoc !== 0) {
-        throw new Error(`At line: ${tokens[keywordLoc].line}. Probable missing ';' before keyword ${tokens[keywordLoc].value}.`)
+        throw new Error(`At line: ${tokens[keywordLoc].line}.` +
+        ` Probable missing ';' before keyword ${tokens[keywordLoc].value}.`)
     }
     switch (tokens[0].value) {
     case 'sleep':
@@ -205,14 +213,18 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
 
 function UnaryOperatorToAST (tokens: TOKEN[], operatorLoc: number) : AST {
     if (operatorLoc !== 0) {
-        throw new Error(`At line: ${tokens[operatorLoc].line}. Invalid use of 'UnaryOperator' '${tokens[operatorLoc].value}'.`)
+        throw new Error(`At line: ${tokens[operatorLoc].line}.` +
+        ` Invalid use of 'UnaryOperator' '${tokens[operatorLoc].value}'.`)
     }
     if (tokens.length === 1) {
         throw new Error(`At line: ${tokens[0].line}. Missing value to apply unary operator '${tokens[0].value}'.`)
     }
     if (tokens[0].value === '*' && tokens.length > 0) {
-        if (tokens[1].type !== 'Variable' && tokens[1].type !== 'CodeCave' && tokens[1].type !== 'SetUnaryOperator') {
-            throw new Error(`At line: ${tokens[1].line}. Invalid lvalue for pointer operation. Can not have type '${tokens[1].type}'.`)
+        if (tokens[1].type !== 'Variable' &&
+            tokens[1].type !== 'CodeCave' &&
+            tokens[1].type !== 'SetUnaryOperator') {
+            throw new Error(`At line: ${tokens[1].line}.` +
+            ` Invalid lvalue for pointer operation. Can not have type '${tokens[1].type}'.`)
         }
     }
     return {
@@ -224,16 +236,19 @@ function UnaryOperatorToAST (tokens: TOKEN[], operatorLoc: number) : AST {
 
 function preSetUnaryToAST (tokens: TOKEN[]) : AST {
     if (tokens.length === 1) {
-        throw new Error(`At line: ${tokens[0].line}. Missing value to apply 'SetUnaryOperator' '${tokens[0].value}'.`)
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` Missing value to apply 'SetUnaryOperator' '${tokens[0].value}'.`)
     }
     if (tokens[1].type !== 'Variable') {
-        throw new Error(`At line: ${tokens[0].line}. 'SetUnaryOperator' '${tokens[0].value}' expecting a variable, got a '${tokens[1].type}'.`)
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` 'SetUnaryOperator' '${tokens[0].value}' expecting a variable, got a '${tokens[1].type}'.`)
     }
     for (let j = 1; j < tokens.length; j++) {
         if (tokens[j].type === 'Variable' || tokens[j].type === 'Member') {
             continue
         }
-        throw new Error('At line: ' + tokens[0].line + ". Can not use 'SetUnaryOperator' with types '" + tokens[j].type + "'.")
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` Can not use 'SetUnaryOperator' with types '${tokens[j].type}'.`)
     }
     return {
         type: 'exceptionASN',
@@ -246,13 +261,15 @@ function postSetUnaryToAST (tokens: TOKEN[]) : AST {
     const operatorLoc = tokens.length - 1
     // Process exceptions for post increment and post decrement (left-to-right associativity)
     if (tokens[0].type !== 'Variable') {
-        throw new Error(`At line: ${tokens[0].line}. 'SetUnaryOperator' '${tokens[operatorLoc].value}' expecting a variable, got a '${tokens[0].type}'.`)
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` 'SetUnaryOperator' '${tokens[operatorLoc].value}' expecting a variable, got a '${tokens[0].type}'.`)
     }
     for (let j = 1; j < tokens.length - 1; j++) {
         if (tokens[j].type === 'Variable' || tokens[j].type === 'Member') {
             continue
         }
-        throw new Error('At line: ' + tokens[0].line + ". Can not use 'SetUnaryOperator' with types  '" + tokens[j].type + "'.")
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` Can not use 'SetUnaryOperator' with types  '${tokens[j].type}'.`)
     }
     return {
         type: 'exceptionASN',

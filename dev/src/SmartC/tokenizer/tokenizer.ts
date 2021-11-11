@@ -168,7 +168,8 @@ export default function tokenize (inputSourceCode: string): PRE_TOKEN[] {
             if (simpleTokensSpecs.find(findAndProcessSimpleTokens)) {
                 continue
             }
-            throw new Error(`At line: ${AuxVars.currentLine}. Forbidden character found: '${AuxVars.currentChar}'.`)
+            throw new Error(`At line: ${AuxVars.currentLine}.` +
+            ` Forbidden character found: '${AuxVars.currentChar}'.`)
         }
         return AuxVars.preTokens
     }
@@ -188,7 +189,11 @@ export default function tokenize (inputSourceCode: string): PRE_TOKEN[] {
             AuxVars.current += endParts[1].length
             return true// breaks find function
         }
-        AuxVars.preTokens.push({ type: ruleN.pretokenType, value: endParts[1].slice(0, -ruleN.removeTrailing), line: AuxVars.currentLine })
+        AuxVars.preTokens.push({
+            type: ruleN.pretokenType,
+            value: endParts[1].slice(0, -ruleN.removeTrailing),
+            line: AuxVars.currentLine
+        })
         AuxVars.currentLine += (endParts[1].match(/\n/g) || '').length
         AuxVars.current += endParts[1].length
         return true// breaks find function
@@ -211,7 +216,8 @@ export default function tokenize (inputSourceCode: string): PRE_TOKEN[] {
             }
             const endLocation = asmParts[2].indexOf('}')
             if (endLocation === -1) {
-                throw new Error(`At line: ${AuxVars.currentLine}. Ending '}' not found for 'asm { ... }' keyword.`)
+                throw new Error(`At line: ${AuxVars.currentLine}.` +
+                " Ending '}' not found for 'asm { ... }' keyword.")
             }
             const asmText = asmParts[2].slice(0, endLocation)
             const asmCode = asmParts[1] + asmText + '}'
@@ -223,9 +229,15 @@ export default function tokenize (inputSourceCode: string): PRE_TOKEN[] {
         case 'STRUCT': {
             const structParts = /^(struct\s+(\w+))/.exec(AuxVars.remainingText)
             if (structParts === null) {
-                throw new Error(`At line: ${AuxVars.currentLine}. 'struct' keyword must be followed by a type name`)
+                throw new Error(`At line: ${AuxVars.currentLine}.` +
+                " 'struct' keyword must be followed by a type name")
             }
-            AuxVars.preTokens.push({ type: 'keyword', value: 'struct', line: AuxVars.currentLine, extValue: structParts[2] })
+            AuxVars.preTokens.push({
+                type: 'keyword',
+                value: 'struct',
+                line: AuxVars.currentLine,
+                extValue: structParts[2]
+            })
             AuxVars.currentLine += (structParts[1].match(/\n/g) || '').length
             AuxVars.current += structParts[1].length
             return true

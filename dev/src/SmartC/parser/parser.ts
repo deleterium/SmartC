@@ -65,7 +65,12 @@ export default function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
         {
             sequence: ['keyword'],
             action (tokenID): TOKEN {
-                const node: TOKEN = { type: 'Keyword', precedence: 12, value: preTokens[tokenID].value, line: preTokens[tokenID].line }
+                const node: TOKEN = {
+                    type: 'Keyword',
+                    precedence: 12,
+                    value: preTokens[tokenID].value,
+                    line: preTokens[tokenID].line
+                }
                 if (preTokens[tokenID].value === 'asm' || preTokens[tokenID].value === 'struct') {
                     node.extValue = preTokens[tokenID].extValue
                 }
@@ -232,13 +237,24 @@ export default function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
         {
             sequence: ['variable', 'colon'],
             action (tokenID): TOKEN {
-                return { type: 'Keyword', precedence: 12, value: 'label', extValue: preTokens[tokenID].value, line: preTokens[tokenID].line }
+                return {
+                    type: 'Keyword',
+                    precedence: 12,
+                    value: 'label',
+                    extValue: preTokens[tokenID].value,
+                    line: preTokens[tokenID].line
+                }
             }
         },
         {
             sequence: ['variable'],
             action (tokenID): TOKEN {
-                return { type: 'Variable', precedence: 0, value: preTokens[tokenID].value, line: preTokens[tokenID].line }
+                return {
+                    type: 'Variable',
+                    precedence: 0,
+                    value: preTokens[tokenID].value,
+                    line: preTokens[tokenID].line
+                }
             }
         },
         // multi-tokens medium
@@ -380,7 +396,8 @@ export default function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
             retToken.params = getTokensUntil('}', retToken.type, retToken.line)
             return retToken
         default:
-            throw new Error(`Internal error. Unknow token found: type: '${currentPreToken.type}' value: '${currentPreToken.value}'.`)
+            throw new Error('Internal error. Unknow token found: ' +
+            `type: '${currentPreToken.type}' value: '${currentPreToken.value}'.`)
         }
     }
 
@@ -392,7 +409,8 @@ export default function parse (preTokens: PRE_TOKEN[]): TOKEN[] {
             returnedTokens.push(getNextToken())
             // getNextToken will increase mainLoopIndex for loop
             if (AuxVars.mainLoopIndex >= preTokens.length) {
-                throw new Error(`At line: end of file. Missing closing '${endChar}' for for '${parentType}' started at line: ${line}.`)
+                throw new Error('At line: end of file. ' +
+                `Missing closing '${endChar}' for for '${parentType}' started at line: ${line}.`)
             }
         }
         // discard closing char

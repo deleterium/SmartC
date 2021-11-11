@@ -12,7 +12,9 @@
  * @returns Anything, but not undefined
  * @throws {Typerror} if value is undefined
  */
-export function assertNotUndefined<Type> (argument: Type | undefined, errorMessage: string = 'Internal error.'): Exclude<Type, undefined> {
+export function assertNotUndefined<Type> (
+    argument: Type | undefined, errorMessage: string = 'Internal error.'
+) : Exclude<Type, undefined> {
     if (argument === undefined) {
         throw new Error(errorMessage)
     }
@@ -27,7 +29,9 @@ export function assertNotUndefined<Type> (argument: Type | undefined, errorMessa
  * @returns Argument without undefined type
  * @throws {Error} if not pass condition
  */
-export function assertNotEqual<T> (argument: T | undefined, param: T, errorMessage: string): Exclude<T, undefined> {
+export function assertNotEqual<T> (
+    argument: T | undefined, param: T, errorMessage: string
+) : Exclude<T, undefined> {
     if (argument !== undefined && argument !== param) {
         return argument as Exclude<T, undefined>
     }

@@ -1,12 +1,16 @@
 import { SC_FUNCTION } from '../typings/contractTypes'
-import { REGISTER_TYPE_DEFINITION, LONG_TYPE_DEFINITION, STRUCT_TYPE_DEFINITION, MEMORY_BASE_TYPES, MEMORY_SLOT } from '../typings/syntaxTypes'
+import {
+    REGISTER_TYPE_DEFINITION, LONG_TYPE_DEFINITION, STRUCT_TYPE_DEFINITION, MEMORY_BASE_TYPES, MEMORY_SLOT
+} from '../typings/syntaxTypes'
 
 type ObjectTypeDefinition<T> = T extends 'register' ? REGISTER_TYPE_DEFINITION :
     T extends 'long' ? LONG_TYPE_DEFINITION :
     T extends 'struct' ? STRUCT_TYPE_DEFINITION :
     never;
 
-export function getTypeDefinitionTemplate<T extends 'register'|'long'|'struct'> (templateType: T) : ObjectTypeDefinition<T> {
+export function getTypeDefinitionTemplate<T extends 'register'|'long'|'struct'> (
+    templateType: T
+) : ObjectTypeDefinition<T> {
     let retObj: REGISTER_TYPE_DEFINITION | LONG_TYPE_DEFINITION | STRUCT_TYPE_DEFINITION
     switch (templateType) {
     case 'register':

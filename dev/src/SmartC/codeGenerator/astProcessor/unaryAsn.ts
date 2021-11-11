@@ -6,7 +6,9 @@ import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGen
 import utils from '../utils'
 import genCode from './genCode'
 
-export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS): GENCODE_SOLVED_OBJECT {
+export default function unaryAsnProcessor (
+    Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
+): GENCODE_SOLVED_OBJECT {
     let CurrentNode: UNARY_ASN
 
     function unaryAsnProcessorMain () : GENCODE_SOLVED_OBJECT {
@@ -69,10 +71,20 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
         const TmpMemObj = AuxVars.getNewRegister()
         // Logical return is long value!
         CGenObj.asmCode += createSimpleInstruction('Label', idNotST)
-        CGenObj.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(1))
+        CGenObj.asmCode += createInstruction(
+            AuxVars,
+            utils.genAssignmentToken(),
+            TmpMemObj,
+            utils.createConstantMemObj(1)
+        )
         CGenObj.asmCode += createSimpleInstruction('Jump', idEnd)
         CGenObj.asmCode += createSimpleInstruction('Label', idNotSF)
-        CGenObj.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(0))
+        CGenObj.asmCode += createInstruction(
+            AuxVars,
+            utils.genAssignmentToken(),
+            TmpMemObj,
+            utils.createConstantMemObj(0)
+        )
         CGenObj.asmCode += createSimpleInstruction('Label', idEnd)
         AuxVars.freeRegister(CGenObj.SolvedMem.address)
         return { SolvedMem: TmpMemObj, asmCode: CGenObj.asmCode }
@@ -109,11 +121,11 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
             if (Program.Config.warningToError) {
                 if (CurrentNode.Center.type === 'endASN' || CurrentNode.Center.type === 'lookupASN') {
                     throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                        ` Warning: Trying to read/set content of variable ${CurrentNode.Center.Token.value}` +
-                        ' that is not declared as pointer.')
+                    ` Warning: Trying to read/set content of variable ${CurrentNode.Center.Token.value}` +
+                    ' that is not declared as pointer.')
                 }
                 throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                    ' Warning: Trying to read/set content of a value that is not declared as pointer.')
+                ' Warning: Trying to read/set content of a value that is not declared as pointer.')
             }
             utils.setMemoryDeclaration(CGenObj.SolvedMem, (declar + '_ptr') as DECLARATION_TYPES)
         }
@@ -134,7 +146,15 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
             declaration: 'long'
         }
         if (ScopeInfo.logicalOp === true) {
-            CGenObj.asmCode += createInstruction(AuxVars, utils.genNotEqualToken(), CGenObj.SolvedMem, utils.createConstantMemObj(0), ScopeInfo.revLogic, ScopeInfo.jumpFalse, ScopeInfo.jumpTrue)
+            CGenObj.asmCode += createInstruction(
+                AuxVars,
+                utils.genNotEqualToken(),
+                CGenObj.SolvedMem,
+                utils.createConstantMemObj(0),
+                ScopeInfo.revLogic,
+                ScopeInfo.jumpFalse,
+                ScopeInfo.jumpTrue
+            )
             AuxVars.freeRegister(CGenObj.SolvedMem.address)
             return { SolvedMem: utils.createVoidMemObj(), asmCode: CGenObj.asmCode }
         }
@@ -149,7 +169,15 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
         asmCode += createInstruction(AuxVars, utils.genSubToken(CurrentNode.Operation.line), TmpMemObj, CGenObj)
         AuxVars.freeRegister(CGenObj.address)
         if (ScopeInfo.logicalOp === true) {
-            asmCode += createInstruction(AuxVars, utils.genNotEqualToken(), TmpMemObj, utils.createConstantMemObj(0), ScopeInfo.revLogic, ScopeInfo.jumpFalse, ScopeInfo.jumpTrue)
+            asmCode += createInstruction(
+                AuxVars,
+                utils.genNotEqualToken(),
+                TmpMemObj,
+                utils.createConstantMemObj(0),
+                ScopeInfo.revLogic,
+                ScopeInfo.jumpFalse,
+                ScopeInfo.jumpTrue
+            )
             AuxVars.freeRegister(TmpMemObj.address)
             return { SolvedMem: utils.createVoidMemObj(), asmCode: asmCode }
         }
@@ -170,7 +198,15 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
         }
         asmCode += createInstruction(AuxVars, CurrentNode.Operation, TmpMemObj)
         if (ScopeInfo.logicalOp === true) {
-            asmCode += createInstruction(AuxVars, utils.genNotEqualToken(), TmpMemObj, utils.createConstantMemObj(0), ScopeInfo.revLogic, ScopeInfo.jumpFalse, ScopeInfo.jumpTrue)
+            asmCode += createInstruction(
+                AuxVars,
+                utils.genNotEqualToken(),
+                TmpMemObj,
+                utils.createConstantMemObj(0),
+                ScopeInfo.revLogic,
+                ScopeInfo.jumpFalse,
+                ScopeInfo.jumpTrue
+            )
             AuxVars.freeRegister(CGenObj.address)
             AuxVars.freeRegister(TmpMemObj.address)
             return { SolvedMem: utils.createVoidMemObj(), asmCode: asmCode }
@@ -184,28 +220,30 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
     function addressOfOpProc () : GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.jumpFalse !== undefined) {
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-                "Can not use UnaryOperator '&' during logical operations with branches.")
+            "Can not use UnaryOperator '&' during logical operations with branches.")
         }
         let { SolvedMem: RetMem, asmCode } = traverseNotLogical()
         let TmpMemObj: MEMORY_SLOT
         switch (RetMem.type) {
         case 'void':
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-                'Trying to get address of void value.')
+            'Trying to get address of void value.')
         case 'register':
             if (Program.Config.warningToError) {
                 throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-                    'Warning: Returning address of a register.')
+                'Warning: Returning address of a register.')
             }
             TmpMemObj = utils.createConstantMemObj(RetMem.address)
             break
         case 'constant':
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-                'Trying to get address of a constant value.')
+            'Trying to get address of a constant value.')
         case 'array':
             if (RetMem.Offset !== undefined) {
                 if (RetMem.Offset.type === 'constant') {
-                    TmpMemObj = utils.createConstantMemObj(utils.addHexContents(RetMem.hexContent, RetMem.Offset.value))
+                    TmpMemObj = utils.createConstantMemObj(
+                        utils.addHexContents(RetMem.hexContent, RetMem.Offset.value)
+                    )
                     TmpMemObj.declaration = RetMem.declaration
                     break
                 }
@@ -214,7 +252,12 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
                 TmpMemObj = AuxVars.getNewRegister()
                 TmpMemObj.declaration = RetMem.declaration
                 asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, Copyvar)
-                asmCode += createInstruction(AuxVars, utils.genAddToken(), TmpMemObj, AuxVars.getMemoryObjectByLocation(RetMem.Offset.addr))
+                asmCode += createInstruction(
+                    AuxVars,
+                    utils.genAddToken(),
+                    TmpMemObj,
+                    AuxVars.getMemoryObjectByLocation(RetMem.Offset.addr)
+                )
                 break
             }
             TmpMemObj = utils.createConstantMemObj(RetMem.address)
@@ -226,7 +269,7 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
         case 'structRef':
             if (RetMem.Offset !== undefined) {
                 throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-                    "Get address of 'structRef' with offset not implemented. ")
+                "Get address of 'structRef' with offset not implemented. ")
             }
             TmpMemObj = utils.createConstantMemObj(RetMem.address)
             TmpMemObj.declaration = 'struct_ptr'
@@ -239,7 +282,7 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
             throw new Error(`At line: ${CurrentNode.Operation.line}. Trying to get address of a Label`)
         default:
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-                `Get address of '${RetMem.type}' not implemented.`)
+            `Get address of '${RetMem.type}' not implemented.`)
         }
         if (!TmpMemObj.declaration.includes('_ptr')) {
             TmpMemObj.declaration += '_ptr'
@@ -267,31 +310,32 @@ export default function unaryAsnProcessor (Program: CONTRACT, AuxVars: GENCODE_A
             return { SolvedMem: utils.createVoidMemObj(), asmCode: '' }
         default:
             throw new Error(`Internal error: At line: ${CurrentNode.Operation.line}. ` +
-                `Invalid use of keyword '${CurrentNode.Operation.value}'`)
+            `Invalid use of keyword '${CurrentNode.Operation.value}'`)
         }
     }
 
     function returnKeyProc () : GENCODE_SOLVED_OBJECT {
         if (AuxVars.CurrentFunction === undefined) {
             throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                " Can not use 'return' in global statements.")
+            " Can not use 'return' in global statements.")
         }
         if (AuxVars.CurrentFunction.declaration === 'void') {
             throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                ` Function '${AuxVars.CurrentFunction.name}' must return` +
-                ` a ${AuxVars.CurrentFunction.declaration}' value.`)
+            ` Function '${AuxVars.CurrentFunction.name}' must return` +
+            ` a ${AuxVars.CurrentFunction.declaration}' value.`)
         }
         if (AuxVars.CurrentFunction.name === 'main' || AuxVars.CurrentFunction.name === 'catch') {
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-                ` Special function ${AuxVars.CurrentFunction.name} must return void value.`)
+            ` Special function ${AuxVars.CurrentFunction.name} must return void value.`)
         }
         const CGenObj = traverseNotLogical()
         CGenObj.asmCode += AuxVars.getPostOperations()
         if (utils.isNotValidDeclarationOp(AuxVars.CurrentFunction.declaration, CGenObj.SolvedMem)) {
             if (Program.Config.warningToError) {
                 throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                    ` Warning: Function ${AuxVars.CurrentFunction.name} must return` +
-                    ` '${AuxVars.CurrentFunction.declaration}' value, but it is returning '${CGenObj.SolvedMem.declaration}'.`)
+                ` Warning: Function ${AuxVars.CurrentFunction.name} must return` +
+                ` '${AuxVars.CurrentFunction.declaration}' value,` +
+                ` but it is returning '${CGenObj.SolvedMem.declaration}'.`)
             }
             // Override declaration protection rules
             utils.setMemoryDeclaration(CGenObj.SolvedMem, AuxVars.CurrentFunction.declaration)

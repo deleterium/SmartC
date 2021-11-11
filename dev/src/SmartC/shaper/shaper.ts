@@ -64,7 +64,8 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 tokenAST[AuxVars.currentToken + 3]?.type === 'CodeDomain') {
                 // Function found. Does not return pointer
                 if (tokenAST[AuxVars.currentToken].value === 'struct') {
-                    throw new Error(`At line: ${tokenAST[AuxVars.currentToken].line}. Function returning a struct currently not implemented.`)
+                    throw new Error(`At line: ${tokenAST[AuxVars.currentToken].line}.` +
+                    ' Function returning a struct currently not implemented.')
                 }
 
                 Program.functions.push({
@@ -101,7 +102,12 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
             }
             if (tokenAST[AuxVars.currentToken].type === 'Macro') {
                 const fields = tokenAST[AuxVars.currentToken].value.replace(/\s\s+/g, ' ').split(' ')
-                Program.Global.macros.push({ type: fields[0], property: fields[1], value: fields.slice(2).join(' '), line: tokenAST[AuxVars.currentToken].line })
+                Program.Global.macros.push({
+                    type: fields[0],
+                    property: fields[1],
+                    value: fields.slice(2).join(' '),
+                    line: tokenAST[AuxVars.currentToken].line
+                })
                 continue
             }
             // Not function neither macro, so it is global statement
@@ -141,16 +147,20 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 usedBoolVal = true
                 break
             }
-            throw new Error(`At line: ${Token.line}. Unknow macro property '#${Token.type} ${Token.property}'. Do you mean 'APIFunctions'? Check valid values on Help page`)
+            throw new Error(`At line: ${Token.line}.` +
+            ` Unknow macro property '#${Token.type} ${Token.property}'.` +
+            " Do you mean 'APIFunctions'? Check valid values on Help page")
         case 'program':
             processMacroProgram(Token)
             break
         default:
-            throw new Error(`At line: ${Token.line}. Unknow macro: '#${Token.type}'. Please check valid values on Help page`)
+            throw new Error(`At line: ${Token.line}.` +
+            ` Unknow macro: '#${Token.type}'. Please check valid values on Help page`)
         }
         // Check if there was an error assign boolean values
         if (throwBoolVal && usedBoolVal) {
-            throw new Error(`At line: ${Token.line}. Macro: '#${Token.type} ${Token.property}' with wrong value. Please check valid values on Help page.`)
+            throw new Error(`At line: ${Token.line}.` +
+            ` Macro: '#${Token.type} ${Token.property}' with wrong value. Please check valid values on Help page.`)
         }
     }
 
@@ -192,7 +202,9 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
             Program.Config.outputSourceLineNumber = bool
             return true
         default:
-            throw new Error(`At line: ${macroToken.line}. Unknow macro property: '#${macroToken.type} ${macroToken.property}'. Please check valid values on Help page`)
+            throw new Error(`At line: ${macroToken.line}.` +
+            ` Unknow macro property: '#${macroToken.type} ${macroToken.property}'.` +
+            ' Please check valid values on Help page')
         }
     }
 
@@ -204,10 +216,12 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 Program.Config.PName = macroToken.value
                 return
             }
-            throw new Error(`At line: ${macroToken.line}. Program name must contains only letters [a-z][A-Z][0-9], from 1 to 30 chars.`)
+            throw new Error(`At line: ${macroToken.line}.` +
+            ' Program name must contains only letters [a-z][A-Z][0-9], from 1 to 30 chars.')
         case 'description':
             if (macroToken.value.length >= 1000) {
-                throw new Error(`At line: ${macroToken.line}. Program description max lenght is 1000 chars. It is ${macroToken.value.length} chars.`)
+                throw new Error(`At line: ${macroToken.line}.` +
+                ` Program description max lenght is 1000 chars. It is ${macroToken.value.length} chars.`)
             }
             Program.Config.PDescription = macroToken.value
             return
@@ -222,15 +236,19 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 Program.Config.PUserStackPages = Number(macroToken.value)
                 return
             }
-            throw new Error(`At line: ${macroToken.line}. Program user stack pages must be a number between 0 and 10, included.`)
+            throw new Error(`At line: ${macroToken.line}.` +
+            ' Program user stack pages must be a number between 0 and 10, included.')
         case 'codeStackPages':
             if (/^\d\s*$|^10\s*$/.test(macroToken.value)) {
                 Program.Config.PCodeStackPages = Number(macroToken.value)
                 return
             }
-            throw new Error(`At line: ${macroToken.line}. Program code stack pages must be a number between 0 and 10, included.`)
+            throw new Error(`At line: ${macroToken.line}.` +
+            ' Program code stack pages must be a number between 0 and 10, included.')
         default:
-            throw new Error(`At line: ${macroToken.line}. Unknow macro property: '#${macroToken.type} ${macroToken.property}'. Please check valid values on Help page`)
+            throw new Error(`At line: ${macroToken.line}.` +
+            ` Unknow macro property: '#${macroToken.type} ${macroToken.property}'.` +
+            ' Please check valid values on Help page')
         }
     }
 
@@ -240,13 +258,17 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
     function checkCompilerVersion () : void {
         if (Program.Config.sourcecodeVersion === '') {
             if (!Program.Config.compilerVersion.includes('dev')) {
-                throw new Error(`Compiler version not set. Pin current compiler version in your program adding '#pragma version ${Program.Config.compilerVersion}' to code.`)
+                throw new Error('Compiler version not set.' +
+                ' Pin current compiler version in your program' +
+                ` adding '#pragma version ${Program.Config.compilerVersion}' to code.`)
             }
             Program.Config.sourcecodeVersion = Program.Config.compilerVersion
         }
         if (Program.Config.sourcecodeVersion !== Program.Config.compilerVersion) {
             if (Program.Config.sourcecodeVersion !== 'dev') {
-                throw new Error(`This compiler is version '${Program.Config.compilerVersion}'. File needs a compiler version '${Program.Config.sourcecodeVersion}'. Update '#pragma version' macro or run another SmartC version.`)
+                throw new Error(`This compiler is version '${Program.Config.compilerVersion}'.` +
+                ` File needs a compiler version '${Program.Config.sourcecodeVersion}'.` +
+                " Update '#pragma version' macro or run another SmartC version.")
             }
             Program.Config.sourcecodeVersion = Program.Config.compilerVersion
         }
@@ -265,7 +287,9 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
     }
 
     function getRegisterTypeDefinition () : REGISTER_TYPE_DEFINITION {
-        const search = Program.typesDefinitions.find(obj => obj.type === 'register') as (REGISTER_TYPE_DEFINITION | undefined)
+        const search = Program.typesDefinitions.find(obj => {
+            return obj.type === 'register'
+        }) as (REGISTER_TYPE_DEFINITION | undefined)
         return assertNotUndefined(search, 'Internal error.')
     }
 
@@ -323,7 +347,12 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 throw new Error(`At line: ${struphrs.line}. Invalid sentence in struct members.`)
             }
             if (struphrs.code !== undefined) {
-                NewStructTD.structMembers.push(...phraseToMemoryObject(Program.typesDefinitions, AuxVars, struphrs.code, structPhrase.name + '_'))
+                NewStructTD.structMembers.push(...phraseToMemoryObject(
+                    Program.typesDefinitions,
+                    AuxVars,
+                    struphrs.code,
+                    structPhrase.name + '_'
+                ))
             }
         })
 
@@ -340,13 +369,16 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
         Program.typesDefinitions.push(NewStructTD)
     }
 
-    /** Process/checks function arguments and code, transforming them into argsMemObj and sentences properties  */
+    /** Process/checks function arguments and code, transforming them
+     * into argsMemObj and sentences properties  */
     function processFunctionCodeAndArguments (currentFunction: SC_FUNCTION, fnNum: number) {
         AuxVars.currentToken = 0
         currentFunction.sentences = codeToSentenceArray(AuxVars, currentFunction.code)
 
         let expectVoid = false
-        if (currentFunction.arguments?.length === 1 && currentFunction.arguments[0].type === 'Keyword' && currentFunction.arguments[0].value === 'void') {
+        if (currentFunction.arguments?.length === 1 &&
+            currentFunction.arguments[0].type === 'Keyword' &&
+            currentFunction.arguments[0].value === 'void') {
             expectVoid = true
         }
         AuxVars.currentScopeName = currentFunction.name
@@ -355,11 +387,13 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
         AuxVars.currentToken = 0
         const sentence = codeToSentenceArray(AuxVars, currentFunction.arguments, true)
         if (sentence.length !== 1 || sentence[0].type !== 'phrase' || sentence[0].code === undefined) {
-            throw new Error(`At line: ${currentFunction.line}. Wrong arguments for function '${currentFunction.name}'.`)
+            throw new Error(`At line: ${currentFunction.line}.` +
+            `Wrong arguments for function '${currentFunction.name}'.`)
         }
         currentFunction.argsMemObj = phraseToMemoryObject(Program.typesDefinitions, AuxVars, sentence[0].code)
         if (currentFunction.argsMemObj.length === 0 && expectVoid === false) {
-            throw new Error(`At line: ${currentFunction.line}. No variables in arguments for function '${currentFunction.name}'. Do you mean 'void'?`)
+            throw new Error(`At line: ${currentFunction.line}.` +
+            ` No variables in arguments for function '${currentFunction.name}'. Do you mean 'void'?`)
         }
         Program.memory = Program.memory.concat(currentFunction.argsMemObj)
         AuxVars.isFunctionArgument = false
@@ -377,12 +411,18 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
             for (j = i + 1; j < Program.memory.length; j++) {
                 if (Program.memory[i].asmName === Program.memory[j].asmName) {
                     if (Program.memory[i].type !== Program.memory[j].type) {
-                        throw new Error(`At line: unknown. Global check: it was found a variable and a label with same name. Change variable named '${Program.memory[i].name}'`)
+                        throw new Error('At line: unknown.' +
+                        ' + Global check: it was found a variable and a label with same name.' +
+                        ` Change variable named '${Program.memory[i].name}'`)
                     }
                     if (Program.memory[i].type === 'label') {
-                        throw new Error(`At line: unknow. Global check: it was found that label '${Program.memory[i].name}' was declared more than one time.`)
+                        throw new Error('At line: unknow.' +
+                        ` Global check: it was found that label '${Program.memory[i].name}' was` +
+                        ' declared more than one time.')
                     }
-                    throw new Error(`At line: unknow. Global check: it was found that variable '${Program.memory[i].name}' was declared more than one time.`)
+                    throw new Error('At line: unknow.' +
+                    ` Global check: it was found that variable '${Program.memory[i].name}' was` +
+                    ' declared more than one time.')
                 }
             }
         }
@@ -394,14 +434,16 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
         for (i = 0; i < Program.functions.length; i++) {
             for (j = i + 1; j < Program.functions.length; j++) {
                 if (Program.functions[i].name === Program.functions[j].name) {
-                    throw new Error(`At line: ${Program.functions[j].line}. Found second definition for function '${Program.functions[j].name}'.`)
+                    throw new Error(`At line: ${Program.functions[j].line}.` +
+                    ` Found second definition for function '${Program.functions[j].name}'.`)
                 }
             }
             if (Program.Config.APIFunctions === true) {
                 for (j = 0; j < Program.Global.APIFunctions.length; j++) {
                     if (Program.functions[i].name === Program.Global.APIFunctions[j].name ||
                         Program.functions[i].name === Program.Global.APIFunctions[j].asmName) {
-                        throw new Error(`At line: ${Program.functions[i].line}. Function '${Program.functions[i].name}' has same name of one API Functions.`)
+                        throw new Error(`At line: ${Program.functions[i].line}.` +
+                        ` Function '${Program.functions[i].name}' has same name of one API Functions.`)
                     }
                 }
             }

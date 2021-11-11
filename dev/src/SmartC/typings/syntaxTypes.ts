@@ -116,7 +116,10 @@ export type END_ASN = {
     /** End token. May be undefined, but most of times this situation leads to error. */
     Token: TOKEN
 }
-export type TOKEN_MODIFIER = {type: 'Array', Center: AST} | {type: 'MemberByVal', Center: TOKEN} | {type: 'MemberByRef', Center: TOKEN}
+export type TOKEN_MODIFIER =
+    {type: 'Array', Center: AST} |
+    {type: 'MemberByVal', Center: TOKEN} |
+    {type: 'MemberByRef', Center: TOKEN}
 
 export type LOOKUP_ASN = {
     /** Abstract Syntax Node for variables with modifiers to be evaluated in chain  */

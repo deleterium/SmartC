@@ -8,7 +8,9 @@ import { SHAPER_AUXVARS } from './shaperTypings'
 
 /** Expect one or more sentences in codetrain and converts it
  * to items in sentences array */
-export default function codeToSentenceArray (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = [], addTerminator: boolean = false) : SENTENCES[] {
+export default function codeToSentenceArray (
+    AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = [], addTerminator: boolean = false
+) : SENTENCES[] {
     if (addTerminator) {
         codetrain.push({ type: 'Terminator', value: ';', precedence: 11, line: -1 })
     }
@@ -65,7 +67,8 @@ function codeToOneSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[]): SENTEN
             continue
         }
         if (codetrain[AuxVars.currentToken].type === 'Keyword' && phrase.length > 0) {
-            throw new Error(`At line: ${phrase[0].line}. Statement including '${codetrain[AuxVars.currentToken].value}' in wrong way. Possible missing ';'.`)
+            throw new Error(`At line: ${phrase[0].line}.` +
+            ` Statement including '${codetrain[AuxVars.currentToken].value}' in wrong way. Possible missing ';'.`)
         }
         switch (codetrain[AuxVars.currentToken].value) {
         // Handle special type:phrase keywords and exceptions
@@ -107,12 +110,14 @@ function ifCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : S
     const id = `__if${line}`
     AuxVars.currentToken++
     if (codetrain[AuxVars.currentToken] === undefined || codetrain[AuxVars.currentToken].type !== 'CodeCave') {
-        throw new Error(`At line: ${codetrain[AuxVars.currentToken - 1].line}. Expecting condition for 'if' statement.`)
+        throw new Error(`At line: ${codetrain[AuxVars.currentToken - 1].line}.` +
+        " Expecting condition for 'if' statement.")
     }
     const condition = codetrain[AuxVars.currentToken].params
     AuxVars.currentToken++
     const trueBlock = codeToOneSentence(AuxVars, codetrain)
-    if (codetrain[AuxVars.currentToken + 1]?.type === 'Keyword' && codetrain[AuxVars.currentToken + 1]?.value === 'else') {
+    if (codetrain[AuxVars.currentToken + 1]?.type === 'Keyword' &&
+        codetrain[AuxVars.currentToken + 1]?.value === 'else') {
         AuxVars.currentToken += 2
         return [{
             type: 'ifElse',
@@ -137,7 +142,8 @@ function whileCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) 
     const id = `__loop${line}`
     AuxVars.currentToken++
     if (codetrain[AuxVars.currentToken] === undefined || codetrain[AuxVars.currentToken].type !== 'CodeCave') {
-        throw new Error(`At line: ${codetrain[AuxVars.currentToken - 1].line}. Expecting condition for 'while' statement.`)
+        throw new Error(`At line: ${codetrain[AuxVars.currentToken - 1].line}.` +
+        " Expecting condition for 'while' statement.")
     }
     const condition = codetrain[AuxVars.currentToken].params
     AuxVars.currentToken++
@@ -158,7 +164,8 @@ function forCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : 
     const id = `__loop${line}`
     AuxVars.currentToken++
     if (codetrain[AuxVars.currentToken] === undefined || codetrain[AuxVars.currentToken]?.type !== 'CodeCave') {
-        throw new Error(`At line: ${codetrain[AuxVars.currentToken - 1].line}. Expecting condition for 'for' statement.`)
+        throw new Error(`At line: ${codetrain[AuxVars.currentToken - 1].line}.` +
+        " Expecting condition for 'for' statement.")
     }
     const savePosition = AuxVars.currentToken
     AuxVars.currentToken = 0
@@ -208,7 +215,11 @@ function doCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : S
 
 function structCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : SENTENCES[] {
     const line = codetrain[AuxVars.currentToken].line
-    const structName = assertNotEqual(codetrain[AuxVars.currentToken].extValue, '', 'Internal error. Missing struct type name.')
+    const structName = assertNotEqual(
+        codetrain[AuxVars.currentToken].extValue,
+        '',
+        'Internal error. Missing struct type name.'
+    )
     AuxVars.currentToken++
     const Node: SENTENCE_STRUCT = {
         type: 'struct',
