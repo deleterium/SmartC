@@ -16,7 +16,7 @@ import createTree from './createTree'
  * @returns {void} but Program will be updated.
  * @throws {Error|Error} on any mistake.
  */
-export default function syntaxProcess (Program: CONTRACT) : void {
+export default function syntaxProcessor (Program: CONTRACT) : void {
     /* * * Main function! * * */
     function syntaxProcessMain () : void {
         Program.Global.sentences.forEach(processSentence)

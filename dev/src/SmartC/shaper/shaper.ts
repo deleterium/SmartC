@@ -10,9 +10,9 @@ import {
 } from '../typings/syntaxTypes'
 import { assertNotUndefined, deepCopy } from '../repository/repository'
 import { APITableTemplate, getTypeDefinitionTemplate } from './templates'
-import codeToSentenceArray from './sentencesProcessor'
-import phraseToMemoryObject from './memoryProcessor'
-import { SHAPER_AUXVARS } from './shaperTypings'
+import sentencesProcessor from './sentencesProcessor'
+import memoryProcessor from './memoryProcessor'
+import { SHAPER_AUXVARS } from './shaperTypes'
 
 /** Translate an array of tokens into the object representing the program.
  * This is the second phase of parser
@@ -21,7 +21,7 @@ import { SHAPER_AUXVARS } from './shaperTypings'
  * @returns {void} but Program will be updated.
  * @throws {Error} at any mistakes
  */
-export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
+export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     const AuxVars: SHAPER_AUXVARS = {
         currentToken: 0,
         latestLoopId: [],
@@ -311,7 +311,7 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
         AuxVars.currentScopeName = ''
         AuxVars.currentPrefix = ''
         AuxVars.currentToken = 0
-        Program.Global.sentences = codeToSentenceArray(AuxVars, Program.Global.code)
+        Program.Global.sentences = sentencesProcessor(AuxVars, Program.Global.code)
         createMemoryTable(Program.Global.sentences)
         delete Program.Global.code
     }
@@ -321,12 +321,12 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
     function createMemoryTable (sntcs: SENTENCES[] = []) {
         sntcs.forEach(function (phrs) {
             if (phrs.type === 'phrase' && phrs.code !== undefined) {
-                Program.memory.push(...phraseToMemoryObject(Program.typesDefinitions, AuxVars, phrs.code))
+                Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, phrs.code))
                 return
             }
             if (phrs.type === 'struct' && phrs.Phrase.code !== undefined) {
                 structToTypeDefinition(phrs)
-                Program.memory.push(...phraseToMemoryObject(Program.typesDefinitions, AuxVars, phrs.Phrase.code))
+                Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, phrs.Phrase.code))
             }
         })
     }
@@ -347,7 +347,7 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 throw new Error(`At line: ${struphrs.line}. Invalid sentence in struct members.`)
             }
             if (struphrs.code !== undefined) {
-                NewStructTD.structMembers.push(...phraseToMemoryObject(
+                NewStructTD.structMembers.push(...memoryProcessor(
                     Program.typesDefinitions,
                     AuxVars,
                     struphrs.code,
@@ -373,7 +373,7 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
      * into argsMemObj and sentences properties  */
     function processFunctionCodeAndArguments (currentFunction: SC_FUNCTION, fnNum: number) {
         AuxVars.currentToken = 0
-        currentFunction.sentences = codeToSentenceArray(AuxVars, currentFunction.code)
+        currentFunction.sentences = sentencesProcessor(AuxVars, currentFunction.code)
 
         let expectVoid = false
         if (currentFunction.arguments?.length === 1 &&
@@ -385,12 +385,12 @@ export default function shape (Program: CONTRACT, tokenAST: TOKEN[]): void {
         AuxVars.currentPrefix = AuxVars.currentScopeName + '_'
         AuxVars.isFunctionArgument = true
         AuxVars.currentToken = 0
-        const sentence = codeToSentenceArray(AuxVars, currentFunction.arguments, true)
+        const sentence = sentencesProcessor(AuxVars, currentFunction.arguments, true)
         if (sentence.length !== 1 || sentence[0].type !== 'phrase' || sentence[0].code === undefined) {
             throw new Error(`At line: ${currentFunction.line}.` +
             `Wrong arguments for function '${currentFunction.name}'.`)
         }
-        currentFunction.argsMemObj = phraseToMemoryObject(Program.typesDefinitions, AuxVars, sentence[0].code)
+        currentFunction.argsMemObj = memoryProcessor(Program.typesDefinitions, AuxVars, sentence[0].code)
         if (currentFunction.argsMemObj.length === 0 && expectVoid === false) {
             throw new Error(`At line: ${currentFunction.line}.` +
             ` No variables in arguments for function '${currentFunction.name}'. Do you mean 'void'?`)

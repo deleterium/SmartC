@@ -4,11 +4,11 @@
 
 import { assertNotEqual } from '../repository/repository'
 import { TOKEN, SENTENCES, SENTENCE_PHRASE, SENTENCE_STRUCT } from '../typings/syntaxTypes'
-import { SHAPER_AUXVARS } from './shaperTypings'
+import { SHAPER_AUXVARS } from './shaperTypes'
 
 /** Expect one or more sentences in codetrain and converts it
  * to items in sentences array */
-export default function codeToSentenceArray (
+export default function sentencesProcessor (
     AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = [], addTerminator: boolean = false
 ) : SENTENCES[] {
     if (addTerminator) {
@@ -16,21 +16,21 @@ export default function codeToSentenceArray (
     }
     let sentences: SENTENCES[] = []
     for (; AuxVars.currentToken < codetrain.length; AuxVars.currentToken++) {
-        sentences = sentences.concat(codeToOneSentence(AuxVars, codetrain))
+        sentences = sentences.concat(processOneSentence(AuxVars, codetrain))
     }
     return sentences
 }
 
 /** Expects only one sentence in codetrain and converts it
  * to one item sentences array */
-function codeToOneSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[]): SENTENCES[] {
+function processOneSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[]): SENTENCES[] {
     const phrase: TOKEN[] = []
     const lineOfFirstInstruction = codetrain[AuxVars.currentToken]?.line ?? -1
 
     if (codetrain[AuxVars.currentToken].type === 'CodeDomain') {
         const savedPosition = AuxVars.currentToken
         AuxVars.currentToken = 0
-        const temp = codeToSentenceArray(AuxVars, codetrain[savedPosition].params)
+        const temp = sentencesProcessor(AuxVars, codetrain[savedPosition].params)
         AuxVars.currentToken = savedPosition
         return temp
     }
@@ -115,7 +115,7 @@ function ifCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : S
     }
     const condition = codetrain[AuxVars.currentToken].params
     AuxVars.currentToken++
-    const trueBlock = codeToOneSentence(AuxVars, codetrain)
+    const trueBlock = processOneSentence(AuxVars, codetrain)
     if (codetrain[AuxVars.currentToken + 1]?.type === 'Keyword' &&
         codetrain[AuxVars.currentToken + 1]?.value === 'else') {
         AuxVars.currentToken += 2
@@ -125,7 +125,7 @@ function ifCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : S
             line: line,
             condition: condition,
             trueBlock: trueBlock,
-            falseBlock: codeToOneSentence(AuxVars, codetrain)
+            falseBlock: processOneSentence(AuxVars, codetrain)
         }]
     }
     return [{
@@ -148,7 +148,7 @@ function whileCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) 
     const condition = codetrain[AuxVars.currentToken].params
     AuxVars.currentToken++
     AuxVars.latestLoopId.push(id)
-    const trueBlock = codeToOneSentence(AuxVars, codetrain)
+    const trueBlock = processOneSentence(AuxVars, codetrain)
     AuxVars.latestLoopId.pop()
     return [{
         type: 'while',
@@ -169,7 +169,7 @@ function forCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : 
     }
     const savePosition = AuxVars.currentToken
     AuxVars.currentToken = 0
-    const threeSentences = codeToSentenceArray(AuxVars, codetrain[savePosition].params, true)
+    const threeSentences = sentencesProcessor(AuxVars, codetrain[savePosition].params, true)
     AuxVars.currentToken = savePosition
     if (threeSentences.length !== 3) {
         throw new Error(`At line: ${line}. Expected 3 sentences for 'for(;;){}' loop. Got ${threeSentences.length}`)
@@ -179,7 +179,7 @@ function forCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : 
     }
     AuxVars.currentToken++
     AuxVars.latestLoopId.push(id)
-    const trueBlock = codeToOneSentence(AuxVars, codetrain)
+    const trueBlock = processOneSentence(AuxVars, codetrain)
     AuxVars.latestLoopId.pop()
     return [{
         type: 'for',
@@ -195,7 +195,7 @@ function doCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : S
     const id = `__loop${line}`
     AuxVars.currentToken++
     AuxVars.latestLoopId.push(id)
-    const trueBlock = codeToOneSentence(AuxVars, codetrain)
+    const trueBlock = processOneSentence(AuxVars, codetrain)
     AuxVars.latestLoopId.pop()
     AuxVars.currentToken++
     if (codetrain[AuxVars.currentToken]?.value === 'while' &&
@@ -225,7 +225,7 @@ function structCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = [])
         type: 'struct',
         line: line,
         name: structName,
-        members: codeToOneSentence(AuxVars, codetrain),
+        members: processOneSentence(AuxVars, codetrain),
         Phrase: { type: 'phrase', line: codetrain[AuxVars.currentToken - 1].line }
     }
     Node.Phrase.code = [codetrain[AuxVars.currentToken - 1]]

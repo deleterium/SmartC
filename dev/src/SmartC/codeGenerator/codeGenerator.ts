@@ -14,7 +14,7 @@ import { GLOBAL_AUXVARS } from './codeGeneratorTypes'
  * @param Program object holding information
  * @returns assembly source code
  */
-export default function codeGenerate (Program: CONTRACT) {
+export default function codeGenerator (Program: CONTRACT) {
     // holds variables needed during compilation
     const GlobalCodeVars: GLOBAL_AUXVARS = {
         Program: Program,

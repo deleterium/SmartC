@@ -12,7 +12,7 @@ import hashMachineCode from './hashMachineCode'
  * smart contract deployment.
  * @throws {Error} on any source code mistake.
  */
-export default function byteCode (assemblySourceCode: string): MACHINE_OBJECT {
+export default function assembler (assemblySourceCode: string): MACHINE_OBJECT {
     // Local types
     type MEMORY_INFO = {
         name: string

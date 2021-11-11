@@ -6,7 +6,7 @@ import { assertExpression, assertNotEqual, assertNotUndefined, deepCopy } from '
 import {
     ARRAY_TYPE_DEFINITION, MEMORY_SLOT, STRUCT_TYPE_DEFINITION, TOKEN, TYPE_DEFINITIONS
 } from '../typings/syntaxTypes'
-import { SHAPER_AUXVARS } from './shaperTypings'
+import { SHAPER_AUXVARS } from './shaperTypes'
 import { getMemoryTemplate, getTypeDefinitionTemplate } from './templates'
 
 /** Process a tokens sequence from a Sentence phrase and return the variables
@@ -19,7 +19,7 @@ import { getMemoryTemplate, getTypeDefinitionTemplate } from './templates'
  * @returns Array of memory objects declared
  * @throws {Error} on any mistakes
  */
-export default function phraseToMemoryObject (
+export default function memoryProcessor (
     ProgramTD: TYPE_DEFINITIONS[], AuxVars: SHAPER_AUXVARS, phraseCode: TOKEN [], structPrefix: string = ''
 ): MEMORY_SLOT[] {
     let ptmoCounter = 0

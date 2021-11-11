@@ -6,11 +6,11 @@ import { CONTRACT } from '../../typings/contractTypes'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 
 import utils from '../utils'
-import binaryAsnProcessor from './binaryAsn'
-import endAsnProcessor from './endAsn'
-import exceptionAsnProcessor from './exceptionAsn'
-import lookupAsnProcessor from './lookupAsn'
-import unaryAsnProcessor from './unaryAsn'
+import binaryAsnProcessor from './binaryAsnProcessor'
+import endAsnProcessor from './endAsnProcessor'
+import exceptionAsnProcessor from './exceptionAsnProcessor'
+import lookupAsnProcessor from './lookupAsnProcessor'
+import unaryAsnProcessor from './unaryAsnProcessor'
 
 /** Manages the functions to process Abstract Syntax Nodes */
 export default function genCode (
