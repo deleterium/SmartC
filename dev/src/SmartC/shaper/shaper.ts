@@ -51,7 +51,8 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
      * */
     function splitCode () : void {
         Program.Global.code = []
-        for (let tokenIndex = 0; tokenIndex < tokenAST.length; tokenIndex++) {
+        let tokenIndex = 0
+        while (tokenIndex < tokenAST.length) {
             if (tokenAST[tokenIndex].type === 'Keyword' &&
                 tokenAST[tokenIndex + 1]?.type === 'Variable' &&
                 tokenAST[tokenIndex + 2]?.type === 'Function' &&
@@ -70,7 +71,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                     arguments: tokenAST[tokenIndex + 2].params,
                     code: tokenAST[tokenIndex + 3].params
                 })
-                tokenIndex += 3
+                tokenIndex += 4
                 continue
             }
             if (tokenAST[tokenIndex].type === 'Keyword' &&
@@ -89,7 +90,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                     arguments: tokenAST[tokenIndex + 3].params,
                     code: tokenAST[tokenIndex + 4].params
                 })
-                tokenIndex += 4
+                tokenIndex += 5
                 continue
             }
             if (tokenAST[tokenIndex].type === 'Macro') {
@@ -100,10 +101,12 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                     value: fields.slice(2).join(' '),
                     line: tokenAST[tokenIndex].line
                 })
+                tokenIndex++
                 continue
             }
             // Not function neither macro, so it is global statement
             Program.Global.code.push(tokenAST[tokenIndex])
+            tokenIndex++
         }
     }
 
