@@ -37,7 +37,7 @@ export class SmartC {
     private readonly language
     private readonly sourceCode
     private assemblyCode?: string
-    private machineCode?: MACHINE_OBJECT
+    private MachineCode?: MACHINE_OBJECT
     private Program: CONTRACT = {
         Global: {
             APIFunctions: [],
@@ -68,9 +68,9 @@ export class SmartC {
         }
     }
 
-    constructor (options: { language: 'C' | 'Assembly', sourceCode: string }) {
-        this.language = options.language
-        this.sourceCode = options.sourceCode
+    constructor (Options: { language: 'C' | 'Assembly', sourceCode: string }) {
+        this.language = Options.language
+        this.sourceCode = Options.sourceCode
     }
 
     /**
@@ -80,7 +80,7 @@ export class SmartC {
         let preprocessed : string
         let tokenized: PRE_TOKEN[]
         let parsed: TOKEN[]
-        if (this.machineCode) {
+        if (this.MachineCode) {
             return this
         }
         switch (this.language) {
@@ -98,7 +98,7 @@ export class SmartC {
         default:
             throw new Error('Invalid usage. Language must be "C" or "Assembly".')
         }
-        this.machineCode = assembler(this.assemblyCode)
+        this.MachineCode = assembler(this.assemblyCode)
         return this
     }
 
@@ -107,7 +107,7 @@ export class SmartC {
      * @throws {Error} if compilation was not done
      */
     getAssemblyCode () : string {
-        if (!this.machineCode) {
+        if (!this.MachineCode) {
             throw new Error('Source code was not compiled.')
         }
         return this.assemblyCode ?? ''
@@ -118,10 +118,10 @@ export class SmartC {
      * @throws {Error} if compilation was not done
      */
     getMachineCode () : MACHINE_OBJECT {
-        if (!this.machineCode) {
+        if (!this.MachineCode) {
             throw new Error('Source code was not compiled.')
         }
-        return this.machineCode
+        return this.MachineCode
     }
 
     /**

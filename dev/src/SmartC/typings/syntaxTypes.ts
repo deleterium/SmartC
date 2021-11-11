@@ -41,8 +41,7 @@ export type OFFSET_MODIFIER_CONSTANT = {
 export type OFFSET_MODIFIER_VARIABLE = {
     type: 'variable',
     addr: number,
-    declaration:
-    DECLARATION_TYPES,
+    declaration: DECLARATION_TYPES,
     typeDefinition?: string
 }
 export type OFFSET_MODIFIER = OFFSET_MODIFIER_CONSTANT | OFFSET_MODIFIER_VARIABLE
