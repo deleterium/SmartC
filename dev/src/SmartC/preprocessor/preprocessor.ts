@@ -2,16 +2,32 @@
 // Project: https://github.com/deleterium/SmartC
 // License: BSD 3-Clause License
 
+import { assertNotEqual } from '../repository/repository'
+
+type PREPROCESSOR_RULE = {
+    regex: RegExp
+    type: 'DEFINE_NULL' | 'DEFINE_VAL' | 'UNDEF' | 'IFDEF' | 'IFNDEF' | 'ELSE' | 'ENDIF' | 'MATCHES_ALL'
+}
+type IF_INFO = {
+    active: boolean
+    flipped: boolean
+}
+type REPLACEMENTS = {
+    cname: string
+    value: string
+}
+type PROCESSED_RULE = {
+    Code: PREPROCESSOR_RULE
+    parts: RegExpExecArray
+}
+
 /**
  * Process macro substitutions on source code
  * @param sourcecode Source code input
  * @returns preprocessed string
  */
-export default function preprocessor (sourcecode: string) {
-    const preprocessorCodes: {
-        regex: RegExp
-        type: 'DEFINE_NULL' | 'DEFINE_VAL' | 'UNDEF' | 'IFDEF' | 'IFNDEF' | 'ELSE' | 'ENDIF' | 'MATCHES_ALL'
-    } [] = [
+export default function preprocessor (sourcecode: string) : string {
+    const preprocessorCodes: PREPROCESSOR_RULE[] = [
         // Regex order is important!
         { regex: /^\s*#\s*define\s+(\w+)\s*$/, type: 'DEFINE_NULL' },
         { regex: /^\s*#\s*define\s+(\w+\b)(.+)$/, type: 'DEFINE_VAL' },
@@ -22,17 +38,12 @@ export default function preprocessor (sourcecode: string) {
         { regex: /^\s*#\s*endif\s*$/, type: 'ENDIF' },
         { regex: /^[\s\S]*$/, type: 'MATCHES_ALL' }
     ]
-    let preprocessorReplacements = [
+    let preprocessorReplacements: REPLACEMENTS[] = [
         { cname: 'true', value: '1' },
         { cname: 'false', value: '0' },
         { cname: 'NULL', value: '0' },
         { cname: 'SMARTC', value: '' }
     ]
-
-    type IF_INFO = {
-        active: boolean
-        flipped: boolean
-    }
     const ifActive: IF_INFO[] = [{ active: true, flipped: false }]
     let currentIfLevel = 0
 
@@ -48,12 +59,12 @@ export default function preprocessor (sourcecode: string) {
         return retLines.join('\n')
     }
 
-    function getPrepRule (codeline: string) {
-        for (const currCode of preprocessorCodes) {
-            const parts = currCode.regex.exec(codeline)
+    function getPrepRule (codeline: string) : PROCESSED_RULE {
+        for (const CurrRule of preprocessorCodes) {
+            const parts = CurrRule.regex.exec(codeline)
             if (parts !== null) {
                 return {
-                    Code: currCode,
+                    Code: CurrRule,
                     parts: parts
                 }
             }
@@ -62,53 +73,48 @@ export default function preprocessor (sourcecode: string) {
         throw new Error('Internal error.')
     }
 
-    function replaceDefines (codeline: string) {
-        preprocessorReplacements.forEach(function (replacement) {
-            const rep = new RegExp('\\b' + replacement.cname + '\\b', 'g')
-            codeline = codeline.replace(rep, replacement.value)
+    function replaceDefines (codeline: string) : string {
+        preprocessorReplacements.forEach((Replacement) => {
+            const rep = new RegExp('\\b' + Replacement.cname + '\\b', 'g')
+            codeline = codeline.replace(rep, Replacement.value)
         })
         return codeline
     }
 
     function processLine (currentLine: string, lineNo: number) : string {
         const PrepRule = getPrepRule(currentLine)
-        const ifTemplateObj = { active: true, flipped: false }
+        const IfTemplateObj = { active: true, flipped: false }
         let idx: number
-
         if (currentIfLevel < 0) {
             throw new Error(`At line: ${lineNo}. Unmatched '#endif' directive.`)
         }
-        if (ifActive.length === 0) {
-            // Skew between currentIfLevel and ifActive.length
-            throw new Error('Internal error.')
-        }
-        const lastIfInfo = ifActive[ifActive.length - 1]
+        assertNotEqual(ifActive.length, 0, 'Internal error')
+        const LastIfInfo = ifActive[ifActive.length - 1]
         const lineActive = ifActive[currentIfLevel].active
-
         // Process rules that does not depend on lineActive
         switch (PrepRule.Code.type) {
         case 'IFDEF':
             currentIfLevel += lineActive ? 1 : 0
-            idx = preprocessorReplacements.findIndex(obj => obj.cname === PrepRule.parts[1])
+            idx = preprocessorReplacements.findIndex(Obj => Obj.cname === PrepRule.parts[1])
             if (idx === -1) {
-                ifTemplateObj.active = false
+                IfTemplateObj.active = false
             }
-            ifActive.push(ifTemplateObj)
+            ifActive.push(IfTemplateObj)
             return ''
         case 'IFNDEF':
             currentIfLevel += lineActive ? 1 : 0
-            idx = preprocessorReplacements.findIndex(obj => obj.cname === PrepRule.parts[1])
+            idx = preprocessorReplacements.findIndex(Obj => Obj.cname === PrepRule.parts[1])
             if (idx !== -1) {
-                ifTemplateObj.active = false
+                IfTemplateObj.active = false
             }
-            ifActive.push(ifTemplateObj)
+            ifActive.push(IfTemplateObj)
             return ''
         case 'ELSE':
-            if (lastIfInfo.flipped === true) {
+            if (LastIfInfo.flipped === true) {
                 throw new Error(`At line: ${lineNo + 1}. Unmatched '#else' directive.`)
             }
-            lastIfInfo.flipped = true
-            lastIfInfo.active = !lastIfInfo.active
+            LastIfInfo.flipped = true
+            LastIfInfo.active = !LastIfInfo.active
             return ''
         case 'ENDIF':
             if (ifActive.length - 1 === currentIfLevel) {
@@ -122,7 +128,7 @@ export default function preprocessor (sourcecode: string) {
         }
         switch (PrepRule.Code.type) {
         case 'DEFINE_NULL':
-            idx = preprocessorReplacements.findIndex(obj => obj.cname === PrepRule.parts[1])
+            idx = preprocessorReplacements.findIndex(Obj => Obj.cname === PrepRule.parts[1])
             if (idx === -1) {
                 preprocessorReplacements.push({ cname: PrepRule.parts[1], value: '' })
                 return ''
@@ -130,7 +136,7 @@ export default function preprocessor (sourcecode: string) {
             preprocessorReplacements[idx].value = ''
             return ''
         case 'DEFINE_VAL':
-            idx = preprocessorReplacements.findIndex(obj => obj.cname === PrepRule.parts[1])
+            idx = preprocessorReplacements.findIndex(Obj => Obj.cname === PrepRule.parts[1])
             if (idx === -1) {
                 preprocessorReplacements.push({
                     cname: PrepRule.parts[1],
