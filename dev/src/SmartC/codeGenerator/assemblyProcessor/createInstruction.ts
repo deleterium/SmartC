@@ -1,4 +1,4 @@
-import { assertNotUndefined } from '../../repository/repository'
+import { assertExpression, assertNotUndefined } from '../../repository/repository'
 import { MEMORY_SLOT, TOKEN } from '../../typings/syntaxTypes'
 import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_AUXVARS } from '../codeGeneratorTypes'
 
@@ -31,17 +31,14 @@ export function setConstAsmCode (progMemory: MEMORY_SLOT[], code: string, line: 
                 retlines.push(`^const SET @${setpart[1]} #${BigInt(setpart[2]).toString(16).padStart(16, '0')}`)
                 return
             }
-            throw new Error(`At line: ${line}. No operations can be done during 'const' assignment.`)
+            throw new Error(`Internal error at line ${line}`)
         }
-        const search = progMemory.find(obj => obj.asmName === parts[1])
-        if (search === undefined) {
-            throw new Error(`At line: ${line}. Variable ${parts[1]} not found in memory.`)
-        }
-        if (search.hexContent !== undefined) {
+        const FoundMem = assertNotUndefined(progMemory.find(obj => obj.asmName === parts[1]))
+        if (FoundMem.hexContent !== undefined) {
             throw new Error(`At line: ${line}. ` +
             "Left side of an assigment with 'const' keyword already has been set.")
         }
-        search.hexContent = parts[2]
+        FoundMem.hexContent = parts[2]
         retlines.push('^const ' + instruction)
     })
     return retlines.join('\n')
@@ -159,9 +156,7 @@ export function flattenMemory (
             hexString = hexParam
         }
         hexString = hexString.padStart(16, '0')
-        if (hexString.length > 17) {
-            throw new Error(`At line: ${line}. Overflow on long value assignment. Value bigger than 64 bits).`)
-        }
+        assertExpression(hexString.length <= 16)
         const OptMem = AuxVars.memory.find(MEM => {
             return MEM.asmName === 'n' + Number('0x' + hexString) && MEM.hexContent === hexString
         })

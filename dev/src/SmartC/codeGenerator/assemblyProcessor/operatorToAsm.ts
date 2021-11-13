@@ -24,12 +24,9 @@ export default function operatorToAsm (
                 return ''
             }
             if (optimizationResult.length > 0) {
-                if (FlatLeft.isNew === true) {
-                    AuxVars.freeRegister(FlatRight.FlatMem.address)
-                    assemblyCode = createInstruction(AuxVars, utils.genAssignmentToken(), LeftMem, FlatLeft.FlatMem)
-                    AuxVars.freeRegister(FlatLeft.FlatMem.address)
-                }
-                return FlatLeft.asmCode + optimizationResult + assemblyCode
+                // Optimizations before already flat left side.
+                assertExpression(FlatLeft.isNew === false, 'Internal error. Expecting not new item.')
+                return FlatLeft.asmCode + optimizationResult
             }
         }
         // No optimization was possible, do regular operations
@@ -37,7 +34,7 @@ export default function operatorToAsm (
             ` @${FlatLeft.FlatMem.asmName} $${FlatRight.FlatMem.asmName}\n`
         AuxVars.freeRegister(FlatRight.FlatMem.address)
         if (FlatLeft.isNew === true) {
-            assemblyCode += createInstruction(AuxVars, utils.genAssignmentToken(), LeftMem, FlatLeft.FlatMem)
+            assemblyCode += createInstruction(AuxVars, utils.genAssignmentToken(OperatorToken.line), LeftMem, FlatLeft.FlatMem)
             AuxVars.freeRegister(FlatLeft.FlatMem.address)
         }
         return FlatLeft.asmCode + FlatRight.asmCode + assemblyCode
@@ -86,7 +83,7 @@ export default function operatorToAsm (
             }
             if (RightMem.hexContent === '0000000000000000') {
                 AuxVars.freeRegister(FlatRight.FlatMem.address)
-                return createInstruction(AuxVars, utils.genAssignmentToken(), FlatLeft.FlatMem, RightMem)
+                return createInstruction(AuxVars, utils.genAssignmentToken(OperatorToken.line), FlatLeft.FlatMem, RightMem)
             }
             return ''
         case '/':
