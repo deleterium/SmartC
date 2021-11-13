@@ -143,9 +143,23 @@ describe('#pragma', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toMatch(assembly)
     })
+    it('should compile: enableRandom (with getJumpID in AuxVars)', () => {
+        const code = '#pragma maxAuxVars 1\n#pragma enableRandom true\nlong a, b; b = !a;'
+        const assembly = /^\^declare r0\n\^declare a\n\^declare b\n\nBNZ \$a :__NOT_\w{5}_sF\nSET @b #0000000000000001\nJMP :__NOT_\w{5}_end\n__NOT_\w{5}_sF:\nCLR @b\n__NOT_\w{5}_end:\nFIN\n$/g
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toMatch(assembly)
+    })
     it('should compile: enableLineLabels', () => {
         const code = '#pragma enableLineLabels true\nlong a;\nif (a) a++;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBZR $a :__if3_1_endif\n__if3_1_start:\nINC @a\n__if3_1_endif:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: enableLineLabels (getJumpId in AuxVars)', () => {
+        const code = '#pragma enableLineLabels true\n long a, b;\n a = !b;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $b :__NOT_3_1_sF\nSET @a #0000000000000001\nJMP :__NOT_3_1_end\n__NOT_3_1_sF:\nCLR @a\n__NOT_3_1_end:\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

@@ -43,6 +43,13 @@ describe('Special functions', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    test('should throw: using main retuning something', () => {
+        expect(() => {
+            const code = 'long a; long main(void) { return a; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
 })
 
 describe('User defined functions', () => {
@@ -70,6 +77,13 @@ describe('User defined functions', () => {
     test('should throw: getting return value of void fun()', () => {
         expect(() => {
             const code = 'long a; a=test(); void test(void) { a++; return; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: Conditionals with void fun()', () => {
+        expect(() => {
+            const code = 'long a; if (test()) a++; void test(void) {}'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
@@ -126,6 +140,20 @@ describe('User defined functions', () => {
     test('should throw: long_ptr functions trying to return long var', () => {
         expect(() => {
             const code = 'long *a; a=test(); long *test(void) { long b; return b; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: return void in functions with return type', () => {
+        expect(() => {
+            const code = 'test(); long test(void) { return; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: return value in functions with return void', () => {
+        expect(() => {
+            const code = 'test(); void test(void) { return 5; }'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
@@ -283,6 +311,13 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`
     test('should throw: Wrong arguments', () => {
         expect(() => {
             const code = 'long a, test_b; test(a); void test(long b) { long c; c++; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: Wrong arguments quantity', () => {
+        expect(() => {
+            const code = 'long a, b; test(b, a); void test(long c) { }'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)

@@ -33,27 +33,26 @@ describe('SmartC class (no compiling)', () => {
 })
 describe('SmartC class (void compiling)', () => {
     it('should compile sucessfull void C code 1x', () => {
-        const compiler = new SmartC({
-            language: 'C',
-            sourceCode: ''
-        })
+        const compiler = new SmartC({ language: 'C', sourceCode: '' })
         expect(compiler.compile().getAssemblyCode()).toBe('^declare r0\n^declare r1\n^declare r2\n\nFIN\n')
     })
     it('should compile sucessfull void C code 2x', () => {
-        const compiler = new SmartC({
-            language: 'C',
-            sourceCode: ''
-        })
+        const compiler = new SmartC({ language: 'C', sourceCode: '' })
         compiler.compile()
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe('^declare r0\n^declare r1\n^declare r2\n\nFIN\n')
     })
     it('should compile sucessfull void Assembly code', () => {
-        const compiler = new SmartC({
-            language: 'Assembly',
-            sourceCode: ''
-        })
+        const compiler = new SmartC({ language: 'Assembly', sourceCode: '' })
         expect(compiler.compile().getAssemblyCode()).toBe('')
         expect(compiler.getMachineCode().ByteCode).toBe('')
+    })
+    it('should compile sucessfull void C code 1x (Same compiler version) ', () => {
+        const testVersion = new SmartC({ language: 'C', sourceCode: '' })
+        const version = testVersion.getCompilerVersion()
+        const compiler = new SmartC({ language: 'C', sourceCode: `#pragma version ${version}\n` })
+        expect(typeof version).toBe('string')
+        expect(version).not.toBe('')
+        expect(compiler.compile().getAssemblyCode()).toBe('^declare r0\n^declare r1\n^declare r2\n\nFIN\n')
     })
 })

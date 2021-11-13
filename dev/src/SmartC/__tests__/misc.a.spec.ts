@@ -132,6 +132,13 @@ describe('Wrong code to check error safeguards', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: Modifier on codecave', () => {
+        expect(() => {
+            const code = 'long a; a = (a).length;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
     test('should throw: Operator addition on void returning function', () => {
         expect(() => {
             const code = 'long a, b; a = b + test(); void test(void) { a++; }'
