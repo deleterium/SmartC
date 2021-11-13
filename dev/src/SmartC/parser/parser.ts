@@ -397,6 +397,10 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
     // until endChar is found
     function getTokensUntil (endChar: ')'|'}'|']', parentType: TOKEN_TYPES, line: number) : TOKEN [] {
         const returnedTokens : TOKEN [] = []
+        if (AuxVars.mainLoopIndex >= preTokens.length) {
+            throw new Error('At line: end of file. ' +
+            `Missing closing '${endChar}' for for '${parentType}' started at line: ${line}.`)
+        }
         while (preTokens[AuxVars.mainLoopIndex].value !== endChar) {
             returnedTokens.push(getNextToken())
             // getNextToken will increase mainLoopIndex for loop

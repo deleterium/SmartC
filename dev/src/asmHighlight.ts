@@ -183,12 +183,12 @@ export function asmHighlight (asmSourceCode: string) {
 
     function colorThisLine (asmLine: string, Rule: codeRule | undefined): string {
         let apiName: string
-        if (Rule === undefined) {
-            return toSpan(asmLine, Config.spanErrorClass)
+        let parts = null
+        if (Rule !== undefined) {
+            parts = Rule.regex.exec(asmLine)
         }
-        const parts = Rule.regex.exec(asmLine)
-        if (parts === null) {
-            // this should never be reached
+        if (parts === null || Rule === undefined) {
+            // No rule found to highlight line
             return toSpan(asmLine, Config.spanErrorClass)
         }
         switch (Rule.opCode) {
@@ -346,7 +346,6 @@ export function asmHighlight (asmSourceCode: string) {
                 toSpan(parts[5], Config.spanVariableClass)
         case 0x36:
         default:
-            // this should never be reached
             return toSpan(asmLine, Config.spanErrorClass)
         }
     }

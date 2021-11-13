@@ -1,4 +1,4 @@
-// Note: Use assert or failIf only in cases for internal error or debug purposes.
+// Note: Use assert functions only in cases for internal error or debug purposes.
 // Using them with regular error messages will lead to condition not beeing checked
 // in coverage report.
 
@@ -41,23 +41,11 @@ export function assertNotEqual<T> (
  * @returns true
  * @throws {Error} if expression is false
  */
-export function assertExpression (argument: boolean, errorMessage: string = 'Internal error.'): void {
+export function assertExpression (argument: boolean, errorMessage: string = 'Internal error.'): true {
     if (!argument) {
         throw new Error(errorMessage)
     }
-}
-
-/**
- * Throw if argument is true
- * @param argument to check
- * @param errorMessage to throw
- * @returns true
- * @throws {Error} if expression is false
- */
-export function failIf (argument: boolean, errorMessage: string): void {
-    if (argument) {
-        throw new Error(errorMessage)
-    }
+    return true
 }
 
 // Note: Found at https://gist.github.com/sunnyy02/2477458d4d1c08bde8cc06cd8f56702e
@@ -110,12 +98,12 @@ export function stringToHexstring (inStr: string) : string {
             byarr.push(0x80 | (0x3f & charCode))
             break
         default: {
-            i++
-            const nextCharCode = inStr.charCodeAt(i)
+            const nextCharCode = inStr.charCodeAt(i + 1)
             if (isNaN(nextCharCode)) {
                 break
             }
             if ((charCode & 0xfc00) === 0xd800 && (nextCharCode & 0xfc00) === 0xdc00) {
+                i++
                 const newCharCode = ((charCode & 0x3ff) << 10) + (nextCharCode & 0x3ff) + 0x10000
                 byarr.push(0xf0 | (0x3f & (newCharCode >> 18)))
                 byarr.push(0x80 | (0x3f & (newCharCode >> 12)))

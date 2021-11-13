@@ -75,6 +75,13 @@ describe('Wrong code to check error safeguards', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: not ending } (at end of file)', () => {
+        expect(() => {
+            const code = 'long a, b; test (b); void test(long c) {'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
     test('Endless comment', () => {
         expect(() => {
             const code = 'long a;/*asdf'
