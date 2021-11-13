@@ -20,6 +20,7 @@ export default function codeGenerator (Program: CONTRACT) {
         currFunctionIndex: -1,
         currSourceLine: 0,
         getNewJumpID: function (line: number) {
+            // Any changes here, also change function auxvarsGetNewJumpID
             let id = ''
             if (this.Program.Config.enableLineLabels) {
                 id += line + '_'

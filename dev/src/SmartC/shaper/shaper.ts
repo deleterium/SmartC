@@ -396,8 +396,8 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 if (Program.memory[i].asmName === Program.memory[j].asmName) {
                     if (Program.memory[i].type !== Program.memory[j].type) {
                         throw new Error('At line: unknown.' +
-                        ' + Global check: it was found a variable and a label with same name.' +
-                        ` Change variable named '${Program.memory[i].name}'`)
+                        ` Global check: it was found that variable '${Program.memory[i].name}' was declared more` +
+                        ` one time with types '${Program.memory[i].type}' and '${Program.memory[j].type}'.`)
                     }
                     if (Program.memory[i].type === 'label') {
                         throw new Error('At line: unknow.' +

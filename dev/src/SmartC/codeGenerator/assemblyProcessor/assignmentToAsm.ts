@@ -61,7 +61,7 @@ export default function assignmentToAsm (
         Right.hexContent = assertNotUndefined(Right.hexContent)
         if (Right.hexContent.length > 17) {
             throw new Error(`At line: ${operationLine}.` +
-            'Overflow on long value assignment (value bigger than 64 bits)')
+            ' Overflow on long value assignment (value bigger than 64 bits)')
         }
         if (Right.hexContent === '0000000000000000') {
             return `CLR @${Left.asmName}\n`

@@ -159,6 +159,7 @@ export default function setupGenCode (
     }
 
     function auxvarsGetNewJumpID (line: number) : string {
+        // This code shall be equal GlobalCodeVars.getNewJumpID()
         let id = ''
         if (Globals.Program.Config.enableLineLabels) {
             id += line + '_'
