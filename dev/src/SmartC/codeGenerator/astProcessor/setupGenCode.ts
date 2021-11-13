@@ -141,21 +141,16 @@ export default function setupGenCode (
 
     function auxvarsGetMemoryObjectByLocation (loc: number|string, line: number = sentenceLine): MEMORY_SLOT {
         let addr:number
-        switch (typeof (loc)) {
-        case 'number':
+        if (typeof loc === 'number') {
             addr = loc
-            break
-        case 'string':
+        } else {
             addr = parseInt(loc, 16)
-            break
-        default:
-            throw new Error('Internal error. Wrong type in getMemoryObjectByLocation.')
         }
-        const search = AuxVars.memory.find(obj => obj.address === addr)
-        if (search === undefined) {
-            throw new Error(`At line: ${line}. No variable found at address '0x${addr}'.`)
+        const FoundMemory = AuxVars.memory.find(obj => obj.address === addr)
+        if (FoundMemory === undefined) {
+            throw new Error(`At line: ${line}. No variable found at address '${addr}'.`)
         }
-        return deepCopy(search)
+        return deepCopy(FoundMemory)
     }
 
     function auxvarsGetNewJumpID (line: number) : string {

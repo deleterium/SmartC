@@ -14,10 +14,7 @@ export default function binaryAsnProcessor (
     let CurrentNode : BINARY_ASN
 
     function binaryAsnProcessorMain () : GENCODE_SOLVED_OBJECT {
-        if (ScopeInfo.RemAST.type !== 'binaryASN') {
-            throw new Error('Internal error.')
-        }
-        CurrentNode = ScopeInfo.RemAST
+        CurrentNode = utils.assertAsnType('binaryASN', ScopeInfo.RemAST)
         switch (CurrentNode.Operation.type) {
         case 'Delimiter':
             return delimiterProc()
@@ -101,7 +98,7 @@ export default function binaryAsnProcessor (
         if (LGenObj.SolvedMem.type !== 'register') {
             TmpMemObj = AuxVars.getNewRegister()
             TmpMemObj.declaration = utils.getDeclarationFromMemory(LGenObj.SolvedMem)
-            assemblyCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, LGenObj.SolvedMem)
+            assemblyCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, LGenObj.SolvedMem)
             AuxVars.freeRegister(LGenObj.SolvedMem.address)
         } else {
             TmpMemObj = LGenObj.SolvedMem
@@ -212,9 +209,6 @@ export default function binaryAsnProcessor (
     }
 
     function assignmentLeftSideErrorTests (Left: MEMORY_SLOT) : void {
-        if (Left.type === 'void') {
-            throw new Error(`At line: ${CurrentNode.Operation.line}. Trying to assign a void variable.`)
-        }
         if (Left.address === -1) {
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
             `Invalid left value for ${CurrentNode.Operation.type}.`)
@@ -224,14 +218,13 @@ export default function binaryAsnProcessor (
                 // Array assignment base type
                 throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
                 `Invalid left value for '${CurrentNode.Operation.type}'. Can not reassign an array.`)
+            } else if (Left.Offset.type === 'variable' &&
+                Left.Offset.addr === 0 &&
+                Left.Offset.declaration.includes('_ptr')) {
+                // Array assignment inside struct
+                throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
+                `Invalid left value for '${CurrentNode.Operation.type}'. Can not reassign an array.`)
             }
-        } else if (Left.Offset &&
-            Left.Offset.declaration.includes('_ptr') &&
-            Left.Offset.typeDefinition !== undefined &&
-            AuxVars.hasVoidArray === false) {
-            // Array assignment inside struct
-            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-            `Invalid left value for '${CurrentNode.Operation.type}'. Can not reassign an array.`)
         }
         if (AuxVars.hasVoidArray &&
             (CurrentNode.Right.type !== 'endASN' ||
@@ -372,7 +365,7 @@ export default function binaryAsnProcessor (
         asmCode += createSimpleInstruction('Label', swapLogic ? idCompSF : idCompST)
         asmCode += createInstruction(
             AuxVars,
-            utils.genAssignmentToken(),
+            utils.genAssignmentToken(CurrentNode.Operation.line),
             TmpMemObj,
             utils.createConstantMemObj(swapLogic ? 0 : 1)
         )
@@ -380,7 +373,7 @@ export default function binaryAsnProcessor (
         asmCode += createSimpleInstruction('Label', swapLogic ? idCompST : idCompSF)
         asmCode += createInstruction(
             AuxVars,
-            utils.genAssignmentToken(),
+            utils.genAssignmentToken(CurrentNode.Operation.line),
             TmpMemObj,
             utils.createConstantMemObj(swapLogic ? 1 : 0)
         )
@@ -400,17 +393,6 @@ export default function binaryAsnProcessor (
             jumpTrue: ScopeInfo.jumpTrue
         })
         assemblyCode += LGenObj.asmCode
-        if (AuxVars.isTemp(LGenObj.SolvedMem.address)) { // maybe it was an arithmetic operation
-            assemblyCode += createInstruction(
-                AuxVars,
-                utils.genNotEqualToken(),
-                LGenObj.SolvedMem,
-                utils.createConstantMemObj(0),
-                true,
-                ScopeInfo.jumpFalse,
-                ScopeInfo.jumpTrue
-            )
-        }
         assemblyCode += createSimpleInstruction('Label', idNextStmt)
         const RGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Right,
@@ -420,17 +402,6 @@ export default function binaryAsnProcessor (
             jumpTrue: ScopeInfo.jumpTrue
         })
         assemblyCode += RGenObj.asmCode
-        if (AuxVars.isTemp(RGenObj.SolvedMem.address)) { // maybe it was an arithmetic operation
-            assemblyCode += createInstruction(
-                AuxVars,
-                utils.genNotEqualToken(),
-                RGenObj.SolvedMem,
-                utils.createConstantMemObj(0),
-                true,
-                ScopeInfo.jumpFalse,
-                ScopeInfo.jumpTrue
-            )
-        }
         assemblyCode += createSimpleInstruction('Jump', ScopeInfo.jumpFalse)
         return { SolvedMem: utils.createVoidMemObj(), asmCode: assemblyCode }
     }
@@ -446,17 +417,6 @@ export default function binaryAsnProcessor (
             jumpTrue: idNextStmt
         })
         assemblyCode += LGenObj.asmCode
-        if (AuxVars.isTemp(LGenObj.SolvedMem.address)) { // maybe it was an arithmetic operation
-            assemblyCode += createInstruction(
-                AuxVars,
-                utils.genNotEqualToken(),
-                LGenObj.SolvedMem,
-                utils.createConstantMemObj(0),
-                false,
-                ScopeInfo.jumpFalse,
-                ScopeInfo.jumpTrue
-            )
-        }
         assemblyCode += createSimpleInstruction('Label', idNextStmt)
         const RGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Right,
@@ -466,17 +426,6 @@ export default function binaryAsnProcessor (
             jumpTrue: ScopeInfo.jumpTrue
         })
         assemblyCode += RGenObj.asmCode
-        if (AuxVars.isTemp(RGenObj.SolvedMem.address)) { // maybe it was an arithmetic operation
-            assemblyCode += createInstruction(
-                AuxVars,
-                utils.genNotEqualToken(),
-                RGenObj.SolvedMem,
-                utils.createConstantMemObj(0),
-                false,
-                ScopeInfo.jumpFalse,
-                ScopeInfo.jumpTrue
-            )
-        }
         assemblyCode += createSimpleInstruction('Jump', ScopeInfo.jumpTrue)
         return { SolvedMem: utils.createVoidMemObj(), asmCode: assemblyCode }
     }

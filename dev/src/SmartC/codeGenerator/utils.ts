@@ -1,5 +1,13 @@
 import { assertNotUndefined } from '../repository/repository'
-import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES, LOOKUP_ASN } from '../typings/syntaxTypes'
+import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES, LOOKUP_ASN, BINARY_ASN, END_ASN, EXCEPTION_ASN, NULL_ASN, UNARY_ASN } from '../typings/syntaxTypes'
+
+type ObjectAsnType<T> = T extends 'binaryASN' ? BINARY_ASN :
+T extends 'unaryASN' ? UNARY_ASN :
+T extends 'nullASN' ? NULL_ASN :
+T extends 'endASN' ? END_ASN :
+T extends 'lookupASN' ? LOOKUP_ASN :
+T extends 'exceptionASN' ? EXCEPTION_ASN :
+never;
 
 /**
  * Simple functions that do not depend external variables.
@@ -50,8 +58,8 @@ export default {
     genSubToken (line: number = -1): TOKEN {
         return { type: 'Operator', precedence: 4, value: '-', line: line }
     },
-    genAssignmentToken (): TOKEN {
-        return { type: 'Assignment', precedence: 9, value: '=', line: -1 }
+    genAssignmentToken (line: number): TOKEN {
+        return { type: 'Assignment', precedence: 9, value: '=', line: line }
     },
     genIncToken (): TOKEN {
         return { type: 'SetUnaryOperator', precedence: 2, value: '++', line: -1 }
@@ -68,65 +76,42 @@ export default {
     genPushToken (line: number): TOKEN {
         return { type: 'Push', precedence: 12, value: '', line: line }
     },
-    mulHexContents (param1: number | string = 'Error', param2: number | string = 'Error') {
-        let n1: bigint, n2: bigint
-        if (typeof (param1) === 'number') {
-            n1 = BigInt(param1)
-        } else {
-            n1 = BigInt('0x' + param1)
-        }
-        if (typeof (param2) === 'number') {
-            n2 = BigInt(param2)
-        } else {
-            n2 = BigInt('0x' + param2)
-        }
+    mulHexContents (param1: number | string | undefined, param2: number | string | undefined) {
+        const n1 = this.HexContentsToBigint(param1)
+        const n2 = this.HexContentsToBigint(param2)
         return (n1 * n2).toString(16).padStart(16, '0').slice(-16)
     },
-    divHexContents (param1: number | string = 'Error', param2: number | string = 'Error') {
-        let n1: bigint, n2: bigint
-        if (typeof (param1) === 'number') {
-            n1 = BigInt(param1)
-        } else {
-            n1 = BigInt('0x' + param1)
-        }
-        if (typeof (param2) === 'number') {
-            n2 = BigInt(param2)
-        } else {
-            n2 = BigInt('0x' + param2)
+    divHexContents (param1: number | string | undefined, param2: number | string | undefined) {
+        const n1 = this.HexContentsToBigint(param1)
+        const n2 = this.HexContentsToBigint(param2)
+        if (n2 === 0n) {
+            throw new Error('Division by zero')
         }
         return (n1 / n2).toString(16).padStart(16, '0').slice(-16)
     },
-    addHexContents (param1: number | string = 'Error', param2: number | string = 'Error') {
-        let n1: bigint, n2: bigint
-        if (typeof (param1) === 'number') {
-            n1 = BigInt(param1)
-        } else {
-            n1 = BigInt('0x' + param1)
-        }
-        if (typeof (param2) === 'number') {
-            n2 = BigInt(param2)
-        } else {
-            n2 = BigInt('0x' + param2)
-        }
+    addHexContents (param1: number | string | undefined, param2: number | string | undefined) {
+        const n1 = this.HexContentsToBigint(param1)
+        const n2 = this.HexContentsToBigint(param2)
         return (n1 + n2).toString(16).padStart(16, '0').slice(-16)
     },
-    subHexContents (param1: number | string = 'Error', param2: number | string = 'Error') {
-        let n1: bigint, n2: bigint
-        if (typeof (param1) === 'number') {
-            n1 = BigInt(param1)
-        } else {
-            n1 = BigInt('0x' + param1)
-        }
-        if (typeof (param2) === 'number') {
-            n2 = BigInt(param2)
-        } else {
-            n2 = BigInt('0x' + param2)
-        }
+    subHexContents (param1: number | string | undefined, param2: number | string | undefined) {
+        const n1 = this.HexContentsToBigint(param1)
+        const n2 = this.HexContentsToBigint(param2)
         let sub = n1 - n2
         if (sub < 0) {
             sub += 18446744073709551616n
         }
         return sub.toString(16).padStart(16, '0').slice(-16)
+    },
+    /** Converts a hex string or number to bigint */
+    HexContentsToBigint (arg: number | string | undefined) : bigint {
+        if (typeof arg === 'undefined') {
+            return 0n
+        }
+        if (typeof arg === 'number') {
+            return BigInt(arg)
+        }
+        return BigInt('0x' + arg)
     },
     /** Splits an AST into array of AST based on delimiters */
     splitASTOnDelimiters (Obj: AST) {
@@ -309,5 +294,12 @@ export default {
             return false
         }
         return recursiveFind(ObjAST)
+    },
+    assertAsnType<T extends 'binaryASN'|'unaryASN'|'nullASN'|'endASN'|'lookupASN'|'exceptionASN'> (templateType: T,
+        testObject: AST) : ObjectAsnType<T> {
+        if (testObject.type !== undefined && testObject.type === templateType) {
+            return testObject as ObjectAsnType<T>
+        }
+        throw new Error('Internal error')
     }
 }

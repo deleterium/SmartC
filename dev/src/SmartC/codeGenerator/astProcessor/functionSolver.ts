@@ -1,4 +1,4 @@
-import { assertNotUndefined } from '../../repository/repository'
+import { assertExpression, assertNotUndefined } from '../../repository/repository'
 import { CONTRACT, SC_FUNCTION } from '../../typings/contractTypes'
 import { LOOKUP_ASN, AST, MEMORY_SLOT } from '../../typings/syntaxTypes'
 import {
@@ -14,10 +14,8 @@ export default function functionSolver (
     let CurrentNode: LOOKUP_ASN
 
     function functionSolverMain (): GENCODE_SOLVED_OBJECT {
-        if (ScopeInfo.RemAST.type !== 'lookupASN' || ScopeInfo.RemAST.Token.type !== 'Function') {
-            throw new Error('Internal error.')
-        }
-        CurrentNode = ScopeInfo.RemAST
+        CurrentNode = utils.assertAsnType('lookupASN', ScopeInfo.RemAST)
+        assertExpression(CurrentNode.Token.type === 'Function')
         const fnName = assertNotUndefined(CurrentNode.Token.extValue)
         const FnToCall = Program.functions.find(val => val.name === fnName)
         const ApiToCall = Program.Global.APIFunctions.find(val => val.name === fnName)

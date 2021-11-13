@@ -8,14 +8,11 @@ import genCode from './genCode'
 export default function endAsnProcessor (
     Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
 ) : GENCODE_SOLVED_OBJECT {
-    let currentNode: END_ASN
+    let CurrentNode: END_ASN
 
     function endAsnProcessorMain () : GENCODE_SOLVED_OBJECT {
-        if (ScopeInfo.RemAST.type !== 'endASN') {
-            throw new Error('Internal error.')
-        }
-        currentNode = ScopeInfo.RemAST
-        switch (currentNode.Token.type) {
+        CurrentNode = utils.assertAsnType('endASN', ScopeInfo.RemAST)
+        switch (CurrentNode.Token.type) {
         case 'Constant':
             return constantProc()
         case 'Variable':
@@ -23,14 +20,14 @@ export default function endAsnProcessor (
         case 'Keyword':
             return keywordProc()
         default:
-            throw new Error(`Internal error at line: ${currentNode.Token.line}.`)
+            throw new Error(`Internal error at line: ${CurrentNode.Token.line}.`)
         }
     }
 
     function constantProc () : GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.logicalOp) {
             if (ScopeInfo.revLogic === false) {
-                if (currentNode.Token.value === '0000000000000000') {
+                if (CurrentNode.Token.value === '0000000000000000') {
                     return {
                         SolvedMem: utils.createVoidMemObj(),
                         asmCode: createSimpleInstruction('Jump', ScopeInfo.jumpFalse)
@@ -38,7 +35,7 @@ export default function endAsnProcessor (
                 }
                 return { SolvedMem: utils.createVoidMemObj(), asmCode: '' }
             }
-            if (currentNode.Token.value !== '0000000000000000') {
+            if (CurrentNode.Token.value !== '0000000000000000') {
                 return {
                     SolvedMem: utils.createVoidMemObj(),
                     asmCode: createSimpleInstruction('Jump', ScopeInfo.jumpTrue)
@@ -47,15 +44,15 @@ export default function endAsnProcessor (
             return { SolvedMem: utils.createVoidMemObj(), asmCode: '' }
         }
         const RetMemObj = utils.createConstantMemObj()
-        RetMemObj.size = currentNode.Token.value.length / 16
-        RetMemObj.hexContent = currentNode.Token.value
+        RetMemObj.size = CurrentNode.Token.value.length / 16
+        RetMemObj.hexContent = CurrentNode.Token.value
         return { SolvedMem: RetMemObj, asmCode: '' }
     }
 
     function variableProc () : GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.logicalOp) {
             let { SolvedMem, asmCode } = genCode(Program, AuxVars, {
-                RemAST: currentNode,
+                RemAST: CurrentNode,
                 logicalOp: false,
                 revLogic: ScopeInfo.revLogic
             })
@@ -72,8 +69,8 @@ export default function endAsnProcessor (
             return { SolvedMem: utils.createVoidMemObj(), asmCode: asmCode }
         }
         const retMemObj = AuxVars.getMemoryObjectByName(
-            currentNode.Token.value,
-            currentNode.Token.line,
+            CurrentNode.Token.value,
+            CurrentNode.Token.line,
             AuxVars.isDeclaration
         )
         return { SolvedMem: retMemObj, asmCode: '' }
@@ -81,10 +78,10 @@ export default function endAsnProcessor (
 
     function keywordProc () : GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.logicalOp) {
-            throw new Error(`Internal error at line: ${currentNode.Token.line}. ` +
-            `Invalid use of keyword '${currentNode.Token.value}'.`)
+            throw new Error(`At line: ${CurrentNode.Token.line}. ` +
+            `Cannot use of keyword '${CurrentNode.Token.value}' in logical statements.`)
         }
-        switch (currentNode.Token.value) {
+        switch (CurrentNode.Token.value) {
         case 'break':
         case 'continue':
         case 'label':
@@ -93,16 +90,16 @@ export default function endAsnProcessor (
         case 'halt':
             return {
                 SolvedMem: utils.createVoidMemObj(),
-                asmCode: createInstruction(AuxVars, currentNode.Token)
+                asmCode: createInstruction(AuxVars, CurrentNode.Token)
             }
         case 'return':
             // this is 'return;'
             if (AuxVars.CurrentFunction === undefined) {
-                throw new Error(`At line: ${currentNode.Token.line}.` +
+                throw new Error(`At line: ${CurrentNode.Token.line}.` +
                 " Can not use 'return' in global statements.")
             }
             if (AuxVars.CurrentFunction.declaration !== 'void') {
-                throw new Error(`At line: ${currentNode.Token.line}.` +
+                throw new Error(`At line: ${CurrentNode.Token.line}.` +
                 ` Function '${AuxVars.CurrentFunction.name}'` +
                 ` must return a '${AuxVars.CurrentFunction.declaration}' value.`)
             }
@@ -114,10 +111,10 @@ export default function endAsnProcessor (
             }
             return {
                 SolvedMem: utils.createVoidMemObj(),
-                asmCode: createInstruction(AuxVars, currentNode.Token)
+                asmCode: createInstruction(AuxVars, CurrentNode.Token)
             }
         default:
-            throw new Error(`Internal error at line: ${currentNode.Token.line}.`)
+            throw new Error(`Internal error at line: ${CurrentNode.Token.line}.`)
         }
     }
 

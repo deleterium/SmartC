@@ -12,15 +12,10 @@ export default function unaryAsnProcessor (
     let CurrentNode: UNARY_ASN
 
     function unaryAsnProcessorMain () : GENCODE_SOLVED_OBJECT {
-        if (ScopeInfo.RemAST.type !== 'unaryASN') {
-            throw new Error('Internal error.')
-        }
-        CurrentNode = ScopeInfo.RemAST
+        CurrentNode = utils.assertAsnType('unaryASN', ScopeInfo.RemAST)
         switch (CurrentNode.Operation.type) {
         case 'UnaryOperator':
             return UnaryOperatorProcessor()
-        case 'CodeCave':
-            return traverseDefault()
         case 'Keyword':
             return unaryKeywordProcessor()
         default:
@@ -73,7 +68,7 @@ export default function unaryAsnProcessor (
         CGenObj.asmCode += createSimpleInstruction('Label', idNotST)
         CGenObj.asmCode += createInstruction(
             AuxVars,
-            utils.genAssignmentToken(),
+            utils.genAssignmentToken(CurrentNode.Operation.line),
             TmpMemObj,
             utils.createConstantMemObj(1)
         )
@@ -81,7 +76,7 @@ export default function unaryAsnProcessor (
         CGenObj.asmCode += createSimpleInstruction('Label', idNotSF)
         CGenObj.asmCode += createInstruction(
             AuxVars,
-            utils.genAssignmentToken(),
+            utils.genAssignmentToken(CurrentNode.Operation.line),
             TmpMemObj,
             utils.createConstantMemObj(0)
         )
@@ -133,7 +128,7 @@ export default function unaryAsnProcessor (
             // Double deference: deference and continue
             const TmpMemObj = AuxVars.getNewRegister()
             TmpMemObj.declaration = utils.getDeclarationFromMemory(CGenObj.SolvedMem)
-            CGenObj.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, CGenObj.SolvedMem)
+            CGenObj.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, CGenObj.SolvedMem)
             if (CGenObj.SolvedMem.Offset.type === 'variable') {
                 AuxVars.freeRegister(CGenObj.SolvedMem.Offset.addr)
             }
@@ -165,7 +160,7 @@ export default function unaryAsnProcessor (
         let { SolvedMem: CGenObj, asmCode } = traverseNotLogical()
         const TmpMemObj = AuxVars.getNewRegister()
         TmpMemObj.declaration = utils.getDeclarationFromMemory(CGenObj)
-        asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, utils.createConstantMemObj(0))
+        asmCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, utils.createConstantMemObj(0))
         asmCode += createInstruction(AuxVars, utils.genSubToken(CurrentNode.Operation.line), TmpMemObj, CGenObj)
         AuxVars.freeRegister(CGenObj.address)
         if (ScopeInfo.logicalOp === true) {
@@ -191,7 +186,7 @@ export default function unaryAsnProcessor (
         if (!AuxVars.isTemp(CGenObj.address)) {
             TmpMemObj = AuxVars.getNewRegister()
             TmpMemObj.declaration = utils.getDeclarationFromMemory(CGenObj)
-            asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, CGenObj)
+            asmCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, CGenObj)
             clearVar = true
         } else {
             TmpMemObj = CGenObj
@@ -251,7 +246,7 @@ export default function unaryAsnProcessor (
                 delete Copyvar.Offset
                 TmpMemObj = AuxVars.getNewRegister()
                 TmpMemObj.declaration = RetMem.declaration
-                asmCode += createInstruction(AuxVars, utils.genAssignmentToken(), TmpMemObj, Copyvar)
+                asmCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, Copyvar)
                 asmCode += createInstruction(
                     AuxVars,
                     utils.genAddToken(),
@@ -268,7 +263,7 @@ export default function unaryAsnProcessor (
             break
         case 'structRef':
             if (RetMem.Offset !== undefined) {
-                throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
+                throw new Error(`Internal error at line: ${CurrentNode.Operation.line}. ` +
                 "Get address of 'structRef' with offset not implemented. ")
             }
             TmpMemObj = utils.createConstantMemObj(RetMem.address)
@@ -278,11 +273,8 @@ export default function unaryAsnProcessor (
             TmpMemObj = utils.createConstantMemObj(RetMem.address)
             TmpMemObj.declaration = 'long'
             break
-        case 'label':
-            throw new Error(`At line: ${CurrentNode.Operation.line}. Trying to get address of a Label`)
         default:
-            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-            `Get address of '${RetMem.type}' not implemented.`)
+            throw new Error(`Internal error at line ${CurrentNode.Operation.line}.`)
         }
         if (!TmpMemObj.declaration.includes('_ptr')) {
             TmpMemObj.declaration += '_ptr'

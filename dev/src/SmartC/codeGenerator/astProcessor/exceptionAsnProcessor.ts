@@ -2,15 +2,13 @@ import { assertNotUndefined } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
 import { createInstruction } from '../assemblyProcessor/createInstruction'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
+import utils from '../utils'
 import genCode from './genCode'
 
 export default function exceptionAsnProcessor (
     Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
 ) : GENCODE_SOLVED_OBJECT {
-    if (ScopeInfo.RemAST.type !== 'exceptionASN') {
-        throw new Error('Internal error.')
-    }
-    const CurrentNode = ScopeInfo.RemAST
+    const CurrentNode = utils.assertAsnType('exceptionASN', ScopeInfo.RemAST)
     if (ScopeInfo.jumpFalse !== undefined) {
         throw new Error(`At line: ${CurrentNode.Operation.line}.` +
         ' Can not use SetUnaryOperator (++ or --) during logical operations with branches')
