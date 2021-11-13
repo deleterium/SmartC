@@ -1,13 +1,15 @@
 import { assertNotUndefined } from '../repository/repository'
 import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES, LOOKUP_ASN, BINARY_ASN, END_ASN, EXCEPTION_ASN, NULL_ASN, UNARY_ASN } from '../typings/syntaxTypes'
 
-type ObjectAsnType<T> = T extends 'binaryASN' ? BINARY_ASN :
+type OBJECT_ASN_TYPE<T> = T extends 'binaryASN' ? BINARY_ASN :
 T extends 'unaryASN' ? UNARY_ASN :
 T extends 'nullASN' ? NULL_ASN :
 T extends 'endASN' ? END_ASN :
 T extends 'lookupASN' ? LOOKUP_ASN :
 T extends 'exceptionASN' ? EXCEPTION_ASN :
 never;
+
+type HEXCONTENTS = number | string | undefined
 
 /**
  * Simple functions that do not depend external variables.
@@ -76,12 +78,12 @@ export default {
     genPushToken (line: number): TOKEN {
         return { type: 'Push', precedence: 12, value: '', line: line }
     },
-    mulHexContents (param1: number | string | undefined, param2: number | string | undefined) {
+    mulHexContents (param1: HEXCONTENTS, param2: HEXCONTENTS) {
         const n1 = this.HexContentsToBigint(param1)
         const n2 = this.HexContentsToBigint(param2)
         return (n1 * n2).toString(16).padStart(16, '0').slice(-16)
     },
-    divHexContents (param1: number | string | undefined, param2: number | string | undefined) {
+    divHexContents (param1: HEXCONTENTS, param2: HEXCONTENTS) {
         const n1 = this.HexContentsToBigint(param1)
         const n2 = this.HexContentsToBigint(param2)
         if (n2 === 0n) {
@@ -89,12 +91,12 @@ export default {
         }
         return (n1 / n2).toString(16).padStart(16, '0').slice(-16)
     },
-    addHexContents (param1: number | string | undefined, param2: number | string | undefined) {
+    addHexContents (param1: HEXCONTENTS, param2: HEXCONTENTS) {
         const n1 = this.HexContentsToBigint(param1)
         const n2 = this.HexContentsToBigint(param2)
         return (n1 + n2).toString(16).padStart(16, '0').slice(-16)
     },
-    subHexContents (param1: number | string | undefined, param2: number | string | undefined) {
+    subHexContents (param1: HEXCONTENTS, param2: HEXCONTENTS) {
         const n1 = this.HexContentsToBigint(param1)
         const n2 = this.HexContentsToBigint(param2)
         let sub = n1 - n2
@@ -104,7 +106,7 @@ export default {
         return sub.toString(16).padStart(16, '0').slice(-16)
     },
     /** Converts a hex string or number to bigint */
-    HexContentsToBigint (arg: number | string | undefined) : bigint {
+    HexContentsToBigint (arg: HEXCONTENTS) : bigint {
         if (typeof arg === 'undefined') {
             return 0n
         }
@@ -296,9 +298,9 @@ export default {
         return recursiveFind(ObjAST)
     },
     assertAsnType<T extends 'binaryASN'|'unaryASN'|'nullASN'|'endASN'|'lookupASN'|'exceptionASN'> (templateType: T,
-        testObject: AST) : ObjectAsnType<T> {
+        testObject: AST) : OBJECT_ASN_TYPE<T> {
         if (testObject.type !== undefined && testObject.type === templateType) {
-            return testObject as ObjectAsnType<T>
+            return testObject as OBJECT_ASN_TYPE<T>
         }
         throw new Error('Internal error')
     }

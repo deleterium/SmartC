@@ -214,14 +214,11 @@ export default function binaryAsnProcessor (
             `Invalid left value for ${CurrentNode.Operation.type}.`)
         }
         if (Left.type === 'array' && AuxVars.hasVoidArray === false) {
-            if (Left.Offset === undefined) {
-                // Array assignment base type
-                throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-                `Invalid left value for '${CurrentNode.Operation.type}'. Can not reassign an array.`)
-            } else if (Left.Offset.type === 'variable' &&
+            if (Left.Offset === undefined ||
+                (Left.Offset.type === 'variable' &&
                 Left.Offset.addr === 0 &&
-                Left.Offset.declaration.includes('_ptr')) {
-                // Array assignment inside struct
+                Left.Offset.declaration.includes('_ptr'))) {
+                // Array assignment base type || Array assignment inside struct
                 throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
                 `Invalid left value for '${CurrentNode.Operation.type}'. Can not reassign an array.`)
             }

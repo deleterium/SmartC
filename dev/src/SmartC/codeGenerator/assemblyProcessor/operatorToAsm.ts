@@ -51,51 +51,67 @@ export default function operatorToAsm (
         switch (OperatorToken.value) {
         case '+':
         case '+=':
-            switch (RightMem.hexContent) {
-            case '0000000000000000':
-                return
-            case '0000000000000001':
-                AuxVars.freeRegister(FlatRight.FlatMem.address)
-                return createInstruction(AuxVars, utils.genIncToken(), FlatLeft.FlatMem)
-            case '0000000000000002':
-                AuxVars.freeRegister(FlatRight.FlatMem.address)
-                if (!AuxVars.memory.find(MEM => MEM.asmName === 'n2' && MEM.hexContent === '0000000000000002')) {
-                    return createInstruction(AuxVars, utils.genIncToken(), FlatLeft.FlatMem) +
-                    createInstruction(AuxVars, utils.genIncToken(), FlatLeft.FlatMem)
-                }
-            }
-            return ''
+            return testOptimizationsPlus()
         case '-':
         case '-=':
-            if (RightMem.hexContent === '0000000000000000') {
-                return
-            }
-            if (RightMem.hexContent === '0000000000000001') {
-                AuxVars.freeRegister(FlatRight.FlatMem.address)
-                return createInstruction(AuxVars, utils.genDecToken(), FlatLeft.FlatMem)
-            }
-            return ''
+            return testOptimizationsMinus()
         case '*':
         case '*=':
-            if (RightMem.hexContent === '0000000000000001') {
-                AuxVars.freeRegister(FlatRight.FlatMem.address)
-                return
-            }
-            if (RightMem.hexContent === '0000000000000000') {
-                AuxVars.freeRegister(FlatRight.FlatMem.address)
-                return createInstruction(AuxVars, utils.genAssignmentToken(OperatorToken.line), FlatLeft.FlatMem, RightMem)
-            }
-            return ''
+            return testOptimizationsMultiply()
         case '/':
         case '/=':
-            if (RightMem.hexContent === '0000000000000001') {
-                AuxVars.freeRegister(FlatRight.FlatMem.address)
-                return
-            }
-            return ''
+            return testOptimizationsDivide()
         default:
             return ''
         }
+    }
+
+    function testOptimizationsPlus () : string|undefined {
+        switch (RightMem.hexContent) {
+        case '0000000000000000':
+            return
+        case '0000000000000001':
+            AuxVars.freeRegister(FlatRight.FlatMem.address)
+            return createInstruction(AuxVars, utils.genIncToken(), FlatLeft.FlatMem)
+        case '0000000000000002':
+            AuxVars.freeRegister(FlatRight.FlatMem.address)
+            if (!AuxVars.memory.find(MEM => MEM.asmName === 'n2' && MEM.hexContent === '0000000000000002')) {
+                return createInstruction(AuxVars, utils.genIncToken(), FlatLeft.FlatMem) +
+                createInstruction(AuxVars, utils.genIncToken(), FlatLeft.FlatMem)
+            }
+        }
+        return ''
+    }
+
+    function testOptimizationsMinus () : string|undefined {
+        if (RightMem.hexContent === '0000000000000000') {
+            return
+        }
+        if (RightMem.hexContent === '0000000000000001') {
+            AuxVars.freeRegister(FlatRight.FlatMem.address)
+            return createInstruction(AuxVars, utils.genDecToken(), FlatLeft.FlatMem)
+        }
+        return ''
+    }
+
+    function testOptimizationsMultiply () : string|undefined {
+        if (RightMem.hexContent === '0000000000000001') {
+            AuxVars.freeRegister(FlatRight.FlatMem.address)
+            return
+        }
+        if (RightMem.hexContent === '0000000000000000') {
+            AuxVars.freeRegister(FlatRight.FlatMem.address)
+            return createInstruction(AuxVars, utils.genAssignmentToken(OperatorToken.line), FlatLeft.FlatMem, RightMem)
+        }
+        return ''
+    }
+
+    function testOptimizationsDivide () : string|undefined {
+        if (RightMem.hexContent === '0000000000000001') {
+            AuxVars.freeRegister(FlatRight.FlatMem.address)
+            return
+        }
+        return ''
     }
 
     return operatorToAsmMain()
