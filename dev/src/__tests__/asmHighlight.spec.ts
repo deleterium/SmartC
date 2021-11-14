@@ -43,4 +43,10 @@ describe('Assembly compilation:', () => {
         const result = asmHighlight(code)
         expect(result).toBe(highlighted)
     })
+    it('should highlight error: Rule not found and Non existent 0x36 api function', () => {
+        const code = 'long day here\nFUN @A 0x36APIFunction $B'
+        const highlighted = "<span class='asmError'>long day here</span><br><span class='asmError'>FUN @A 0x36APIFunction $B</span><br>"
+        const result = asmHighlight(code)
+        expect(result).toBe(highlighted)
+    })
 })

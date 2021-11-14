@@ -1,48 +1,52 @@
 import { SC_FUNCTION } from '../typings/contractTypes'
-import { REGISTER_TYPE_DEFINITION, LONG_TYPE_DEFINITION, STRUCT_TYPE_DEFINITION, MEMORY_BASE_TYPES, MEMORY_SLOT } from '../typings/syntaxTypes'
+import {
+    REGISTER_TYPE_DEFINITION, LONG_TYPE_DEFINITION, STRUCT_TYPE_DEFINITION, MEMORY_BASE_TYPES, MEMORY_SLOT
+} from '../typings/syntaxTypes'
 
-type ObjectType<T> = T extends 'register' ? REGISTER_TYPE_DEFINITION :
+type ObjectTypeDefinition<T> = T extends 'register' ? REGISTER_TYPE_DEFINITION :
     T extends 'long' ? LONG_TYPE_DEFINITION :
     T extends 'struct' ? STRUCT_TYPE_DEFINITION :
     never;
 
-export function getTypeDefinitionTemplate<T extends 'register'|'long'|'struct'> (templateType: T) {
-    let retObj: REGISTER_TYPE_DEFINITION | LONG_TYPE_DEFINITION | STRUCT_TYPE_DEFINITION
+export function getTypeDefinitionTemplate<T extends 'register'|'long'|'struct'> (
+    templateType: T
+) : ObjectTypeDefinition<T> {
+    let RetObj: REGISTER_TYPE_DEFINITION | LONG_TYPE_DEFINITION | STRUCT_TYPE_DEFINITION
     switch (templateType) {
     case 'register':
-        retObj = {
+        RetObj = {
             type: 'register',
             name: '',
             MemoryTemplate: getMemoryTemplate('register')
         }
-        retObj.MemoryTemplate.declaration = 'long'
-        retObj.MemoryTemplate.size = 1
-        retObj.MemoryTemplate.isDeclared = true
+        RetObj.MemoryTemplate.declaration = 'long'
+        RetObj.MemoryTemplate.size = 1
+        RetObj.MemoryTemplate.isDeclared = true
         break
     case 'long':
-        retObj = {
+        RetObj = {
             type: 'long',
             name: '',
             MemoryTemplate: getMemoryTemplate('long')
         }
-        retObj.MemoryTemplate.declaration = 'long'
-        retObj.MemoryTemplate.size = 1
+        RetObj.MemoryTemplate.declaration = 'long'
+        RetObj.MemoryTemplate.size = 1
         break
     case 'struct':
-        retObj = {
+        RetObj = {
             name: '',
             type: 'struct',
             structMembers: [],
             structAccumulatedSize: [],
             MemoryTemplate: getMemoryTemplate('struct')
         }
-        retObj.MemoryTemplate.typeDefinition = ''
-        retObj.MemoryTemplate.declaration = 'struct'
+        RetObj.MemoryTemplate.typeDefinition = ''
+        RetObj.MemoryTemplate.declaration = 'struct'
         break
     default:
-        throw new TypeError('Internal error')
+        throw new Error('Internal error')
     }
-    return retObj as ObjectType<T>
+    return RetObj as ObjectTypeDefinition<T>
 }
 
 export function getMemoryTemplate (memType: MEMORY_BASE_TYPES) : MEMORY_SLOT {

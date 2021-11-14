@@ -43,6 +43,13 @@ describe('Special functions', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    test('should throw: using main retuning something', () => {
+        expect(() => {
+            const code = 'long a; long main(void) { return a; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
 })
 
 describe('User defined functions', () => {
@@ -70,6 +77,13 @@ describe('User defined functions', () => {
     test('should throw: getting return value of void fun()', () => {
         expect(() => {
             const code = 'long a; a=test(); void test(void) { a++; return; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: Conditionals with void fun()', () => {
+        expect(() => {
+            const code = 'long a; if (test()) a++; void test(void) {}'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
@@ -130,6 +144,20 @@ describe('User defined functions', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: return void in functions with return type', () => {
+        expect(() => {
+            const code = 'test(); long test(void) { return; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: return value in functions with return void', () => {
+        expect(() => {
+            const code = 'test(); void test(void) { return 5; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
     test('should throw: function returning struct', () => {
         expect(() => {
             const code = 'struct KOMBI { long driver; long collector; long passenger; } car, car2; car = teste(); struct KOMBI teste(void){ return car; }'
@@ -167,14 +195,14 @@ describe('User defined functions', () => {
     })
     it('should compile: pass two struct pointer as argument', () => {
         const code = 'struct KOMBI { long driver, collector, passenger; } car1, car2; long a, b; test(&car1, &car2); void test(struct KOMBI * lptr, struct KOMBI * rptr) { lptr-> driver = rptr-> driver; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car1_driver\n^declare car1_collector\n^declare car1_passenger\n^declare car2_driver\n^declare car2_collector\n^declare car2_passenger\n^declare a\n^declare b\n^declare test_lptr\n^declare test_rptr\n\nSET @r0 #0000000000000006\nPSH $r0\nSET @r0 #0000000000000003\nPSH $r0\nJSR :__fn_test\nFIN\n\n__fn_test:\nPOP @test_lptr\nPOP @test_rptr\nCLR @r1\nSET @r0 $($test_rptr + $r1)\nCLR @r1\nSET @($test_lptr + $r1) $r0\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car1_driver\n^declare car1_collector\n^declare car1_passenger\n^declare car2_driver\n^declare car2_collector\n^declare car2_passenger\n^declare a\n^declare b\n^declare test_lptr\n^declare test_rptr\n\nSET @r0 #0000000000000006\nPSH $r0\nSET @r0 #0000000000000003\nPSH $r0\nJSR :__fn_test\nFIN\n\n__fn_test:\nPOP @test_lptr\nPOP @test_rptr\nCLR @r1\nSET @r0 $($test_rptr + $r1)\nSET @($test_lptr) $r0\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: pass struct pointer as second argument', () => {
         const code = 'struct KOMBI { long driver, collector, passenger; } car; long a, b; test(a, &car); void test(long a, struct KOMBI * sptr) { sptr-> driver = a; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare a\n^declare b\n^declare test_a\n^declare test_sptr\n\nSET @r0 #0000000000000003\nPSH $r0\nPSH $a\nJSR :__fn_test\nFIN\n\n__fn_test:\nPOP @test_a\nPOP @test_sptr\nCLR @r0\nSET @($test_sptr + $r0) $test_a\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare a\n^declare b\n^declare test_a\n^declare test_sptr\n\nSET @r0 #0000000000000003\nPSH $r0\nPSH $a\nJSR :__fn_test\nFIN\n\n__fn_test:\nPOP @test_a\nPOP @test_sptr\nSET @($test_sptr) $test_a\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -195,7 +223,7 @@ describe('User defined functions', () => {
     })
     it('should compile: check variable types on function arguments', () => {
         const code = "struct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b;pcar=&car;\n teste(pcar);\n void teste(struct KOMBI * value) { value->driver = 'Zé'; }"
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare teste_value\n\nSET @pcar #0000000000000003\nPSH $pcar\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_value\nSET @r0 #0000000000a9c35a\nCLR @r1\nSET @($teste_value + $r1) $r0\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare teste_value\n\nSET @pcar #0000000000000003\nPSH $pcar\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_value\nSET @r0 #0000000000a9c35a\nSET @($teste_value) $r0\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -283,6 +311,13 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`
     test('should throw: Wrong arguments', () => {
         expect(() => {
             const code = 'long a, test_b; test(a); void test(long b) { long c; c++; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: Wrong arguments quantity', () => {
+        expect(() => {
+            const code = 'long a, b; test(b, a); void test(long c) { }'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)

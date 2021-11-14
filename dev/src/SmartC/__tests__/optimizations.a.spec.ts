@@ -22,9 +22,37 @@ describe('Optimizations', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: Specifc operator optimization with WRONG const n2 variables', () => {
+        const code = 'long a , b; const long n2 = 20; a=b+2;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare n2\n\n^const SET @n2 #0000000000000014\nSET @a $b\nINC @a\nINC @a\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
     it('should compile: Optimization with const nX variables as struct index', () => {
         const code = 'const long n2 = 2; struct KOMBI { long driver; long collector; long passenger; } *pcar; pcar->passenger="Ze";'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare n2\n^declare pcar\n\n^const SET @n2 #0000000000000002\nSET @r0 #000000000000655a\nSET @($pcar + $n2) $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: Optimization constant x constant basic operations + - * /', () => {
+        const code = 'long a = 7+5; a = 7-5; a = 7*5; a = 7/5;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @a #000000000000000c\nSET @a #0000000000000002\nSET @a #0000000000000023\nSET @a #0000000000000001\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: Optimization variable x constant basic commutative operations + *', () => {
+        const code = 'long a , b; a = b * 1; a--; a = 0 * b; b = a+1; a--; b=0+a;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @a $b\nDEC @a\nSET @a $b\nCLR @a\nSET @b $a\nINC @b\nDEC @a\nSET @b $a\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: Non commutative operations: Optimization with constants and operation - /', () => {
+        const code = 'long a , b; a = b - 1; a++; a = b - 0; b = a/1;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @a $b\nDEC @a\nINC @a\nSET @a $b\nSET @b $a\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

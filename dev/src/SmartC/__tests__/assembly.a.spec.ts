@@ -135,41 +135,41 @@ describe('Assembly wrong code', () => {
             const code = 'INC @a\nlaravel\n'
             const result = new SmartC({ language: 'Assembly', sourceCode: code })
             result.compile()
-        }).toThrowError(/^bytecode/)
+        }).toThrowError(/^assembler/)
     })
     test('should throw: Unknow API function (with return value)', () => {
         expect(() => {
             const code = '^declare a\nFUN @a getA1\nFIN'
             const result = new SmartC({ language: 'Assembly', sourceCode: code })
             result.compile()
-        }).toThrowError(/^bytecode/)
+        }).toThrowError(/^assembler/)
     })
     test('should throw: Unknow API function (without return value)', () => {
         expect(() => {
             const code = 'SET @a #0000000000000005\nFUN send_to_TO_Address_in_B $a\nFIN'
             const result = new SmartC({ language: 'Assembly', sourceCode: code })
             result.compile()
-        }).toThrowError(/^bytecode/)
+        }).toThrowError(/^assembler/)
     })
     test('should throw: Unknow ^program directive', () => {
         expect(() => {
             const code = '^program word processor\nFIN'
             const result = new SmartC({ language: 'Assembly', sourceCode: code })
             result.compile()
-        }).toThrowError(/^bytecode/)
+        }).toThrowError(/^assembler/)
     })
     test('should throw: Invalid jump location', () => {
         expect(() => {
             const code = 'INC @a\nJMP :nowhere\nINC @a\nFIN'
             const result = new SmartC({ language: 'Assembly', sourceCode: code })
             result.compile()
-        }).toThrowError(/^bytecode/)
+        }).toThrowError(/^assembler/)
     })
     test('should throw: Invalid branch location', () => {
         expect(() => {
             const code = 'INC @a\nBZR $a :nowhere\nINC @a\nFIN'
             const result = new SmartC({ language: 'Assembly', sourceCode: code })
             result.compile()
-        }).toThrowError(/^bytecode/)
+        }).toThrowError(/^assembler/)
     })
 })

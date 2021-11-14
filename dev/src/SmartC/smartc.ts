@@ -1,10 +1,10 @@
-import { preprocess } from './preprocessor/preprocessor'
-import { tokenize } from './tokenizer/tokenizer'
-import { parse } from './parser/parser'
-import { shape } from './shaper/shaper'
-import { syntaxProcess } from './syntaxProcessor/syntaxProcessor'
-import { codeGenerate } from './codeGenerator/codeGenerator'
-import { byteCode } from './byteCoder/byteCoder'
+import preprocessor from './preprocessor/preprocessor'
+import tokenizer from './tokenizer/tokenizer'
+import parser from './parser/parser'
+import shaper from './shaper/shaper'
+import syntaxProcessor from './syntaxProcessor/syntaxProcessor'
+import codeGenerator from './codeGenerator/codeGenerator'
+import assembler from './assembler/assembler'
 
 import { PRE_TOKEN, TOKEN } from './typings/syntaxTypes'
 import { CONTRACT, MACHINE_OBJECT } from './typings/contractTypes'
@@ -36,8 +36,8 @@ import { CONTRACT, MACHINE_OBJECT } from './typings/contractTypes'
 export class SmartC {
     private readonly language
     private readonly sourceCode
-    private codeGenerated?: string
-    private byteCoded?: MACHINE_OBJECT
+    private assemblyCode?: string
+    private MachineCode?: MACHINE_OBJECT
     private Program: CONTRACT = {
         Global: {
             APIFunctions: [],
@@ -68,9 +68,9 @@ export class SmartC {
         }
     }
 
-    constructor (options: { language: 'C' | 'Assembly', sourceCode: string }) {
-        this.language = options.language
-        this.sourceCode = options.sourceCode
+    constructor (Options: { language: 'C' | 'Assembly', sourceCode: string }) {
+        this.language = Options.language
+        this.sourceCode = Options.sourceCode
     }
 
     /**
@@ -80,25 +80,25 @@ export class SmartC {
         let preprocessed : string
         let tokenized: PRE_TOKEN[]
         let parsed: TOKEN[]
-        if (this.byteCoded) {
+        if (this.MachineCode) {
             return this
         }
         switch (this.language) {
         case 'C':
-            preprocessed = preprocess(this.sourceCode)
-            tokenized = tokenize(preprocessed)
-            parsed = parse(tokenized)
-            shape(this.Program, parsed)
-            syntaxProcess(this.Program)
-            this.codeGenerated = codeGenerate(this.Program)
+            preprocessed = preprocessor(this.sourceCode)
+            tokenized = tokenizer(preprocessed)
+            parsed = parser(tokenized)
+            shaper(this.Program, parsed)
+            syntaxProcessor(this.Program)
+            this.assemblyCode = codeGenerator(this.Program)
             break
         case 'Assembly':
-            this.codeGenerated = this.sourceCode
+            this.assemblyCode = this.sourceCode
             break
         default:
             throw new Error('Invalid usage. Language must be "C" or "Assembly".')
         }
-        this.byteCoded = byteCode(this.codeGenerated)
+        this.MachineCode = assembler(this.assemblyCode)
         return this
     }
 
@@ -107,10 +107,10 @@ export class SmartC {
      * @throws {Error} if compilation was not done
      */
     getAssemblyCode () : string {
-        if (!this.byteCoded) {
+        if (!this.MachineCode) {
             throw new Error('Source code was not compiled.')
         }
-        return this.codeGenerated ?? ''
+        return this.assemblyCode ?? ''
     }
 
     /**
@@ -118,10 +118,10 @@ export class SmartC {
      * @throws {Error} if compilation was not done
      */
     getMachineCode () : MACHINE_OBJECT {
-        if (!this.byteCoded) {
+        if (!this.MachineCode) {
             throw new Error('Source code was not compiled.')
         }
-        return this.byteCoded
+        return this.MachineCode
     }
 
     /**

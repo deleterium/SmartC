@@ -1,11 +1,7 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 import { CONTRACT } from '../typings/contractTypes'
 import { SENTENCES } from '../typings/syntaxTypes'
 import { assertNotUndefined } from '../repository/repository'
-import { createTree } from './createTree'
+import createTree from './createTree'
 
 /**
  * Traverse Program transforming some sentences properties from arrays of
@@ -14,9 +10,9 @@ import { createTree } from './createTree'
  * This is parser third and final pass.
  * @param Program to be processed
  * @returns {void} but Program will be updated.
- * @throws {TypeError|SyntaxError} on any mistake.
+ * @throws {Error} on any mistake.
  */
-export function syntaxProcess (Program: CONTRACT) : void {
+export default function syntaxProcessor (Program: CONTRACT) : void {
     /* * * Main function! * * */
     function syntaxProcessMain () : void {
         Program.Global.sentences.forEach(processSentence)
@@ -43,7 +39,7 @@ export function syntaxProcess (Program: CONTRACT) : void {
         case 'while':
         case 'do':
             if (assertNotUndefined(SentenceObj.condition).length === 0) {
-                throw new SyntaxError(`At line ${SentenceObj.line}. Sentence condition can not be empty`)
+                throw new Error(`At line ${SentenceObj.line}. Sentence condition can not be empty`)
             }
             SentenceObj.ConditionAST = createTree(SentenceObj.condition)
             delete SentenceObj.condition

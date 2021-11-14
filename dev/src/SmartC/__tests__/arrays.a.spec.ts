@@ -312,6 +312,13 @@ describe('Array assignment (right side)', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    it('should compile: Pointer operation inside array index', () => {
+        const code = 'long a, b, *c, d[2]; if ( d[  *(c+1)  ]  ) a++;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #0000000000000007\n^declare d_0\n^declare d_1\n\nSET @r0 $c\nINC @r0\nSET @r1 $($r0)\nSET @r0 $($d + $r1)\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
     it('should compile: mix delimiter', () => {
         const code = 'long a[3],b,c[3],d,e[3],f; a[2]=b,c[2]*=d,e[2]+=f;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare b\n^declare c\n^const SET @c #0000000000000009\n^declare c_0\n^declare c_1\n^declare c_2\n^declare d\n^declare e\n^const SET @e #000000000000000e\n^declare e_0\n^declare e_1\n^declare e_2\n^declare f\n\nSET @a_2 $b\nMUL @c_2 $d\nADD @e_2 $f\nFIN\n'

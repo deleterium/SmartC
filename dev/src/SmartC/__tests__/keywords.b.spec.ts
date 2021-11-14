@@ -85,9 +85,23 @@ describe('Keywords wrong usage', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: break and missing comma', () => {
+        expect(() => {
+            const code = 'long a; while (a>0) { if (a==5) break a++; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
     test('should throw: continue must have no arguments', () => {
         expect(() => {
             const code = 'long a, b; continue a; a++;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: continue and missing comma', () => {
+        expect(() => {
+            const code = 'long a; while (a>0) { if (a==5) continue a++; }'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
@@ -123,6 +137,13 @@ describe('Keywords wrong usage', () => {
     test('should throw: return in global code', () => {
         expect(() => {
             const code = 'long a; return;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: return val in global code', () => {
+        expect(() => {
+            const code = 'long a; return 5;'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
@@ -197,6 +218,13 @@ describe('Keywords wrong usage', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: const and variable in right side', () => {
+        expect(() => {
+            const code = 'long a, d; const d=a;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
     test('should throw: setting "const" same var two times', () => {
         expect(() => {
             const code = 'long a, b, *c, d[2]; const long e=3; a++; const e=4;'
@@ -221,6 +249,13 @@ describe('Keywords wrong usage', () => {
     test('should throw: declaring variable as void', () => {
         expect(() => {
             const code = 'void a;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: keyword in logical expressions', () => {
+        expect(() => {
+            const code = 'long a; if (exit) a++;'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)

@@ -88,12 +88,47 @@ describe('Multi dimensional Arrays assignment (right side)', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: registers on index', () => {
+        const code = 'long a[5][5]; long b, c; c+=a[b+3][b+4];'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare a_8\n^declare a_9\n^declare a_10\n^declare a_11\n^declare a_12\n^declare a_13\n^declare a_14\n^declare a_15\n^declare a_16\n^declare a_17\n^declare a_18\n^declare a_19\n^declare a_20\n^declare a_21\n^declare a_22\n^declare a_23\n^declare a_24\n^declare b\n^declare c\n\nSET @r0 #0000000000000003\nADD @r0 $b\nSET @r1 #0000000000000005\nMUL @r0 $r1\nSET @r1 #0000000000000004\nADD @r1 $b\nADD @r0 $r1\nSET @r1 $($a + $r0)\nADD @c $r1\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: constant + registers on index', () => {
+        const code = 'long a[5][5]; long b, c; c+=a[3][b+4];'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare a_8\n^declare a_9\n^declare a_10\n^declare a_11\n^declare a_12\n^declare a_13\n^declare a_14\n^declare a_15\n^declare a_16\n^declare a_17\n^declare a_18\n^declare a_19\n^declare a_20\n^declare a_21\n^declare a_22\n^declare a_23\n^declare a_24\n^declare b\n^declare c\n\nSET @r0 #0000000000000004\nADD @r0 $b\nSET @r1 #000000000000000f\nADD @r0 $r1\nSET @r1 $($a + $r0)\nADD @c $r1\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })
 
 describe('Array wrong usage:', () => {
     test('should throw: declaring array with variable size', () => {
         expect(() => {
             const code = 'long a;long b[a];'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: reassign an array', () => {
+        expect(() => {
+            const code = 'long a, b[2], *c; b=c;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: reassign an array inside struct', () => {
+        expect(() => {
+            const code = 'struct KOMBI { long driver; long collector; long passenger[2]; } car[2]; long a, *c; car[a].passenger = c;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: overflow on multi long assignment', () => {
+        expect(() => {
+            const code = 'long a[2]; a[]="aaaaaaaazzzzzzzzsdsd";'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
@@ -114,5 +149,12 @@ describe('array.length property', () => {
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    test('should throw: get length of pointer', () => {
+        expect(() => {
+            const code = 'long a, *c; a=c.length;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
     })
 })

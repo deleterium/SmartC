@@ -1,7 +1,3 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 /* LICENSE notes for function binb_sha256:
  *
  * A JavaScript implementation of the RSA Data Security, Inc. MD5 Message
@@ -17,7 +13,7 @@
  * @param hexCode Machine code to be calculated, as hex string.
  * @returns A string representing a hash ID of given contract
  */
-export function hashMachineCode (hexCode: string): string {
+export default function hashMachineCode (hexCode: string): string {
     // Pad input to match codepage length
     const hexLen = Number(((BigInt(hexCode.length) / 512n) + 1n) * 512n)
     hexCode = hexCode.padEnd(hexLen, '0')

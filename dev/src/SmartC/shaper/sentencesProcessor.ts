@@ -1,230 +1,224 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 import { assertNotEqual } from '../repository/repository'
 import { TOKEN, SENTENCES, SENTENCE_PHRASE, SENTENCE_STRUCT } from '../typings/syntaxTypes'
-import { SHAPER_AUXVARS } from './shaper'
+import { SHAPER_AUXVARS } from './shaperTypes'
 
 /** Expect one or more sentences in codetrain and converts it
  * to items in sentences array */
-export function codeToSentenceArray (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = [], addTerminator: boolean = false) : SENTENCES[] {
-    if (addTerminator) {
-        codetrain.push({ type: 'Terminator', value: ';', precedence: 11, line: -1 })
-    }
-    let sentences: SENTENCES[] = []
-    for (; AuxVars.currentToken < codetrain.length; AuxVars.currentToken++) {
-        sentences = sentences.concat(codeToOneSentence(AuxVars, codetrain))
-    }
-    return sentences
-}
+export default function sentencesProcessor (
+    AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = [], addTerminator: boolean = false
+) : SENTENCES[] {
+    /** Current scope counter for sentence processing */
+    let currentToken = 0
 
-/** Expects only one sentence in codetrain and converts it
- * to one item sentences array */
-function codeToOneSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[]): SENTENCES[] {
-    const phrase: TOKEN[] = []
-    const lineOfFirstInstruction = codetrain[0]?.line ?? -1
-
-    if (codetrain[AuxVars.currentToken].type === 'CodeDomain') {
-        const savedPosition = AuxVars.currentToken
-        AuxVars.currentToken = 0
-        const temp = codeToSentenceArray(AuxVars, codetrain[savedPosition].params)
-        AuxVars.currentToken = savedPosition
-        return temp
+    function sentencesProcessorMain () : SENTENCES[] {
+        if (addTerminator) {
+            codetrain.push({ type: 'Terminator', value: ';', precedence: 11, line: -1 })
+        }
+        let sentences: SENTENCES[] = []
+        for (; currentToken < codetrain.length; currentToken++) {
+            sentences = sentences.concat(processOneSentence())
+        }
+        return sentences
     }
 
-    // One sentence ending with terminator (or maybe another loop/conditional)
-    while (AuxVars.currentToken < codetrain.length) {
-        const line = codetrain[AuxVars.currentToken].line
-        if (codetrain[AuxVars.currentToken].type === 'Terminator') {
-            // end of sentence!
-            return [{ type: 'phrase', code: phrase, line: lineOfFirstInstruction }]
+    /** Expects only one sentence in codetrain and converts it
+     * to one item sentences array */
+    function processOneSentence (): SENTENCES[] {
+        const phrase: TOKEN[] = []
+        const lineOfFirstInstruction = codetrain[currentToken]?.line ?? -1
+        // Analysis for start tokens
+        if (codetrain[currentToken].type === 'CodeDomain') {
+            return sentencesProcessor(AuxVars, codetrain[currentToken].params)
         }
-        switch (codetrain[AuxVars.currentToken].value) {
-        case 'struct':
-            // Handle struct. It can be type:phrase or type:struct
-            if (codetrain[AuxVars.currentToken + 1]?.type === 'CodeDomain') {
-                // Struct definition -> type is 'struct'
-                return structCodeToSentence(AuxVars, codetrain)
-            }
-            // Consider type: 'phrase' with struct variable declaration
-            phrase.push(codetrain[AuxVars.currentToken])
-            AuxVars.currentToken++
-            continue
-        case 'long':
-        case 'const':
-        case 'void':
-        case 'goto':
-        case 'halt':
-        case 'return':
-        case 'sleep':
-        case 'exit':
-            // Handle type:phrase keywords
-            phrase.push(codetrain[AuxVars.currentToken])
-            AuxVars.currentToken++
-            continue
-        }
-        if (codetrain[AuxVars.currentToken].type === 'Keyword' && phrase.length > 0) {
-            throw new SyntaxError(`At line: ${phrase[0].line}. Statement including '${codetrain[AuxVars.currentToken].value}' in wrong way. Possible missing ';'.`)
-        }
-        switch (codetrain[AuxVars.currentToken].value) {
-        // Handle special type:phrase keywords and exceptions
+        switch (codetrain[currentToken].value) {
+        // These keywords must start one sentence.
         case 'if':
-            return ifCodeToSentence(AuxVars, codetrain)
+            return ifCodeToSentence()
         case 'while':
-            return whileCodeToSentence(AuxVars, codetrain)
+            return whileCodeToSentence()
         case 'for':
-            return forCodeToSentence(AuxVars, codetrain)
+            return forCodeToSentence()
         case 'else':
-            throw new SyntaxError(`At line: ${line}. 'else' not associated with an 'if(){}else{}' sentence`)
+            throw new Error(`At line: ${lineOfFirstInstruction}. 'else' not associated with an 'if(){}else{}' sentence`)
         case 'asm':
-            return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]], line: line }]
         case 'label':
-            return [{ type: 'phrase', code: [codetrain[AuxVars.currentToken]], line: line }]
+            return [{ type: 'phrase', code: [codetrain[currentToken]], line: lineOfFirstInstruction }]
         case 'do':
-            return doCodeToSentence(AuxVars, codetrain)
+            return doCodeToSentence()
         case 'break':
         case 'continue':
             if (AuxVars.latestLoopId.length === 0) {
-                throw new SyntaxError(`At line: ${line}. '${codetrain[AuxVars.currentToken].value}' outside a loop.`)
+                throw new Error(`At line: ${lineOfFirstInstruction}. '${codetrain[currentToken].value}' outside a loop.`)
             }
-            // Just update information and continue on loop
-            codetrain[AuxVars.currentToken].extValue = AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1]
-            break
+            if (codetrain[currentToken + 1]?.type === 'Terminator') {
+                currentToken++
+                codetrain[currentToken - 1].extValue = AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1]
+                return [{ type: 'phrase', code: [codetrain[currentToken - 1]], line: lineOfFirstInstruction }]
+            }
+            throw new Error(`At line: ${lineOfFirstInstruction}. Missing ';' after '${codetrain[currentToken].value}' keyword.`)
+        case 'struct':
+            // Handle struct. It can be type:phrase or type:struct. handle here only type:struct
+            if (codetrain[currentToken + 1]?.type === 'CodeDomain') {
+                return structCodeToSentence()
+            }
         }
-        phrase.push(codetrain[AuxVars.currentToken])
-        AuxVars.currentToken++
+        // Analysis for type:phrase
+        while (currentToken < codetrain.length) {
+            if (codetrain[currentToken].type === 'Terminator') {
+                // end of sentence!
+                return [{ type: 'phrase', code: phrase, line: lineOfFirstInstruction }]
+            }
+            switch (codetrain[currentToken].value) {
+            case 'if':
+            case 'while':
+            case 'for':
+            case 'else':
+            case 'asm':
+            case 'label':
+            case 'do':
+            case 'break':
+            case 'continue':
+                // These keywords must start a sentence treated before. Throw if found now.
+                throw new Error(`At line: ${codetrain[currentToken].line}.` +
+                ` Statement including '${codetrain[currentToken].value}' in wrong way. Possible missing ';' before it.`)
+            }
+            phrase.push(codetrain[currentToken])
+            currentToken++
+        }
+        throw new Error(`At line: ${codetrain[currentToken - 1].line}. Missing ';'. `)
     }
-    if (phrase.length !== 0) {
-        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken - 1].line}. Missing ';'. `)
-    }
-    // Never
-    throw new SyntaxError(`Internal error processing line ${codetrain[AuxVars.currentToken - 1].line}.`)
-}
 
-function ifCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : SENTENCES[] {
-    const line = codetrain[AuxVars.currentToken].line
-    const id = `__if${line}`
-    AuxVars.currentToken++
-    if (codetrain[AuxVars.currentToken] === undefined || codetrain[AuxVars.currentToken].type !== 'CodeCave') {
-        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken - 1].line}. Expecting condition for 'if' statement.`)
-    }
-    const condition = codetrain[AuxVars.currentToken].params
-    AuxVars.currentToken++
-    const trueBlock = codeToOneSentence(AuxVars, codetrain)
-    if (codetrain[AuxVars.currentToken + 1]?.type === 'Keyword' && codetrain[AuxVars.currentToken + 1]?.value === 'else') {
-        AuxVars.currentToken += 2
+    function ifCodeToSentence () : SENTENCES[] {
+        const line = codetrain[currentToken].line
+        const id = `__if${line}`
+        currentToken++
+        if (codetrain[currentToken] === undefined || codetrain[currentToken].type !== 'CodeCave') {
+            throw new Error(`At line: ${codetrain[currentToken - 1].line}.` +
+            " Expecting condition for 'if' statement.")
+        }
+        const condition = codetrain[currentToken].params
+        currentToken++
+        const trueBlock = processOneSentence()
+        if (codetrain[currentToken + 1]?.type === 'Keyword' &&
+            codetrain[currentToken + 1]?.value === 'else') {
+            currentToken += 2
+            return [{
+                type: 'ifElse',
+                id: id,
+                line: line,
+                condition: condition,
+                trueBlock: trueBlock,
+                falseBlock: processOneSentence()
+            }]
+        }
         return [{
-            type: 'ifElse',
+            type: 'ifEndif',
             id: id,
             line: line,
             condition: condition,
-            trueBlock: trueBlock,
-            falseBlock: codeToOneSentence(AuxVars, codetrain)
+            trueBlock: trueBlock
         }]
     }
-    return [{
-        type: 'ifEndif',
-        id: id,
-        line: line,
-        condition: condition,
-        trueBlock: trueBlock
-    }]
-}
 
-function whileCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : SENTENCES[] {
-    const line = codetrain[AuxVars.currentToken].line
-    const id = `__loop${line}`
-    AuxVars.currentToken++
-    if (codetrain[AuxVars.currentToken] === undefined || codetrain[AuxVars.currentToken].type !== 'CodeCave') {
-        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken - 1].line}. Expecting condition for 'while' statement.`)
-    }
-    const condition = codetrain[AuxVars.currentToken].params
-    AuxVars.currentToken++
-    AuxVars.latestLoopId.push(id)
-    const trueBlock = codeToOneSentence(AuxVars, codetrain)
-    AuxVars.latestLoopId.pop()
-    return [{
-        type: 'while',
-        id: id,
-        line: line,
-        condition: condition,
-        trueBlock: trueBlock
-    }]
-}
-
-function forCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : SENTENCES[] {
-    const line = codetrain[AuxVars.currentToken].line
-    const id = `__loop${line}`
-    AuxVars.currentToken++
-    if (codetrain[AuxVars.currentToken] === undefined || codetrain[AuxVars.currentToken]?.type !== 'CodeCave') {
-        throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken - 1].line}. Expecting condition for 'for' statement.`)
-    }
-    const savePosition = AuxVars.currentToken
-    AuxVars.currentToken = 0
-    const threeSentences = codeToSentenceArray(AuxVars, codetrain[savePosition].params, true)
-    AuxVars.currentToken = savePosition
-    if (threeSentences.length !== 3) {
-        throw new SyntaxError(`At line: ${line}. Expected 3 sentences for 'for(;;){}' loop. Got ${threeSentences.length}`)
-    }
-    if (!threeSentences.every(Obj => Obj.type === 'phrase')) {
-        throw new SyntaxError(`At line: ${line}. Sentences inside 'for(;;)' can not be other loops or conditionals`)
-    }
-    AuxVars.currentToken++
-    AuxVars.latestLoopId.push(id)
-    const trueBlock = codeToOneSentence(AuxVars, codetrain)
-    AuxVars.latestLoopId.pop()
-    return [{
-        type: 'for',
-        id: id,
-        line: line,
-        threeSentences: threeSentences as SENTENCE_PHRASE[],
-        trueBlock: trueBlock
-    }]
-}
-
-function doCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : SENTENCES[] {
-    const line = codetrain[AuxVars.currentToken].line
-    const id = `__loop${line}`
-    AuxVars.currentToken++
-    AuxVars.latestLoopId.push(id)
-    const trueBlock = codeToOneSentence(AuxVars, codetrain)
-    AuxVars.latestLoopId.pop()
-    AuxVars.currentToken++
-    if (codetrain[AuxVars.currentToken]?.value === 'while' &&
-            codetrain[AuxVars.currentToken + 1]?.type === 'CodeCave' &&
-            codetrain[AuxVars.currentToken + 2]?.type === 'Terminator') {
-        AuxVars.currentToken += 2
+    function whileCodeToSentence () : SENTENCES[] {
+        const line = codetrain[currentToken].line
+        const id = `__loop${line}`
+        currentToken++
+        if (codetrain[currentToken] === undefined || codetrain[currentToken].type !== 'CodeCave') {
+            throw new Error(`At line: ${codetrain[currentToken - 1].line}.` +
+            " Expecting condition for 'while' statement.")
+        }
+        const condition = codetrain[currentToken].params
+        currentToken++
+        AuxVars.latestLoopId.push(id)
+        const trueBlock = processOneSentence()
+        AuxVars.latestLoopId.pop()
         return [{
-            type: 'do',
+            type: 'while',
             id: id,
             line: line,
-            trueBlock: trueBlock,
-            condition: codetrain[AuxVars.currentToken - 1].params
+            condition: condition,
+            trueBlock: trueBlock
         }]
     }
-    throw new SyntaxError(`At line: ${codetrain[AuxVars.currentToken].line}. Wrong do{}while(); sentence.`)
-}
 
-function structCodeToSentence (AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = []) : SENTENCES[] {
-    const line = codetrain[AuxVars.currentToken].line
-    const structName = assertNotEqual(codetrain[AuxVars.currentToken].extValue, '', 'Internal error. Missing struct type name.')
-    AuxVars.currentToken++
-    const Node: SENTENCE_STRUCT = {
-        type: 'struct',
-        line: line,
-        name: structName,
-        members: codeToOneSentence(AuxVars, codetrain),
-        Phrase: { type: 'phrase', line: codetrain[AuxVars.currentToken - 1].line }
-    }
-    Node.Phrase.code = [codetrain[AuxVars.currentToken - 1]]
-    AuxVars.currentToken++
-    while (AuxVars.currentToken < codetrain.length) {
-        if (codetrain[AuxVars.currentToken].type === 'Terminator') {
-            return [Node]
+    function forCodeToSentence () : SENTENCES[] {
+        const line = codetrain[currentToken].line
+        const id = `__loop${line}`
+        currentToken++
+        if (codetrain[currentToken] === undefined || codetrain[currentToken]?.type !== 'CodeCave') {
+            throw new Error(`At line: ${codetrain[currentToken - 1].line}.` +
+            " Expecting condition for 'for' statement.")
         }
-        Node.Phrase.code.push(codetrain[AuxVars.currentToken])
-        AuxVars.currentToken++
+        const threeSentences = sentencesProcessor(AuxVars, codetrain[currentToken].params, true)
+        if (threeSentences.length !== 3) {
+            throw new Error(`At line: ${line}. Expected 3 sentences for 'for(;;){}' loop. Got ${threeSentences.length}`)
+        }
+        if (!threeSentences.every(Obj => Obj.type === 'phrase')) {
+            throw new Error(`At line: ${line}. Sentences inside 'for(;;)' can not be other loops or conditionals`)
+        }
+        currentToken++
+        AuxVars.latestLoopId.push(id)
+        const trueBlock = processOneSentence()
+        AuxVars.latestLoopId.pop()
+        return [{
+            type: 'for',
+            id: id,
+            line: line,
+            threeSentences: threeSentences as SENTENCE_PHRASE[],
+            trueBlock: trueBlock
+        }]
     }
-    throw new SyntaxError(`At line: end of file. Missing ';' to end 'struct' statement started at line ${line}.`)
+
+    function doCodeToSentence () : SENTENCES[] {
+        const line = codetrain[currentToken].line
+        const id = `__loop${line}`
+        currentToken++
+        AuxVars.latestLoopId.push(id)
+        const trueBlock = processOneSentence()
+        AuxVars.latestLoopId.pop()
+        currentToken++
+        if (codetrain[currentToken]?.value === 'while' &&
+            codetrain[currentToken + 1]?.type === 'CodeCave' &&
+            codetrain[currentToken + 2]?.type === 'Terminator') {
+            currentToken += 2
+            return [{
+                type: 'do',
+                id: id,
+                line: line,
+                trueBlock: trueBlock,
+                condition: codetrain[currentToken - 1].params
+            }]
+        }
+        throw new Error(`At line: ${codetrain[currentToken].line}. Wrong do{}while(); sentence.`)
+    }
+
+    function structCodeToSentence () : SENTENCES[] {
+        const line = codetrain[currentToken].line
+        const structName = assertNotEqual(
+            codetrain[currentToken].extValue,
+            '',
+            'Internal error. Missing struct type name.'
+        )
+        currentToken++
+        const Node: SENTENCE_STRUCT = {
+            type: 'struct',
+            line: line,
+            name: structName,
+            members: processOneSentence(),
+            Phrase: { type: 'phrase', line: codetrain[currentToken - 1].line }
+        }
+        Node.Phrase.code = [codetrain[currentToken - 1]]
+        currentToken++
+        while (currentToken < codetrain.length) {
+            if (codetrain[currentToken].type === 'Terminator') {
+                return [Node]
+            }
+            Node.Phrase.code.push(codetrain[currentToken])
+            currentToken++
+        }
+        throw new Error(`At line: end of file. Missing ';' to end 'struct' statement started at line ${line}.`)
+    }
+
+    return sentencesProcessorMain()
 }

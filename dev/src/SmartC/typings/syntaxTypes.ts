@@ -1,4 +1,4 @@
-export interface PRE_TOKEN {
+export type PRE_TOKEN = {
     line: number
     type: string
     value: string
@@ -14,7 +14,7 @@ export type TOKEN_TYPES = 'Variable' | 'Constant' | 'Operator' | 'UnaryOperator'
 
 export type DECLARATION_TYPES = 'void' | 'long' | 'struct' | 'void_ptr' | 'long_ptr' | 'struct_ptr' | ''
 
-export interface TOKEN {
+export type TOKEN = {
     line: number
     precedence: number
     type: TOKEN_TYPES
@@ -32,10 +32,21 @@ export type MEMORY_BASE_TYPES = 'register' | 'long' | 'constant' | 'struct' | 's
 /** If constant, it is the number to shift. If variable, it is the address containing the value to shift.
  * Stores information about variable it is pointing to.
  */
-export type OFFSET_MODIFIER = { type: 'constant', value: number, declaration: DECLARATION_TYPES, typeDefinition?: string } |
-    { type: 'variable', addr: number, declaration: DECLARATION_TYPES, typeDefinition?: string }
+export type OFFSET_MODIFIER_CONSTANT = {
+    type: 'constant',
+    value: number,
+    declaration: DECLARATION_TYPES,
+    typeDefinition?: string
+}
+export type OFFSET_MODIFIER_VARIABLE = {
+    type: 'variable',
+    addr: number,
+    declaration: DECLARATION_TYPES,
+    typeDefinition?: string
+}
+export type OFFSET_MODIFIER = OFFSET_MODIFIER_CONSTANT | OFFSET_MODIFIER_VARIABLE
 
-export interface MEMORY_SLOT {
+export type MEMORY_SLOT = {
     /** Variable base types: 'register' | 'long' | 'constant' | 'struct' | 'structRef' | 'array' | 'label' | 'void' */
     type: MEMORY_BASE_TYPES
     /** Variable name in assembly code */
@@ -57,7 +68,7 @@ export interface MEMORY_SLOT {
     /** For constants: content */
     hexContent?: string
     /** Info about items of array. */
-    arrItem?: {
+    ArrayItem?: {
         /** item base type */
         type: MEMORY_BASE_TYPES,
         /** item base declaration */
@@ -74,7 +85,7 @@ export interface MEMORY_SLOT {
 // eslint-disable-next-line no-use-before-define
 export type AST = UNARY_ASN | BINARY_ASN | NULL_ASN | END_ASN | LOOKUP_ASN | EXCEPTION_ASN
 
-export interface UNARY_ASN {
+export type UNARY_ASN = {
     /** Unary Abstract Syntax Node */
     type: 'unaryASN'
     /** Unary operator token */
@@ -82,7 +93,7 @@ export interface UNARY_ASN {
     /** Continuation of AST */
     Center: AST
 }
-export interface BINARY_ASN {
+export type BINARY_ASN = {
     /** Binary Abstract Syntax Node */
     type: 'binaryASN'
     /** Binary operator token */
@@ -93,20 +104,22 @@ export interface BINARY_ASN {
     Right: AST
 }
 
-export interface NULL_ASN {
+export type NULL_ASN = {
     /** End Abstract Syntax Node */
     type: 'nullASN'
 }
 
-export interface END_ASN {
+export type END_ASN = {
     /** End Abstract Syntax Node */
     type: 'endASN'
     /** End token. May be undefined, but most of times this situation leads to error. */
     Token: TOKEN
 }
-export type TOKEN_MODIFIER = {type: 'Array', Center: AST} | {type: 'MemberByVal', Center: TOKEN} | {type: 'MemberByRef', Center: TOKEN}
+export type TOKEN_MODIFIER_ARRAY = {type: 'Array', Center: AST}
+export type TOKEN_MODIFIER_MEMBER = {type: 'MemberByVal'|'MemberByRef', Center: TOKEN}
+export type TOKEN_MODIFIER = TOKEN_MODIFIER_ARRAY | TOKEN_MODIFIER_MEMBER
 
-export interface LOOKUP_ASN {
+export type LOOKUP_ASN = {
     /** Abstract Syntax Node for variables with modifiers to be evaluated in chain  */
     type: 'lookupASN'
     /** End token with type == 'Variable' or 'Function' */
@@ -116,7 +129,7 @@ export interface LOOKUP_ASN {
     /** Value modifiers like Arr or Members */
     modifiers: TOKEN_MODIFIER[]
 }
-export interface EXCEPTION_ASN {
+export type EXCEPTION_ASN = {
     /** exception Abstract Syntax Node. Used for SetUnaryOperator */
     type: 'exceptionASN'
     /** Binary operator token. Currently only SetUnaryOperator */
@@ -129,7 +142,7 @@ export interface EXCEPTION_ASN {
 
 // eslint-disable-next-line no-use-before-define
 export type SENTENCES = SENTENCE_PHRASE | SENTENCE_IF_ENDIF | SENTENCE_IF_ELSE | SENTENCE_WHILE | SENTENCE_DO | SENTENCE_FOR | SENTENCE_STRUCT
-export interface SENTENCE_PHRASE {
+export type SENTENCE_PHRASE = {
     type: 'phrase'
     /** phrase starting line number */
     line: number
@@ -138,7 +151,7 @@ export interface SENTENCE_PHRASE {
     /** Tokens organized in an AST */
     CodeAST?: AST
 }
-export interface SENTENCE_IF_ENDIF {
+export type SENTENCE_IF_ENDIF = {
     type: 'ifEndif'
     id: string
     line: number
@@ -147,7 +160,7 @@ export interface SENTENCE_IF_ENDIF {
     ConditionAST?: AST
     trueBlock: SENTENCES[]
 }
-export interface SENTENCE_IF_ELSE {
+export type SENTENCE_IF_ELSE = {
     type: 'ifElse'
     id: string
     line: number
@@ -156,7 +169,7 @@ export interface SENTENCE_IF_ELSE {
     trueBlock: SENTENCES[]
     falseBlock: SENTENCES[]
 }
-export interface SENTENCE_WHILE {
+export type SENTENCE_WHILE = {
     type: 'while'
     id: string
     line: number
@@ -164,7 +177,7 @@ export interface SENTENCE_WHILE {
     ConditionAST?: AST
     trueBlock: SENTENCES[]
 }
-export interface SENTENCE_DO {
+export type SENTENCE_DO = {
     type: 'do'
     id: string
     line: number
@@ -172,14 +185,14 @@ export interface SENTENCE_DO {
     ConditionAST?: AST
     trueBlock: SENTENCES[]
 }
-export interface SENTENCE_FOR {
+export type SENTENCE_FOR = {
     type: 'for'
     id: string
     line: number
     threeSentences: SENTENCE_PHRASE[]
     trueBlock: SENTENCES[]
 }
-export interface SENTENCE_STRUCT {
+export type SENTENCE_STRUCT = {
     type: 'struct',
     line: number,
     name: string,
@@ -187,26 +200,26 @@ export interface SENTENCE_STRUCT {
     Phrase: SENTENCE_PHRASE
 }
 
-export interface STRUCT_TYPE_DEFINITION {
+export type STRUCT_TYPE_DEFINITION = {
     type: 'struct',
     name: string,
     structMembers: MEMORY_SLOT[],
     structAccumulatedSize: [string, number][],
     MemoryTemplate: MEMORY_SLOT
 }
-export interface ARRAY_TYPE_DEFINITION {
+export type ARRAY_TYPE_DEFINITION = {
     type: 'array'
     name: string
     arrayDimensions: number[]
     arrayMultiplierDim: number[]
     MemoryTemplate: MEMORY_SLOT
 }
-export interface REGISTER_TYPE_DEFINITION {
+export type REGISTER_TYPE_DEFINITION = {
     type: 'register'
     name: '',
     MemoryTemplate: MEMORY_SLOT
 }
-export interface LONG_TYPE_DEFINITION {
+export type LONG_TYPE_DEFINITION = {
     type: 'long'
     name: '',
     MemoryTemplate: MEMORY_SLOT

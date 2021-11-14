@@ -1,4 +1,4 @@
-import { stringToHexstring, ReedSalomonAddressDecode } from '../repository'
+import { stringToHexstring, ReedSalomonAddressDecode, assertNotUndefined, assertNotEqual, assertExpression, deepCopy } from '../repository'
 
 describe('Strings to hexstring', () => {
     it('should convert: simple string ( <= 0x7f)', () => {
@@ -40,6 +40,18 @@ describe('Strings to hexstring', () => {
     it('should convert string sucessfully (over 0x10000)', () => {
         const str = '🨁'
         const hexstring = '00 00 00 00 81 a8 9f f0'
+        const result = stringToHexstring(str)
+        expect(result).toBe(hexstring.replace(/ /g, ''))
+    })
+    it('should convert wrong string data removing skipping invalid data', () => {
+        const str = '🨁🨁🨁'.substr(0, 5)
+        const hexstring = '81 a8 9f f0 81 a8 9f f0'
+        const result = stringToHexstring(str)
+        expect(result).toBe(hexstring.replace(/ /g, ''))
+    })
+    it('should convert wrong string data removing skipping invalid data', () => {
+        const str = '🨁🨁🨁'.substr(0, 5) + 'SS'
+        const hexstring = '00 00 00 00 00 00 53 53 81 a8 9f f0 81 a8 9f f0'
         const result = stringToHexstring(str)
         expect(result).toBe(hexstring.replace(/ /g, ''))
     })
@@ -87,5 +99,85 @@ describe('Reed-Salomon decode', () => {
             const code = 'LQSJ-DXPH-HHZG-CZXQH'
             ReedSalomonAddressDecode(code, 0)
         }).toThrowError(/^At line/)
+    })
+})
+
+describe('assert/deepcopy functions', () => {
+    it('should pass: assertNotUndefined', () => {
+        const num = 2
+        const result = assertNotUndefined(num + 2, 'New Error')
+        expect(result).toBe(4)
+    })
+    test('should throw: assertNotUndefined', () => {
+        expect(() => {
+            assertNotUndefined(undefined, 'New Error')
+        }).toThrowError('New Error')
+    })
+    test('should throw: assertNotUndefined', () => {
+        expect(() => {
+            assertNotUndefined(undefined)
+        }).toThrowError('Internal error')
+    })
+    it('should pass: assertNotEqual', () => {
+        const num = 2
+        const result = assertNotEqual(num + 2, 0, 'Error')
+        expect(result).toBe(4)
+    })
+    test('should throw: assertNotEqual', () => {
+        expect(() => {
+            assertNotEqual(undefined, 5, 'New Error')
+        }).toThrowError('New Error')
+    })
+    test('should throw: assertNotEqual', () => {
+        expect(() => {
+            assertNotEqual(2, 2, 'Internal error')
+        }).toThrowError('Internal error')
+    })
+    it('should pass: assertExpression', () => {
+        let num = 2
+        num++
+        const result = assertExpression(num === 3, 'Error')
+        expect(result).toBe(true)
+    })
+    test('should throw: assertExpression', () => {
+        let num = 2
+        num++
+        expect(() => {
+            assertExpression(num === 0, 'New Error')
+        }).toThrowError('New Error')
+    })
+    test('should throw: assertExpression', () => {
+        let num = 2
+        num++
+        expect(() => {
+            assertExpression(num === 0)
+        }).toThrowError('Internal error')
+    })
+    test('should throw: assertExpression', () => {
+        let num = 2
+        num++
+        expect(() => {
+            assertExpression(num === 0)
+        }).toThrowError('Internal error')
+    })
+    it('should pass: deepCopy object', () => {
+        const data = { a: 5, b: 'notjo' }
+        const copy = deepCopy(data)
+        expect(data).toEqual(copy)
+        expect(data).not.toBe(copy)
+    })
+    it('should pass: deepCopy array', () => {
+        const data = [5, 23, 'notjo']
+        const copy = deepCopy(data)
+        expect(copy).toBeInstanceOf(Array)
+        expect(data).toEqual(copy)
+        expect(data).not.toBe(copy)
+    })
+    it('should pass: deepCopy date', () => {
+        const data = new Date(2018, 11, 24, 10, 33, 30, 0)
+        const copy = deepCopy(data)
+        expect(copy).toBeInstanceOf(Date)
+        expect(data).toEqual(copy)
+        expect(data).not.toBe(copy)
     })
 })

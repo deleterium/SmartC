@@ -1,26 +1,30 @@
+import { assertNotUndefined } from '../repository/repository'
+import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES, LOOKUP_ASN, BINARY_ASN, END_ASN, EXCEPTION_ASN, NULL_ASN, UNARY_ASN } from '../typings/syntaxTypes'
 
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
+type OBJECT_ASN_TYPE<T> = T extends 'binaryASN' ? BINARY_ASN :
+T extends 'unaryASN' ? UNARY_ASN :
+T extends 'nullASN' ? NULL_ASN :
+T extends 'endASN' ? END_ASN :
+T extends 'lookupASN' ? LOOKUP_ASN :
+T extends 'exceptionASN' ? EXCEPTION_ASN :
+never;
 
-import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES } from '../typings/syntaxTypes'
+type HEXCONTENTS = number | string | undefined
 
 /**
  * Simple functions that do not depend external variables.
  */
-export const utils = {
+export default {
     /** Creates a constant Memory Object */
-    createConstantMemObj (value: number|string = ''): MEMORY_SLOT {
+    createConstantMemObj (value: number | string = ''): MEMORY_SLOT {
         let param: string
         if (typeof (value) === 'number') {
             if (value % 1 !== 0) {
-                throw new TypeError('Only integer numbers in createConstantMemObj().')
+                throw new Error('Only integer numbers in createConstantMemObj().')
             }
             param = value.toString(16).padStart(16, '0').slice(-16)
-        } else if (typeof (value) === 'string') {
-            param = value.padStart(16, '0').slice(-16)
         } else {
-            throw new TypeError('Unknow value arrived at createConstantMemObj().')
+            param = value.padStart(16, '0').slice(-16)
         }
         return {
             address: -1,
@@ -56,8 +60,8 @@ export const utils = {
     genSubToken (line: number = -1): TOKEN {
         return { type: 'Operator', precedence: 4, value: '-', line: line }
     },
-    genAssignmentToken (): TOKEN {
-        return { type: 'Assignment', precedence: 9, value: '=', line: -1 }
+    genAssignmentToken (line: number): TOKEN {
+        return { type: 'Assignment', precedence: 9, value: '=', line: line }
     },
     genIncToken (): TOKEN {
         return { type: 'SetUnaryOperator', precedence: 2, value: '++', line: -1 }
@@ -69,96 +73,61 @@ export const utils = {
         return { type: 'Comparision', precedence: 6, value: '!=', line: -1 }
     },
     genAPICallToken (line: number, name?: string): TOKEN {
-        if (name === undefined) {
-            throw new TypeError('Wrong APICall name in genAPICallToken')
-        }
-        return { type: 'APICall', precedence: 0, value: name, line: line }
+        return { type: 'APICall', precedence: 0, value: assertNotUndefined(name), line: line }
     },
     genPushToken (line: number): TOKEN {
         return { type: 'Push', precedence: 12, value: '', line: line }
     },
-    mulHexContents (param1?: number|string, param2?: number|string) {
-        let n1: bigint, n2: bigint
-        if (typeof (param1) === 'number') {
-            n1 = BigInt(param1)
-        } else if (typeof (param1) === 'string') {
-            n1 = BigInt('0x' + param1)
-        } else throw new TypeError('Wrong type in mulHexContents')
-
-        if (typeof (param2) === 'number') {
-            n2 = BigInt(param2)
-        } else if (typeof (param2) === 'string') {
-            n2 = BigInt('0x' + param2)
-        } else throw new TypeError('Wrong type in mulHexContents')
-
+    mulHexContents (param1: HEXCONTENTS, param2: HEXCONTENTS) {
+        const n1 = this.HexContentsToBigint(param1)
+        const n2 = this.HexContentsToBigint(param2)
         return (n1 * n2).toString(16).padStart(16, '0').slice(-16)
     },
-    divHexContents (param1?: number|string, param2?: number|string) {
-        let n1: bigint, n2: bigint
-        if (typeof (param1) === 'number') {
-            n1 = BigInt(param1)
-        } else if (typeof (param1) === 'string') {
-            n1 = BigInt('0x' + param1)
-        } else throw new TypeError('Wrong type in divHexContents')
-
-        if (typeof (param2) === 'number') {
-            n2 = BigInt(param2)
-        } else if (typeof (param2) === 'string') {
-            n2 = BigInt('0x' + param2)
-        } else throw new TypeError('Wrong type in divHexContents')
-
+    divHexContents (param1: HEXCONTENTS, param2: HEXCONTENTS) {
+        const n1 = this.HexContentsToBigint(param1)
+        const n2 = this.HexContentsToBigint(param2)
+        if (n2 === 0n) {
+            throw new Error('Division by zero')
+        }
         return (n1 / n2).toString(16).padStart(16, '0').slice(-16)
     },
-    addHexContents (param1?: number|string, param2?: number|string) {
-        let n1: bigint, n2: bigint
-        if (typeof (param1) === 'number') {
-            n1 = BigInt(param1)
-        } else if (typeof (param1) === 'string') {
-            n1 = BigInt('0x' + param1)
-        } else throw new TypeError('Wrong type in addHexContents')
-
-        if (typeof (param2) === 'number') {
-            n2 = BigInt(param2)
-        } else if (typeof (param2) === 'string') {
-            n2 = BigInt('0x' + param2)
-        } else throw new TypeError('Wrong type in addHexContents')
-
+    addHexContents (param1: HEXCONTENTS, param2: HEXCONTENTS) {
+        const n1 = this.HexContentsToBigint(param1)
+        const n2 = this.HexContentsToBigint(param2)
         return (n1 + n2).toString(16).padStart(16, '0').slice(-16)
     },
-    subHexContents (param1?: number|string, param2?: number|string) {
-        let n1: bigint, n2: bigint
-        if (typeof (param1) === 'number') {
-            n1 = BigInt(param1)
-        } else if (typeof (param1) === 'string') {
-            n1 = BigInt('0x' + param1)
-        } else throw new TypeError('Wrong type in addHexContents')
-
-        if (typeof (param2) === 'number') {
-            n2 = BigInt(param2)
-        } else if (typeof (param2) === 'string') {
-            n2 = BigInt('0x' + param2)
-        } else throw new TypeError('Wrong type in addHexContents')
-
+    subHexContents (param1: HEXCONTENTS, param2: HEXCONTENTS) {
+        const n1 = this.HexContentsToBigint(param1)
+        const n2 = this.HexContentsToBigint(param2)
         let sub = n1 - n2
         if (sub < 0) {
             sub += 18446744073709551616n
         }
         return sub.toString(16).padStart(16, '0').slice(-16)
     },
+    /** Converts a hex string or number to bigint */
+    HexContentsToBigint (arg: HEXCONTENTS) : bigint {
+        if (typeof arg === 'undefined') {
+            return 0n
+        }
+        if (typeof arg === 'number') {
+            return BigInt(arg)
+        }
+        return BigInt('0x' + arg)
+    },
     /** Splits an AST into array of AST based on delimiters */
     splitASTOnDelimiters (Obj: AST) {
         const ret: AST[] = []
-
-        function recursiveSplit (recursiveAST: AST) {
-            if (recursiveAST.type === 'endASN' || recursiveAST.type === 'lookupASN') {
-                ret.push(recursiveAST)
+        function recursiveSplit (RecursiveAST: AST) {
+            if (RecursiveAST.type === 'endASN' || RecursiveAST.type === 'lookupASN') {
+                ret.push(RecursiveAST)
                 return
             }
-            if (recursiveAST.type === 'binaryASN' && recursiveAST.Operation.type === 'Delimiter') {
-                recursiveSplit(recursiveAST.Left)
-                recursiveSplit(recursiveAST.Right)
+            if (RecursiveAST.type === 'binaryASN' && RecursiveAST.Operation.type === 'Delimiter') {
+                recursiveSplit(RecursiveAST.Left)
+                recursiveSplit(RecursiveAST.Right)
             } else {
-                ret.push(recursiveAST)
+                ret.push(RecursiveAST)
             }
         }
         recursiveSplit(Obj)
@@ -172,17 +141,18 @@ export const utils = {
      */
     isNotValidDeclarationOp (desiredDeclaration: DECLARATION_TYPES, MemoObj: MEMORY_SLOT) {
         const memoDeclaration = this.getDeclarationFromMemory(MemoObj)
-
         if (desiredDeclaration === 'void' || memoDeclaration === 'void') {
             return true
         }
         if (desiredDeclaration === memoDeclaration) {
             return false
         }
-        if (desiredDeclaration === 'void_ptr' && (memoDeclaration === 'long_ptr' || memoDeclaration === 'struct_ptr')) {
+        if (desiredDeclaration === 'void_ptr' &&
+            (memoDeclaration === 'long_ptr' || memoDeclaration === 'struct_ptr')) {
             return false
         }
-        if (memoDeclaration === 'void_ptr' && (desiredDeclaration === 'long_ptr' || desiredDeclaration === 'struct_ptr')) {
+        if (memoDeclaration === 'void_ptr' &&
+            (desiredDeclaration === 'long_ptr' || desiredDeclaration === 'struct_ptr')) {
             return false
         }
         if (desiredDeclaration.includes('_ptr') && MemoObj.type === 'constant') {
@@ -194,9 +164,8 @@ export const utils = {
     getDeclarationFromMemory (MemoObj: MEMORY_SLOT): DECLARATION_TYPES {
         if (MemoObj.Offset === undefined) {
             return MemoObj.declaration
-        } else {
-            return MemoObj.Offset.declaration
         }
+        return MemoObj.Offset.declaration
     },
     setMemoryDeclaration (MemoObj: MEMORY_SLOT, dec: DECLARATION_TYPES) {
         if (MemoObj.Offset === undefined) {
@@ -275,5 +244,64 @@ export const utils = {
         } while (optimizedLines !== 0)
 
         return tmpCodeLines.join('\n')
+    },
+    /** Traverse an AST searching a variable name. In this case is the
+     *  right side of an assignment. If variable 'name' is found, it
+     *   can not be reused as temporary var (register)
+     */
+    findVarNameInAst (vname: string, ObjAST: AST): boolean {
+        function recursiveFind (InspAst: AST): boolean {
+            let left: boolean, right: boolean
+            switch (InspAst.type) {
+            case 'nullASN':
+                return true
+            case 'endASN':
+                if (InspAst.Token.type === 'Variable' && InspAst.Token.value === vname) {
+                    return false
+                }
+                return true
+            case 'lookupASN':
+                return lookupAsn(InspAst)
+            case 'unaryASN':
+                return recursiveFind(InspAst.Center)
+            case 'binaryASN':
+                left = recursiveFind(InspAst.Left)
+                right = recursiveFind(InspAst.Right)
+                if (left && right) {
+                    return true
+                }
+                return false
+            case 'exceptionASN':
+                if (InspAst.Left !== undefined) {
+                    return recursiveFind(InspAst.Left)
+                }
+                return recursiveFind(assertNotUndefined(InspAst.Right))
+            }
+        }
+        function lookupAsn (InspAst: LOOKUP_ASN): boolean {
+            const CanReuse = InspAst.modifiers.find(CurrentModifier => {
+                if (CurrentModifier.type === 'Array') {
+                    if (recursiveFind(CurrentModifier.Center) === false) {
+                        return true
+                    }
+                }
+                return false
+            })
+            if (CanReuse === undefined) {
+                if (InspAst.Token.type === 'Function' && InspAst.FunctionArgs !== undefined) {
+                    return recursiveFind(InspAst.FunctionArgs)
+                }
+                return true
+            }
+            return false
+        }
+        return recursiveFind(ObjAST)
+    },
+    assertAsnType<T extends 'binaryASN'|'unaryASN'|'nullASN'|'endASN'|'lookupASN'|'exceptionASN'> (templateType: T,
+        testObject: AST) : OBJECT_ASN_TYPE<T> {
+        if (testObject.type !== undefined && testObject.type === templateType) {
+            return testObject as OBJECT_ASN_TYPE<T>
+        }
+        throw new Error('Internal error')
     }
 }

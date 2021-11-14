@@ -15,13 +15,6 @@ describe('Pointer assignment', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
-    it('should compile: regular variable as pointer + warningToError false', () => {
-        const code = '#pragma warningToError false\nlong *pa, *pb, va, vb;\n pa=vb; pa=*pb; *pa=pb; *pa=&pb; *pa=&vb; va=pb; va=&pb; va=&vb;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare pa\n^declare pb\n^declare va\n^declare vb\n\nSET @pa $vb\nSET @pa $($pb)\nSET @($pa) $pb\nSET @r0 #0000000000000004\nSET @($pa) $r0\nSET @r0 #0000000000000006\nSET @($pa) $r0\nSET @va $pb\nSET @va #0000000000000004\nSET @va #0000000000000006\nFIN\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
     it('should compile: pointer + setOperator', () => {
         const code = 'long *pa, *pb, va, vb; pa+=vb;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare pa\n^declare pb\n^declare va\n^declare vb\n\nADD @pa $vb\nFIN\n'

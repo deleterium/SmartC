@@ -1,7 +1,3 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
 import { assertNotUndefined } from '../repository/repository'
 import { AST, LOOKUP_ASN, TOKEN } from '../typings/syntaxTypes'
 
@@ -9,16 +5,13 @@ import { AST, LOOKUP_ASN, TOKEN } from '../typings/syntaxTypes'
  * Traverse an array of tokens to create a real AST based on
  * simple operations. Uses precedence values to decide the operations order.
  */
-export function createTree (tokenArray: TOKEN[] | undefined): AST {
+export default function createTree (tokenArray: TOKEN[] | undefined): AST {
     const tokenToAst = assertNotUndefined(tokenArray,
         'Internal error. Undefined AST to create syntactic tree')
-
     if (tokenToAst.length === 0) {
         return { type: 'nullASN' }
     }
-
     const needle = findSplitTokenIndex(tokenToAst)
-
     switch (tokenToAst[needle].type) {
     case 'Constant':
         return ConstantToAST(tokenToAst)
@@ -43,10 +36,12 @@ export function createTree (tokenArray: TOKEN[] | undefined): AST {
         if (needle === tokenToAst.length - 1) {
             return postSetUnaryToAST(tokenToAst)
         }
-        throw new SyntaxError(`At line: ${tokenToAst[needle].line}. Invalid use of 'SetUnaryOperator' '${tokenToAst[needle].value}'.`)
+        throw new Error(`At line: ${tokenToAst[needle].line}.` +
+        ` Invalid use of 'SetUnaryOperator' '${tokenToAst[needle].value}'.`)
     default:
         // Never
-        throw new SyntaxError(`Internal error at line: ${tokenToAst[0].line}. Token '${tokenToAst[0].type}' with value '${tokenToAst[0].value}' does not match any syntax rules.`)
+        throw new Error(`Internal error at line: ${tokenToAst[0].line}.` +
+        ` Token '${tokenToAst[0].type}' with value '${tokenToAst[0].value}' does not match any syntax rules.`)
     }
 }
 
@@ -54,12 +49,11 @@ export function createTree (tokenArray: TOKEN[] | undefined): AST {
 function findSplitTokenIndex (tokens: TOKEN[]) : number {
     const precedenceOnly = tokens.map(tok => tok.precedence)
     const maxPrecedence = Math.max(...precedenceOnly)
-    if (maxPrecedence === 0) {
+    switch (maxPrecedence) {
+    case 0:
         // Precedence zero is handled in lookupASN
         // inside VariableToAST.
         return 0
-    }
-    switch (maxPrecedence) {
     case 12:
     case 10:
     case 2:
@@ -76,7 +70,7 @@ function findSplitTokenIndex (tokens: TOKEN[]) : number {
 
 function ConstantToAST (tokens: TOKEN[]) : AST {
     if (tokens.length !== 1) {
-        throw new SyntaxError(`At line: ${tokens[0].line}. Constants cannot have modifiers.`)
+        throw new Error(`At line: ${tokens[0].line}. Constants cannot have modifiers.`)
     }
     return { type: 'endASN', Token: tokens[0] }
 }
@@ -114,10 +108,12 @@ function VariableToAST (tokens: TOKEN[]) : AST {
             if (tokens[idx + 1]?.type === 'Variable') {
                 break
             }
-            throw new TypeError(`At line: ${tokens[idx].line}. Expecting a variable for '${tokens[idx].value}' modifier.`)
+            throw new Error(`At line: ${tokens[idx].line}.` +
+            ` Expecting a variable for '${tokens[idx].value}' modifier.`)
         case 'Variable':
             if (tokens[idx - 1].type !== 'Member') {
-                throw new TypeError(`At line: ${tokens[idx].line}. Probable missing ';'. Expecting a member modifier before '${tokens[idx].value}'.`)
+                throw new Error(`At line: ${tokens[idx].line}.` +
+                ` Probable missing ';'. Expecting a member modifier before '${tokens[idx].value}'.`)
             }
 
             if (tokens[idx - 1].value === '.') {
@@ -133,7 +129,8 @@ function VariableToAST (tokens: TOKEN[]) : AST {
             })
             break
         default:
-            throw new TypeError(`At line: ${tokens[idx].line}. Probable missing ';'. Invalid type of variable modifier: '${tokens[idx].type}'.`)
+            throw new Error(`At line: ${tokens[idx].line}.` +
+            ` Probable missing ';'. Invalid type of variable modifier: '${tokens[idx].type}'.`)
         }
     }
     return retNode
@@ -141,7 +138,7 @@ function VariableToAST (tokens: TOKEN[]) : AST {
 
 function CodeCaveToAST (tokens: TOKEN[]) : AST {
     if (tokens.length !== 1) {
-        throw new SyntaxError(`At line: ${tokens[0].line}. Modifiers not implemented on '${tokens[0].type}'.`)
+        throw new Error(`At line: ${tokens[0].line}. Modifiers not implemented on '${tokens[0].type}'.`)
     }
     const newAST = createTree(tokens[0].params)
     delete tokens[0].params
@@ -150,10 +147,12 @@ function CodeCaveToAST (tokens: TOKEN[]) : AST {
 
 function BinariesToAST (tokens: TOKEN[], operatorLoc: number) : AST {
     if (operatorLoc === 0) {
-        throw new SyntaxError(`At line: ${tokens[0].line}. Missing left value for binary operator '${tokens[operatorLoc].value}'.`)
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` Missing left value for binary operator '${tokens[operatorLoc].value}'.`)
     }
     if (operatorLoc === tokens.length - 1) {
-        throw new SyntaxError(`At line: ${tokens[0].line}. Missing right value for binary operator '${tokens[operatorLoc].value}'.`)
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` Missing right value for binary operator '${tokens[operatorLoc].value}'.`)
     }
     return {
         type: 'binaryASN',
@@ -165,7 +164,8 @@ function BinariesToAST (tokens: TOKEN[], operatorLoc: number) : AST {
 
 function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
     if (keywordLoc !== 0) {
-        throw new SyntaxError(`At line: ${tokens[keywordLoc].line}. Probable missing ';' before keyword ${tokens[keywordLoc].value}.`)
+        throw new Error(`At line: ${tokens[keywordLoc].line}.` +
+        ` Probable missing ';' before keyword ${tokens[keywordLoc].value}.`)
     }
     switch (tokens[0].value) {
     case 'sleep':
@@ -174,7 +174,7 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
     case 'long':
     case 'void':
         if (tokens.length === 1) {
-            throw new TypeError(`At line: ${tokens[0].line}. Missing arguments for keyword '${tokens[0].value}'.`)
+            throw new Error(`At line: ${tokens[0].line}. Missing arguments for keyword '${tokens[0].value}'.`)
         }
         return {
             type: 'unaryASN',
@@ -188,7 +188,7 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
     case 'label':
     case 'asm':
         if (tokens.length !== 1) {
-            throw new TypeError(`At line: ${tokens[0].line}. Keyword '${tokens[0].value}' does not accept arguments.`)
+            throw new Error(`At line: ${tokens[0].line}. Keyword '${tokens[0].value}' does not accept arguments.`)
         }
         return { type: 'endASN', Token: tokens[0] }
     case 'struct':
@@ -203,20 +203,24 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
         }
     default:
         // Never
-        throw new TypeError(`Internal error at line: ${tokens[0].line}. Keyword '${tokens[0].value}' shown up.`)
+        throw new Error(`Internal error at line: ${tokens[0].line}. Keyword '${tokens[0].value}' shown up.`)
     }
 }
 
 function UnaryOperatorToAST (tokens: TOKEN[], operatorLoc: number) : AST {
     if (operatorLoc !== 0) {
-        throw new SyntaxError(`At line: ${tokens[operatorLoc].line}. Invalid use of 'UnaryOperator' '${tokens[operatorLoc].value}'.`)
+        throw new Error(`At line: ${tokens[operatorLoc].line}.` +
+        ` Invalid use of 'UnaryOperator' '${tokens[operatorLoc].value}'.`)
     }
     if (tokens.length === 1) {
-        throw new SyntaxError(`At line: ${tokens[0].line}. Missing value to apply unary operator '${tokens[0].value}'.`)
+        throw new Error(`At line: ${tokens[0].line}. Missing value to apply unary operator '${tokens[0].value}'.`)
     }
     if (tokens[0].value === '*' && tokens.length > 0) {
-        if (tokens[1].type !== 'Variable' && tokens[1].type !== 'CodeCave' && tokens[1].type !== 'SetUnaryOperator') {
-            throw new SyntaxError(`At line: ${tokens[1].line}. Invalid lvalue for pointer operation. Can not have type '${tokens[1].type}'.`)
+        if (tokens[1].type !== 'Variable' &&
+            tokens[1].type !== 'CodeCave' &&
+            tokens[1].type !== 'SetUnaryOperator') {
+            throw new Error(`At line: ${tokens[1].line}.` +
+            ` Invalid lvalue for pointer operation. Can not have type '${tokens[1].type}'.`)
         }
     }
     return {
@@ -228,16 +232,19 @@ function UnaryOperatorToAST (tokens: TOKEN[], operatorLoc: number) : AST {
 
 function preSetUnaryToAST (tokens: TOKEN[]) : AST {
     if (tokens.length === 1) {
-        throw new SyntaxError(`At line: ${tokens[0].line}. Missing value to apply 'SetUnaryOperator' '${tokens[0].value}'.`)
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` Missing value to apply 'SetUnaryOperator' '${tokens[0].value}'.`)
     }
     if (tokens[1].type !== 'Variable') {
-        throw new SyntaxError(`At line: ${tokens[0].line}. 'SetUnaryOperator' '${tokens[0].value}' expecting a variable, got a '${tokens[1].type}'.`)
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` 'SetUnaryOperator' '${tokens[0].value}' expecting a variable, got a '${tokens[1].type}'.`)
     }
     for (let j = 1; j < tokens.length; j++) {
         if (tokens[j].type === 'Variable' || tokens[j].type === 'Member') {
             continue
         }
-        throw new SyntaxError('At line: ' + tokens[0].line + ". Can not use 'SetUnaryOperator' with types '" + tokens[j].type + "'.")
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` Can not use 'SetUnaryOperator' with types '${tokens[j].type}'.`)
     }
     return {
         type: 'exceptionASN',
@@ -250,13 +257,15 @@ function postSetUnaryToAST (tokens: TOKEN[]) : AST {
     const operatorLoc = tokens.length - 1
     // Process exceptions for post increment and post decrement (left-to-right associativity)
     if (tokens[0].type !== 'Variable') {
-        throw new SyntaxError(`At line: ${tokens[0].line}. 'SetUnaryOperator' '${tokens[operatorLoc].value}' expecting a variable, got a '${tokens[0].type}'.`)
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` 'SetUnaryOperator' '${tokens[operatorLoc].value}' expecting a variable, got a '${tokens[0].type}'.`)
     }
     for (let j = 1; j < tokens.length - 1; j++) {
         if (tokens[j].type === 'Variable' || tokens[j].type === 'Member') {
             continue
         }
-        throw new SyntaxError('At line: ' + tokens[0].line + ". Can not use 'SetUnaryOperator' with types  '" + tokens[j].type + "'.")
+        throw new Error(`At line: ${tokens[0].line}.` +
+        ` Can not use 'SetUnaryOperator' with types  '${tokens[j].type}'.`)
     }
     return {
         type: 'exceptionASN',

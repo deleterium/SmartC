@@ -1,8 +1,4 @@
-// Author: Rui Deleterium
-// Project: https://github.com/deleterium/SmartC
-// License: BSD 3-Clause License
-
-// Note: Use assert or failIf only in cases for internal error or debug purposes.
+// Note: Use assert functions only in cases for internal error or debug purposes.
 // Using them with regular error messages will lead to condition not beeing checked
 // in coverage report.
 
@@ -12,9 +8,11 @@
  * @returns Anything, but not undefined
  * @throws {Typerror} if value is undefined
  */
-export function assertNotUndefined<Type> (argument: Type | undefined, errorMessage: string = 'Internal error.'): Exclude<Type, undefined> {
+export function assertNotUndefined<Type> (
+    argument: Type | undefined, errorMessage: string = 'Internal error.'
+) : Exclude<Type, undefined> {
     if (argument === undefined) {
-        throw new TypeError(errorMessage)
+        throw new Error(errorMessage)
     }
     return argument as Exclude<Type, undefined>
 }
@@ -25,13 +23,15 @@ export function assertNotUndefined<Type> (argument: Type | undefined, errorMessa
  * @param param to compare
  * @param errorMessage to throw
  * @returns Argument without undefined type
- * @throws {TypeError} if not pass condition
+ * @throws {Error} if not pass condition
  */
-export function assertNotEqual<T> (argument: T | undefined, param: T, errorMessage: string): Exclude<T, undefined> {
+export function assertNotEqual<T> (
+    argument: T | undefined, param: T, errorMessage: string
+) : Exclude<T, undefined> {
     if (argument !== undefined && argument !== param) {
         return argument as Exclude<T, undefined>
     }
-    throw new TypeError(errorMessage)
+    throw new Error(errorMessage)
 }
 
 /**
@@ -39,25 +39,13 @@ export function assertNotEqual<T> (argument: T | undefined, param: T, errorMessa
  * @param argument to check
  * @param errorMessage to throw
  * @returns true
- * @throws {TypeError} if expression is false
+ * @throws {Error} if expression is false
  */
-export function assertExpression (argument: boolean, errorMessage: string): void {
+export function assertExpression (argument: boolean, errorMessage: string = 'Internal error.'): true {
     if (!argument) {
-        throw new TypeError(errorMessage)
+        throw new Error(errorMessage)
     }
-}
-
-/**
- * Throw if argument is true
- * @param argument to check
- * @param errorMessage to throw
- * @returns true
- * @throws {TypeError} if expression is false
- */
-export function failIf (argument: boolean, errorMessage: string): void {
-    if (argument) {
-        throw new TypeError(errorMessage)
-    }
+    return true
 }
 
 // Note: Found at https://gist.github.com/sunnyy02/2477458d4d1c08bde8cc06cd8f56702e
@@ -91,9 +79,7 @@ export function deepCopy<T1> (source: T1): T1 {
  */
 export function stringToHexstring (inStr: string) : string {
     const byarr : number [] = []
-
     if (inStr.length === 0) byarr.push(0)
-
     let i = 0
     while (i < inStr.length) {
         const charCode = inStr.charCodeAt(i)
@@ -112,12 +98,12 @@ export function stringToHexstring (inStr: string) : string {
             byarr.push(0x80 | (0x3f & charCode))
             break
         default: {
-            i++
-            const nextCharCode = inStr.charCodeAt(i)
+            const nextCharCode = inStr.charCodeAt(i + 1)
             if (isNaN(nextCharCode)) {
                 break
             }
             if ((charCode & 0xfc00) === 0xd800 && (nextCharCode & 0xfc00) === 0xdc00) {
+                i++
                 const newCharCode = ((charCode & 0x3ff) << 10) + (nextCharCode & 0x3ff) + 0x10000
                 byarr.push(0xf0 | (0x3f & (newCharCode >> 18)))
                 byarr.push(0x80 | (0x3f & (newCharCode >> 12)))
@@ -142,7 +128,7 @@ export function stringToHexstring (inStr: string) : string {
  * chars are skipped
  * @param currLine Will be used in throw message if error in decoding
  * @returns hexstring little endian equivalent for RS address
- * @throws {TypeError} on decoding error
+ * @throws {Error} on decoding error
  */
 export function ReedSalomonAddressDecode (RSString: string, currLine: number) : string {
     const gexp = [1, 2, 4, 8, 16, 5, 10, 20, 13, 26, 17, 7, 14, 28, 29, 31, 27, 19, 3, 6, 12, 24, 21, 15, 30, 25, 23, 11, 22, 9, 18, 1]
@@ -186,16 +172,14 @@ export function ReedSalomonAddressDecode (RSString: string, currLine: number) : 
             codeword[codewordMap[index]] = positionInAlphabet
         })
         if (validChars.length !== 17 || !isCodewordValid(codeword)) {
-            throw new TypeError(`At line: ${currLine}. Error decoding address: S-${RSString}`)
+            throw new Error(`At line: ${currLine}. Error decoding address: S-${RSString}`)
         }
-
         // base32 to bigint conversion. Disregard checking bytes on indexes above 13.
         const accountId = codeword.slice(0, 13).reduce((previousValue, currentValue, currentIndex) => {
             return previousValue + (BigInt(currentValue) * (1n << (5n * BigInt(currentIndex))))
         }, 0n)
-
         if (accountId >= 18446744073709551616n) {
-            throw new TypeError(`At line: ${currLine}. Error decoding address: S-${RSString}`)
+            throw new Error(`At line: ${currLine}. Error decoding address: S-${RSString}`)
         }
         return accountId.toString(16).padStart(16, '0')
     }
