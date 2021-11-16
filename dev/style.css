@@ -117,6 +117,9 @@ label:hover                      { background: #ddf; }
 	width: 100%;
 }
 
+.bluebackground {
+    background: #021851b0;
+}
 .transp {
 	opacity: 0;
 	transition: all ease 3s;
