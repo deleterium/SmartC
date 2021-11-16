@@ -7,36 +7,43 @@ body {
 	margin: 0;
 	padding: 0;
 	font-family: sans-serif;
-	background: #ddd;
+    background: url('./assets/SmartC-Watermark.png') no-repeat fixed bottom right, radial-gradient(#e8f3ff, #EAF0F6) no-repeat fixed;
 	display: grid;
 	grid-gap: 1em;
 }
 
-h1 {
-	padding: 1vh;
-	background: #da7;
-	color: #114;
-	margin: 0 0 3vh 0;
-	text-align: center;
-	border-bottom: 0.5vh double #114;
+header {
+    padding: 1vh;
+    background: url('./assets/whiteLogo.png') no-repeat, #021851;
+    background-size: contain;
+    color: white;
+    margin: 0 0 3vh 0;
+    text-align: center;
+    box-shadow: -5px 3px 5px #021851, 5px 3px 5px #021851;
+    font-size: xx-large;
 }
 
 fieldset {
-	border: solid 0.5vh #ccc;
+	border: solid 1px #888;
 	padding: 1em;
 	margin: 0em 1em;
 	border-radius: 2vh;
+    background: linear-gradient(to right, #EAF0F6FF, #EAF0F600);
+    box-shadow: 0px 0px 10px #888;
+    z-index: 0;
 }
 
 legend, .tooltip {
-	background-color: #da7;
-	color: #114;
-	padding: 3px 6px;
-	border: 0.2vh solid #114;
-	transition: all ease 0.3s;
+    background-color: #3a3a6690;
+    color: #fff;
+    padding: 3px 6px;
+    border: 0.2vh solid #666;
+    transition: all ease 0.3s;
+    border-radius: 4px;
+    box-shadow: 0px 0px 10px #888,
 }
 legend:hover {
-	background: #eb8;
+    background-color: rgb(58, 58, 102);
 }
 legend {
 	cursor: pointer;
@@ -219,7 +226,7 @@ label:hover                      { background: #ddf; }
 .winbox {
     background: linear-gradient(90deg, #228, #114);
     border-radius: 12px 12px 0 0;
-    box-shadow: none;
+    box-shadow: 0px 0px 10px #888,
 }
 
 .winbox.min {
@@ -229,7 +236,7 @@ label:hover                      { background: #ddf; }
 .wb-body {
     /* the width of window border: */
     margin: 4px;
-    background: #ddd;
+    background: linear-gradient(to right, #EAF0F6, #e8f3ff);
 }
 
 .wb-title {

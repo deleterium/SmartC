@@ -61,7 +61,7 @@ window.onload = () => {
 
     document.title = document.title.replace('%version%', startUpTest.getCompilerVersion())
     const h1TitleDom = document.getElementById('h1_title')
-    h1TitleDom.innerText = h1TitleDom.innerText.replace('%version%', startUpTest.getCompilerVersion())
+    h1TitleDom.innerHTML = h1TitleDom.innerHTML.replace('%version%', startUpTest.getCompilerVersion())
 }
 
 const PageGlobal = {

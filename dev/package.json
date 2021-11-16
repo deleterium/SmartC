@@ -27,7 +27,7 @@
     "test": "npx jest",
     "test:ci": "npx jest --coverage",
     "build": "npm run lint && node esbuild.config.js",
-    "build:stable": "npm run build && rm -Rf ../stable||: && mkdir ../stable && cp -R ./lib index.html style.css ./3rd-party favicon.svg ../stable/ && npm run build:docs && echo 'Sucess'",
+    "build:stable": "npm run build && rm -Rf ../stable||: && mkdir ../stable && cp -R ./lib ./assets index.html style.css ./3rd-party ../stable/ && npm run build:docs && echo 'Sucess'",
     "start": "npx light-server -s . -p 7000 --no-reload",
     "build:docs": "rm -Rf ../stable/htmlDocs||: && npx markdown-folder-to-html ../docs && mv ../_docs ../stable/htmlDocs && ln -s ./README.html ../stable/htmlDocs/index.html && rm ../stable/htmlDocs/contents.json"
   },
