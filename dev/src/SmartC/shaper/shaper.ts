@@ -182,9 +182,12 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         case 'enableLineLabels':
             Program.Config.enableLineLabels = bool
             return true
-        case 'globalOptimization':
-            Program.Config.globalOptimization = bool
-            return true
+        case 'optimizationLevel':
+            if (num >= 0 && num <= 3) {
+                Program.Config.optimizationLevel = num
+                return false
+            }
+            throw new Error(`At line: ${MacroToken.line}. Value out of permitted range 0..3.`)
         case 'version':
             Program.Config.sourcecodeVersion = MacroToken.value
             return false
