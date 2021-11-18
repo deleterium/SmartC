@@ -1,7 +1,6 @@
 import { assertNotUndefined, deepCopy } from '../../repository/repository'
 import { AST, MEMORY_SLOT, DECLARATION_TYPES } from '../../typings/syntaxTypes'
 import { GLOBAL_AUXVARS, SETUPGENCODE_ARGS, GENCODE_AUXVARS } from '../codeGeneratorTypes'
-import utils from '../utils'
 import genCode from './genCode'
 
 /** Translates global variables to scope auxvars to be used by genCode.
@@ -56,16 +55,6 @@ export default function setupGenCode (
             }
             return line
         }).join('\n')
-        // optimizations for jumps and labels
-        if (code.asmCode.indexOf(':') >= 0) {
-            if (CodeGenInfo.InitialAST.type === 'endASN') {
-                if (CodeGenInfo.InitialAST.Token.type === 'Keyword' &&
-                        CodeGenInfo.InitialAST.Token.value === 'label') {
-                    return code.asmCode // do not optimize!!!
-                }
-            }
-            code.asmCode = utils.miniOptimizeJumps(code.asmCode)
-        }
         return code.asmCode
     }
 
