@@ -39,9 +39,13 @@ Some special features can be enabled/disable via preprocessor directives:
 * `#pragma userStackPages N`: User pages are used during function calls to pass arguments values, to store function return value, or to store function scope variables during recursive calls. Default value is zero if not needed, or one if needed. Tweak this value if using more than 16 arguments on functions or recursive functions. Maximum value is 10 pages.
 * `#pragma enableRandom [true/false/1/0/]`: Makes labels for jumps and conditionals receive a random value. Default value is `false`. Default behaviour is labels having an increasing number starting with 1 (number is base 36).
 * `#pragma enableLineLabels [true/false/1/0/]`: Adds line number to labels in assembly. Only usefull for debug purposes. Default value is `false`.
-* `#pragma globalOptimization [true/false/1/0/]`: Adds a final step to the compiler where generated code will be optimized. Default value is `false` until more tests are done. Makes generated assembly code even less readable, removing labels not referenced by jumps.
 * `#pragma maxAuxVars N`: Used to tell compiler how many auxiliary variables will be available (they are used as registers). Default value is `3`, min value is `1` and max is `10`. If you are under memory pressure, try to reduce to minimal necessary for compiling. Simple contracts will use around 2 values, but this number depends on nested operations.
 * `#pragma maxConstVars N`: Compiler will create variable from 1 to maxConstVars. Variables will be named 'n1', 'n2', ... 'n10'. It is very usefull to use, because compiler will change all numbers references to these variables and optimize code, making code much much smaller! Default min value is `0` (deactivated) and max is `10`.
+* `#pragma optimizationLevel N`: Choose strategy for code optimizer. It can be between 0 and 3.
+  * 0: No optimization.
+  * 1: Very basic optimization, just remove silly and unused code.
+  * 2: **Default**. Safely change and/or delete code for smarter outcome.
+  * 3: Dangerous optimizations no well tested. Result must be inspected by developer.
 * `#pragma reuseAssignedVar [true/false/1/0/]`: When set, compiler will try to use a variable on left side of and `Assignment` as a register. If variable is also used on right side, the compiler will not reuse it. This can save one assembly instruction for every expression used! Default value is `true` and it is highly recomended to maintain it active.
 * `#pragma version N`: Informs which compiler's version the code was developed. Must be set if not using development version. To skip this check, set it to `dev`.
 * `#pragma warningToError [true/false/1/0/]`: All warnings to compiler errors. Default value is `true`. Warning messages begin with WARNING, other ones are actually errors.
