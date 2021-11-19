@@ -388,8 +388,8 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
             RetToken.params = getTokensUntil('}', RetToken.type, RetToken.line)
             return RetToken
         default:
-            throw new Error('Internal error. Unknow token found: ' +
-            `type: '${CurrentPreToken.type}' value: '${CurrentPreToken.value}'.`)
+            throw new Error(`At line: ${CurrentPreToken.line}.` +
+            ` Unexpected token '${CurrentPreToken.value}' - type: '${CurrentPreToken.type}'.`)
         }
     }
 
