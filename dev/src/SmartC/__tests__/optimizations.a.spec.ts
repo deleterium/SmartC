@@ -1,6 +1,7 @@
+import optimizer from '../codeGenerator/assemblyProcessor/optimizer'
 import { SmartC } from '../smartc'
 
-describe('Optimizations', () => {
+describe('Optimizations level zero', () => {
     it('should compile: swap register order on division', () => {
         const code = '#pragma optimizationLevel 0\nlong a, b; a=b/a;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nDIV @r0 $a\nSET @a $r0\nFIN\n'
@@ -59,173 +60,115 @@ describe('Optimizations', () => {
     })
 })
 
-describe('Global Optimization', () => {
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\nlong a,b; for (a=0;a<10;a++) { b++; } b--;'
+describe('Optimizations level 1', () => {
+    it('should compile: Remove unused labels', () => {
+        const code = '#pragma optimizationLevel 1\nlong a,b; for (a=0;a<10;a++) { b++; } b--;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nINC @b\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nDEC @b\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\nlong a,b; while (b) {a++; while (1) { if (a) break;  } } a++;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $b :__loop1_break\nINC @a\n__loop2_continue:\nBNZ $a :__loop1_continue\nJMP :__loop2_continue\n__loop1_break:\nINC @a\nFIN\n'
+    it('should compile: Delete unused code', () => {
+        const code = '#pragma optimizationLevel 1\nvoid teste(void) { long a; a++; }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare teste_a\n\nFIN\n\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\nlong a,b; if (!b) {a++; } b++;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $b :__if1_endif\nINC @a\n__if1_endif:\nINC @b\nFIN\n'
+    it('should compile: delete set same variable', () => {
+        const code = '#pragma optimizationLevel 1\nlong a[2]; a[1] = a[1];'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\nlong a,b; void main (void) { a++; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n\nPCS\nINC @a\nFIN\n'
+    it('should compile: delete jump to next instruction', () => {
+        const code = '#pragma optimizationLevel 1\nvoid main (void) { long a=1;}'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare main_a\n\n\nPCS\nSET @main_a #0000000000000001\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\nlong a,b; if (!b) {a++; } else { b++;} '
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $b :__if1_else\nINC @a\nFIN\n__if1_else:\nINC @b\nFIN\n'
+})
+
+describe('Optimizations level 2', () => {
+    it('should compile: Swap branch ', () => {
+        const code = '#pragma optimizationLevel 2\nlong a,b; while (1) { if (a) break;  a++; } a--;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBNZ $a :__loop1_break\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nDEC @a\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\nlong a,b; test(); void test (void) { if (a) a++; else b++; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nBZR $a :__if1_else\nINC @a\nRET\n__if1_else:\nINC @b\nRET\n'
+    it('should compile: Swap ALL branches types ', () => {
+        const code = '#pragma optimizationLevel 2\nlong a,b; while (1) { if (a) break; if (!a) break; if (a<b) break; if (a<=b) break; if (a>b) break; if (a>=b) break; if (a==b) break; if (a!=b) break; a++; } a--;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBNZ $a :__loop1_break\nBZR $a :__loop1_break\nBLT $a $b :__loop1_break\nBLE $a $b :__loop1_break\nBGT $a $b :__loop1_break\nBGE $a $b :__loop1_break\nBEQ $a $b :__loop1_break\nBNE $a $b :__loop1_break\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nDEC @a\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\nlong a,b; test(); exit; a++; void test (void) { a++; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nINC @a\nRET\n'
+    it('should compile: branchOpt', () => {
+        const code = '#pragma optimizationLevel 2\nlong a,b; start: a++; if (a) a--; goto start;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nstart:\nINC @a\nBZR $a :start\nDEC @a\nJMP :start\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\nlong a,b; test(); void test (void) { return; a++; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nRET\n'
+    it('should compile: branchOpt (exit)', () => {
+        const code = '#pragma optimizationLevel 2\nlong a,b; if (a) a--;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $a :__opt_1\nFIN\n__opt_1:\nDEC @a\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\nlong a,b; test(); void test (void) { if (a) a++; else b++; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nBZR $a :__if1_else\nINC @a\nRET\n__if1_else:\nINC @b\nRET\n'
+    it('should compile: Jump to jump', () => {
+        const code = '#pragma optimizationLevel 2\nlong a,b; while (a) {if (a) a--; else b++;} a++;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $a :__loop1_break\nBZR $a :__if2_else\nDEC @a\nJMP :__loop1_continue\n__if2_else:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nINC @a\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\nlong a, b, c, d; a=(b*c)*d;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @a $b\nMUL @a $c\nMUL @a $d\nFIN\n'
+    it('should compile: Jump to exit', () => {
+        const code = '#pragma optimizationLevel 2\nlong a,b; if (a) a--; else b++;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_else\nDEC @a\nFIN\n__if1_else:\nINC @b\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\nlong a[4][2], *b, c,d; b=&a[c][d];'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\n^declare c\n^declare d\n\nSET @r0 #0000000000000002\nMUL @r0 $c\nADD @r0 $d\nSET @b $a\nADD @b $r0\nFIN\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\n long a; a=0; void test(void){ a++; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @a\nFIN\n\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
-    it('should compile:', () => {
-        const code = `#pragma optimizationLevel 3\nstruct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b, *c, d[2],z;pcar=&car;
-pcar->passenger='Ze';
-pcar->driver=a;
-b+=-a;
-a=0;
-d[a]=5;
-for (a=0;a<10;a++) d[a]=1;\n
-pcar->driver=*c;pcar->driver=d[1];pcar->driver=d[a];pcar->driver=pcar->collector;
-a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;`
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #000000000000000b\n^declare d_0\n^declare d_1\n^declare z\n\nSET @pcar #0000000000000003\nSET @r0 #000000000000655a\nSET @r1 #0000000000000002\nSET @($pcar + $r1) $r0\nSET @($pcar) $a\nCLR @r0\nSUB @r0 $a\nADD @b $r0\nSET @r0 #0000000000000005\nSET @($d) $r0\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nSET @r0 #0000000000000001\nSET @($d + $a) $r0\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nSET @r0 $($c)\nSET @($pcar) $r0\nSET @($pcar) $d_1\nSET @r0 $($d + $a)\nSET @($pcar) $r0\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nSET @($pcar) $r0\nSET @r0 #0000000000000001\nSET @a $($pcar + $r0)\nINC @z\nSET @r0 $($pcar)\nSET @($c) $r0\nSET @r0 #0000000000000001\nSET @d_1 $($pcar + $r0)\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nSET @($d + $a) $r0\nFIN\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\n long d[2]; d[1]=d[1]+1;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare d\n^const SET @d #0000000000000004\n^declare d_0\n^declare d_1\n\nINC @d_1\nFIN\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
-    it('should compile:', () => {
-        const code = `#pragma optimizationLevel 3\n#pragma maxConstVars 3\nstruct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b, *c, d[2],z;pcar=&car;
-pcar->passenger='Ze';
-pcar->driver=a;
-b+=-a;
-a=0;
-d[a]=5;
-for (a=0;a<10;a++) d[a]=1;\n
-pcar->driver=*c;pcar->driver=d[1];pcar->driver=d[a];pcar->driver=pcar->collector;
-a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;`
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #000000000000000e\n^declare d_0\n^declare d_1\n^declare z\n\nSET @pcar #0000000000000006\nSET @r0 #000000000000655a\nSET @($pcar + $n2) $r0\nSET @($pcar) $a\nCLR @r0\nSUB @r0 $a\nADD @b $r0\nSET @r0 #0000000000000005\nSET @($d) $r0\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nSET @($d + $a) $n1\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nSET @r0 $($c)\nSET @($pcar) $r0\nSET @($pcar) $d_1\nSET @r0 $($d + $a)\nSET @($pcar) $r0\nSET @r0 $($pcar + $n1)\nSET @($pcar) $r0\nSET @a $($pcar + $n1)\nINC @z\nSET @r0 $($pcar)\nSET @($c) $r0\nSET @d_1 $($pcar + $n1)\nSET @r0 $($pcar + $n1)\nSET @($d + $a) $r0\nFIN\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\n#pragma maxConstVars 3\nlong a, b, c; teste(a, 2); void teste(long aa, long bb) { aa=bb;} '
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n^declare a\n^declare b\n^declare c\n^declare teste_aa\n^declare teste_bb\n\nPSH $n2\nPSH $a\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_aa\nPOP @teste_bb\nSET @teste_aa $teste_bb\nRET\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\n#pragma maxConstVars 3\nsleep 1;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n\nSLP $n1\nFIN\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\n long a,b; if ( a==4 && (b || a )) { a++; a=4;} b++;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 #0000000000000004\nBNE $a $r0 :__if1_endif\nBNZ $b :__if1_start\nBZR $a :__if1_endif\n__if1_start:\nINC @a\nSET @a #0000000000000004\n__if1_endif:\nINC @b\nFIN\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\n long a,b, c; if ( a==4 && (b || a>c )) { a++; a=4; } b++;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @r0 #0000000000000004\nBNE $a $r0 :__if1_endif\nBNZ $b :__if1_start\nBLE $a $c :__if1_endif\n__if1_start:\nINC @a\nSET @a #0000000000000004\n__if1_endif:\nINC @b\nFIN\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\n long a; a=~a;'
+    it('should compile: bitwise not optimizer', () => {
+        const code = '#pragma optimizationLevel 2\nlong a; a=~a;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nNOT @a\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\n long a, b; tt(teste(b)); long teste(long c){ return ++c; } void tt(long d){ d++; }'
+    it('should compile: Pop+Push', () => {
+        const code = '#pragma optimizationLevel 2\n long a, b; tt(teste(b)); long teste(long c){ return ++c; } void tt(long d){ d++; }'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare teste_c\n^declare tt_d\n\nPSH $b\nJSR :__fn_teste\nJSR :__fn_tt\nFIN\n\n__fn_teste:\nPOP @teste_c\nINC @teste_c\nPSH $teste_c\nRET\n\n__fn_tt:\nPOP @tt_d\nINC @tt_d\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile:', () => {
-        const code = '#pragma optimizationLevel 3\n long a, b; /* No opt: interference with reuseVariable */ a=teste(teste(b)); tt(a); long teste(long c){ return ++c; } void tt(long d){ d++; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare teste_c\n^declare tt_d\n\nPSH $b\nJSR :__fn_teste\nPOP @a\nPSH $a\nJSR :__fn_teste\nPOP @a\nPSH $a\nJSR :__fn_tt\nFIN\n\n__fn_teste:\nPOP @teste_c\nINC @teste_c\nPSH $teste_c\nRET\n\n__fn_tt:\nPOP @tt_d\nINC @tt_d\nRET\n'
+})
+
+/* Please note that these optimizations are not well tested. Code generated by smartc
+mostly have this safely coded during AST processing. */
+describe('Optimizations level 3', () => {
+    it('should optimize: pop+set = pop', () => {
+        const code = 'SET @r0 #000000000000655a\nPOP @r0\nSET @pcar $r0\nFIN\n'
+        const assembly = 'SET @r0 #000000000000655a\nPOP @pcar\nFIN\n'
+        const result = optimizer(3, code, [])
+        expect(result).toBe(assembly)
+    })
+    it('should compile: clear+pointer = pointer', () => {
+        const code = '#pragma optimizationLevel 3\nlong a, d[2]; a=0; d[a]=5; d[1]=d[a];'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare d\n^const SET @d #0000000000000005\n^declare d_0\n^declare d_1\n\nSET @r0 #0000000000000005\nSET @($d) $r0\nSET @d_1 $($d)\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: set+pointer = pointer with old var', () => {
+        const code = '#pragma optimizationLevel 3\nlong a, b, d[2]; a=b; d[a]=5; d[1]=d[a];'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare d\n^const SET @d #0000000000000006\n^declare d_0\n^declare d_1\n\nSET @r0 #0000000000000005\nSET @($d + $b) $r0\nSET @d_1 $($d + $b)\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

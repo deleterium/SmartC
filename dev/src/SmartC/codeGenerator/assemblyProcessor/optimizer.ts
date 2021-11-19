@@ -15,7 +15,7 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
     let optimizedLines: number
     let codeLines = assemblyCode.split('\n')
 
-    function safeOptimizerMain () : string {
+    function optimizerMain () : string {
         do {
             optimizedLines = 0
             jumpLabels = getJumpLabels().concat(labels)
@@ -28,9 +28,8 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
             if (O >= 2) {
                 codeLines.forEach(jumpJumpOpt)
                 codeLines.forEach(swapBranches)
-                codeLines.forEach(swapBranchesZero)
-                codeLines.forEach(setBranchOpt)
                 codeLines.forEach(notOpt)
+                codeLines.forEach(popPushRegister)
                 codeLines = codeLines.flatMap(branchOpt)
             }
             if (O >= 3) {
@@ -42,7 +41,6 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
                 codeLines.forEach(pointerZeroOpt)
             }
         } while (optimizedLines !== 0)
-
         return codeLines.join('\n')
     }
 
@@ -115,19 +113,14 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
             return
         }
         const labelDest = getLabeldestination(jmpto[1])
-        if (/^\s*RET\s*$/.exec(labelDest) !== null) {
-            array[index] = 'RET' // if jump to return, just return from here
-            optimizedLines++
-            return
-        }
-        if (/^\s*FIN\s*$/.exec(labelDest) !== null) {
-            array[index] = 'FIN' // if jump to exit, just exit from here
+        if (/^\s*(RET|FIN)\s*$/.exec(labelDest) !== null) {
+            array[index] = labelDest
             optimizedLines++
             return
         }
         const lbl = /^\s*(\w+):\s*$/.exec(labelDest)
         if (lbl !== null) {
-            array[index] = 'JMP :' + lbl[1] // if jump to other jump, just jump over there
+            array[index] = 'JMP :' + lbl[1]
             optimizedLines++
         }
     }
@@ -151,20 +144,7 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
             }
             array[i] = 'DELETE'
             optimizedLines++
-            continue
         }
-    }
-
-    /** Untouchable lines are the ones with these contents:
-     * - empty line
-     * - DELETE
-     * - ^directives
-     * */
-    function isUntouchable (line: string) : boolean {
-        if (line === '' || line === 'DELETE' || /^\s*\^\w+(.*)/.exec(line) !== null) {
-            return true
-        }
-        return false
     }
 
     /** Swap branches to spare one jump instruction
@@ -172,11 +152,9 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
      * BNE $r0 $var37 :lab_f75 -> BEQ $r0 $var37 :lab_fa2
      * JMP :lab_fa2            -> DELETE
      * lab_f75:                -> unchanged
-     * ```
-     * Does not swap if jump location is return or exit. In this case is
-     * better to optimize changing JMP to RET or FIN. */
+     * ``` */
     function swapBranches (value: string, index: number, array: string[]) : void {
-        const branchdat = /^\s*(BGT|BLT|BGE|BLE|BEQ|BNE)\s+\$(\w+)\s+\$(\w+)\s+:(\w+)\s*$/.exec(value)
+        const branchdat = /^\s*(BGT|BLT|BGE|BLE|BEQ|BNE|BZR|BNZ)\s+\$(\w+)\s+(\$\w+\s+)?:(\w+)\s*$/.exec(value)
         if (branchdat === null) {
             return
         }
@@ -188,52 +166,9 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         if (jmpto === null) {
             return
         }
-        // If jump location is RET or FIN, optimize to RET or FIN.
-        const dest = getLabeldestination(jmpto[1])
-        if (/^\s*RET\s*$/.exec(dest) !== null) {
-            array[index + 1] = 'RET' // if jump to return, just return from here
-            optimizedLines++
-            return
-        }
-        if (/^\s*FIN\s*$/.exec(dest) !== null) {
-            array[index + 1] = 'FIN' // if jump to exit, just exit from here
-            optimizedLines++
-            return
-        }
-        array[index] = `${inverseBranch(branchdat[1])} $${branchdat[2]} $${branchdat[3]} :${jmpto[1]}`
-        array[index + 1] = 'DELETE'
-        optimizedLines++
-    }
-
-    /** Swap branch zero to spare one jump instruction
-     * ```
-     * BNZ $r0 :lab_f75 -> BZR $r0 :lab_fa2
-     * JMP :lab_fa2     -> DELETE
-     * lab_f75:         -> unchanged
-     * ```
-     * Does not swap if jump location is return or exit. In this case is
-     * better to optimize changing JMP to RET or FIN. */
-    function swapBranchesZero (value: string, index: number, array: string[]) : void {
-        const branchdat = /^\s*(BZR|BNZ)\s+\$(\w+)\s+:(\w+)\s*$/.exec(value)
-        if (branchdat === null) {
-            return
-        }
-        const lbl = /^\s*(\w+):\s*$/.exec(array[index + 2]) // matches labels
-        if (lbl === null || branchdat[3] !== lbl[1]) {
-            return
-        }
-        const jmpto = /^\s*JMP\s+:(\w+)\s*$/.exec(array[index + 1])
-        if (jmpto === null) {
-            return
-        }
-        // if jump location is RET or FIN, optimize to RET or FIN.
-        const dest = getLabeldestination(jmpto[1])
-        if (/^\s*(RET|FIN)\s*$/.exec(dest) !== null) {
-            array[index + 1] = dest // if jump to return/exit, just return/exit from here
-            optimizedLines++
-            return
-        }
-        array[index] = `${inverseBranch(branchdat[1])} $${branchdat[2]} :${jmpto[1]}`
+        array[index] = value
+            .replace(branchdat[1], inverseBranch(branchdat[1]))
+            .replace(branchdat[4], jmpto[1])
         array[index + 1] = 'DELETE'
         optimizedLines++
     }
@@ -244,17 +179,18 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
      * up.
      */
     function branchOpt (value: string) : string [] {
-        const branchTo = /^\s*(BGT|BLT|BGE|BLE|BEQ|BNE|BZR|BNZ)\s+[^:]+:(\w+)\s*$/.exec(value)
+        const branchTo = /^\s*(BGT|BLT|BGE|BLE|BEQ|BNE|BZR|BNZ)\s+\$(\w+)\s+(\$\w+\s+)?:(\w+)\s*$/.exec(value)
         if (branchTo === null) {
             return [value]
         }
-        const labelDest = getLabeldestination(branchTo[2])
+        const labelDest = getLabeldestination(branchTo[4])
         if (/^\s*(RET|FIN)\s*$/.exec(labelDest) !== null) {
             // if jump to return, swap branch and return from here
             const newLabel = `__opt_${labelID}`
             labelID++
-            let newInstr = branchTo[0].replace(branchTo[1], inverseBranch(branchTo[1]))
-            newInstr = newInstr.replace(`:${branchTo[2]}`, `:${newLabel}`)
+            const newInstr = value
+                .replace(branchTo[1], inverseBranch(branchTo[1]))
+                .replace(branchTo[4], newLabel)
             optimizedLines++
             return [
                 newInstr,
@@ -265,28 +201,9 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         const lbl = /^\s*(\w+):\s*$/.exec(labelDest)
         if (lbl !== null) {
             optimizedLines++
-            return [branchTo[0].replace(branchTo[1], lbl[1])]// if branch to other jump, just branch over there
+            return [value.replace(branchTo[4], lbl[1])]
         }
         return [value]
-    }
-
-    /** If there is an assigment to register and after that a branch, update branch
-     * and save one instruction
-     * ```
-     * SET @r0 $n2             -> BLT $i $n2 :__if151_c_endif
-     * BLT $i $r0 :__if1_endif -> DELETE
-     * ``` */
-    function setBranchOpt (value: string, index: number, array: string[]) : void {
-        const setdat = /^\s*SET\s+@(r\d)\s+\$(n\d+)\s*$/.exec(value)
-        if (setdat === null) {
-            return
-        }
-        const branchdat = /^\s*(BGT|BLT|BGE|BLE|BEQ|BNE)\s+\$(\w+)\s+\$(\w+)\s+:(\w+)\s*$/.exec(array[index + 1])
-        if (branchdat !== null && branchdat[3] === setdat[1]) {
-            array[index] = branchdat[1] + ' $' + branchdat[2] + ' $' + setdat[2] + ' :' + branchdat[4]
-            array[index + 1] = 'DELETE'
-            optimizedLines++
-        }
     }
 
     /** Optimizes the bitwise NOT operator
@@ -318,12 +235,33 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
      * SET @var $var -> DELETE
      * ``` */
     function setSame (value: string, index: number, array: string[]) : void {
-        const setdat = /^\s*SET\s+@(\w+)\s+\$(\1)\s*$/.exec(value)
+        const setdat = /^\s*SET\s+@(\w+)\s+\$\1\s*$/.exec(value)
         if (setdat === null) {
             return
         }
         array[index] = 'DELETE'
         optimizedLines++
+    }
+
+    /** Optimizes register poping and pushing in sequence
+     * ```
+     * POP @r0 -> DELETE
+     * PSH $r0 -> DELETE
+     * ``` */
+    function popPushRegister (value: string, index: number, array: string[]) : void {
+        const popdat = /^\s*POP\s+@(r\d)\s*$/.exec(value)
+        if (popdat === null) {
+            return
+        }
+        const pshslpdat = /^\s*PSH\s+\$(r\d+)\s*$/.exec(array[index + 1])
+        if (pshslpdat === null) {
+            return
+        }
+        if (pshslpdat[1] === popdat[1]) {
+            array[index] = 'DELETE'
+            array[index + 1] = 'DELETE'
+            optimizedLines++
+        }
     }
 
     /** Inspect label location and return next instruction. If next instruction is a
@@ -340,7 +278,7 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
             if (lbl !== null) {
                 continue
             }
-            if (codeLines[idx] === '' || codeLines[idx] === 'DELETE') {
+            if (isUntouchable(codeLines[idx])) {
                 continue
             }
             jmpdest = /^\s*JMP\s+:(\w+)\s*$/.exec(codeLines[idx])
@@ -351,6 +289,18 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
             return codeLines[idx]
         }
         return ''
+    }
+
+    /** Untouchable lines are the ones with these contents:
+     * - empty line
+     * - DELETE
+     * - ^directives
+     * */
+    function isUntouchable (line: string) : boolean {
+        if (line === '' || line === 'DELETE' || /^\s*\^\w+(.*)/.exec(line) !== null) {
+            return true
+        }
+        return false
     }
 
     function inverseBranch (branchOperator: string) : string {
@@ -366,6 +316,9 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         default: throw new Error('Internal error.')
         }
     }
+
+    /* Start of dangerous optimizations. They are already coded in codeGenerator and mostly will
+    * lead to no optimization, but can mess with code. */
 
     function operatorSetSwap (value: string, index: number, array: string[]) : void {
         // ADD @r0 $b
@@ -429,9 +382,6 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
     }
 
     function setidxOpt (value: string, index: number, array: string[]) : void {
-        // SET @r0 $a
-        // ADD @b $r0
-        // turns ADD @b $a
         const setdat = /^\s*SET\s+@(\w+)\s+\$(\w+)\s*$/.exec(value)
         if (setdat === null) {
             return
@@ -496,20 +446,6 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
                 array[index] = 'POP @' + setdat[1]
                 array[index + 1] = 'DELETE'
                 optimizedLines++
-                return
-            }
-
-            // POP @r0
-            // PSH $r0
-            // turns nothing (safe for registers)
-            const pshslpdat = /^\s*(PSH|SLP)\s+\$(r\d+)\s*$/.exec(array[index + 1])
-            if (pshslpdat === null) {
-                return
-            }
-            if (pshslpdat[2] === popdat[1]) {
-                array[index] = 'DELETE'
-                array[index + 1] = 'DELETE'
-                optimizedLines++
             }
         }
     }
@@ -555,5 +491,5 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         }
     }
 
-    return safeOptimizerMain()
+    return optimizerMain()
 }
