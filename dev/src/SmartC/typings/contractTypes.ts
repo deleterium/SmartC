@@ -7,12 +7,12 @@ export type SC_CONFIG = {
     enableRandom: boolean,
     /** Add line number to labels: #pragma enableLineLabels */
     enableLineLabels: boolean,
-    /** Make final global optimization: #pragma globalOptimization */
-    globalOptimization: boolean,
     /** Number of auxiliary vars to be declared by compiler: #pragma maxAuxVars */
     maxAuxVars: number,
     /** Number of auxiliary Constants to be declared by compiler: #pragma maxConstVars */
     maxConstVars: number,
+    /** Make final global optimization: #pragma optimizationLevel */
+    optimizationLevel: number,
     /** Try to reuse variable at left side of assigment: #pragma reuseAssignedVar */
     reuseAssignedVar: boolean,
     /** Default version for user's programs. If not on a dev version, user must

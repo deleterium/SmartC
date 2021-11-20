@@ -160,6 +160,13 @@ describe('Wrong code to check error safeguards', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: Unexpected token at parser', () => {
+        expect(() => {
+            const code = 'long a; a\\b;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
     test('should throw: Arr modifiers on constants', () => {
         expect(() => {
             const code = '2[2]=2;'

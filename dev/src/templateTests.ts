@@ -124,7 +124,7 @@ export const tests: CTestType [] = [
 
     // UnaryOperator
     ['UnaryOperator;', null, 'div'],
-    ['long a, b; a=!b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $b :__NOT_1_sF\nSET @a #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @a\n__NOT_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; a=!b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $b :__NOT_1_sF\n__NOT_1_sT:\nSET @a #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @a\n__NOT_1_end:\nFIN\n'],
     ['long a, b; a=~b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @a $b\nNOT @a\nFIN\n'],
     ['long a, b; a^=~b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nNOT @r0\nXOR @a $r0\nFIN\n'],
     ['long a, b; a=~0xff;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @a #00000000000000ff\nNOT @a\nFIN\n'],
@@ -277,31 +277,31 @@ export const tests: CTestType [] = [
 
     // Arithmetic + comparisions
     ['Arithmetic + comparisions;', null, 'div'],
-    ['long a, b, z; z=a==b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBNE $a $b :__CMP_1_sF\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, z; z=a!=b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBEQ $a $b :__CMP_1_sF\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, z; z=2<=b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nSET @z #0000000000000002\nBGT $z $b :__CMP_1_sF\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, z; z=a<2;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nSET @z #0000000000000002\nBGE $a $z :__CMP_1_sF\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, z; z=a>=b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBLT $a $b :__CMP_1_sF\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, z; z=a>b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBLE $a $b :__CMP_1_sF\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, z; z=!a;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBNZ $a :__NOT_1_sF\nSET @z #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @z\n__NOT_1_end:\nFIN\n'],
-    ['long a, b, z; z=!!a;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBZR $a :__NOT_1_sF\nSET @z #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @z\n__NOT_1_end:\nFIN\n'],
-    ['long a, b, z; z=a&&b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBZR $a :__CMP_1_sF\nBZR $b :__CMP_1_sF\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, z; z=a||b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBNZ $a :__CMP_1_sT\nBNZ $b :__CMP_1_sT\nCLR @z\nJMP :__CMP_1_end\n__CMP_1_sT:\nSET @z #0000000000000001\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, c; a=2+b==c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $b\nINC @a\nINC @a\nBNE $a $c :__CMP_1_sF\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, c; a=2+(b==c);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBNE $b $c :__CMP_1_sF\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nINC @a\nINC @a\nFIN\n'],
-    ['long a, b, c; a=b==~c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $c\nNOT @a\nBNE $b $a :__CMP_1_sF\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, c; a=b==!c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBNZ $c :__NOT_2_sF\nSET @a #0000000000000001\nJMP :__NOT_2_end\n__NOT_2_sF:\nCLR @a\n__NOT_2_end:\nBNE $b $a :__CMP_1_sF\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, c; a=!b==c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBNZ $b :__NOT_2_sF\nSET @a #0000000000000001\nJMP :__NOT_2_end\n__NOT_2_sF:\nCLR @a\n__NOT_2_end:\nBNE $a $c :__CMP_1_sF\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, c; a=!b==!c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBNZ $b :__NOT_2_sF\nSET @a #0000000000000001\nJMP :__NOT_2_end\n__NOT_2_sF:\nCLR @a\n__NOT_2_end:\nBNZ $c :__NOT_3_sF\nSET @r0 #0000000000000001\nJMP :__NOT_3_end\n__NOT_3_sF:\nCLR @r0\n__NOT_3_end:\nBNE $a $r0 :__CMP_1_sF\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, c; a=!(b+c);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $b\nADD @a $c\nBNZ $a :__NOT_1_sF\nSET @a #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @a\n__NOT_1_end:\nFIN\n'],
-    ['long a, b, c; a=!(b==c);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBEQ $b $c :__NOT_1_sF\nSET @a #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @a\n__NOT_1_end:\nFIN\n'],
-    ['long a, b, c, d; a=!(b==c)==d;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBEQ $b $c :__NOT_2_sF\nSET @a #0000000000000001\nJMP :__NOT_2_end\n__NOT_2_sF:\nCLR @a\n__NOT_2_end:\nBNE $a $d :__CMP_1_sF\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nFIN\n'],
-    ['long a, b, c, d, z; z=1+((a&&b)||(c&&d));', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare z\n\nBZR $a :__OR_2_next\nBZR $b :__OR_2_next\nJMP :__CMP_1_sT\n__OR_2_next:\nBZR $c :__CMP_1_sF\nBZR $d :__CMP_1_sF\nJMP :__CMP_1_sT\n__CMP_1_sF:\nCLR @z\nJMP :__CMP_1_end\n__CMP_1_sT:\nSET @z #0000000000000001\n__CMP_1_end:\nINC @z\nFIN\n'],
-    ['long a, b, c, d, z; z=1+!((a&&b)||(c&&d));', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare z\n\nBZR $a :__OR_2_next\nBZR $b :__OR_2_next\nJMP :__NOT_1_sF\n__OR_2_next:\nBZR $c :__NOT_1_sT\nBZR $d :__NOT_1_sT\nJMP :__NOT_1_sF\n__NOT_1_sT:\nSET @z #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @z\n__NOT_1_end:\nINC @z\nFIN\n'],
-    ['long a, b, c, d; a=b+(++c==d++);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nINC @c\nBNE $c $d :__CMP_1_sF\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nADD @a $b\nINC @d\nFIN\n'],
-    ['long a, b, c, d; a=b+(++c&&d++);', true, ''],
-    ['long a, b, c, d, z; z=1+((a||b)&&(c||d));', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare z\n\nBNZ $a :__AND_2_next\nBNZ $b :__AND_2_next\nJMP :__CMP_1_sF\n__AND_2_next:\nBNZ $c :__CMP_1_sT\nBNZ $d :__CMP_1_sT\nJMP :__CMP_1_sF\n__CMP_1_sT:\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nINC @z\nFIN\n'],
-    ['long a, b, c, d, z; z=1+!((a||b)&&(c||d));', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare z\n\nBNZ $a :__AND_2_next\nBNZ $b :__AND_2_next\nJMP :__NOT_1_sT\n__AND_2_next:\nBNZ $c :__NOT_1_sF\nBNZ $d :__NOT_1_sF\n__NOT_1_sT:\nSET @z #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @z\n__NOT_1_end:\nINC @z\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, z; z=a==b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBNE $a $b :__CMP_1_sF\n__CMP_1_sT:\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, z; z=a!=b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBEQ $a $b :__CMP_1_sF\n__CMP_1_sT:\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, z; z=2<=b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nSET @z #0000000000000002\nBGT $z $b :__CMP_1_sF\n__CMP_1_sT:\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, z; z=a<2;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nSET @z #0000000000000002\nBGE $a $z :__CMP_1_sF\n__CMP_1_sT:\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, z; z=a>=b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBLT $a $b :__CMP_1_sF\n__CMP_1_sT:\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, z; z=a>b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBLE $a $b :__CMP_1_sF\n__CMP_1_sT:\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, z; z=!a;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBNZ $a :__NOT_1_sF\n__NOT_1_sT:\nSET @z #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @z\n__NOT_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, z; z=!!a;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBZR $a :__NOT_1_sF\n__NOT_1_sT:\nSET @z #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @z\n__NOT_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, z; z=a&&b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBZR $a :__CMP_1_sF\n__AND_2_next:\nBZR $b :__CMP_1_sF\nJMP :__CMP_1_sT\n__CMP_1_sT:\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, z; z=a||b;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare z\n\nBNZ $a :__CMP_1_sT\n__OR_2_next:\nBNZ $b :__CMP_1_sT\nJMP :__CMP_1_sF\n__CMP_1_sF:\nCLR @z\nJMP :__CMP_1_end\n__CMP_1_sT:\nSET @z #0000000000000001\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c; a=2+b==c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $b\nINC @a\nINC @a\nBNE $a $c :__CMP_1_sF\n__CMP_1_sT:\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c; a=2+(b==c);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBNE $b $c :__CMP_1_sF\n__CMP_1_sT:\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nINC @a\nINC @a\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c; a=b==~c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $c\nNOT @a\nBNE $b $a :__CMP_1_sF\n__CMP_1_sT:\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c; a=b==!c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBNZ $c :__NOT_2_sF\n__NOT_2_sT:\nSET @a #0000000000000001\nJMP :__NOT_2_end\n__NOT_2_sF:\nCLR @a\n__NOT_2_end:\nBNE $b $a :__CMP_1_sF\n__CMP_1_sT:\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c; a=!b==c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBNZ $b :__NOT_2_sF\n__NOT_2_sT:\nSET @a #0000000000000001\nJMP :__NOT_2_end\n__NOT_2_sF:\nCLR @a\n__NOT_2_end:\nBNE $a $c :__CMP_1_sF\n__CMP_1_sT:\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c; a=!b==!c;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBNZ $b :__NOT_2_sF\n__NOT_2_sT:\nSET @a #0000000000000001\nJMP :__NOT_2_end\n__NOT_2_sF:\nCLR @a\n__NOT_2_end:\nBNZ $c :__NOT_3_sF\n__NOT_3_sT:\nSET @r0 #0000000000000001\nJMP :__NOT_3_end\n__NOT_3_sF:\nCLR @r0\n__NOT_3_end:\nBNE $a $r0 :__CMP_1_sF\n__CMP_1_sT:\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c; a=!(b+c);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $b\nADD @a $c\nBNZ $a :__NOT_1_sF\n__NOT_1_sT:\nSET @a #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @a\n__NOT_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c; a=!(b==c);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBEQ $b $c :__NOT_1_sF\n__NOT_1_sT:\nSET @a #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @a\n__NOT_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d; a=!(b==c)==d;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBEQ $b $c :__NOT_2_sF\n__NOT_2_sT:\nSET @a #0000000000000001\nJMP :__NOT_2_end\n__NOT_2_sF:\nCLR @a\n__NOT_2_end:\nBNE $a $d :__CMP_1_sF\n__CMP_1_sT:\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, z; z=1+((a&&b)||(c&&d));', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare z\n\nBZR $a :__OR_2_next\n__AND_3_next:\nBZR $b :__OR_2_next\nJMP :__CMP_1_sT\n__OR_2_next:\nBZR $c :__CMP_1_sF\n__AND_4_next:\nBZR $d :__CMP_1_sF\nJMP :__CMP_1_sT\nJMP :__CMP_1_sF\n__CMP_1_sF:\nCLR @z\nJMP :__CMP_1_end\n__CMP_1_sT:\nSET @z #0000000000000001\n__CMP_1_end:\nINC @z\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, z; z=1+!((a&&b)||(c&&d));', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare z\n\nBZR $a :__OR_2_next\n__AND_3_next:\nBZR $b :__OR_2_next\nJMP :__NOT_1_sF\n__OR_2_next:\nBZR $c :__NOT_1_sT\n__AND_4_next:\nBZR $d :__NOT_1_sT\nJMP :__NOT_1_sF\nJMP :__NOT_1_sT\n__NOT_1_sT:\nSET @z #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @z\n__NOT_1_end:\nINC @z\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d; a=b+(++c==d++);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nINC @c\nBNE $c $d :__CMP_1_sF\n__CMP_1_sT:\nSET @a #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @a\n__CMP_1_end:\nADD @a $b\nINC @d\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d; a=b+(++c&&d++);', true, ''],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, z; z=1+((a||b)&&(c||d));', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare z\n\nBNZ $a :__AND_2_next\n__OR_3_next:\nBNZ $b :__AND_2_next\nJMP :__CMP_1_sF\n__AND_2_next:\nBNZ $c :__CMP_1_sT\n__OR_4_next:\nBNZ $d :__CMP_1_sT\nJMP :__CMP_1_sF\nJMP :__CMP_1_sT\n__CMP_1_sT:\nSET @z #0000000000000001\nJMP :__CMP_1_end\n__CMP_1_sF:\nCLR @z\n__CMP_1_end:\nINC @z\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, z; z=1+!((a||b)&&(c||d));', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare z\n\nBNZ $a :__AND_2_next\n__OR_3_next:\nBNZ $b :__AND_2_next\nJMP :__NOT_1_sT\n__AND_2_next:\nBNZ $c :__NOT_1_sF\n__OR_4_next:\nBNZ $d :__NOT_1_sF\nJMP :__NOT_1_sT\nJMP :__NOT_1_sF\n__NOT_1_sT:\nSET @z #0000000000000001\nJMP :__NOT_1_end\n__NOT_1_sF:\nCLR @z\n__NOT_1_end:\nINC @z\nFIN\n'],
 
     ['long a, b; a==b;', true, ''],
     ['long a, b; a!=b;', true, ''],
@@ -355,63 +355,63 @@ export const tests: CTestType [] = [
     ['One Operation) { a++; }', null, 'div'],
 
     // Variable
-    ['long a; if (a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // Constant
-    ['long a; if (0) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (1) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (10) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (0) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (1) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (10) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // Operator
-    ['long a; if (a/2) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nDIV @r0 $r1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (a%2) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nMOD @r0 $r1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (a<<2) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nSHL @r0 $r1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (a>>2) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nSHR @r0 $r1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (a|2) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000002\nBOR @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (a^2) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000002\nXOR @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (a/2) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nDIV @r0 $r1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (a%2) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nMOD @r0 $r1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (a<<2) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nSHL @r0 $r1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (a>>2) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nSHR @r0 $r1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (a|2) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000002\nBOR @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (a^2) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000002\nXOR @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // UnaryOperator
-    ['long a; if (!a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (~a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nNOT @r0\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (~a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nNOT @r0\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // SetUnaryOperators
-    ['long a; if (++a) { a++; }', true, ''],
-    ['long a; if (a++) { a++; }', true, ''],
+    ['#pragma optimizationLevel 0\nlong a; if (++a) { a++; }', true, ''],
+    ['#pragma optimizationLevel 0\nlong a; if (a++) { a++; }', true, ''],
 
     // Assignment SetOperator
-    ['long a; if (a=b) { a++; }', true, ''],
-    ['long a; if (a+=b) { a++; }', true, ''],
+    ['#pragma optimizationLevel 0\nlong a; if (a=b) { a++; }', true, ''],
+    ['#pragma optimizationLevel 0\nlong a; if (a+=b) { a++; }', true, ''],
 
     // Comparision
-    ['long a, b; if (a==b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (a!=b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBEQ $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (a>=b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBLT $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (a>b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBLE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (a<=b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBGT $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (a<b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBGE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (a==0) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (a!=0) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (a&&b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_endif\nBZR $b :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (a||b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $a :__if1_start\nBNZ $b :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d; if (a==b&&c==d) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBNE $a $b :__if1_endif\nBNE $c $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d; if (a==b||c==d) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBEQ $a $b :__if1_start\nBEQ $c $d :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a==b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a!=b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBEQ $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a>=b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBLT $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a>b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBLE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a<=b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBGT $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a<b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBGE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a==0) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a!=0) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a&&b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_endif\n__AND_2_next:\nBZR $b :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a||b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $a :__if1_start\n__OR_2_next:\nBNZ $b :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d; if (a==b&&c==d) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBNE $a $b :__if1_endif\n__AND_2_next:\nBNE $c $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d; if (a==b||c==d) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBEQ $a $b :__if1_start\n__OR_2_next:\nBEQ $c $d :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // Arr
-    ['long *a, b; if (a[b]) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $($a + $b)\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a[2], b; if (a[b]) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong *a, b; if (a[b]) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $($a + $b)\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a[2], b; if (a[b]) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // CheckOperator Unary
-    ['long a; if (+a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long *a; if (*a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $($a)\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (-a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @r0\nSUB @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (~a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nNOT @r0\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (&a) { a++; }', true, ''],
+    ['#pragma optimizationLevel 0\nlong a; if (+a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong *a; if (*a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $($a)\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (-a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @r0\nSUB @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (~a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nNOT @r0\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (&a) { a++; }', true, ''],
 
     // CheckOperator Binary
-    ['long a, b; if (b+a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nADD @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (b*a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nMUL @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (b-a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nSUB @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (b&a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nAND @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (b+a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nADD @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (b*a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nMUL @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (b-a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nSUB @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (b&a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nAND @r0 $a\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // NewCodeLine
     ['long a; if (,) { a++; }', true, ''],
@@ -422,114 +422,114 @@ export const tests: CTestType [] = [
     ['Combinations with NOT) { a++; }', null, 'div'],
 
     // Variable
-    ['long a; if (!a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // Constant
-    ['long a; if (!0) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (!1) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (!10) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!0) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!1) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!10) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // Operator
-    ['long a; if (!(a/2)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nDIV @r0 $r1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (!(a%2)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nMOD @r0 $r1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (!(a<<2)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nSHL @r0 $r1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (!(a>>2)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nSHR @r0 $r1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (!(a|2)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000002\nBOR @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (!(a^2)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000002\nXOR @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!(a/2)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nDIV @r0 $r1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!(a%2)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nMOD @r0 $r1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!(a<<2)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nSHL @r0 $r1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!(a>>2)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nSET @r1 #0000000000000002\nSHR @r0 $r1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!(a|2)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000002\nBOR @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!(a^2)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000002\nXOR @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // UnaryOperator
-    ['long a; if (!!a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (!~a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nNOT @r0\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!!a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!~a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nNOT @r0\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // Comparision
-    ['long a, b; if (!(a==b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBEQ $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(a!=b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(a>=b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBGE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(a>b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBGT $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(a<=b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBLE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(a<b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBLT $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(a==0)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(a!=0)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(a&&b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_start\nBZR $b :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(a||b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $a :__if1_endif\nBNZ $b :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d; if (!(a==b&&c==d)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBNE $a $b :__if1_start\nBNE $c $d :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d; if (!(a==b||c==d)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBEQ $a $b :__if1_endif\nBEQ $c $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(a==b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBEQ $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(a!=b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(a>=b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBGE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(a>b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBGT $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(a<=b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBLE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(a<b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBLT $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(a==0)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(a!=0)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(a&&b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_start\n__AND_2_next:\nBZR $b :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(a||b)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $a :__if1_endif\n__OR_2_next:\nBNZ $b :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d; if (!(a==b&&c==d)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBNE $a $b :__if1_start\n__AND_2_next:\nBNE $c $d :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d; if (!(a==b||c==d)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBEQ $a $b :__if1_endif\n__OR_2_next:\nBEQ $c $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // Arr
-    ['long *a, b; if (!a[b]) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $($a + $b)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a[2], b; if (!a[b]) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong *a, b; if (!a[b]) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $($a + $b)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a[2], b; if (!a[b]) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // CheckOperator Unary
-    ['long a; if (!(+a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long *a; if (!(*a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $($a)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (!(-a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @r0\nSUB @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (!(~a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nNOT @r0\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a; if (!(&a)) { a++; }', true, ''],
+    ['#pragma optimizationLevel 0\nlong a; if (!(+a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBNZ $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong *a; if (!(*a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $($a)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!(-a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @r0\nSUB @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!(~a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 $a\nNOT @r0\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; if (!(&a)) { a++; }', true, ''],
 
     // CheckOperator Binary
-    ['long a, b; if (!(b+a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nADD @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(b*a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nMUL @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(b-a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nSUB @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(b&a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nAND @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(b+a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nADD @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(b*a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nMUL @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(b-a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nSUB @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(b&a)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nAND @r0 $a\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     // Combinations trying to break algorithm
-    ['Misc combinations) { a++; }', null, 'div'],
-    ['long a, b, c, d; if (a==b&&!(c==d)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBNE $a $b :__if1_endif\nBEQ $c $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d; if (!(a==b)&&c==d) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBEQ $a $b :__if1_endif\nBNE $c $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d; if (a==b==c) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBNE $a $b :__CMP_2_sF\nSET @r0 #0000000000000001\nJMP :__CMP_2_end\n__CMP_2_sF:\nCLR @r0\n__CMP_2_end:\nBNE $r0 $c :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d; if ((a==b)==c) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBNE $a $b :__CMP_2_sF\nSET @r0 #0000000000000001\nJMP :__CMP_2_end\n__CMP_2_sF:\nCLR @r0\n__CMP_2_end:\nBNE $r0 $c :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e, f, g, h; if (a==b&&c==d&&e==f&&g==h) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBNE $a $b :__if1_endif\nBNE $c $d :__if1_endif\nBNE $e $f :__if1_endif\nBNE $g $h :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e, f, g, h; if (a==b||c==d||e==f||g==h) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBEQ $a $b :__if1_start\nBEQ $c $d :__if1_start\nBEQ $e $f :__if1_start\nBEQ $g $h :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e, f, g, h; if ((a==b||c==d)&&(e==f||g==h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBEQ $a $b :__AND_2_next\nBEQ $c $d :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nBEQ $e $f :__if1_start\nBEQ $g $h :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e, f, g, h; if ((a==b && c==d) || (e==f && g==h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBNE $a $b :__OR_2_next\nBNE $c $d :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBNE $e $f :__if1_endif\nBNE $g $h :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e, f, g, h; if ((a>=b && c>=d) || (e!=f && g!=h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBLT $a $b :__OR_2_next\nBLT $c $d :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBEQ $e $f :__if1_endif\nBEQ $g $h :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e, f, g, h; if ((a>=b&&c>=d)||!(e==f&&g==h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBLT $a $b :__OR_2_next\nBLT $c $d :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBNE $e $f :__if1_start\nBNE $g $h :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e, f, g, h; if ((a<=b||c<d)&&!(e==f||g==h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBLE $a $b :__AND_2_next\nBLT $c $d :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nBEQ $e $f :__if1_endif\nBEQ $g $h :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e, f, g, h; if (!(a<=b||c<d)&&(e==f||g==h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBLE $a $b :__if1_endif\nBLT $c $d :__if1_endif\nBEQ $e $f :__if1_start\nBEQ $g $h :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (a==~-b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @r0\nSUB @r0 $b\nNOT @r0\nBNE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (a==!~-b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @r0\nSUB @r0 $b\nNOT @r0\nBNZ $r0 :__NOT_2_sF\nSET @r0 #0000000000000001\nJMP :__NOT_2_end\n__NOT_2_sF:\nCLR @r0\n__NOT_2_end:\nBNE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e; if (a||(b&&c&&d)||e) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nBNZ $a :__if1_start\nBZR $b :__OR_2_next\nBZR $c :__OR_2_next\nBZR $d :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBNZ $e :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e; if (a&&(b||c||d)&&e) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nBZR $a :__if1_endif\nBNZ $b :__AND_2_next\nBNZ $c :__AND_2_next\nBNZ $d :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nBZR $e :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e; if (a||(b&&!c&&d)||e) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nBNZ $a :__if1_start\nBZR $b :__OR_2_next\nBNZ $c :__OR_2_next\nBZR $d :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBNZ $e :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e; if (a&&(b||!c||d)&&e) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nBZR $a :__if1_endif\nBNZ $b :__AND_2_next\nBZR $c :__AND_2_next\nBNZ $d :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nBZR $e :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e; if (a==0&&(b==0||c==0&&d==0)&&e==0) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nBNZ $a :__if1_endif\nBZR $b :__AND_2_next\nBNZ $c :__if1_endif\nBNZ $d :__if1_endif\n__AND_2_next:\nBNZ $e :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(!(!(a==b)))) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBEQ $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (!(!(!(!(a==b))))) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, z; if (( ( (a==5 || b==z) && c==z) || d==z ) && a==25+b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare z\n\nSET @r0 #0000000000000005\nBEQ $a $r0 :__AND_4_next\nBEQ $b $z :__AND_4_next\nJMP :__OR_3_next\n__AND_4_next:\nBNE $c $z :__OR_3_next\nJMP :__AND_2_next\n__OR_3_next:\nBEQ $d $z :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nSET @r0 #0000000000000019\nADD @r0 $b\nBNE $a $r0 :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e, f, g, h; if (a||b&&c||d && e||f&&g||h) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBNZ $a :__if1_start\nBZR $b :__OR_4_next\nBZR $c :__OR_4_next\nJMP :__if1_start\n__OR_4_next:\nBZR $d :__OR_3_next\nBZR $e :__OR_3_next\nJMP :__if1_start\n__OR_3_next:\nBZR $f :__OR_2_next\nBZR $g :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBNZ $h :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e, f, g, h; if ((a||b)&&(c||d)&&(e||f)&&(g||h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBNZ $a :__AND_4_next\nBNZ $b :__AND_4_next\nJMP :__if1_endif\n__AND_4_next:\nBNZ $c :__AND_3_next\nBNZ $d :__AND_3_next\nJMP :__if1_endif\n__AND_3_next:\nBNZ $e :__AND_2_next\nBNZ $f :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nBNZ $g :__if1_start\nBNZ $h :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d, e, f, g, h; if (((a&&b)||(c&&d)) && ((e&&f)||(g&&h))) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBZR $a :__OR_3_next\nBZR $b :__OR_3_next\nJMP :__AND_2_next\n__OR_3_next:\nBZR $c :__if1_endif\nBZR $d :__if1_endif\n__AND_2_next:\nBZR $e :__OR_6_next\nBZR $f :__OR_6_next\nJMP :__if1_start\n__OR_6_next:\nBZR $g :__if1_endif\nBZR $h :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d; if (!((a&&b)||(c&&d))) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBZR $a :__OR_2_next\nBZR $b :__OR_2_next\nJMP :__if1_endif\n__OR_2_next:\nBZR $c :__if1_start\nBZR $d :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b, c, d; if (!((a||b)&&(c||d))) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBNZ $a :__AND_2_next\nBNZ $b :__AND_2_next\nJMP :__if1_start\n__AND_2_next:\nBNZ $c :__if1_endif\nBNZ $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nMisc combinations) { a++; }', null, 'div'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d; if (a==b&&!(c==d)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBNE $a $b :__if1_endif\n__AND_2_next:\nBEQ $c $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d; if (!(a==b)&&c==d) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBEQ $a $b :__if1_endif\n__AND_2_next:\nBNE $c $d :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d; if (a==b==c) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBNE $a $b :__CMP_2_sF\n__CMP_2_sT:\nSET @r0 #0000000000000001\nJMP :__CMP_2_end\n__CMP_2_sF:\nCLR @r0\n__CMP_2_end:\nBNE $r0 $c :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d; if ((a==b)==c) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBNE $a $b :__CMP_2_sF\n__CMP_2_sT:\nSET @r0 #0000000000000001\nJMP :__CMP_2_end\n__CMP_2_sF:\nCLR @r0\n__CMP_2_end:\nBNE $r0 $c :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e, f, g, h; if (a==b&&c==d&&e==f&&g==h) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBNE $a $b :__if1_endif\n__AND_4_next:\nBNE $c $d :__if1_endif\nJMP :__AND_3_next\n__AND_3_next:\nBNE $e $f :__if1_endif\nJMP :__AND_2_next\n__AND_2_next:\nBNE $g $h :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e, f, g, h; if (a==b||c==d||e==f||g==h) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBEQ $a $b :__if1_start\n__OR_4_next:\nBEQ $c $d :__if1_start\nJMP :__OR_3_next\n__OR_3_next:\nBEQ $e $f :__if1_start\nJMP :__OR_2_next\n__OR_2_next:\nBEQ $g $h :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e, f, g, h; if ((a==b||c==d)&&(e==f||g==h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBEQ $a $b :__AND_2_next\n__OR_3_next:\nBEQ $c $d :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nBEQ $e $f :__if1_start\n__OR_4_next:\nBEQ $g $h :__if1_start\nJMP :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e, f, g, h; if ((a==b && c==d) || (e==f && g==h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBNE $a $b :__OR_2_next\n__AND_3_next:\nBNE $c $d :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBNE $e $f :__if1_endif\n__AND_4_next:\nBNE $g $h :__if1_endif\nJMP :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e, f, g, h; if ((a>=b && c>=d) || (e!=f && g!=h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBLT $a $b :__OR_2_next\n__AND_3_next:\nBLT $c $d :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBEQ $e $f :__if1_endif\n__AND_4_next:\nBEQ $g $h :__if1_endif\nJMP :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e, f, g, h; if ((a>=b&&c>=d)||!(e==f&&g==h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBLT $a $b :__OR_2_next\n__AND_3_next:\nBLT $c $d :__OR_2_next\nJMP :__if1_start\n__OR_2_next:\nBNE $e $f :__if1_start\n__AND_4_next:\nBNE $g $h :__if1_start\nJMP :__if1_endif\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e, f, g, h; if ((a<=b||c<d)&&!(e==f||g==h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBLE $a $b :__AND_2_next\n__OR_3_next:\nBLT $c $d :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nBEQ $e $f :__if1_endif\n__OR_4_next:\nBEQ $g $h :__if1_endif\nJMP :__if1_start\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e, f, g, h; if (!(a<=b||c<d)&&(e==f||g==h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBLE $a $b :__if1_endif\n__OR_3_next:\nBLT $c $d :__if1_endif\nJMP :__AND_2_next\n__AND_2_next:\nBEQ $e $f :__if1_start\n__OR_4_next:\nBEQ $g $h :__if1_start\nJMP :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a==~-b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @r0\nSUB @r0 $b\nNOT @r0\nBNE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a==!~-b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @r0\nSUB @r0 $b\nNOT @r0\nBNZ $r0 :__NOT_2_sF\n__NOT_2_sT:\nSET @r0 #0000000000000001\nJMP :__NOT_2_end\n__NOT_2_sF:\nCLR @r0\n__NOT_2_end:\nBNE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e; if (a||(b&&c&&d)||e) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nBNZ $a :__if1_start\n__OR_3_next:\nBZR $b :__OR_2_next\n__AND_5_next:\nBZR $c :__OR_2_next\nJMP :__AND_4_next\n__AND_4_next:\nBZR $d :__OR_2_next\nJMP :__if1_start\nJMP :__OR_2_next\n__OR_2_next:\nBNZ $e :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e; if (a&&(b||c||d)&&e) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nBZR $a :__if1_endif\n__AND_3_next:\nBNZ $b :__AND_2_next\n__OR_5_next:\nBNZ $c :__AND_2_next\nJMP :__OR_4_next\n__OR_4_next:\nBNZ $d :__AND_2_next\nJMP :__if1_endif\nJMP :__AND_2_next\n__AND_2_next:\nBZR $e :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e; if (a||(b&&!c&&d)||e) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nBNZ $a :__if1_start\n__OR_3_next:\nBZR $b :__OR_2_next\n__AND_5_next:\nBNZ $c :__OR_2_next\nJMP :__AND_4_next\n__AND_4_next:\nBZR $d :__OR_2_next\nJMP :__if1_start\nJMP :__OR_2_next\n__OR_2_next:\nBNZ $e :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e; if (a&&(b||!c||d)&&e) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nBZR $a :__if1_endif\n__AND_3_next:\nBNZ $b :__AND_2_next\n__OR_5_next:\nBZR $c :__AND_2_next\nJMP :__OR_4_next\n__OR_4_next:\nBNZ $d :__AND_2_next\nJMP :__if1_endif\nJMP :__AND_2_next\n__AND_2_next:\nBZR $e :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e; if (a==0&&(b==0||c==0&&d==0)&&e==0) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n\nBNZ $a :__if1_endif\n__AND_3_next:\nBZR $b :__AND_2_next\n__OR_4_next:\nBNZ $c :__if1_endif\n__AND_5_next:\nBNZ $d :__if1_endif\nJMP :__AND_2_next\nJMP :__if1_endif\nJMP :__AND_2_next\n__AND_2_next:\nBNZ $e :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(!(!(a==b)))) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBEQ $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (!(!(!(!(a==b))))) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNE $a $b :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, z; if (( ( (a==5 || b==z) && c==z) || d==z ) && a==25+b) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare z\n\nSET @r0 #0000000000000005\nBEQ $a $r0 :__AND_4_next\n__OR_5_next:\nBEQ $b $z :__AND_4_next\nJMP :__OR_3_next\n__AND_4_next:\nBNE $c $z :__OR_3_next\nJMP :__AND_2_next\n__OR_3_next:\nBEQ $d $z :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nSET @r0 #0000000000000019\nADD @r0 $b\nBNE $a $r0 :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e, f, g, h; if (a||b&&c||d && e||f&&g||h) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBNZ $a :__if1_start\n__OR_5_next:\nBZR $b :__OR_4_next\n__AND_6_next:\nBZR $c :__OR_4_next\nJMP :__if1_start\nJMP :__OR_4_next\n__OR_4_next:\nBZR $d :__OR_3_next\n__AND_7_next:\nBZR $e :__OR_3_next\nJMP :__if1_start\nJMP :__OR_3_next\n__OR_3_next:\nBZR $f :__OR_2_next\n__AND_8_next:\nBZR $g :__OR_2_next\nJMP :__if1_start\nJMP :__OR_2_next\n__OR_2_next:\nBNZ $h :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e, f, g, h; if ((a||b)&&(c||d)&&(e||f)&&(g||h)) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBNZ $a :__AND_4_next\n__OR_5_next:\nBNZ $b :__AND_4_next\nJMP :__if1_endif\n__AND_4_next:\nBNZ $c :__AND_3_next\n__OR_6_next:\nBNZ $d :__AND_3_next\nJMP :__if1_endif\nJMP :__AND_3_next\n__AND_3_next:\nBNZ $e :__AND_2_next\n__OR_7_next:\nBNZ $f :__AND_2_next\nJMP :__if1_endif\nJMP :__AND_2_next\n__AND_2_next:\nBNZ $g :__if1_start\n__OR_8_next:\nBNZ $h :__if1_start\nJMP :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d, e, f, g, h; if (((a&&b)||(c&&d)) && ((e&&f)||(g&&h))) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n^declare e\n^declare f\n^declare g\n^declare h\n\nBZR $a :__OR_3_next\n__AND_4_next:\nBZR $b :__OR_3_next\nJMP :__AND_2_next\n__OR_3_next:\nBZR $c :__if1_endif\n__AND_5_next:\nBZR $d :__if1_endif\nJMP :__AND_2_next\nJMP :__if1_endif\n__AND_2_next:\nBZR $e :__OR_6_next\n__AND_7_next:\nBZR $f :__OR_6_next\nJMP :__if1_start\n__OR_6_next:\nBZR $g :__if1_endif\n__AND_8_next:\nBZR $h :__if1_endif\nJMP :__if1_start\nJMP :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d; if (!((a&&b)||(c&&d))) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBZR $a :__OR_2_next\n__AND_3_next:\nBZR $b :__OR_2_next\nJMP :__if1_endif\n__OR_2_next:\nBZR $c :__if1_start\n__AND_4_next:\nBZR $d :__if1_start\nJMP :__if1_endif\nJMP :__if1_start\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c, d; if (!((a||b)&&(c||d))) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nBNZ $a :__AND_2_next\n__OR_3_next:\nBNZ $b :__AND_2_next\nJMP :__if1_start\n__AND_2_next:\nBNZ $c :__if1_endif\n__OR_4_next:\nBNZ $d :__if1_endif\nJMP :__if1_start\nJMP :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
 
     ['Keywords tests', null, 'div'],
-    ['long a, b; if (a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (a) { a++; } else { b--; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_else\n__if1_start:\nINC @a\nJMP :__if1_endif\n__if1_else:\nDEC @b\n__if1_endif:\nFIN\n'],
-    ['long a, b; while (a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'],
-    ['long a, b; for (a=0;a<10;a++) { b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\n__loop1_start:\nINC @b\n__loop1_continue:\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nFIN\n'],
-    ['long a, b; do { a++; } while (a<b);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nINC @a\nBLT $a $b :__loop1_continue\n__loop1_break:\nFIN\n'],
-    ['long a, b; if (a) a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['long a, b; if (a) a++; else b--;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_else\n__if1_start:\nINC @a\nJMP :__if1_endif\n__if1_else:\nDEC @b\n__if1_endif:\nFIN\n'],
-    ['long a, b; while (a) a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'],
-    ['long a, b; for (a=0;a<10;a++) b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\n__loop1_start:\nINC @b\n__loop1_continue:\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nFIN\n'],
-    ['long a, b; do a++; while (a<b);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nINC @a\nBLT $a $b :__loop1_continue\n__loop1_break:\nFIN\n'],
-    ['long a, b; while (a) { a++; if (a==5) break; b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nSET @r0 #0000000000000005\nBNE $a $r0 :__if2_endif\n__if2_start:\nJMP :__loop1_break\n__if2_endif:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'],
-    ['long a, b; while (a) { a++; if (a==5) continue; b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nSET @r0 #0000000000000005\nBNE $a $r0 :__if2_endif\n__if2_start:\nJMP :__loop1_continue\n__if2_endif:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'],
-    ['long a, b, c; a++; goto alabel; b++; alabel: c++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nINC @a\nJMP :alabel\nINC @b\nalabel:\nINC @c\nFIN\n'],
-    ['long temp; temp = 2; if (temp>0) goto label1; if (temp==0) goto label2; goto label3; label1: temp++; label2: temp++; label3: temp++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare temp\n\nSET @temp #0000000000000002\nCLR @r0\nBLE $temp $r0 :__if1_endif\n__if1_start:\nJMP :label1\n__if1_endif:\nBNZ $temp :__if2_endif\n__if2_start:\nJMP :label2\n__if2_endif:\nJMP :label3\nlabel1:\nINC @temp\nlabel2:\nINC @temp\nlabel3:\nINC @temp\nFIN\n'],
-    ['long a, b; a++; asm { PSH $a\nPOP @b } b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nINC @a\nPSH $a\nPOP @b\nINC @b\nFIN\n'],
-    ['long a, b; a++; sleep 1;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nINC @a\nSET @r0 #0000000000000001\nSLP $r0\nFIN\n'],
-    ['long a, b; exit; a++; ', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nFIN\nINC @a\nFIN\n'],
-    ['halt;', false, '^declare r0\n^declare r1\n^declare r2\n\nSTP\nFIN\n'],
-    ['long a, b, c; if (a) { a++; if (b) { b++; if (c) { c++; } } }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\nBZR $b :__if2_endif\n__if2_start:\nINC @b\nBZR $c :__if3_endif\n__if3_start:\nINC @c\n__if3_endif:\n__if2_endif:\n__if1_endif:\nFIN\n'],
-    ['long a, b, c; if (a) {\n a++;\n} else if (b) {\n b++;\n} else if (c) {\n c++;\n}', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBZR $a :__if1_else\n__if1_start:\nINC @a\nJMP :__if1_endif\n__if1_else:\nBZR $b :__if2_else\n__if2_start:\nINC @b\nJMP :__if2_endif\n__if2_else:\nBZR $c :__if3_endif\n__if3_start:\nINC @c\n__if3_endif:\n__if2_endif:\n__if1_endif:\nFIN\n'],
-    ['long a, b; a=2; const b=5; a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @a #0000000000000002\n^const SET @b #0000000000000005\nINC @a\nFIN\n'],
-    ['Empty conditions', null, 'div'],
-    ['long a; if () { a++; }', true, ''],
-    ['long a; if () { a++; } else { b--; }', true, ''],
-    ['long a; while () { a++; }', true, ''],
-    ['long a; for (;;) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n__loop1_condition:\n__loop1_start:\nINC @a\n__loop1_continue:\nJMP :__loop1_condition\n__loop1_break:\nFIN\n'],
-    ['long a; do { a++; } while ();', true, ''],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a) { a++; } else { b--; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_else\n__if1_start:\nINC @a\nJMP :__if1_endif\n__if1_else:\nDEC @b\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; while (a) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; for (a=0;a<10;a++) { b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\n__loop1_start:\nINC @b\n__loop1_continue:\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; do { a++; } while (a<b);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nINC @a\nBLT $a $b :__loop1_continue\n__loop1_break:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a) a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; if (a) a++; else b--;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__if1_else\n__if1_start:\nINC @a\nJMP :__if1_endif\n__if1_else:\nDEC @b\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; while (a) a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; for (a=0;a<10;a++) b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\n__loop1_start:\nINC @b\n__loop1_continue:\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; do a++; while (a<b);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nINC @a\nBLT $a $b :__loop1_continue\n__loop1_break:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; while (a) { a++; if (a==5) break; b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nSET @r0 #0000000000000005\nBNE $a $r0 :__if2_endif\n__if2_start:\nJMP :__loop1_break\n__if2_endif:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; while (a) { a++; if (a==5) continue; b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $a :__loop1_break\n__loop1_start:\nINC @a\nSET @r0 #0000000000000005\nBNE $a $r0 :__if2_endif\n__if2_start:\nJMP :__loop1_continue\n__if2_endif:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c; a++; goto alabel; b++; alabel: c++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nINC @a\nJMP :alabel\nINC @b\nalabel:\nINC @c\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong temp; temp = 2; if (temp>0) goto label1; if (temp==0) goto label2; goto label3; label1: temp++; label2: temp++; label3: temp++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare temp\n\nSET @temp #0000000000000002\nCLR @r0\nBLE $temp $r0 :__if1_endif\n__if1_start:\nJMP :label1\n__if1_endif:\nBNZ $temp :__if2_endif\n__if2_start:\nJMP :label2\n__if2_endif:\nJMP :label3\nlabel1:\nINC @temp\nlabel2:\nINC @temp\nlabel3:\nINC @temp\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; a++; asm { PSH $a\nPOP @b } b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nINC @a\nPSH $a\nPOP @b\nINC @b\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; a++; sleep 1;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nINC @a\nSET @r0 #0000000000000001\nSLP $r0\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; exit; a++; ', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nFIN\nINC @a\nFIN\n'],
+    ['#pragma optimizationLevel 0\nhalt;', false, '^declare r0\n^declare r1\n^declare r2\n\nSTP\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c; if (a) { a++; if (b) { b++; if (c) { c++; } } }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBZR $a :__if1_endif\n__if1_start:\nINC @a\nBZR $b :__if2_endif\n__if2_start:\nINC @b\nBZR $c :__if3_endif\n__if3_start:\nINC @c\n__if3_endif:\n__if2_endif:\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b, c; if (a) {\n a++;\n} else if (b) {\n b++;\n} else if (c) {\n c++;\n}', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nBZR $a :__if1_else\n__if1_start:\nINC @a\nJMP :__if1_endif\n__if1_else:\nBZR $b :__if2_else\n__if2_start:\nINC @b\nJMP :__if2_endif\n__if2_else:\nBZR $c :__if3_endif\n__if3_start:\nINC @c\n__if3_endif:\n__if2_endif:\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; a=2; const b=5; a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @a #0000000000000002\n^const SET @b #0000000000000005\nINC @a\nFIN\n'],
+    ['#pragma optimizationLevel 0\nEmpty conditions', null, 'div'],
+    ['#pragma optimizationLevel 0\nlong a; if () { a++; }', true, ''],
+    ['#pragma optimizationLevel 0\nlong a; if () { a++; } else { b--; }', true, ''],
+    ['#pragma optimizationLevel 0\nlong a; while () { a++; }', true, ''],
+    ['#pragma optimizationLevel 0\nlong a; for (;;) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n__loop1_condition:\n__loop1_start:\nINC @a\n__loop1_continue:\nJMP :__loop1_condition\n__loop1_break:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; do { a++; } while ();', true, ''],
 
     // pointer Operation
     ['Full tests;', null, 'div'],
@@ -804,39 +804,39 @@ d[a]=pcar->passenger[b];`, false, '^declare r0\n^declare r1\n^declare r2\n^decla
     ['struct KOMBI { long driver, collector, passenger; } *car; void * ptr; ptr = &car;', false, '^declare r0\n^declare r1\n^declare r2\n^declare car\n^declare ptr\n\nSET @ptr #0000000000000003\nFIN\n'],
 
     ['Logical operations with arrays and structs', null, 'div'],
-    ['long a[2], b; if (a[b]) { b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBZR $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nFIN\n'],
-    ['long a[2], b; if (!(a[b])) { b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nFIN\n'],
-    ['long a[2], b; if (!a[b]) { b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nFIN\n'],
-    [`struct KOMBI { long driver; long collector; long passenger; } car;
+    ['#pragma optimizationLevel 0\nlong a[2], b; if (a[b]) { b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBZR $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a[2], b; if (!(a[b])) { b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a[2], b; if (!a[b]) { b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare b\n\nSET @r0 $($a + $b)\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nFIN\n'],
+    [`#pragma optimizationLevel 0\nstruct KOMBI { long driver; long collector; long passenger; } car;
 long a, b;
 if (car.driver=='Ze') { b++; }
 if (a<=car.collector) { b--; }`, false, '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nBNE $car_driver $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nBGT $a $car_collector :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n'],
-    [`struct KOMBI { long driver; long collector; long passenger; } car[2];
+    [`#pragma optimizationLevel 0\nstruct KOMBI { long driver; long collector; long passenger; } car[2];
 long a, b;
 if (car[1].driver=='Ze') { b++; }
 if (a<=car[0].collector) { b--; }`, false, '^declare r0\n^declare r1\n^declare r2\n^declare car\n^const SET @car #0000000000000004\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nBNE $car_1_driver $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nBGT $a $car_0_collector :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n'],
-    [`struct KOMBI { long driver; long collector; long passenger; } car[2];
+    [`#pragma optimizationLevel 0\nstruct KOMBI { long driver; long collector; long passenger; } car[2];
 long a, b;
 if (car[b].driver=='Ze') { b++; }
 if (a<=car[b].collector) { b--; }`, false, '^declare r0\n^declare r1\n^declare r2\n^declare car\n^const SET @car #0000000000000004\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare a\n^declare b\n\nSET @r0 #0000000000000003\nMUL @r0 $b\nSET @r1 $($car + $r0)\nSET @r0 #000000000000655a\nBNE $r1 $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nSET @r0 #0000000000000003\nMUL @r0 $b\nINC @r0\nSET @r1 $($car + $r0)\nBGT $a $r1 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n'],
-    [`struct KOMBI { long driver; long collector; long passenger[3]; } car;
+    [`#pragma optimizationLevel 0\nstruct KOMBI { long driver; long collector; long passenger[3]; } car;
 long a, b;
 if (car.passenger[0]=='Ze') { b++; }
 if (a<=car.passenger[2]) { b--; }`, false, '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^const SET @car_passenger #0000000000000006\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nBNE $car_passenger_0 $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nBGT $a $car_passenger_2 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n'],
-    [`struct KOMBI { long driver; long collector; long passenger[3]; } car[2];
+    [`#pragma optimizationLevel 0\nstruct KOMBI { long driver; long collector; long passenger[3]; } car[2];
 long a, b;
 if (car[0].passenger[0]=='Ze') { b++; }
 if (a<=car[b].passenger[2]) { b--; }`, false, '^declare r0\n^declare r1\n^declare r2\n^declare car\n^const SET @car #0000000000000004\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^const SET @car_0_passenger #0000000000000007\n^declare car_0_passenger_0\n^declare car_0_passenger_1\n^declare car_0_passenger_2\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^const SET @car_1_passenger #000000000000000d\n^declare car_1_passenger_0\n^declare car_1_passenger_1\n^declare car_1_passenger_2\n^declare a\n^declare b\n\nSET @r0 #000000000000655a\nBNE $car_0_passenger_0 $r0 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nSET @r0 #0000000000000006\nMUL @r0 $b\nSET @r1 #0000000000000003\nADD @r0 $r1\nINC @r0\nINC @r0\nSET @r1 $($car + $r0)\nBGT $a $r1 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n'],
-    [`struct KOMBI { long driver; long collector; long passenger[3]; } car[2];
+    [`#pragma optimizationLevel 0\nstruct KOMBI { long driver; long collector; long passenger[3]; } car[2];
 long a, b;
 if (car[0].passenger[b]=='Ze') { b++; }
 if (a<=car[b].passenger[a]) { b--; }`, false, '^declare r0\n^declare r1\n^declare r2\n^declare car\n^const SET @car #0000000000000004\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^const SET @car_0_passenger #0000000000000007\n^declare car_0_passenger_0\n^declare car_0_passenger_1\n^declare car_0_passenger_2\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^const SET @car_1_passenger #000000000000000d\n^declare car_1_passenger_0\n^declare car_1_passenger_1\n^declare car_1_passenger_2\n^declare a\n^declare b\n\nSET @r0 $($car_0_passenger + $b)\nSET @r1 #000000000000655a\nBNE $r0 $r1 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nSET @r0 #0000000000000006\nMUL @r0 $b\nSET @r1 #0000000000000003\nADD @r0 $r1\nADD @r0 $a\nSET @r1 $($car + $r0)\nBGT $a $r1 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n'],
-    [`struct KOMBI { long driver; long collector; long passenger; } ;
+    [`#pragma optimizationLevel 0\nstruct KOMBI { long driver; long collector; long passenger; } ;
 struct KOMBI car[2], *pcar;
 long a, b;
 pcar=&car[1];
 if (pcar->driver=='Ze') { b++; }
-if (a<=pcar->collector) { b--; }`, false, '^declare r0\n^declare r1\n^declare r2\n^declare car\n^const SET @car #0000000000000004\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare pcar\n^declare a\n^declare b\n\nSET @pcar #0000000000000007\nCLR @r1\nSET @r0 $($pcar + $r1)\nSET @r1 #000000000000655a\nBNE $r0 $r1 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nBGT $a $r0 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n'],
+if (a<=pcar->collector) { b--; }`, false, '^declare r0\n^declare r1\n^declare r2\n^declare car\n^const SET @car #0000000000000004\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare pcar\n^declare a\n^declare b\n\nSET @pcar #0000000000000007\nSET @r0 $($pcar)\nSET @r1 #000000000000655a\nBNE $r0 $r1 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nBGT $a $r0 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n'],
 
     //    [ "",  false,"" ],
 
@@ -851,21 +851,21 @@ if (a<=pcar->collector) { b--; }`, false, '^declare r0\n^declare r1\n^declare r2
     ['long a[3]; a[0]=9;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n\nSET @a_0 #0000000000000009\nFIN\n'],
     ['long a[3]; a=9;', true, ''],
     ['Functions', null, 'div'],
-    ['long a; void main(void) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\n'],
-    ['long a; void main(void) { a++; return; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\n'],
-    ['long a; void main(void) { a++; return; a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\nINC @a\nFIN\n'],
-    ['long a; void test(void) { a++; return; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFIN\n\n__fn_test:\nINC @a\nRET\n'],
-    ['long a; void test(void) { a++; return; a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFIN\n\n__fn_test:\nINC @a\nRET\nINC @a\nRET\n'],
-    ['long a; test(); void test(void) { a++; return; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nINC @a\nRET\n'],
-    ['long a; a=test(); void test(void) { a++; return; }', true, ''],
-    ['long a; void test2(long b) { b++; return; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nRET\n'],
-    ['long a; long test2(long b) { b++; return b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n'],
-    ['long a=0; a=test2(a); long test2(long b) { b++; return b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\nSET @a $r0\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n'],
-    ['#pragma warningToError false\nlong a=0; test2(a); long test2(long b) { b++; return b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n'],
-    ['long a=0; void main(void){ a++; test2(a); exit; } void test2(long b) { b++; return; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nCLR @a\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nPSH $a\nJSR :__fn_test2\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nRET\n'],
-    ['#include APIFunctions\nlong a;Set_A1(a);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFUN set_A1 $a\nFIN\n'],
-    ['#include APIFunctions\nSet_A1();', true, ''],
-    ['long *a; a=test(); long *test(void) { long b; return &b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test_b\n\nJSR :__fn_test\nPOP @a\nFIN\n\n__fn_test:\nSET @r0 #0000000000000004\nPSH $r0\nRET\n'],
+    ['#pragma optimizationLevel 0\nlong a; void main(void) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; void main(void) { a++; return; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; void main(void) { a++; return; a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\nINC @a\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a; void test(void) { a++; return; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFIN\n\n__fn_test:\nINC @a\nRET\n'],
+    ['#pragma optimizationLevel 0\nlong a; void test(void) { a++; return; a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFIN\n\n__fn_test:\nINC @a\nRET\nINC @a\nRET\n'],
+    ['#pragma optimizationLevel 0\nlong a; test(); void test(void) { a++; return; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nINC @a\nRET\n'],
+    ['#pragma optimizationLevel 0\nlong a; a=test(); void test(void) { a++; return; }', true, ''],
+    ['#pragma optimizationLevel 0\nlong a; void test2(long b) { b++; return; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nRET\n'],
+    ['#pragma optimizationLevel 0\nlong a; long test2(long b) { b++; return b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n'],
+    ['#pragma optimizationLevel 0\nlong a=0; a=test2(a); long test2(long b) { b++; return b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\nSET @a $r0\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n'],
+    ['#pragma optimizationLevel 0\n#pragma warningToError false\nlong a=0; test2(a); long test2(long b) { b++; return b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n'],
+    ['#pragma optimizationLevel 0\nlong a=0; void main(void){ a++; test2(a); exit; } void test2(long b) { b++; return; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nCLR @a\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nPSH $a\nJSR :__fn_test2\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nRET\n'],
+    ['#pragma optimizationLevel 0\n#include APIFunctions\nlong a;Set_A1(a);', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFUN set_A1 $a\nFIN\n'],
+    ['#pragma optimizationLevel 0\n#include APIFunctions\nSet_A1();', true, ''],
+    ['#pragma optimizationLevel 0\nlong *a; a=test(); long *test(void) { long b; return &b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test_b\n\nJSR :__fn_test\nPOP @a\nFIN\n\n__fn_test:\nSET @r0 #0000000000000004\nPSH $r0\nRET\n'],
     ['long a; a=test(); long *test(void) { long b; return &b; }', true, ''],
     ['long *a; a=test(); long *test(void) { long b; return b; }', true, ''],
     ['struct KOMBI { long driver; long collector; long passenger; } car, car2; car = teste(); struct KOMBI teste(void){ return car; }', true, ''],
@@ -895,7 +895,7 @@ if (a<=pcar->collector) { b--; }`, false, '^declare r0\n^declare r1\n^declare r2
     // long *a[4], b, c; c = -a[b];
     [
         // Recursion with fibbonacci
-        'long a; long counter = 0; a = fibbonacci(12); \nlong fibbonacci(long n) {if(n == 0){ return 0; } else if(n == 1) { return 1; } else { return (fibbonacci(n-1) + fibbonacci(n-2)); } }',
+        '#pragma optimizationLevel 0\nlong a; long counter = 0; a = fibbonacci(12); \nlong fibbonacci(long n) {if(n == 0){ return 0; } else if(n == 1) { return 1; } else { return (fibbonacci(n-1) + fibbonacci(n-2)); } }',
         false,
         '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare counter\n^declare fibbonacci_n\n\nCLR @counter\nSET @a #000000000000000c\nPSH $a\nJSR :__fn_fibbonacci\nPOP @a\nFIN\n\n__fn_fibbonacci:\nPOP @fibbonacci_n\nBNZ $fibbonacci_n :__if1_else\n__if1_start:\nCLR @r0\nPSH $r0\nRET\nJMP :__if1_endif\n__if1_else:\nSET @r0 #0000000000000001\nBNE $fibbonacci_n $r0 :__if2_else\n__if2_start:\nSET @r0 #0000000000000001\nPSH $r0\nRET\nJMP :__if2_endif\n__if2_else:\nPSH $fibbonacci_n\nSET @r0 $fibbonacci_n\nDEC @r0\nPSH $r0\nJSR :__fn_fibbonacci\nPOP @r0\nPOP @fibbonacci_n\nPSH $fibbonacci_n\nPSH $r0\nSET @r1 $fibbonacci_n\nSET @r2 #0000000000000002\nSUB @r1 $r2\nPSH $r1\nJSR :__fn_fibbonacci\nPOP @r1\nPOP @r0\nPOP @fibbonacci_n\nADD @r0 $r1\nPSH $r0\nRET\n__if2_endif:\n__if1_endif:\nCLR @r0\nPSH $r0\nRET\n'
     ],
@@ -916,7 +916,7 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`,
     ],
     [
         // return of null pointer and return of long_ptr at function returning void pointer. Assign this return value to a long_ptr
-        'long *plong; plong = malloc(); void *malloc(void) { if (current >=20) { return NULL; } long current++; long mem[20]; return (&mem[current]); }',
+        '#pragma optimizationLevel 0\nlong *plong; plong = malloc(); void *malloc(void) { if (current >=20) { return NULL; } long current++; long mem[20]; return (&mem[current]); }',
         false,
         '^declare r0\n^declare r1\n^declare r2\n^declare plong\n^declare malloc_current\n^declare malloc_mem\n^const SET @malloc_mem #0000000000000006\n^declare malloc_mem_0\n^declare malloc_mem_1\n^declare malloc_mem_2\n^declare malloc_mem_3\n^declare malloc_mem_4\n^declare malloc_mem_5\n^declare malloc_mem_6\n^declare malloc_mem_7\n^declare malloc_mem_8\n^declare malloc_mem_9\n^declare malloc_mem_10\n^declare malloc_mem_11\n^declare malloc_mem_12\n^declare malloc_mem_13\n^declare malloc_mem_14\n^declare malloc_mem_15\n^declare malloc_mem_16\n^declare malloc_mem_17\n^declare malloc_mem_18\n^declare malloc_mem_19\n\nJSR :__fn_malloc\nPOP @plong\nFIN\n\n__fn_malloc:\nSET @r0 #0000000000000014\nBLT $malloc_current $r0 :__if1_endif\n__if1_start:\nCLR @r0\nPSH $r0\nRET\n__if1_endif:\nINC @malloc_current\nSET @r0 $malloc_mem\nADD @r0 $malloc_current\nPSH $r0\nRET\n'
     ],
@@ -952,25 +952,25 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`,
     ],
     [
         // Special function 'catch'
-        '#program activationAmount 0\nlong table[20];\nvoid main (void) { const long a = 0; while (true) { table[a] = fibbonacci(a); halt; a++; } }\nlong fibbonacci(long n) { if(n == 0){ return 0; } else if(n == 1) { return 1; } else { return (fibbonacci(n-1) + fibbonacci(n-2)); } }\nvoid catch(void) { long a++; }',
+        '#pragma optimizationLevel 0\n#program activationAmount 0\nlong table[20];\nvoid main (void) { const long a = 0; while (true) { table[a] = fibbonacci(a); halt; a++; } }\nlong fibbonacci(long n) { if(n == 0){ return 0; } else if(n == 1) { return 1; } else { return (fibbonacci(n-1) + fibbonacci(n-2)); } }\nvoid catch(void) { long a++; }',
         false,
         '^program activationAmount 0\n^declare r0\n^declare r1\n^declare r2\n^declare table\n^const SET @table #0000000000000004\n^declare table_0\n^declare table_1\n^declare table_2\n^declare table_3\n^declare table_4\n^declare table_5\n^declare table_6\n^declare table_7\n^declare table_8\n^declare table_9\n^declare table_10\n^declare table_11\n^declare table_12\n^declare table_13\n^declare table_14\n^declare table_15\n^declare table_16\n^declare table_17\n^declare table_18\n^declare table_19\n^declare main_a\n^declare fibbonacci_n\n^declare catch_a\n\nERR :__fn_catch\nJMP :__fn_main\n\n__fn_main:\nPCS\n^const SET @main_a #0000000000000000\n__loop1_continue:\n__loop1_start:\nPSH $main_a\nJSR :__fn_fibbonacci\nPOP @r0\nSET @($table + $main_a) $r0\nSTP\nINC @main_a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n\n__fn_fibbonacci:\nPOP @fibbonacci_n\nBNZ $fibbonacci_n :__if2_else\n__if2_start:\nCLR @r0\nPSH $r0\nRET\nJMP :__if2_endif\n__if2_else:\nSET @r0 #0000000000000001\nBNE $fibbonacci_n $r0 :__if3_else\n__if3_start:\nSET @r0 #0000000000000001\nPSH $r0\nRET\nJMP :__if3_endif\n__if3_else:\nPSH $fibbonacci_n\nSET @r0 $fibbonacci_n\nDEC @r0\nPSH $r0\nJSR :__fn_fibbonacci\nPOP @r0\nPOP @fibbonacci_n\nPSH $fibbonacci_n\nPSH $r0\nSET @r1 $fibbonacci_n\nSET @r2 #0000000000000002\nSUB @r1 $r2\nPSH $r1\nJSR :__fn_fibbonacci\nPOP @r1\nPOP @r0\nPOP @fibbonacci_n\nADD @r0 $r1\nPSH $r0\nRET\n__if3_endif:\n__if2_endif:\nCLR @r0\nPSH $r0\nRET\n\n__fn_catch:\nPCS\nINC @catch_a\nFIN\n'
     ],
     [
         // Special function 'catch': no main function
-        'long b, a = 0; while (true) { a++; } void catch(void) { long a++; }',
+        '#pragma optimizationLevel 0\nlong b, a = 0; while (true) { a++; } void catch(void) { long a++; }',
         false,
         '^declare r0\n^declare r1\n^declare r2\n^declare b\n^declare a\n^declare catch_a\n\nERR :__fn_catch\nCLR @a\n__loop1_continue:\n__loop1_start:\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n\n__fn_catch:\nPCS\nINC @catch_a\nFIN\n'
     ],
     [
         // 'catch' with return statement
-        'long b, a = 0; void catch(void) { if (a) return; a++; }',
+        '#pragma optimizationLevel 0\nlong b, a = 0; void catch(void) { if (a) return; a++; }',
         false,
         '^declare r0\n^declare r1\n^declare r2\n^declare b\n^declare a\n\nERR :__fn_catch\nCLR @a\nFIN\n\n__fn_catch:\nPCS\nBZR $a :__if1_endif\n__if1_start:\nFIN\n__if1_endif:\nINC @a\nFIN\n'
     ],
     [
         // Optimization with const nX variables
-        'const long n233 = 233; long a, b[2]; b[a]=233; b[0]=233; while (a<233) { a++; };',
+        '#pragma optimizationLevel 0\nconst long n233 = 233; long a, b[2]; b[a]=233; b[0]=233; while (a<233) { a++; };',
         false,
         '^declare r0\n^declare r1\n^declare r2\n^declare n233\n^declare a\n^declare b\n^const SET @b #0000000000000006\n^declare b_0\n^declare b_1\n\n^const SET @n233 #00000000000000e9\nSET @($b + $a) $n233\nSET @b_0 $n233\n__loop1_continue:\nBGE $a $n233 :__loop1_break\n__loop1_start:\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'
     ],
@@ -982,13 +982,13 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`,
     ],
     [
         // Macro codeStackPages test
-        '#program codeStackPages    10   \nlong a; void test(void) { a++; return; a++; }',
+        '#pragma optimizationLevel 0\n#program codeStackPages    10   \nlong a; void test(void) { a++; return; a++; }',
         false,
         '^program codeStackPages 10\n^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFIN\n\n__fn_test:\nINC @a\nRET\nINC @a\nRET\n'
     ],
     [
         // Macro userStackPages test
-        '#program codeStackPages    0   \n#program userStackPages 5\n long a; void test(long aa) { a++; return; a++; }',
+        '#pragma optimizationLevel 0\n#program codeStackPages    0   \n#program userStackPages 5\n long a; void test(long aa) { a++; return; a++; }',
         false,
         '^program userStackPages 5\n^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test_aa\n\nFIN\n\n__fn_test:\nPOP @test_aa\nINC @a\nRET\nINC @a\nRET\n'
     ],
@@ -1000,7 +1000,7 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`,
     ],
     [
         // Macro outputSourceLineNumber test
-        '#pragma outputSourceLineNumber\nlong a=5;\nif (a==6){\na--;\n}\n',
+        '#pragma outputSourceLineNumber\nlong a=5;\nif (a==6){\na--;\n}\n#pragma optimizationLevel 0\n',
         false,
         '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n^comment line 3\nSET @a #0000000000000005\n^comment line 4\nSET @r0 #0000000000000006\nBNE $a $r0 :__if1_endif\n__if1_start:\n^comment line 5\nDEC @a\n__if1_endif:\nFIN\n'
     ],
@@ -1013,22 +1013,22 @@ void *ret(long *aa, void *bb) { aa++; return aa; }`,
     ],
     */
 
-    // globalOptimization
-    ['globalOptimization', null, 'div'],
-    ['#pragma globalOptimization\nlong a,b; for (a=0;a<10;a++) { b++; } b--;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nINC @b\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nDEC @b\nFIN\n'],
-    ['#pragma globalOptimization\nlong a,b; while (b) {a++; while (1) { if (a) break;  } } a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $b :__loop1_break\nINC @a\n__loop2_continue:\nBZR $a :__loop2_continue\nJMP :__loop1_continue\n__loop1_break:\nINC @a\nFIN\n'],
-    ['#pragma globalOptimization\nlong a,b; if (!b) {a++; } b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $b :__if1_endif\nINC @a\n__if1_endif:\nINC @b\nFIN\n'],
-    ['#pragma globalOptimization\nlong a,b; void main (void) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n\nPCS\nINC @a\nFIN\n'],
-    ['#pragma globalOptimization\nlong a,b; if (!b) {a++; } else { b++;} ', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $b :__if1_else\nINC @a\nFIN\n__if1_else:\nINC @b\nFIN\n'],
-    ['#pragma globalOptimization\nlong a,b; test(); void test (void) { if (a) a++; else b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nBZR $a :__if1_else\nINC @a\nRET\n__if1_else:\nINC @b\nRET\n'],
-    ['#pragma globalOptimization\nlong a,b; test(); exit; a++; void test (void) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nINC @a\nRET\n'],
-    ['#pragma globalOptimization\nlong a,b; test(); void test (void) { return; a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nRET\n'],
-    ['#pragma globalOptimization\nlong a,b; test(); void test (void) { if (a) a++; else b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nBZR $a :__if1_else\nINC @a\nRET\n__if1_else:\nINC @b\nRET\n'],
-    ['#pragma globalOptimization\nlong a, b, c, d; a=(b*c)*d;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @a $b\nMUL @a $c\nMUL @a $d\nFIN\n'],
-    ['#pragma globalOptimization\nlong a[4][2], *b, c,d; b=&a[c][d];', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\n^declare c\n^declare d\n\nSET @r0 #0000000000000002\nMUL @r0 $c\nADD @r0 $d\nSET @b $a\nADD @b $r0\nFIN\n'],
+    // optimizationLevel 3
+    ['optimizationLevel 3', null, 'div'],
+    ['#pragma optimizationLevel 3\nlong a,b; for (a=0;a<10;a++) { b++; } b--;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nINC @b\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nDEC @b\nFIN\n'],
+    ['#pragma optimizationLevel 3\nlong a,b; while (b) {a++; while (1) { if (a) break;  } } a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBZR $b :__loop1_break\nINC @a\n__loop2_continue:\nBNZ $a :__loop1_continue\nJMP :__loop2_continue\n__loop1_break:\nINC @a\nFIN\n'],
+    ['#pragma optimizationLevel 3\nlong a,b; if (!b) {a++; } b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $b :__if1_endif\nINC @a\n__if1_endif:\nINC @b\nFIN\n'],
+    ['#pragma optimizationLevel 3\nlong a,b; void main (void) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n\nPCS\nINC @a\nFIN\n'],
+    ['#pragma optimizationLevel 3\nlong a,b; if (!b) {a++; } else { b++;} ', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $b :__if1_else\nINC @a\nFIN\n__if1_else:\nINC @b\nFIN\n'],
+    ['#pragma optimizationLevel 3\nlong a,b; test(); void test (void) { if (a) a++; else b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nBZR $a :__if1_else\nINC @a\nRET\n__if1_else:\nINC @b\nRET\n'],
+    ['#pragma optimizationLevel 3\nlong a,b; test(); exit; a++; void test (void) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nINC @a\nRET\n'],
+    ['#pragma optimizationLevel 3\nlong a,b; test(); void test (void) { return; a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nRET\n'],
+    ['#pragma optimizationLevel 3\nlong a,b; test(); void test (void) { if (a) a++; else b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test\nFIN\n\n__fn_test:\nBZR $a :__if1_else\nINC @a\nRET\n__if1_else:\nINC @b\nRET\n'],
+    ['#pragma optimizationLevel 3\nlong a, b, c, d; a=(b*c)*d;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @a $b\nMUL @a $c\nMUL @a $d\nFIN\n'],
+    ['#pragma optimizationLevel 3\nlong a[4][2], *b, c,d; b=&a[c][d];', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare a_5\n^declare a_6\n^declare a_7\n^declare b\n^declare c\n^declare d\n\nSET @r0 #0000000000000002\nMUL @r0 $c\nADD @r0 $d\nSET @b $a\nADD @b $r0\nFIN\n'],
 
-    ['#pragma globalOptimization\n long a; a=0; void test(void){ a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @a\nFIN\n\n'],
-    [`#pragma globalOptimization\nstruct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b, *c, d[2],z;pcar=&car;
+    ['#pragma optimizationLevel 3\n long a; a=0; void test(void){ a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @a\nFIN\n\n'],
+    [`#pragma optimizationLevel 3\nstruct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b, *c, d[2],z;pcar=&car;
 pcar->passenger='Ze';
 pcar->driver=a;
 b+=-a;
@@ -1037,8 +1037,8 @@ d[a]=5;
 for (a=0;a<10;a++) d[a]=1;\n
 pcar->driver=*c;pcar->driver=d[1];pcar->driver=d[a];pcar->driver=pcar->collector;
 a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;`, false, '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #000000000000000b\n^declare d_0\n^declare d_1\n^declare z\n\nSET @pcar #0000000000000003\nSET @r0 #000000000000655a\nSET @r1 #0000000000000002\nSET @($pcar + $r1) $r0\nSET @($pcar) $a\nCLR @r0\nSUB @r0 $a\nADD @b $r0\nSET @r0 #0000000000000005\nSET @($d) $r0\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nSET @r0 #0000000000000001\nSET @($d + $a) $r0\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nSET @r0 $($c)\nSET @($pcar) $r0\nSET @($pcar) $d_1\nSET @r0 $($d + $a)\nSET @($pcar) $r0\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nSET @($pcar) $r0\nSET @r0 #0000000000000001\nSET @a $($pcar + $r0)\nINC @z\nSET @r0 $($pcar)\nSET @($c) $r0\nSET @r0 #0000000000000001\nSET @d_1 $($pcar + $r0)\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nSET @($d + $a) $r0\nFIN\n'],
-    ['#pragma globalOptimization\n long d[2]; d[1]=d[1]+1;', false, '^declare r0\n^declare r1\n^declare r2\n^declare d\n^const SET @d #0000000000000004\n^declare d_0\n^declare d_1\n\nINC @d_1\nFIN\n'],
-    [`#pragma globalOptimization\n#pragma maxConstVars 3\nstruct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b, *c, d[2],z;pcar=&car;
+    ['#pragma optimizationLevel 3\n long d[2]; d[1]=d[1]+1;', false, '^declare r0\n^declare r1\n^declare r2\n^declare d\n^const SET @d #0000000000000004\n^declare d_0\n^declare d_1\n\nINC @d_1\nFIN\n'],
+    [`#pragma optimizationLevel 3\n#pragma maxConstVars 3\nstruct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car, *pcar;long a, b, *c, d[2],z;pcar=&car;
 pcar->passenger='Ze';
 pcar->driver=a;
 b+=-a;
@@ -1047,13 +1047,13 @@ d[a]=5;
 for (a=0;a<10;a++) d[a]=1;\n
 pcar->driver=*c;pcar->driver=d[1];pcar->driver=d[a];pcar->driver=pcar->collector;
 a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;`, false, '^declare r0\n^declare r1\n^declare r2\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #000000000000000e\n^declare d_0\n^declare d_1\n^declare z\n\nSET @pcar #0000000000000006\nSET @r0 #000000000000655a\nSET @($pcar + $n2) $r0\nSET @($pcar) $a\nCLR @r0\nSUB @r0 $a\nADD @b $r0\nSET @r0 #0000000000000005\nSET @($d) $r0\nCLR @a\n__loop1_condition:\nSET @r0 #000000000000000a\nBGE $a $r0 :__loop1_break\nSET @($d + $a) $n1\nINC @a\nJMP :__loop1_condition\n__loop1_break:\nSET @r0 $($c)\nSET @($pcar) $r0\nSET @($pcar) $d_1\nSET @r0 $($d + $a)\nSET @($pcar) $r0\nSET @r0 $($pcar + $n1)\nSET @($pcar) $r0\nSET @a $($pcar + $n1)\nINC @z\nSET @r0 $($pcar)\nSET @($c) $r0\nSET @d_1 $($pcar + $n1)\nSET @r0 $($pcar + $n1)\nSET @($d + $a) $r0\nFIN\n'],
-    ['#pragma globalOptimization\n#pragma maxConstVars 3\nlong a, b, c; teste(a, 2); void teste(long aa, long bb) { aa=bb;} ', false, '^declare r0\n^declare r1\n^declare r2\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n^declare a\n^declare b\n^declare c\n^declare teste_aa\n^declare teste_bb\n\nPSH $n2\nPSH $a\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_aa\nPOP @teste_bb\nSET @teste_aa $teste_bb\nRET\n'],
-    ['#pragma globalOptimization\n#pragma maxConstVars 3\nsleep 1;', false, '^declare r0\n^declare r1\n^declare r2\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n\nSLP $n1\nFIN\n'],
-    ['#pragma globalOptimization\n long a,b; if ( a==4 && (b || a )) { a++; a=4;} b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 #0000000000000004\nBNE $a $r0 :__if1_endif\nBNZ $b :__if1_start\nBZR $a :__if1_endif\n__if1_start:\nINC @a\nSET @a #0000000000000004\n__if1_endif:\nINC @b\nFIN\n'],
-    ['#pragma globalOptimization\n long a,b, c; if ( a==4 && (b || a>c )) { a++; a=4; } b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @r0 #0000000000000004\nBNE $a $r0 :__if1_endif\nBNZ $b :__if1_start\nBLE $a $c :__if1_endif\n__if1_start:\nINC @a\nSET @a #0000000000000004\n__if1_endif:\nINC @b\nFIN\n'],
-    ['#pragma globalOptimization\n long a; a=~a;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nNOT @a\nFIN\n'],
-    ['#pragma globalOptimization\n long a, b; tt(teste(b)); long teste(long c){ return ++c; } void tt(long d){ d++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare teste_c\n^declare tt_d\n\nPSH $b\nJSR :__fn_teste\nJSR :__fn_tt\nFIN\n\n__fn_teste:\nPOP @teste_c\nINC @teste_c\nPSH $teste_c\nRET\n\n__fn_tt:\nPOP @tt_d\nINC @tt_d\nRET\n'],
-    ['#pragma globalOptimization\n long a, b; /* No opt: interference with reuseVariable */ a=teste(teste(b)); tt(a); long teste(long c){ return ++c; } void tt(long d){ d++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare teste_c\n^declare tt_d\n\nPSH $b\nJSR :__fn_teste\nPOP @a\nPSH $a\nJSR :__fn_teste\nPOP @a\nPSH $a\nJSR :__fn_tt\nFIN\n\n__fn_teste:\nPOP @teste_c\nINC @teste_c\nPSH $teste_c\nRET\n\n__fn_tt:\nPOP @tt_d\nINC @tt_d\nRET\n'],
+    ['#pragma optimizationLevel 3\n#pragma maxConstVars 3\nlong a, b, c; teste(a, 2); void teste(long aa, long bb) { aa=bb;} ', false, '^declare r0\n^declare r1\n^declare r2\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n^declare a\n^declare b\n^declare c\n^declare teste_aa\n^declare teste_bb\n\nPSH $n2\nPSH $a\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_aa\nPOP @teste_bb\nSET @teste_aa $teste_bb\nRET\n'],
+    ['#pragma optimizationLevel 3\n#pragma maxConstVars 3\nsleep 1;', false, '^declare r0\n^declare r1\n^declare r2\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare n3\n^const SET @n3 #0000000000000003\n\nSLP $n1\nFIN\n'],
+    ['#pragma optimizationLevel 3\n long a,b; if ( a==4 && (b || a )) { a++; a=4;} b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 #0000000000000004\nBNE $a $r0 :__if1_endif\nBNZ $b :__if1_start\nBZR $a :__if1_endif\n__if1_start:\nINC @a\nSET @a #0000000000000004\n__if1_endif:\nINC @b\nFIN\n'],
+    ['#pragma optimizationLevel 3\n long a,b, c; if ( a==4 && (b || a>c )) { a++; a=4; } b++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @r0 #0000000000000004\nBNE $a $r0 :__if1_endif\nBNZ $b :__if1_start\nBLE $a $c :__if1_endif\n__if1_start:\nINC @a\nSET @a #0000000000000004\n__if1_endif:\nINC @b\nFIN\n'],
+    ['#pragma optimizationLevel 3\n long a; a=~a;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nNOT @a\nFIN\n'],
+    ['#pragma optimizationLevel 3\n long a, b; tt(teste(b)); long teste(long c){ return ++c; } void tt(long d){ d++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare teste_c\n^declare tt_d\n\nPSH $b\nJSR :__fn_teste\nJSR :__fn_tt\nFIN\n\n__fn_teste:\nPOP @teste_c\nINC @teste_c\nPSH $teste_c\nRET\n\n__fn_tt:\nPOP @tt_d\nINC @tt_d\nRET\n'],
+    ['#pragma optimizationLevel 3\n long a, b; /* No opt: interference with reuseVariable */ a=teste(teste(b)); tt(a); long teste(long c){ return ++c; } void tt(long d){ d++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare teste_c\n^declare tt_d\n\nPSH $b\nJSR :__fn_teste\nPOP @a\nPSH $a\nJSR :__fn_teste\nPOP @a\nPSH $a\nJSR :__fn_tt\nFIN\n\n__fn_teste:\nPOP @teste_c\nINC @teste_c\nPSH $teste_c\nRET\n\n__fn_tt:\nPOP @tt_d\nINC @tt_d\nRET\n'],
     //    [ "", false, "" ],
 
     // const keyword
@@ -1090,8 +1090,8 @@ a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;
     ['#define MAX 4\n long a; a=MAX;\n #define MAX 2\n long MAXimus=MAX;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare MAXimus\n\nSET @a #0000000000000004\nSET @MAXimus #0000000000000002\nFIN\n'],
     ['#define MAX 4\n long a; a=MAX;\n #define MAX \n long MAXimus=MAX;', true, ''],
     ['#define 444 4\nlong a; a=444;\n #undef 444\nlong MAXimus=444;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare MAXimus\n\nSET @a #0000000000000004\nSET @MAXimus #00000000000001bc\nFIN\n'],
-    ['#define MAX 4\n#define MAX1 (MAX + 1)\n long a; if (a > MAX1) a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000005\nBLE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
-    ['#define MAX 4\n#define MAX1 (MAX + 1)\n#undef MAX\n long a; if (a > MAX1) a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000005\nBLE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\n#define MAX 4\n#define MAX1 (MAX + 1)\n long a; if (a > MAX1) a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000005\nBLE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\n#define MAX 4\n#define MAX1 (MAX + 1)\n#undef MAX\n long a; if (a > MAX1) a++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #0000000000000005\nBLE $a $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
     //    [ "", false, "" ],
 
     // ifdef macro
@@ -1139,30 +1139,30 @@ a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;
     // bugfixes
     ['Bug fixes', null, 'div'],
     // bug 1, goto failed with undeclared variable
-    ['void  teste(long ret) { long temp = 2; goto newlabel; ret = temp; newlabel: temp++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @teste_ret $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n'],
+    ['#pragma optimizationLevel 0\nvoid  teste(long ret) { long temp = 2; goto newlabel; ret = temp; newlabel: temp++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @teste_ret $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n'],
     // bug 2, failed when declaring pointer on function declaration
-    ['void  teste(long * ret) { long temp = 2; goto newlabel; ret[temp] = temp; newlabel: temp++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @($teste_ret + $teste_temp) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n'],
-    ['void  teste(long * ret) { long temp = 2; goto newlabel; *(ret+temp) = temp; newlabel: temp++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @r0 $teste_ret\nADD @r0 $teste_temp\nSET @($r0) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n'],
+    ['#pragma optimizationLevel 0\nvoid  teste(long * ret) { long temp = 2; goto newlabel; ret[temp] = temp; newlabel: temp++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @($teste_ret + $teste_temp) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n'],
+    ['#pragma optimizationLevel 0\nvoid  teste(long * ret) { long temp = 2; goto newlabel; *(ret+temp) = temp; newlabel: temp++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @r0 $teste_ret\nADD @r0 $teste_temp\nSET @($r0) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n'],
     // bug 3, ReuseAssignedVar not working inside a function.
-    ["#pragma maxAuxVars 2\nlong itoa(long val) {\n    long ret, temp;\n    if (val >= 0 && val <= 99999999) { ret = (ret << 8) + temp; return ret; }\n    return '#error';\n}", false, '^declare r0\n^declare r1\n^declare itoa_val\n^declare itoa_ret\n^declare itoa_temp\n\nFIN\n\n__fn_itoa:\nPOP @itoa_val\nCLR @r0\nBLT $itoa_val $r0 :__if1_endif\nSET @r0 #0000000005f5e0ff\nBGT $itoa_val $r0 :__if1_endif\nJMP :__if1_start\n__if1_start:\nSET @r0 $itoa_ret\nSET @r1 #0000000000000008\nSHL @r0 $r1\nADD @r0 $itoa_temp\nSET @itoa_ret $r0\nPSH $itoa_ret\nRET\n__if1_endif:\nSET @r0 #0000726f72726523\nPSH $r0\nRET\n'],
+    ["#pragma optimizationLevel 0\n#pragma maxAuxVars 2\nlong itoa(long val) {\n    long ret, temp;\n    if (val >= 0 && val <= 99999999) { ret = (ret << 8) + temp; return ret; }\n    return '#error';\n}", false, '^declare r0\n^declare r1\n^declare itoa_val\n^declare itoa_ret\n^declare itoa_temp\n\nFIN\n\n__fn_itoa:\nPOP @itoa_val\nCLR @r0\nBLT $itoa_val $r0 :__if1_endif\n__AND_2_next:\nSET @r0 #0000000005f5e0ff\nBGT $itoa_val $r0 :__if1_endif\nJMP :__if1_start\n__if1_start:\nSET @r0 $itoa_ret\nSET @r1 #0000000000000008\nSHL @r0 $r1\nADD @r0 $itoa_temp\nSET @itoa_ret $r0\nPSH $itoa_ret\nRET\n__if1_endif:\nSET @r0 #0000726f72726523\nPSH $r0\nRET\n'],
     // bug 4, Double declaration causing array pointer to point wrong location.
     ['long a=0; long b; a++; long a=3;', true, ''],
     ['long a=0; long b; a++; void test(void) { a++; } long tt(void) { a++;} long test(void) {a++; return a; }', true, ''],
     ['long a=0; long b; a++; void test(void) { a++; } long tt(void) { a++;} long test(void) {a++; return a; }', true, ''],
-    ['long a=0; void Get_B1(void) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @a\nFIN\n\n__fn_Get_B1:\nINC @a\nRET\n'],
+    ['#pragma optimizationLevel 0\nlong a=0; void Get_B1(void) { a++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @a\nFIN\n\n__fn_Get_B1:\nINC @a\nRET\n'],
     ['#include APIFunctions\nlong a=0; void Get_B1(void) { a++; }', true, ''],
     ['long a=0; mylabel: a++; void temp(void) { a++; mylabel: a++; }', true, ''],
     // bug 5, reuseAssignedVar not working inside functions.
-    ['void test(void) { long t, a; t = a+1; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare test_t\n^declare test_a\n\nFIN\n\n__fn_test:\nSET @test_t $test_a\nINC @test_t\nRET\n'],
+    ['#pragma optimizationLevel 0\nvoid test(void) { long t, a; t = a+1; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare test_t\n^declare test_a\n\nFIN\n\n__fn_test:\nSET @test_t $test_a\nINC @test_t\nRET\n'],
     // bug 6, removed warning when function returning long had no assignment. (removed failed case from other testcase
     // bug 7, array type definition not found when declaring array inside functions.
-    ['void test(void) { long t[2], a; t[a] = 1; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare test_t\n^const SET @test_t #0000000000000004\n^declare test_t_0\n^declare test_t_1\n^declare test_a\n\nFIN\n\n__fn_test:\nSET @r0 #0000000000000001\nSET @($test_t + $test_a) $r0\nRET\n'],
+    ['#pragma optimizationLevel 0\nvoid test(void) { long t[2], a; t[a] = 1; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare test_t\n^const SET @test_t #0000000000000004\n^declare test_t_0\n^declare test_t_1\n^declare test_a\n\nFIN\n\n__fn_test:\nSET @r0 #0000000000000001\nSET @($test_t + $test_a) $r0\nRET\n'],
     // bug 8, wrong order of stack for function call
     ['long ga, gb, gc; test(ga, gb, gc); void test(long a, long b, long c) { a+=b+c; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare ga\n^declare gb\n^declare gc\n^declare test_a\n^declare test_b\n^declare test_c\n\nPSH $gc\nPSH $gb\nPSH $ga\nJSR :__fn_test\nFIN\n\n__fn_test:\nPOP @test_a\nPOP @test_b\nPOP @test_c\nSET @r0 $test_b\nADD @r0 $test_c\nADD @test_a $r0\nRET\n'],
     // optimization: array with constant index now used for reuseAssignedVar
     ['long a[2], b; a[1]=b+1;', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare b\n\nSET @a_1 $b\nINC @a_1\nFIN\n'],
     // Support for array notation on pointer variable.
-    ['long b; void teste(long * poper) { poper[3]=0; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare b\n^declare teste_poper\n\nFIN\n\n__fn_teste:\nPOP @teste_poper\nCLR @r0\nSET @r1 #0000000000000003\nSET @($teste_poper + $r1) $r0\nRET\n'],
+    ['#pragma optimizationLevel 0\nlong b; void teste(long * poper) { poper[3]=0; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare b\n^declare teste_poper\n\nFIN\n\n__fn_teste:\nPOP @teste_poper\nCLR @r0\nSET @r1 #0000000000000003\nSET @($teste_poper + $r1) $r0\nRET\n'],
     // Support for check variable types on function calls
     ['long a, b; teste(a, b); void teste(long *fa, long fb) { fb++; }', true, ''],
     ['long * a, b; teste(a, b); void teste(long *fa, long fb) { fb++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare teste_fa\n^declare teste_fb\n\nPSH $b\nPSH $a\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_fa\nPOP @teste_fb\nINC @teste_fb\nRET\n'],
@@ -1176,18 +1176,18 @@ a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;
     ['struct KOMBI { long driver; long collector; long passenger[4]; } car; long a, b; ++car.driver; a=car.collector++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^const SET @car_passenger #0000000000000006\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare a\n^declare b\n\nINC @car_driver\nSET @a $car_collector\nINC @car_collector\nFIN\n'],
     ['struct KOMBI { long driver; long collector; long passenger[4]; } car; long a, b; ++car.passenger[a]; ', true, ''],
     // bug 9, missing comma before if, while and for keywords lead to no error and statement being ignored.
-    ['long a, b; test2() if (a) a++; long test2(void) { b++; return b; }', true, ''],
-    ['long a, b; test2(); if (a) a++; long test2(void) { b++; return b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test2\nPOP @r0\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n\n__fn_test2:\nINC @b\nPSH $b\nRET\n'],
+    ['#pragma optimizationLevel 0\nlong a, b; test2() if (a) a++; long test2(void) { b++; return b; }', true, ''],
+    ['#pragma optimizationLevel 0\nlong a, b; test2(); if (a) a++; long test2(void) { b++; return b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test2\nPOP @r0\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n\n__fn_test2:\nINC @b\nPSH $b\nRET\n'],
     // bug 10, functions calls destroying content of registers. Implemented saving them in user stack
     ["long a[5], b, c; b=atoi(c); a[b+1]=atoi('2'); a[b+1]=(b*2)/atoi('2'); long atoi(long val){return val+1;}", false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare b\n^declare c\n^declare atoi_val\n\nPSH $c\nJSR :__fn_atoi\nPOP @b\nSET @r0 $b\nINC @r0\nPSH $r0\nSET @r1 #0000000000000032\nPSH $r1\nJSR :__fn_atoi\nPOP @r1\nPOP @r0\nSET @($a + $r0) $r1\nSET @r0 $b\nINC @r0\nSET @r1 #0000000000000002\nMUL @r1 $b\nPSH $r1\nPSH $r0\nSET @r2 #0000000000000032\nPSH $r2\nJSR :__fn_atoi\nPOP @r2\nPOP @r0\nPOP @r1\nDIV @r1 $r2\nSET @($a + $r0) $r1\nFIN\n\n__fn_atoi:\nPOP @atoi_val\nSET @r0 $atoi_val\nINC @r0\nPSH $r0\nRET\n'],
     // bug 11, function calls inside array brackets lead to error.
     ['long a[5], b, c; b=a[atoi("2")+1]; long atoi(long val){ return val+1;}', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare b\n^declare c\n^declare atoi_val\n\nSET @b #0000000000000032\nPSH $b\nJSR :__fn_atoi\nPOP @b\nINC @b\nSET @b $($a + $b)\nFIN\n\n__fn_atoi:\nPOP @atoi_val\nSET @r0 $atoi_val\nINC @r0\nPSH $r0\nRET\n'],
     // bug 13, optimization deleting assembly compiler directives
-    ['#pragma globalOptimization\nwhile (1) halt; const long n8=8, n10=10, n0xff=0xff; long atoi(long val) { return 3; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare n8\n^declare n10\n^declare n0xff\n^declare atoi_val\n\n__loop1_continue:\nSTP\nJMP :__loop1_continue\n^const SET @n8 #0000000000000008\n^const SET @n10 #000000000000000a\n^const SET @n0xff #00000000000000ff\n\n'],
+    ['#pragma optimizationLevel 3\nwhile (1) halt; const long n8=8, n10=10, n0xff=0xff; long atoi(long val) { return 3; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare n8\n^declare n10\n^declare n0xff\n^declare atoi_val\n\n__loop1_continue:\nSTP\nJMP :__loop1_continue\n^const SET @n8 #0000000000000008\n^const SET @n10 #000000000000000a\n^const SET @n0xff #00000000000000ff\n\n'],
     // bug 14, (more) optimization deleting assembly compiler directives
-    ['#pragma globalOptimization\n teste(); exit; const long n0xff=0xff; void teste(void) { const long b=5; b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare n0xff\n^declare teste_b\n\nJSR :__fn_teste\nFIN\n^const SET @n0xff #00000000000000ff\n\n__fn_teste:\n^const SET @teste_b #0000000000000005\nINC @teste_b\nRET\n'],
-    // bug 15, Need to be more restrictive on globalOptimization for PSH and POP
-    ['#pragma globalOptimization\n long a, b; a=b;insertPlayer(a); void insertPlayer(long address) { long id; id=(address >> 27); }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare insertPlayer_address\n^declare insertPlayer_id\n\nSET @a $b\nPSH $a\nJSR :__fn_insertPlayer\nFIN\n\n__fn_insertPlayer:\nPOP @insertPlayer_address\nSET @insertPlayer_id $insertPlayer_address\nSET @r0 #000000000000001b\nSHR @insertPlayer_id $r0\nRET\n'],
+    ['#pragma optimizationLevel 3\n teste(); exit; const long n0xff=0xff; void teste(void) { const long b=5; b++; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare n0xff\n^declare teste_b\n\nJSR :__fn_teste\nFIN\n^const SET @n0xff #00000000000000ff\n\n__fn_teste:\n^const SET @teste_b #0000000000000005\nINC @teste_b\nRET\n'],
+    // bug 15, Need to be more restrictive on optimizationLevel 3 for PSH and POP
+    ['#pragma optimizationLevel 3\n long a, b; a=b;insertPlayer(a); void insertPlayer(long address) { long id; id=(address >> 27); }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare insertPlayer_address\n^declare insertPlayer_id\n\nSET @a $b\nPSH $a\nJSR :__fn_insertPlayer\nFIN\n\n__fn_insertPlayer:\nPOP @insertPlayer_address\nSET @insertPlayer_id $insertPlayer_address\nSET @r0 #000000000000001b\nSHR @insertPlayer_id $r0\nRET\n'],
     // bug 16, Could not return or sleep with array and variable index
     ['long a, slot[4]; sleep slot[a];', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare slot\n^const SET @slot #0000000000000005\n^declare slot_0\n^declare slot_1\n^declare slot_2\n^declare slot_3\n\nSET @r0 $($slot + $a)\nSLP $r0\nFIN\n'],
     // bug 17 Could not start program with function
@@ -1195,14 +1195,14 @@ a=pcar->collector;z++;*c=pcar->driver;d[1]=pcar->collector;d[a]=pcar->collector;
     // bug 18 Fix infinite recursion loop with wrong code
     ['Send_To_Address_In_B(sendEachBlockNQT) sleep SLP_BLOCKS;', true, ''],
     // bug19 Optimization creating wrong code. Removed optimization on double SET instruction
-    ['#pragma globalOptimization\nlong _idx, uCount; _idx = ~(_idx+uCount); uCount = _idx; _idx++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare _idx\n^declare uCount\n\nSET @r0 $_idx\nADD @r0 $uCount\nNOT @r0\nSET @_idx $r0\nSET @uCount $_idx\nINC @_idx\nFIN\n'],
+    ['#pragma optimizationLevel 3\nlong _idx, uCount; _idx = ~(_idx+uCount); uCount = _idx; _idx++;', false, '^declare r0\n^declare r1\n^declare r2\n^declare _idx\n^declare uCount\n\nSET @r0 $_idx\nADD @r0 $uCount\nNOT @r0\nSET @_idx $r0\nSET @uCount $_idx\nINC @_idx\nFIN\n'],
     // bug 20 Fixes some wrong translation of RS-accounts
     ["long a='S-D3HS-T6ML-SJHU-2R5R2';", false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @a #005c77c9272585f8\nFIN\n'],
     // bug 21 Memory was not assigned when declaring struct after a struct pointer
-    ['struct KOMBI { long driver; long collector; long passenger; }; void teste(void) { struct KOMBI tt2, *stru, tt, *stru2; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare teste_tt2_driver\n^declare teste_tt2_collector\n^declare teste_tt2_passenger\n^declare teste_stru\n^declare teste_tt_driver\n^declare teste_tt_collector\n^declare teste_tt_passenger\n^declare teste_stru2\n\nFIN\n\n__fn_teste:\nRET\n'],
+    ['#pragma optimizationLevel 0\nstruct KOMBI { long driver; long collector; long passenger; }; void teste(void) { struct KOMBI tt2, *stru, tt, *stru2; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare teste_tt2_driver\n^declare teste_tt2_collector\n^declare teste_tt2_passenger\n^declare teste_stru\n^declare teste_tt_driver\n^declare teste_tt_collector\n^declare teste_tt_passenger\n^declare teste_stru2\n\nFIN\n\n__fn_teste:\nRET\n'],
     // bug 22 Function/API Functions on conditional not being evaluated
-    ['long a=0; if (test2(a)){ a++; } long test2(long b) { b++; return b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n'],
-    ['#include APIFunctions\n long a=0; if (Get_A1()){ a++;} ', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @a\nFUN @r0 get_A1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
+    ['#pragma optimizationLevel 0\nlong a=0; if (test2(a)){ a++; } long test2(long b) { b++; return b; }', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n'],
+    ['#pragma optimizationLevel 0\n#include APIFunctions\n long a=0; if (Get_A1()){ a++;} ', false, '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @a\nFUN @r0 get_A1\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'],
     // bug 23 Parser trying to get property of undefined variable
     ['long a, b; *a + 1 = b', true, ''],
     // bug 24 Wrong code being sucessfull compiled: ASM and Label disregarding information before them.

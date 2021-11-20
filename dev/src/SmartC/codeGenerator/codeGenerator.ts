@@ -1,8 +1,8 @@
 import { CONTRACT } from '../typings/contractTypes'
 import { MEMORY_SLOT, SENTENCES } from '../typings/syntaxTypes'
+import optimizer from './assemblyProcessor/optimizer'
 import setupGenCode from './astProcessor/setupGenCode'
 
-import { optimize } from './optimizer'
 import { GLOBAL_AUXVARS } from './codeGeneratorTypes'
 
 /**
@@ -69,11 +69,11 @@ export default function codeGenerator (Program: CONTRACT) {
             }
             functionTailGenerator()
         })
-        // Optimize code;
-        if (Program.Config.globalOptimization) {
-            return optimize(GlobalCodeVars.assemblyCode, Program.Config.maxConstVars)
-        }
-        return GlobalCodeVars.assemblyCode
+        return optimizer(
+            Program.Config.optimizationLevel,
+            GlobalCodeVars.assemblyCode,
+            Program.memory.filter(Obj => Obj.type === 'label').map(Res => Res.asmName)
+        )
     }
 
     function writeAsmLine (lineContent: string, sourceCodeLine: number = 0) {

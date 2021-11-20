@@ -96,7 +96,6 @@ export default function assignmentToAsm (
         if ((Left.declaration === Right.declaration) ||
             (Left.declaration === 'void_ptr' && Right.declaration.includes('ptr')) ||
             (Left.declaration.includes('ptr') && Right.declaration === 'void_ptr')) {
-            // TODO Remove after implement of safe optimizations
             if (Left.address === Right.address) {
                 return ''
             }

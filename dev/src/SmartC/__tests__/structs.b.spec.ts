@@ -2,7 +2,8 @@ import { SmartC } from '../smartc'
 
 describe('structs (pointer / arrays)', () => {
     it('should compile: pointer to struct (longs)', () => {
-        const code = `struct KOMBI { long driver; long collector; long passenger; } ;
+        const code = `#pragma optimizationLevel 0
+struct KOMBI { long driver; long collector; long passenger; } ;
 struct KOMBI car, *pcar;
 long a, b, *c, d[2];
 pcar=&car;\n
@@ -22,7 +23,8 @@ d[a]=pcar->collector;`
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: pointer to struct (longs+array[constant]) ', () => {
-        const code = `struct KOMBI { long driver; long collector; long passenger[4]; } ;
+        const code = `#pragma optimizationLevel 0
+struct KOMBI { long driver; long collector; long passenger[4]; } ;
 struct KOMBI car, *pcar;
 long a, b, *c, d[2];
 pcar=&car;\n
@@ -43,7 +45,8 @@ d[a]=pcar->passenger[2];`
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: pointer to struct (longs+array) address of', () => {
-        const code = `struct KOMBI { long driver; long collector; long passenger[4]; } ;
+        const code = `#pragma optimizationLevel 0
+struct KOMBI { long driver; long collector; long passenger[4]; } ;
 struct KOMBI car[2], *pcar;
 long a, b, *c, d[2];
 pcar=&car[a];`
@@ -53,7 +56,8 @@ pcar=&car[a];`
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: pointer to struct (longs+array[variable])', () => {
-        const code = `struct KOMBI { long driver; long collector; long passenger[4]; } ;
+        const code = `#pragma optimizationLevel 0
+struct KOMBI { long driver; long collector; long passenger[4]; } ;
 struct KOMBI car, *pcar;
 long a, b, *c, d[2];
 pcar=&car;\n
@@ -74,7 +78,7 @@ d[a]=pcar->passenger[b];`
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: Recursive struct pointer declaration', () => {
-        const code = 'struct KOMBI { long driver; long collector; struct KOMBI *next; } ; struct KOMBI car, *pcar, *pnext; pcar=&car; pnext=pcar->next->next;'
+        const code = '#pragma optimizationLevel 0\nstruct KOMBI { long driver; long collector; struct KOMBI *next; } ; struct KOMBI car, *pcar, *pnext; pcar=&car; pnext=pcar->next->next;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_next\n^declare pcar\n^declare pnext\n\nSET @pcar #0000000000000003\nSET @r1 #0000000000000002\nSET @r0 $($pcar + $r1)\nSET @r1 #0000000000000002\nSET @pnext $($r0 + $r1)\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
@@ -82,7 +86,7 @@ d[a]=pcar->passenger[b];`
     })
     test('should throw: NOT IMPLEMMENTED. Arrays of struct pointers', () => {
         expect(() => {
-            const code = 'struct KOMBI { long driver; long collector; long passenger; } ; struct KOMBI car, *pcar[2];'
+            const code = '#pragma optimizationLevel 0\nstruct KOMBI { long driver; long collector; long passenger; } ; struct KOMBI car, *pcar[2];'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
@@ -91,7 +95,8 @@ d[a]=pcar->passenger[b];`
 
 describe('Logical operations with structs', () => {
     it('should compile: simple member', () => {
-        const code = `struct KOMBI { long driver; long collector; long passenger; } car;
+        const code = `#pragma optimizationLevel 0
+struct KOMBI { long driver; long collector; long passenger; } car;
 long a, b;
 if (car.driver=='Ze') { b++; }
 if (a<=car.collector) { b--; }`
@@ -101,7 +106,8 @@ if (a<=car.collector) { b--; }`
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: constant array struct', () => {
-        const code = `struct KOMBI { long driver; long collector; long passenger; } car[2];
+        const code = `#pragma optimizationLevel 0
+struct KOMBI { long driver; long collector; long passenger; } car[2];
 long a, b;
 if (car[1].driver=='Ze') { b++; }
 if (a<=car[0].collector) { b--; }`
@@ -111,7 +117,8 @@ if (a<=car[0].collector) { b--; }`
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: variable array struct', () => {
-        const code = `struct KOMBI { long driver; long collector; long passenger; } car[2];
+        const code = `#pragma optimizationLevel 0
+struct KOMBI { long driver; long collector; long passenger; } car[2];
 long a, b;
 if (car[b].driver=='Ze') { b++; }
 if (a<=car[b].collector) { b--; }`
@@ -121,7 +128,8 @@ if (a<=car[b].collector) { b--; }`
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: variable array struct (separated definition)', () => {
-        const code = `struct KOMBI { long driver; long collector; long passenger; }; struct KOMBI car[2];
+        const code = `#pragma optimizationLevel 0
+struct KOMBI { long driver; long collector; long passenger; }; struct KOMBI car[2];
 long a, b;
 if (car[b].driver=='Ze') { b++; }
 if (a<=car[b].collector) { b--; }`
@@ -131,7 +139,8 @@ if (a<=car[b].collector) { b--; }`
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: constant array member', () => {
-        const code = `struct KOMBI { long driver; long collector; long passenger[3]; } car;
+        const code = `#pragma optimizationLevel 0
+struct KOMBI { long driver; long collector; long passenger[3]; } car;
 long a, b;
 if (car.passenger[0]=='Ze') { b++; }
 if (a<=car.passenger[2]) { b--; }`
@@ -141,7 +150,8 @@ if (a<=car.passenger[2]) { b--; }`
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: mix', () => {
-        const code = `struct KOMBI { long driver; long collector; long passenger[3]; } car[2];
+        const code = `#pragma optimizationLevel 0
+struct KOMBI { long driver; long collector; long passenger[3]; } car[2];
 long a, b;
 if (car[0].passenger[0]=='Ze') { b++; }
 if (a<=car[b].passenger[2]) { b--; }`
@@ -151,7 +161,8 @@ if (a<=car[b].passenger[2]) { b--; }`
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: mix', () => {
-        const code = `struct KOMBI { long driver; long collector; long passenger[3]; } car[2];
+        const code = `#pragma optimizationLevel 0
+struct KOMBI { long driver; long collector; long passenger[3]; } car[2];
 long a, b;
 if (car[0].passenger[b]=='Ze') { b++; }
 if (a<=car[b].passenger[a]) { b--; }`
@@ -161,13 +172,14 @@ if (a<=car[b].passenger[a]) { b--; }`
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: struct pointer', () => {
-        const code = `struct KOMBI { long driver; long collector; long passenger; } ;
+        const code = `#pragma optimizationLevel 0
+struct KOMBI { long driver; long collector; long passenger; } ;
 struct KOMBI car[2], *pcar;
 long a, b;
 pcar=&car[1];
 if (pcar->driver=='Ze') { b++; }
 if (a<=pcar->collector) { b--; }`
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car\n^const SET @car #0000000000000004\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare pcar\n^declare a\n^declare b\n\nSET @pcar #0000000000000007\nCLR @r1\nSET @r0 $($pcar + $r1)\nSET @r1 #000000000000655a\nBNE $r0 $r1 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nBGT $a $r0 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car\n^const SET @car #0000000000000004\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare pcar\n^declare a\n^declare b\n\nSET @pcar #0000000000000007\nSET @r0 $($pcar)\nSET @r1 #000000000000655a\nBNE $r0 $r1 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nBGT $a $r0 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -177,7 +189,7 @@ if (a<=pcar->collector) { b--; }`
 describe('structs (pointer / arrays) wrong usage', () => {
     test('should throw: array declaration without struct definition', () => {
         expect(() => {
-            const code = 'struct KOMBI car[2];'
+            const code = '#pragma optimizationLevel 0\nstruct KOMBI car[2];'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)

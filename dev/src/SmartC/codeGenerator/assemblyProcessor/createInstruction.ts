@@ -121,12 +121,9 @@ export function flattenMemory (
         case 'structRef':
             RetObj = AuxVars.getNewRegister()
             RetObj.declaration = paramDec
-            // TODO remove this and gain optimization
-            if (StuffedMemory.type !== 'structRef') {
-                if (StuffedMemory.Offset.value === 0) {
-                    retInstructions += `SET @${RetObj.asmName} $($${StuffedMemory.asmName})\n`
-                    return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
-                }
+            if (StuffedMemory.Offset.value === 0) {
+                retInstructions += `SET @${RetObj.asmName} $($${StuffedMemory.asmName})\n`
+                return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
             }
             FlatConstant = flattenConstant(StuffedMemory.Offset.value)
             retInstructions += FlatConstant.asmCode
