@@ -7,36 +7,41 @@ body {
 	margin: 0;
 	padding: 0;
 	font-family: sans-serif;
-	background: #ddd;
+    background: url('./assets/SmartC-Watermark.png') no-repeat fixed bottom right, radial-gradient(#e8f3ff, #EAF0F6) no-repeat fixed;
+    background-size: contain;
 	display: grid;
 	grid-gap: 1em;
 }
 
-h1 {
-	padding: 1vh;
-	background: #da7;
-	color: #114;
-	margin: 0 0 3vh 0;
-	text-align: center;
-	border-bottom: 0.5vh double #114;
+header {
+    padding: 1vh;
+    color: white;
+    margin: 0 0 3vh 0;
+    text-align: center;
+    box-shadow: -5px 3px 5px #021851, 5px 3px 5px #021851;
+    font-size: xx-large;
 }
 
 fieldset {
-	border: solid 0.5vh #ccc;
+	border: solid 1px #888;
 	padding: 1em;
 	margin: 0em 1em;
 	border-radius: 2vh;
+    box-shadow: 0px 0px 10px #888;
+    z-index: 0;
 }
 
 legend, .tooltip {
-	background-color: #da7;
-	color: #114;
-	padding: 3px 6px;
-	border: 0.2vh solid #114;
-	transition: all ease 0.3s;
+    background-color: #3a3a6690;
+    color: #fff;
+    padding: 3px 6px;
+    border: 0.2vh solid #666;
+    transition: all ease 0.3s;
+    border-radius: 4px;
+    box-shadow: 0px 0px 10px #888;
 }
 legend:hover {
-	background: #eb8;
+    background-color: rgb(58, 58, 102);
 }
 legend {
 	cursor: pointer;
@@ -65,7 +70,8 @@ pre {
 	text-align: center;
 	background: #fff;
 	transition: all ease 0.3s;
-	border: solid 0.5vh #ccc;
+    border: solid 1px #888;
+    box-shadow: 0px 0px 10px #888;
 	border-radius: 1vh;
 	margin: 0;
 }
@@ -74,8 +80,9 @@ pre {
 #debug:checked ~ #bt2            { background: #fdd; }
 label:hover                      { background: #ddf; }
 #debug:hover ~ #bt2 { background: #fcc; }
-#test:hover     { background: #fdd; }
-.btn_class:hover{ background: #dfd; }
+#test:hover { background: #fdd; }
+.btn_class:hover { background: #dfd; box-shadow: 0px 0px 5px #aaa;}
+.btn_class:active { box-shadow: 0px 0px 2px #aaa;}
 
 /* CLASSES and IDs configs */
 .tooltip {
@@ -91,15 +98,16 @@ label:hover                      { background: #ddf; }
 	overflow-y: hidden;
 	overflow-x: auto;
 	outline: none;
+	background: #fafbfc;
 }
 #color_code {
 	position: absolute;
 	top: 0px;
 	left: 0px;
 	z-index: -1;
+	background: #fafbfca0;
 }
 #source-code, #color_code {
-	background: #fafbfc;
 	border: 1px black solid;
 	border-radius: 5px;
 	font-size: 100%;
@@ -179,6 +187,10 @@ label:hover                      { background: #ddf; }
 	.gdcol1 { grid-column-start: 1; }
 	.gdcol2 { grid-column-start: 2; }
 	.gdcol12 { grid-column-start: 1; grid-column-end: 3; }
+	.headerDesktop {
+        background: url('./assets/whiteLogo.png') no-repeat, #021851;
+        background-size: contain;
+    }
 }
 
 /*Grid for page (mobile) */
@@ -189,6 +201,7 @@ label:hover                      { background: #ddf; }
 	.gmrow4 { grid-row-start: 4; }
 	.gmrow5 { grid-row-start: 5; }
 	.gmrow6 { grid-row-start: 6; }
+	.headerMobile { background: #021851; }
 }
 
 /*Grid for buttons */
@@ -219,7 +232,7 @@ label:hover                      { background: #ddf; }
 .winbox {
     background: linear-gradient(90deg, #228, #114);
     border-radius: 12px 12px 0 0;
-    box-shadow: none;
+    box-shadow: 0px 0px 10px #888,
 }
 
 .winbox.min {
@@ -229,7 +242,7 @@ label:hover                      { background: #ddf; }
 .wb-body {
     /* the width of window border: */
     margin: 4px;
-    background: #ddd;
+    background: linear-gradient(to right, #EAF0F6, #e8f3ff);
 }
 
 .wb-title {
