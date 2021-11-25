@@ -18,6 +18,8 @@ export type GLOBAL_AUXVARS = {
     getNewJumpID(currLine: number): string
     /** Query the value of last loop id */
     getLatestLoopID(): string
+    /** Query the value of last loop id that is a pure loop (excluding 'switch' ids) */
+    getLatestPureLoopID(): string
 }
 
 export type SETUPGENCODE_ARGS = {

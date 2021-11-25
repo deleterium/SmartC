@@ -35,6 +35,15 @@ export default function codeGenerator (Program: CONTRACT) {
         getLatestLoopID: function () {
             // error check must be in code!
             return this.latestLoopId[this.latestLoopId.length - 1]
+        },
+        getLatestPureLoopID: function () {
+            // error check must be in code!
+            return this.latestLoopId.reduce((previous, current) => {
+                if (current.includes('loop')) {
+                    return current
+                }
+                return previous
+            }, '')
         }
     }
 
@@ -276,7 +285,6 @@ export default function codeGenerator (Program: CONTRACT) {
             Sentence.block.forEach(compileSentence)
             GlobalCodeVars.latestLoopId.pop()
             writeAsmLine(sentenceID + '_break:')
-            writeAsmLine(sentenceID + '_continue:')
             break
         }
         case 'case':

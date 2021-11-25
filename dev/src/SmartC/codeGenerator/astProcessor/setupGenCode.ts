@@ -53,6 +53,9 @@ export default function setupGenCode (
             if (line.includes('%generateUtils.getLatestLoopId()%')) {
                 return line.replace('%generateUtils.getLatestLoopId()%', Globals.getLatestLoopID())
             }
+            if (line.includes('%generateUtils.getLatestPureLoopId()%')) {
+                return line.replace('%generateUtils.getLatestPureLoopId()%', Globals.getLatestPureLoopID())
+            }
             return line
         }).join('\n')
         return code.asmCode

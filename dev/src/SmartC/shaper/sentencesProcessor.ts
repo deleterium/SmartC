@@ -52,16 +52,9 @@ export default function sentencesProcessor (
         case 'default':
             return defaultCodeToSentence()
         case 'break':
+            return breakCodeToSentence()
         case 'continue':
-            if (AuxVars.latestLoopId.length === 0) {
-                throw new Error(`At line: ${lineOfFirstInstruction}. '${codetrain[currentToken].value}' outside a loop.`)
-            }
-            if (codetrain[currentToken + 1]?.type === 'Terminator') {
-                currentToken++
-                codetrain[currentToken - 1].extValue = AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1]
-                return [{ type: 'phrase', code: [codetrain[currentToken - 1]], line: lineOfFirstInstruction }]
-            }
-            throw new Error(`At line: ${lineOfFirstInstruction}. Missing ';' after '${codetrain[currentToken].value}' keyword.`)
+            return continueCodeToSentence()
         case 'struct':
             // Handle struct. It can be type:phrase or type:struct. handle here only type:struct
             if (codetrain[currentToken + 1]?.type === 'CodeDomain') {
@@ -344,6 +337,39 @@ export default function sentencesProcessor (
             line: line,
             id: formerPhrase[0].value
         }]
+    }
+
+    function breakCodeToSentence () : SENTENCES[] {
+        const line = codetrain[currentToken].line
+        if (AuxVars.latestLoopId.length === 0) {
+            throw new Error(`At line: ${line}. 'break' outside a loop or switch.`)
+        }
+        if (codetrain[currentToken + 1]?.type === 'Terminator') {
+            currentToken++
+            codetrain[currentToken - 1].extValue = AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1]
+            return [{ type: 'phrase', code: [codetrain[currentToken - 1]], line: line }]
+        }
+        throw new Error(`At line: ${line}. Missing ';' after 'break' keyword.`)
+    }
+
+    function continueCodeToSentence () : SENTENCES[] {
+        const line = codetrain[currentToken].line
+        const loopId = AuxVars.latestLoopId.reduce((previous, current) => {
+            if (current.includes('loop')) {
+                return current
+            }
+            return previous
+        }, '')
+        if (loopId === '') {
+            throw new Error(`At line: ${line}.` +
+            " 'continue' outside a loop.")
+        }
+        if (codetrain[currentToken + 1]?.type === 'Terminator') {
+            currentToken++
+            codetrain[currentToken - 1].extValue = loopId
+            return [{ type: 'phrase', code: [codetrain[currentToken - 1]], line: line }]
+        }
+        throw new Error(`At line: ${line}. Missing ';' after 'continue' keyword.`)
     }
 
     return sentencesProcessorMain()
