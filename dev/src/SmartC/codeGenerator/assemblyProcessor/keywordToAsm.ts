@@ -14,8 +14,6 @@ export default function keywordToAsm (
     case 'break':
     case 'continue':
         return `JMP :%generateUtils.getLatestLoopId()%_${OperatorToken.value}\n`
-    case 'label':
-        return `${OperatorToken.extValue}:\n`
     case 'goto':
         return `JMP :${assertNotUndefined(FlatMem).name}\n`
     case 'halt':

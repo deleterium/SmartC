@@ -29,9 +29,6 @@ export default function memoryProcessor (
         tokenCounter = 0
         while (phraseCode[tokenCounter]?.type === 'Keyword') {
             switch (phraseCode[tokenCounter].value) {
-            case 'label':
-                retMem.push(...labelToMemory(phraseCode[tokenCounter].extValue, phraseCode[tokenCounter].line))
-                break
             case 'long':
             case 'void':
                 retMem.push(...longOrVoidProcessControl(phraseCode[tokenCounter].value as 'long'|'void'))
@@ -44,17 +41,6 @@ export default function memoryProcessor (
             }
         }
         return retMem
-    }
-
-    /** Checks and return an array with one label memory type */
-    function labelToMemory (labelName: string = '', line: number = -1): MEMORY_SLOT[] {
-        assertNotEqual(labelName, '', `Internal error at line ${line}. Found a label without id.`)
-        tokenCounter++
-        const MemTempl = getMemoryTemplate('label')
-        MemTempl.asmName = labelName
-        MemTempl.name = labelName
-        MemTempl.isDeclared = true
-        return [MemTempl]
     }
 
     /** From Code containing long/void declaration, return an array of memory objects.

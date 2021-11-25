@@ -5,7 +5,7 @@ import {
     REGISTER_TYPE_DEFINITION
 } from '../typings/syntaxTypes'
 import { assertNotUndefined, deepCopy } from '../repository/repository'
-import { APITableTemplate, getTypeDefinitionTemplate } from './templates'
+import { APITableTemplate, getMemoryTemplate, getTypeDefinitionTemplate } from './templates'
 import sentencesProcessor from './sentencesProcessor'
 import memoryProcessor from './memoryProcessor'
 import { SHAPER_AUXVARS } from './shaperTypes'
@@ -307,23 +307,44 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         AuxVars.currentScopeName = ''
         AuxVars.currentPrefix = ''
         Program.Global.sentences = sentencesProcessor(AuxVars, Program.Global.code)
-        createMemoryTable(Program.Global.sentences)
+        Program.Global.sentences.forEach(createMemoryTable)
         delete Program.Global.code
     }
 
-    /** Not recursive. Only top level declarations allowed.
-     *  This creates only global variables or function scope variables. */
-    function createMemoryTable (sntcs: SENTENCES[] = []) {
-        sntcs.forEach((Phrs) => {
-            if (Phrs.type === 'phrase' && Phrs.code !== undefined) {
-                Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, Phrs.code))
-                return
-            }
-            if (Phrs.type === 'struct' && Phrs.Phrase.code !== undefined) {
-                structToTypeDefinition(Phrs)
-                Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, Phrs.Phrase.code))
-            }
-        })
+    /** Recursive.
+     *  This creates only global variables or function scope variables  */
+    function createMemoryTable (Sentence: SENTENCES) : void {
+        switch (Sentence.type) {
+        case 'phrase':
+            Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, assertNotUndefined(Sentence.code)))
+            return
+        case 'ifElse':
+            Sentence.falseBlock.forEach(createMemoryTable)
+        // eslint-disable-next-line no-fallthrough
+        case 'ifEndif':
+        case 'while':
+        case 'do':
+            Sentence.trueBlock.forEach(createMemoryTable)
+            return
+        case 'for':
+            Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, assertNotUndefined(Sentence.threeSentences[0].code)))
+            Sentence.trueBlock.forEach(createMemoryTable)
+            return
+        case 'struct':
+            structToTypeDefinition(Sentence)
+            Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, assertNotUndefined(Sentence.Phrase.code)))
+            return
+        case 'switch':
+            Sentence.block.forEach(createMemoryTable)
+            return
+        case 'label': {
+            const MemTempl = getMemoryTemplate('label')
+            MemTempl.asmName = Sentence.id
+            MemTempl.name = Sentence.id
+            MemTempl.isDeclared = true
+            Program.memory.push(MemTempl)
+        }
+        }
     }
 
     /** From a struct sentence, create and store a Struct Type Definition
@@ -388,7 +409,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         AuxVars.isFunctionArgument = false
         delete Program.functions[fnNum].arguments
         delete Program.functions[fnNum].code
-        createMemoryTable(CurrentFunction.sentences)
+        CurrentFunction.sentences.forEach(createMemoryTable)
     }
 
     /** Checks variables for double definitions and against label names */

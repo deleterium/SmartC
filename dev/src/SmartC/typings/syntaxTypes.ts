@@ -149,7 +149,7 @@ export type SWITCH_ASN = {
 }
 
 // eslint-disable-next-line no-use-before-define
-export type SENTENCES = SENTENCE_PHRASE | SENTENCE_IF_ENDIF | SENTENCE_IF_ELSE | SENTENCE_WHILE | SENTENCE_DO | SENTENCE_FOR | SENTENCE_STRUCT | SENTENCE_SWITCH | SENTENCE_CASE | SENTENCE_DEFAULT
+export type SENTENCES = SENTENCE_PHRASE | SENTENCE_IF_ENDIF | SENTENCE_IF_ELSE | SENTENCE_WHILE | SENTENCE_DO | SENTENCE_FOR | SENTENCE_STRUCT | SENTENCE_SWITCH | SENTENCE_CASE | SENTENCE_DEFAULT | SENTENCE_LABEL
 export type SENTENCE_PHRASE = {
     type: 'phrase'
     /** phrase starting line number */
@@ -225,6 +225,11 @@ export type SENTENCE_SWITCH = {
     hasDefault: boolean
     block: SENTENCES[]
     JumpTable?: SWITCH_ASN
+}
+export type SENTENCE_LABEL = {
+    type: 'label'
+    line: number
+    id: string
 }
 
 export type STRUCT_TYPE_DEFINITION = {

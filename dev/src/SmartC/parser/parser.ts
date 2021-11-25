@@ -230,18 +230,6 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
             }
         },
         {
-            sequence: ['variable', 'colon'],
-            action (tokenID): TOKEN {
-                return {
-                    type: 'Keyword',
-                    precedence: 12,
-                    value: 'label',
-                    extValue: preTokens[tokenID].value,
-                    line: preTokens[tokenID].line
-                }
-            }
-        },
-        {
             sequence: ['variable'],
             action (tokenID): TOKEN {
                 return {

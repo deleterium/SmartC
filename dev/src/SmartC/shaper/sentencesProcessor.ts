@@ -42,7 +42,6 @@ export default function sentencesProcessor (
         case 'else':
             throw new Error(`At line: ${lineOfFirstInstruction}. 'else' not associated with an 'if(){}else{}' sentence`)
         case 'asm':
-        case 'label':
             return [{ type: 'phrase', code: [codetrain[currentToken]], line: lineOfFirstInstruction }]
         case 'do':
             return doCodeToSentence()
@@ -74,6 +73,10 @@ export default function sentencesProcessor (
             if (codetrain[currentToken].type === 'Terminator') {
                 // end of sentence!
                 return [{ type: 'phrase', code: phrase, line: lineOfFirstInstruction }]
+            }
+            if (codetrain[currentToken].type === 'Colon') {
+                // end of label!
+                return labelCodeToSentence(phrase, lineOfFirstInstruction)
             }
             switch (codetrain[currentToken].value) {
             case 'if':
@@ -320,6 +323,26 @@ export default function sentencesProcessor (
         return [{
             type: 'default',
             line: line
+        }]
+    }
+
+    function labelCodeToSentence (formerPhrase: TOKEN[], line: number) : SENTENCES[] {
+        if (formerPhrase.length === 0) {
+            throw new Error(`At line: ${line}.` +
+            " Unexpected ':'.")
+        }
+        if (formerPhrase.length > 1) {
+            throw new Error(`At line: ${line}.` +
+            "  Labels cannot have more than one word. Maybe missing ';'?")
+        }
+        if (formerPhrase[0].type !== 'Variable') {
+            throw new Error(`At line: ${line}.` +
+            '  Labels must be a name.')
+        }
+        return [{
+            type: 'label',
+            line: line,
+            id: formerPhrase[0].value
         }]
     }
 

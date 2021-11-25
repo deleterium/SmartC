@@ -84,7 +84,6 @@ export default function endAsnProcessor (
         switch (CurrentNode.Token.value) {
         case 'break':
         case 'continue':
-        case 'label':
         case 'asm':
         case 'exit':
         case 'halt':

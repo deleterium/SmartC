@@ -285,6 +285,9 @@ export default function codeGenerator (Program: CONTRACT) {
         case 'default':
             writeAsmLine(GlobalCodeVars.getLatestLoopID() + '_default:', Sentence.line)
             break
+        case 'label':
+            writeAsmLine(Sentence.id + ':', Sentence.line)
+            break
         case 'struct':
             // Nothing to do here
         }
