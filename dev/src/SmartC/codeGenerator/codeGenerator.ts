@@ -261,6 +261,30 @@ export default function codeGenerator (Program: CONTRACT) {
             writeAsmLine('JMP :' + sentenceID + '_condition')
             writeAsmLine(sentenceID + '_break:')
             break
+        case 'switch': {
+            sentenceID = '__switch' + GlobalCodeVars.getNewJumpID(Sentence.line)
+            let jumpTgt = sentenceID
+            jumpTgt += Sentence.hasDefault ? '_default' : '_break'
+            assemblyCode = setupGenCode(GlobalCodeVars, {
+                InitialAST: Sentence.JumpTable,
+                initialJumpTarget: sentenceID,
+                initialJumpNotTarget: jumpTgt,
+                initialIsReversedLogic: false
+            }, Sentence.line)
+            writeAsmCode(assemblyCode, Sentence.line)
+            GlobalCodeVars.latestLoopId.push(sentenceID)
+            Sentence.block.forEach(compileSentence)
+            GlobalCodeVars.latestLoopId.pop()
+            writeAsmLine(sentenceID + '_break:')
+            writeAsmLine(sentenceID + '_continue:')
+            break
+        }
+        case 'case':
+            writeAsmLine(GlobalCodeVars.getLatestLoopID() + Sentence.caseId + ':', Sentence.line)
+            break
+        case 'default':
+            writeAsmLine(GlobalCodeVars.getLatestLoopID() + '_default:', Sentence.line)
+            break
         case 'struct':
             // Nothing to do here
         }

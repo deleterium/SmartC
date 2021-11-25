@@ -83,7 +83,7 @@ export type MEMORY_SLOT = {
 }
 
 // eslint-disable-next-line no-use-before-define
-export type AST = UNARY_ASN | BINARY_ASN | NULL_ASN | END_ASN | LOOKUP_ASN | EXCEPTION_ASN
+export type AST = UNARY_ASN | BINARY_ASN | NULL_ASN | END_ASN | LOOKUP_ASN | EXCEPTION_ASN | SWITCH_ASN
 
 export type UNARY_ASN = {
     /** Unary Abstract Syntax Node */
@@ -139,9 +139,17 @@ export type EXCEPTION_ASN = {
     /** Rigth side AST. Indicating post-increment or post-decrement */
     Right?: AST
 }
+export type SWITCH_ASN = {
+    /** Abstract Syntax Node for switch statements that will be evaluated for jump table.  */
+    type: 'switchASN'
+    /** switch expression part */
+    Expression: AST
+    /** One item for each case statement in switch block */
+    caseConditions: AST[]
+}
 
 // eslint-disable-next-line no-use-before-define
-export type SENTENCES = SENTENCE_PHRASE | SENTENCE_IF_ENDIF | SENTENCE_IF_ELSE | SENTENCE_WHILE | SENTENCE_DO | SENTENCE_FOR | SENTENCE_STRUCT
+export type SENTENCES = SENTENCE_PHRASE | SENTENCE_IF_ENDIF | SENTENCE_IF_ELSE | SENTENCE_WHILE | SENTENCE_DO | SENTENCE_FOR | SENTENCE_STRUCT | SENTENCE_SWITCH | SENTENCE_CASE | SENTENCE_DEFAULT
 export type SENTENCE_PHRASE = {
     type: 'phrase'
     /** phrase starting line number */
@@ -198,6 +206,25 @@ export type SENTENCE_STRUCT = {
     name: string,
     members: SENTENCES[],
     Phrase: SENTENCE_PHRASE
+}
+export type SENTENCE_CASE = {
+    type: 'case'
+    line: number
+    caseId: string
+    condition?: TOKEN[]
+}
+export type SENTENCE_DEFAULT = {
+    type: 'default'
+    line: number
+}
+export type SENTENCE_SWITCH = {
+    type: 'switch'
+    line: number
+    expression?: TOKEN[]
+    cases?: TOKEN[][]
+    hasDefault: boolean
+    block: SENTENCES[]
+    JumpTable?: SWITCH_ASN
 }
 
 export type STRUCT_TYPE_DEFINITION = {

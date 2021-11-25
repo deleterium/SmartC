@@ -52,6 +52,17 @@ export default function syntaxProcessor (Program: CONTRACT) : void {
         case 'struct':
             processSentence(SentenceObj.Phrase)
             break
+        case 'switch':
+            SentenceObj.JumpTable = {
+                type: 'switchASN',
+                Expression: createTree(SentenceObj.expression),
+                caseConditions: assertNotUndefined(SentenceObj.cases).map(Sentence => createTree(Sentence))
+            }
+            SentenceObj.block.forEach(processSentence)
+            break
+        case 'case':
+            delete SentenceObj.condition
+            break
         }
     }
 
