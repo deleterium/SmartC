@@ -162,6 +162,13 @@ describe('Keywords wrong usage', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: wrong label (colon)', () => {
+        expect(() => {
+            const code = 'long a=0; 1: a++; goto 1;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
     test('should throw: unexpected else', () => {
         expect(() => {
             const code = 'long a, b; else a++; a: b++;'
@@ -207,6 +214,83 @@ describe('Keywords wrong usage', () => {
     test('should throw: unexpected continue', () => {
         expect(() => {
             const code = 'long a, b; continue; b++;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong switch statement (missing codecave)', () => {
+        expect(() => {
+            const code = 'long a, b; switch a { case 1: a++; break; default: a--; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong switch statement (missing codedomain)', () => {
+        expect(() => {
+            const code = 'long a, b; switch (a) case 1: a++; break; default: a--;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong switch statement (no expression)', () => {
+        expect(() => {
+            const code = 'long a, b; switch () { case 1: a++; break; default: a--; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong switch statement (no case)', () => {
+        expect(() => {
+            const code = 'long a, b; switch (a) { default: a--; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong switch statement (two default)', () => {
+        expect(() => {
+            const code = 'long a, b; switch (a) { case 1: a++; default: a--; default: a=0; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong case statement (no variable/codecave)', () => {
+        expect(() => {
+            const code = 'long a, b; switch (a) { case: a++; default: a--; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong case statement (case outside switch)', () => {
+        expect(() => {
+            const code = 'long a, b; case 1: a++;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong case statement (case missing colon)', () => {
+        expect(() => {
+            const code = 'long a, b; switch (a) { case 1 || 2: a++; default: a--; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong default statement (case missing colon)', () => {
+        expect(() => {
+            const code = 'long a, b; switch (a) { case }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong default statement (missing colon)', () => {
+        expect(() => {
+            const code = 'long a, b; switch (a) { case 1: a++; default a--; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong default statement (outside switch)', () => {
+        expect(() => {
+            const code = 'long a, b; while (a) { default: a-- };'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)

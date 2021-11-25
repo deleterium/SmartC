@@ -220,6 +220,13 @@ describe('#pragma', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: wrong value for optimizationLevel', () => {
+        expect(() => {
+            const code = '#pragma optimizationLevel\nlong a;\na++;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
 })
 describe('#include and misc', () => {
     test('should throw: unknow directive', () => {

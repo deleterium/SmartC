@@ -232,11 +232,11 @@ export default function sentencesProcessor (
         currentToken++
         if (codetrain[currentToken] === undefined || codetrain[currentToken].type !== 'CodeCave') {
             throw new Error(`At line: ${line}.` +
-            " Expecting variable for 'switch' statement.")
+            " Expecting (expression) for 'switch (expr) {block}' statement.")
         }
         if (codetrain[currentToken + 1] === undefined || codetrain[currentToken + 1].type !== 'CodeDomain') {
             throw new Error(`At line: ${line}.` +
-            " Expecting a block for 'switch (expression) {block}' statement.")
+            " Expecting a {block} for 'switch (expression) {block}' statement.")
         }
         const expression = assertNotUndefined(codetrain[currentToken].params)
         if (expression.length === 0) {
