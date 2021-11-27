@@ -178,13 +178,17 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
      * If final destination is return or exit, then swap branch instruction and bring return/exit
      * up.
      */
-    function branchOpt (value: string) : string [] {
+    function branchOpt (value: string, index: number, array: string[]) : string [] {
         const branchTo = /^\s*(BGT|BLT|BGE|BLE|BEQ|BNE|BZR|BNZ)\s+\$(\w+)\s+(\$\w+\s+)?:(\w+)\s*$/.exec(value)
         if (branchTo === null) {
             return [value]
         }
         const labelDest = getLabeldestination(branchTo[4])
         if (/^\s*(RET|FIN)\s*$/.exec(labelDest) !== null) {
+            if (/^\s*(RET|FIN)\s*$/.test(array[index + 1])) {
+                // It was already optimized!
+                return [value]
+            }
             // if jump to return, swap branch and return from here
             const newLabel = `__opt_${labelID}`
             labelID++

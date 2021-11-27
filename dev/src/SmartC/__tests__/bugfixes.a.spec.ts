@@ -206,4 +206,11 @@ describe('Tests for bugfixes', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: bug 27 Infinite loop during level 2 optimization', () => {
+        const code = '#pragma optimizationLevel 2\nvoid main(void) { long a; if (a==1) { exit; } }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare main_a\n\n\nPCS\nSET @r0 #0000000000000001\nBNE $main_a $r0 :__if1_endif\nFIN\n__if1_endif:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })
