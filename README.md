@@ -10,19 +10,22 @@
 To empower developers, allowing them to create complex and highly optimized smart contracts.
 
 ## Usage
-[Run on gitpages](https://deleterium.github.io/SmartC/stable/index.html) latest stable version. Optionally download project to your computer and open file `index.html` of stable folder in your browser. After compiling, information to create the Smart Contract is presented and it is possible to deploy on your own local node. All versions released are avaliable at [https://deleterium.info/SmartC/](https://deleterium.info/SmartC/)
+[Run on gitpages](https://deleterium.github.io/SmartC/stable/index.html) the latest stable version.
+Optionally run the development version at [Vercel](https://smart-c.vercel.app) or choose a previous compiler version at [https://deleterium.info/SmartC/](https://deleterium.info/SmartC/).
+After compiling, information to create the Smart Contract is presented and it is possible to deploy the contract on your own local node.
 
-## FAQ
-Some information and explanation about the project for users that aren't programmers can be found on [Non-Technical FAQ](https://deleterium.github.io/SmartC/docs/Non-Technical-FAQ);
-
-## Documentation
-[Docs](https://deleterium.github.io/SmartC/docs/) are availabe with detailed technical information about the project. Check also [SmartC playlist on Youtube](https://www.youtube.com/playlist?list=PLyu0NNtb1eg3Gcg2JCrOle8MjtuFPb-Gi), with videos for starting, simulating and deploying a smart contract.
+## Documentation / FAQ / Lessons
+Detailed technical information about the project can be found in compiler's page.
+After opening the desired version, click the **Help** button.
+A window will open with all avaliable documentation for that specific release.
+Check also [SmartC playlist on Youtube](https://www.youtube.com/playlist?list=PLyu0NNtb1eg3Gcg2JCrOle8MjtuFPb-Gi), with videos for starting, simulating and deploying a smart contract.
 
 ## Changelog
 Find [here](https://deleterium.github.io/SmartC/CHANGELOG) major upgrades between releases.
 
 ## Support
-Did you like the project? Consider be owner of one SmartC NFT keyword. The smart contract is online at S-2Z65-L478-VKD4-386YY. More information on my [personal page](https://deleterium.info/NFT/). Check also other [commemorative](https://deleterium.github.io/SmartC/commemorative/) smart contracts. My address on signum: S-DKVF-VE8K-KUXB-DELET.
+Did you like the project? Consider be owner of one SmartC NFT keyword. More information on my [personal page](https://deleterium.info/NFT/).
+Donations are received on my address on signum: S-DKVF-VE8K-KUXB-DELET.
 
 ## Social media
 Join [SmartC Compiler](https://discord.gg/pQHnBRYE5c) server in Discord to stay tuned for news or ask questions.
