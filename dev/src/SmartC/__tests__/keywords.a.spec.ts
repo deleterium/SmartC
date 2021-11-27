@@ -8,6 +8,13 @@ describe('Keywords right usage', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: long declaration inside nested statements', () => {
+        const code = '#pragma optimizationLevel 0\n long a, b; while (a==0) { a++; if (a==5) { long c=3; a=c; } }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\n__loop1_continue:\nBNZ $a :__loop1_break\n__loop1_start:\nINC @a\nSET @r0 #0000000000000005\nBNE $a $r0 :__if2_endif\n__if2_start:\nSET @c #0000000000000003\nSET @a $c\n__if2_endif:\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
     it('should compile: long declaration with assignment', () => {
         const code = '#pragma optimizationLevel 0\nlong a=3;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @a #0000000000000003\nFIN\n'
@@ -158,6 +165,55 @@ describe('Keywords right usage', () => {
     it('should compile: halt', () => {
         const code = '#pragma optimizationLevel 0\nhalt;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n\nSTP\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: switch (simple)', () => {
+        const code = '#pragma optimizationLevel 0\nlong a, b; switch (a) { case 1: a++; break; case b: a--; break; default: a = 0;}'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 #0000000000000001\nBEQ $a $r0 :__switch1_0\nBEQ $a $b :__switch1_1\nJMP :__switch1_default\n__switch1_0:\nINC @a\nJMP :__switch1_break\n__switch1_1:\nDEC @a\nJMP :__switch1_break\n__switch1_default:\nCLR @a\n__switch1_break:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: switch (minimal)', () => {
+        const code = '#pragma optimizationLevel 0\n long a, b; switch (a) { case 1: a++; }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 #0000000000000001\nBEQ $a $r0 :__switch1_0\nJMP :__switch1_break\n__switch1_0:\nINC @a\n__switch1_break:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: switch (expressions)', () => {
+        const code = '#pragma optimizationLevel 0\n#pragma maxConstVars 2\n long a, b; switch (a%2) { default: a--; break; case (b%2): a=0; break; case 1: a++; }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare n1\n^const SET @n1 #0000000000000001\n^declare n2\n^const SET @n2 #0000000000000002\n^declare a\n^declare b\n\nSET @r0 $a\nMOD @r0 $n2\nSET @r1 $b\nMOD @r1 $n2\nBEQ $r0 $r1 :__switch1_0\nBEQ $r0 $n1 :__switch1_1\nJMP :__switch1_default\n__switch1_default:\nDEC @a\nJMP :__switch1_break\n__switch1_0:\nCLR @a\nJMP :__switch1_break\n__switch1_1:\nINC @a\n__switch1_break:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: switch (logical true)', () => {
+        const code = '#pragma optimizationLevel 0\n long a, b; switch (true) { case (b%2 == 3): a=0; break; case (b == 1):  a--; case a: a++; }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nSET @r1 #0000000000000002\nMOD @r0 $r1\nSET @r1 #0000000000000003\nBEQ $r0 $r1 :__switch1_0\n__switch1_0_next:\nSET @r0 #0000000000000001\nBEQ $b $r0 :__switch1_1\n__switch1_1_next:\nBNZ $a :__switch1_2\n__switch1_2_next:\nJMP :__switch1_break\n__switch1_0:\nCLR @a\nJMP :__switch1_break\n__switch1_1:\nDEC @a\n__switch1_2:\nINC @a\n__switch1_break:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: switch (logical false)', () => {
+        const code = '#pragma optimizationLevel 0\n long a, b; switch (false) { case (b%2 == 3): a=0; break; case (b == 1):  a--; case a: a++; }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @r0 $b\nSET @r1 #0000000000000002\nMOD @r0 $r1\nSET @r1 #0000000000000003\nBNE $r0 $r1 :__switch1_0\n__switch1_0_next:\nSET @r0 #0000000000000001\nBNE $b $r0 :__switch1_1\n__switch1_1_next:\nBZR $a :__switch1_2\n__switch1_2_next:\nJMP :__switch1_break\n__switch1_0:\nCLR @a\nJMP :__switch1_break\n__switch1_1:\nDEC @a\n__switch1_2:\nINC @a\n__switch1_break:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: switch (many logical - use jump next)', () => {
+        const code = '#pragma optimizationLevel 0\n long a, b; switch (true) { case (a && b): a=0; break; case (b == 1):  a--; case a: a++; }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBZR $a :__switch1_0_next\n__AND_2_next:\nBZR $b :__switch1_0_next\nJMP :__switch1_0\n__switch1_0_next:\nSET @r0 #0000000000000001\nBEQ $b $r0 :__switch1_1\n__switch1_1_next:\nBNZ $a :__switch1_2\n__switch1_2_next:\nJMP :__switch1_break\n__switch1_0:\nCLR @a\nJMP :__switch1_break\n__switch1_1:\nDEC @a\n__switch1_2:\nINC @a\n__switch1_break:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: continue inside switch', () => {
+        const code = '#pragma optimizationLevel 0\n long a, b; while (a==0) { a++; switch (a) { case 1: a=0; break; case 2: continue; default: a++; } b++;}'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\n__loop1_continue:\nBNZ $a :__loop1_break\n__loop1_start:\nINC @a\nSET @r0 #0000000000000001\nBEQ $a $r0 :__switch2_0\nSET @r0 #0000000000000002\nBEQ $a $r0 :__switch2_1\nJMP :__switch2_default\n__switch2_0:\nCLR @a\nJMP :__switch2_break\n__switch2_1:\nJMP :__loop1_continue\n__switch2_default:\nINC @a\n__switch2_break:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

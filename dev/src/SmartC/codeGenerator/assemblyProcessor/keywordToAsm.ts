@@ -12,10 +12,9 @@ export default function keywordToAsm (
     let TmpMemObj: FLATTEN_MEMORY_RETURN_OBJECT
     switch (OperatorToken.value) {
     case 'break':
-    case 'continue':
         return `JMP :%generateUtils.getLatestLoopId()%_${OperatorToken.value}\n`
-    case 'label':
-        return `${OperatorToken.extValue}:\n`
+    case 'continue':
+        return `JMP :%generateUtils.getLatestPureLoopId()%_${OperatorToken.value}\n`
     case 'goto':
         return `JMP :${assertNotUndefined(FlatMem).name}\n`
     case 'halt':

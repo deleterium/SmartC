@@ -84,7 +84,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             addLength: 2
         },
         { // regular keywords
-            start: /^(break|const|continue|do|else|exit|for|goto|halt|if|long|return|sleep|void|while)\b/,
+            start: /^(break|case|const|continue|default|do|else|exit|for|goto|halt|if|long|return|sleep|switch|void|while)\b/,
             pretokenType: 'keyword',
             addLength: 0
         },

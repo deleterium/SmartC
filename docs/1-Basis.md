@@ -7,8 +7,10 @@ This project aims to be as close to C as possible. But given special characteris
 As C, can be one line `//` or multi-line `/* .... */`;
 
 ### Keywords
-Some keywords have the same meaning and use in C: `asm`, `break`, `continue`, `do`, `else`, `for`, `goto`, `if`, `long`, `return`, `struct`, `void`, `while`. Note differences for keywords:
+Some keywords have the same meaning and use in C: `asm`, `break`, `continue`, `default`, `do`, `else`, `for`, `goto`, `if`, `long`, `return`, `struct`, `void`, `while`. Note differences for keywords:
 * `const`: Actually this will tell compiler to set a value to a variable at the contract creation. No problem setting it a value and then changing it later. It can be used during variable declaration or later, but it can be set only once. Using const can reduce the number of codepages of your program. Examples: `const long i=5;` to seta long; `long a[4]; const a[0]=5;` to set values for array.
+* `switch`: The standard C is fully supported. One addition is that switch expression can be `true` or `false`, and the cases will be evaluated to match the desired result.
+* `case`: The standard C is fully supported, featuring also that expressions can be added using parenthesis. If standard switch is used, an expression can be used: `switch (a) { case (b/2): ... }` and it will be evaluated as `if (a == b/2) ... `. If the logical switch statement is used, then it is possible to add a logical expression in `case` using parenthesis, in the form `switch (true) { case (a>5): ...}` and it will be evaluated as `if (a>5) ...` 
 
 There are also additional keywords:
 * `sleep N`: Puts the contract in 'sleep' mode during N blocks. Argument N must be specified and can be an expression. `sleep 1;` makes your contract to stop being processed at current block and resumes it at next one.
@@ -58,14 +60,14 @@ Structs use same notation in C. Structs pointers can also be used. To access a m
 All variables are initialized with value `0` at the first time the contract is executed, unless other value is set by `const` statement.
 All variables are similar to `static` in C. So every time a function is called or the smart contract receives a transaction, all variables will keep their last value. To avoid this behavior in functions, declare variables setting them a initial value: `long i=0;`.
 Global variables are available in all functions. Functions variables can only be used inside the function.
-Variables declarations can not be inside other sentences, like `for (long i; i<10; i++)` or `if (a){ long i=0; ...}`.
+Variables declarations can be inside other sentences, like `for (long i; i<10; i++)` or `if (a){ long i=0; ...}`, but their scope can only be 'global' or 'function', in other words, the result is the same as declaring variables at the program start (if global variables) or at the function start (if function variables).
 
 ### Functions
 As avaliable in C, the developer can make use of functions to make coding easier or reuse code from other projects. There is no need to put function prototypes at the beginning, the function can be used before it is declared, because their definitions are collected a step before the compiling process. Functions arguments and return values are passed using user stack. Recursive functions are allowed but developer must set manually and carefully a new size for "user stack pages" thru macro definition. There are two special functions: `void main(void)` explained before and `void catch(void)` explained at **Contract states** topic. It is not obligatory to use them.
 Functions can return also arrays and structs; the returning values can be used directly: example `if ( arrFn(a)[2] == 25 )` or `b = structFn(a)->value;`
 
 ### Global statements
-All global statements are grouped at the beginning of assembly code (even if after functions or end of file). When the contracted is executed first time, it does not begin at main function, but will start at the beginning of file and run all global statements. If there is a main function, it will be then executed during this first run. If you stop execution in global statements (with `exit`), the main function will not be processed and the starting point for next transactions will be the start of code. In this case (not using main function) use `halt` keyword to wait next transaction.
+All global statements are grouped at the beginning of assembly code (even if after functions or end of file). When the contract is executed first time, it does not begin at main function, but will start at the beginning of file and run all global statements. If there is a main function, it will be then executed during this first run. If you stop execution in global statements (with `exit`), the main function will not be processed and the starting point for next transactions will be the start of code. In this case (not using main function) use `halt` keyword to wait next transaction.
 
 ### Contract states
 * Finished: Contract execution ended at a `exit` instruction or at the end of 'main' function. On next activation it will start at 'main'.
@@ -81,6 +83,8 @@ If you plan to use a number many times, declare it globally with `const` keyword
 * Precedence of operators: Rules are simpler in SmartC. Note differences in special for bitwise OR. Check assembly code or use parenthesis if in doubt.
 * static: Variables by default are static in SmartC. Set values at the start of function if needed. Their values will not be changed in other functions unless variable is global.
 * Initial value: By default all values are set to zero ar contract creation, so it is not need to initialize them with zero when needed.
+* Variable scope: Although variables can be declared inside scopes, after compilation there will be only two types: Global variables and Function scope variables.
+* Global statements: In C it is fobidden to make assigments and other sentences as loops and conditionals globally. SmartC allows this behaviour.
 * register: By default there are 3, from r0..r2. They can be used without declaration, but inspect assembly code to ensure they are not changed during other instructions. Different from registers in modern CPUs, these registers in SmartC are just regular variables created and used by compiler.
 
 ## Notes

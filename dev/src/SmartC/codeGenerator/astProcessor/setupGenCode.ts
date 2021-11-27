@@ -50,8 +50,11 @@ export default function setupGenCode (
         // Check throw conditions that were out-of-scope
         const analysyCode = code.asmCode.split('\n')
         code.asmCode = analysyCode.map(line => {
-            if (line.startsWith('JMP :%generateUtils.getLatestLoopId()%')) {
+            if (line.includes('%generateUtils.getLatestLoopId()%')) {
                 return line.replace('%generateUtils.getLatestLoopId()%', Globals.getLatestLoopID())
+            }
+            if (line.includes('%generateUtils.getLatestPureLoopId()%')) {
+                return line.replace('%generateUtils.getLatestPureLoopId()%', Globals.getLatestPureLoopID())
             }
             return line
         }).join('\n')

@@ -35,6 +35,15 @@ export default function codeGenerator (Program: CONTRACT) {
         getLatestLoopID: function () {
             // error check must be in code!
             return this.latestLoopId[this.latestLoopId.length - 1]
+        },
+        getLatestPureLoopID: function () {
+            // error check must be in code!
+            return this.latestLoopId.reduce((previous, current) => {
+                if (current.includes('loop')) {
+                    return current
+                }
+                return previous
+            }, '')
         }
     }
 
@@ -260,6 +269,32 @@ export default function codeGenerator (Program: CONTRACT) {
             writeAsmCode(assemblyCode, Sentence.line)
             writeAsmLine('JMP :' + sentenceID + '_condition')
             writeAsmLine(sentenceID + '_break:')
+            break
+        case 'switch': {
+            sentenceID = '__switch' + GlobalCodeVars.getNewJumpID(Sentence.line)
+            let jumpTgt = sentenceID
+            jumpTgt += Sentence.hasDefault ? '_default' : '_break'
+            assemblyCode = setupGenCode(GlobalCodeVars, {
+                InitialAST: Sentence.JumpTable,
+                initialJumpTarget: sentenceID,
+                initialJumpNotTarget: jumpTgt,
+                initialIsReversedLogic: false
+            }, Sentence.line)
+            writeAsmCode(assemblyCode, Sentence.line)
+            GlobalCodeVars.latestLoopId.push(sentenceID)
+            Sentence.block.forEach(compileSentence)
+            GlobalCodeVars.latestLoopId.pop()
+            writeAsmLine(sentenceID + '_break:')
+            break
+        }
+        case 'case':
+            writeAsmLine(GlobalCodeVars.getLatestLoopID() + Sentence.caseId + ':', Sentence.line)
+            break
+        case 'default':
+            writeAsmLine(GlobalCodeVars.getLatestLoopID() + '_default:', Sentence.line)
+            break
+        case 'label':
+            writeAsmLine(Sentence.id + ':', Sentence.line)
             break
         case 'struct':
             // Nothing to do here

@@ -1,5 +1,5 @@
 import { assertNotUndefined } from '../repository/repository'
-import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES, LOOKUP_ASN, BINARY_ASN, END_ASN, EXCEPTION_ASN, NULL_ASN, UNARY_ASN } from '../typings/syntaxTypes'
+import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES, LOOKUP_ASN, BINARY_ASN, END_ASN, EXCEPTION_ASN, NULL_ASN, UNARY_ASN, SWITCH_ASN } from '../typings/syntaxTypes'
 
 type OBJECT_ASN_TYPE<T> = T extends 'binaryASN' ? BINARY_ASN :
 T extends 'unaryASN' ? UNARY_ASN :
@@ -7,6 +7,7 @@ T extends 'nullASN' ? NULL_ASN :
 T extends 'endASN' ? END_ASN :
 T extends 'lookupASN' ? LOOKUP_ASN :
 T extends 'exceptionASN' ? EXCEPTION_ASN :
+T extends 'switchASN' ? SWITCH_ASN :
 never;
 
 type HEXCONTENTS = number | string | undefined
@@ -205,6 +206,8 @@ export default {
                     return recursiveFind(InspAst.Left)
                 }
                 return recursiveFind(assertNotUndefined(InspAst.Right))
+            case 'switchASN':
+                return false
             }
         }
         function lookupAsn (InspAst: LOOKUP_ASN): boolean {
@@ -226,7 +229,7 @@ export default {
         }
         return recursiveFind(ObjAST)
     },
-    assertAsnType<T extends 'binaryASN'|'unaryASN'|'nullASN'|'endASN'|'lookupASN'|'exceptionASN'> (templateType: T,
+    assertAsnType<T extends 'binaryASN'|'unaryASN'|'nullASN'|'endASN'|'lookupASN'|'exceptionASN'|'switchASN'> (templateType: T,
         testObject: AST) : OBJECT_ASN_TYPE<T> {
         if (testObject.type !== undefined && testObject.type === templateType) {
             return testObject as OBJECT_ASN_TYPE<T>
