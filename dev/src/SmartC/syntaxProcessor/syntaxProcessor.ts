@@ -58,6 +58,8 @@ export default function syntaxProcessor (Program: CONTRACT) : void {
                 Expression: createTree(SentenceObj.expression),
                 caseConditions: assertNotUndefined(SentenceObj.cases).map(Sentence => createTree(Sentence))
             }
+            delete SentenceObj.expression
+            delete SentenceObj.cases
             SentenceObj.block.forEach(processSentence)
             break
         case 'case':
