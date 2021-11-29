@@ -213,4 +213,18 @@ describe('Tests for bugfixes', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    test('should throw: bug 28 Check argument size for functions call ', () => {
+        expect(() => {
+            const code = 'teste("is overflow", "ok");  void teste( long aa, long bb) { aa++, bb++; }'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: bug 28 Check argument size for API functions call ', () => {
+        expect(() => {
+            const code = '#include APIFunctions\n Set_A1("is overflow");'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
 })

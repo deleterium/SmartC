@@ -268,6 +268,7 @@ export default function memoryProcessor (
                 StructMemHeader = deepCopy(StructTD.MemoryTemplate)
                 StructMemHeader.declaration = 'struct_ptr'
                 StructMemHeader.type = 'structRef'
+                StructMemHeader.size = 1
             }
             StructMemHeader.name = phraseCode[startingTokenCounter].value
             StructMemHeader.asmName = AuxVars.currentPrefix + phraseCode[startingTokenCounter].value
