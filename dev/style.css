@@ -99,6 +99,7 @@ label:hover                      { background: #ddf; }
 	overflow-x: auto;
 	outline: none;
 	background: #fafbfc;
+	padding: 1em 1em 1em calc(1em + 4ch);
 }
 #color_code {
 	position: absolute;
@@ -106,6 +107,7 @@ label:hover                      { background: #ddf; }
 	left: 0px;
 	z-index: -1;
 	background: #fafbfca0;
+	padding: 1em;
 }
 #source-code, #color_code {
 	border: 1px black solid;
@@ -113,18 +115,17 @@ label:hover                      { background: #ddf; }
 	font-size: 100%;
 	color: #114;
 	margin: 0;
-	padding: 1em;
 	font-family: "Lucida Console", "Courier New", monospace;
 	width: 100%;
 }
 
 .transp {
 	opacity: 0;
-	transition: all ease 3s;
+	transition: opacity ease 3s;
 }
 .opaque {
 	opacity: 1;
-	transition: all ease 0.2s;
+	transition: opacity ease 0.2s;
 }
 
 .asmInstruction {
@@ -176,6 +177,14 @@ label:hover                      { background: #ddf; }
 	display: table-cell;
 	width: 50%;
 	vertical-align: middle;
+}
+.div_cell_b {
+    display: table-cell;
+}
+.div_cell_a {
+    display: table-cell;
+    color: #888;
+    width: 4ch;
 }
 
 /*Grid for page (desktop) */

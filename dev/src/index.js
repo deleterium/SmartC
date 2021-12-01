@@ -62,9 +62,50 @@ window.onload = () => {
     document.title = document.title.replace('%version%', startUpTest.getCompilerVersion())
     const h1TitleDom = document.getElementById('h1_title')
     h1TitleDom.innerHTML = h1TitleDom.innerHTML.replace('%version%', startUpTest.getCompilerVersion())
+
+    hljs.addPlugin({
+        'after:highlight': (result) => {
+            let retString = '<div class="table">'
+            const htmlLines = result.value.split('\n')
+            let spanStack = []
+            retString += htmlLines.map((content, index) => {
+                let startSpanIndex, endSpanIndex
+                let needle = 0
+                content = spanStack.join('') + content
+                spanStack = []
+                do {
+                    const remainingContent = content.slice(needle)
+                    startSpanIndex = remainingContent.indexOf('<span')
+                    endSpanIndex = remainingContent.indexOf('</span')
+                    if (startSpanIndex === -1 && endSpanIndex === -1) {
+                        break
+                    }
+                    if (endSpanIndex === -1 || (startSpanIndex !== -1 && startSpanIndex < endSpanIndex)) {
+                        const nextSpan = /<span .+?>/.exec(remainingContent)
+                        if (nextSpan === null) {
+                            // never: but ensure no exception is raised if it happens.
+                            break
+                        }
+                        spanStack.push(nextSpan[0])
+                        needle += startSpanIndex + nextSpan[0].length
+                    } else {
+                        spanStack.pop()
+                        needle += endSpanIndex + 1
+                    }
+                } while (true)
+                if (spanStack.length > 0) {
+                    content += Array(spanStack.length).fill('</span>').join('')
+                }
+                return `<div id="source_line${index + 1}" class="div_row"><div class="div_cell_a">${index + 1}</div><div class="div_cell_b">${content}</div></div>`
+            }).join('')
+            retString += '</div>'
+            result.value = retString
+        }
+    })
 }
 
 const PageGlobal = {
+    resizerInterval: undefined,
     colorMode: 'source',
     colorToggleTimeout: 0
 }
@@ -103,38 +144,36 @@ function compileCode () {
             compileMessage += '\n\n' + e.stack
         }
         document.getElementById('status_output').innerHTML = compileMessage
+        const lineError = /^At line: (\d+)/.exec(e.message)
+        if (lineError !== null) {
+            document.getElementById('source_line' + lineError[1]).className += ' asmError'
+        }
     }
 }
 
 function textKeyUp (force) {
     const elem = document.getElementById('source-code')
-    const text = elem.value
-    let i
 
     SetSourceCode(force)
 
     // grows text area
-    const oldrow = elem.rows
-    const newrow = (text.match(/\n/g) || '').length + 5
-
-    // eye-candy (resize in 8 steps using polinomial interpolation)
-    i = 1
-    const end = 9
-    let id
-    function frame () {
-        if (i > 9) {
-            clearInterval(id)
+    let gole = 1
+    clearInterval(PageGlobal.resizerInterval)
+    PageGlobal.resizerInterval = setInterval(() => {
+        const targetHeight = elem.scrollHeight
+        if (targetHeight < Number(elem.style.height.replace('px', ''))) {
+            if (gole >= 128) {
+                let val = gole >> 7
+                if (val > targetHeight) val = targetHeight
+                elem.style.height = (targetHeight - val) + 'px'
+            }
+            gole <<= 1
         } else {
-            i++
-            elem.rows = Math.round(i * i * (oldrow - newrow) / (end * end) + i * (newrow - oldrow) * (2 / end) + oldrow)
-            document.getElementById('color_code').style.height = elem.offsetHeight + 'px'
+            elem.style.height = (targetHeight + 2) + 'px'
+            document.getElementById('color_code').style.height = targetHeight + 'px'
+            clearInterval(PageGlobal.resizerInterval)
         }
-    }
-    if (newrow - oldrow > 3 || newrow - oldrow < -3) id = setInterval(frame, 100)
-    else elem.rows = newrow
-    // eye-candy end
-
-    document.getElementById('color_code').style.height = elem.offsetHeight + 'px'
+    }, 100)
 
     // update tooltip info (line:column)
     const cpos = elem.value.substr(0, elem.selectionStart).split('\n')
@@ -156,9 +195,9 @@ function SetColorCode () {
         const dest = document.getElementById('color_code')
 
         if (document.getElementById('source_is_c').checked) {
-            dest.innerHTML = hljs.highlight(source.value, { language: 'c' }).value + '\n\n\n\n\n'
+            dest.innerHTML = hljs.highlight(source.value, { language: 'c' }).value
         } else {
-            dest.innerHTML = asmHighlight(source.value) + '\n\n\n\n\n'
+            dest.innerHTML = asmHighlight(source.value)
         }
         source.className = 'transp'
     }
