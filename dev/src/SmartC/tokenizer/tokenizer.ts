@@ -244,19 +244,10 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             assertExpression(SimpleItem.char === '#',
                 'Internal error at tokenizer.')
             AuxVars.current++
-            const lines = inputSourceCode.slice(AuxVars.current).split('\n')
-            let i = 0; let val = ''
-            for (; i < lines.length; i++) {
-                val += lines[i]
-                AuxVars.current += lines[i].length + 1 // newline!
-                AuxVars.currentLine++
-                if (lines[i].endsWith('\\')) {
-                    val = val.slice(0, -1)
-                    continue
-                }
-                break
-            }
-            AuxVars.preTokens.push({ type: 'macro', value: val, line: AuxVars.currentLine - i - 1 })
+            const val = inputSourceCode.slice(AuxVars.current).split('\n')[0]
+            AuxVars.current += val.length + 1 // newline!
+            AuxVars.currentLine++
+            AuxVars.preTokens.push({ type: 'macro', value: val, line: AuxVars.currentLine - 1 })
             return true
         }
         AuxVars.preTokens.push({ type: SimpleItem.pretokenType, value: AuxVars.currentChar, line: AuxVars.currentLine })

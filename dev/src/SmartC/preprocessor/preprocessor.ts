@@ -44,7 +44,8 @@ export default function preprocessor (sourcecode: string) : string {
     let currentIfLevel = 0
 
     function preprocessMain () : string {
-        const lines = sourcecode.split('\n')
+        const sourceArray = sourcecode.split('\n')
+        const lines = treatEscapedNewLines(sourceArray)
         const retLines = lines.map(processLine)
         if (ifActive.length !== 1) {
             throw new Error("At line: EOF. Unmatched directive '#ifdef' or '#ifndef'.")
@@ -52,7 +53,38 @@ export default function preprocessor (sourcecode: string) : string {
         if (ifActive[0].flipped === true) {
             throw new Error("At line: EOF. Unmatched directives '#else'.")
         }
+        if (sourceArray.length !== retLines.length) {
+            throw new Error('Internal error at preprocessor')
+        }
         return retLines.join('\n')
+    }
+
+    function treatEscapedNewLines (src: string[]) : string[] {
+        const retArr : string [] = []
+        let escapedLines = 0
+        src.forEach((line, index) => {
+            if (line.endsWith('\\')) {
+                if (escapedLines === 0) {
+                    escapedLines = 1
+                    retArr.push(line.slice(0, -1))
+                } else {
+                    retArr[retArr.length - 1] += line.slice(0, -1)
+                    escapedLines++
+                }
+            } else {
+                if (escapedLines !== 0) {
+                    retArr[retArr.length - 1] += line
+                    retArr.push(...Array(escapedLines).fill(''))
+                    escapedLines = 0
+                } else {
+                    retArr.push(line)
+                }
+            }
+        })
+        if (escapedLines > 1) {
+            retArr.push(...Array(escapedLines - 1).fill(''))
+        }
+        return retArr
     }
 
     function getPrepRule (codeline: string) : PROCESSED_RULE {

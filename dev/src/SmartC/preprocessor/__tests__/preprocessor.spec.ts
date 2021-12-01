@@ -92,6 +92,26 @@ describe('preprocessor right tests', () => {
         const result = '\n\n\n\n\n\nlong a; a=44++true;'
         expect(preprocessor(code)).toBe(result)
     })
+    it('escaping new line', () => {
+        const code = 'asdf\nqwer\\\ntyui\n'
+        const result = 'asdf\nqwertyui\n\n'
+        expect(preprocessor(code)).toBe(result)
+    })
+    it('two escaping new lines', () => {
+        const code = 'asdf\nqwer\\\ntyui\\\nop\n'
+        const result = 'asdf\nqwertyuiop\n\n\n'
+        expect(preprocessor(code)).toBe(result)
+    })
+    it('escaping new line at EOF', () => {
+        const code = 'asdf\nqwer\ntyui\\'
+        const result = 'asdf\nqwer\ntyui'
+        expect(preprocessor(code)).toBe(result)
+    })
+    it('many escaping new lines at EOF', () => {
+        const code = 'asdf\nqwer\\\ntyui\\'
+        const result = 'asdf\nqwertyui\n'
+        expect(preprocessor(code)).toBe(result)
+    })
 })
 
 describe('preprocessor wrong code', () => {

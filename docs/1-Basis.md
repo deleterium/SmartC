@@ -19,7 +19,7 @@ There are also additional keywords:
 
 Others keyword have no assembly support. They are disabled: `auto`, `double`, `float`, `register`, `volatile`. For future implementation these keywords can be added: `case`, `char`, `default`, `enum`, `extern`, `int`, `short`, `sizeof`, `signed`, `static`, `switch`, `typedef`, `union`, `unsigned`.
 
-### Macros
+### Preprocessor
 Some special features can be enabled/disable via preprocessor directives:
 #### #program
 * `#program name YourProgramName`: Set program's name. Only regular letters and numbers allowed, max 30 chars in length.
@@ -52,6 +52,9 @@ Some special features can be enabled/disable via preprocessor directives:
 * `#pragma version N`: Informs which compiler's version the code was developed. Must be set if not using development version. To skip this check, set it to `dev`.
 * `#pragma warningToError [true/false/1/0/]`: All warnings to compiler errors. Default value is `true`. Warning messages begin with WARNING, other ones are actually errors.
 * `#pragma outputSourceLineNumber[true/false/1/0/]`: Adds a comment in assembly output with the corresponding line number to the C source code. Very usefull for debug.
+
+#### Escaping new line
+Just end a line with `\` and it will be joined to the next one. It can be used anywhere, even inside "strings". Usefull for multiline program description, #define for a function, or in middle of a variable name!
 
 ### Variables
 At the moment, only `long` values are implemented. User can assign them with decimal values (default) (floating point not allowed) `i=2;`, hexadecimal values `i=0xff;`, strings (up to 8 bytes) `msg="Hello!";` or Signum addresses `addr="S-297Z-EKMN-4AVV-7YWXP";` (also valid starting with BURST or TS). Long values can be assigned during their declaration.
