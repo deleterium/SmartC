@@ -153,6 +153,7 @@ function compileCode () {
 
 function textKeyUp (force) {
     const elem = document.getElementById('source-code')
+    const colored = document.getElementById('color_code')
 
     SetSourceCode(force)
 
@@ -166,11 +167,13 @@ function textKeyUp (force) {
                 let val = gole >> 7
                 if (val > targetHeight) val = targetHeight
                 elem.style.height = (targetHeight - val) + 'px'
+                colored.style.height = targetHeight + 'px'
             }
             gole <<= 1
         } else {
-            elem.style.height = (targetHeight + 2) + 'px'
-            document.getElementById('color_code').style.height = targetHeight + 'px'
+            elem.style.height = targetHeight + 'px'
+            elem.scrollTop = 0
+            colored.style.height = targetHeight + 'px'
             clearInterval(PageGlobal.resizerInterval)
         }
     }, 100)
