@@ -228,6 +228,13 @@ describe('User defined functions', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: Passing long inside struct (with offset)', () => {
+        const code = '#pragma optimizationLevel 0\nstruct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car[2]; long a;\nteste(car[a].collector);\n void teste(long value) { value++; }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car\n^const SET @car #0000000000000004\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare a\n^declare teste_value\n\nSET @r0 #0000000000000003\nMUL @r0 $a\nINC @r0\nSET @r1 $($car + $r0)\nPSH $r1\nJSR :__fn_teste\nFIN\n\n__fn_teste:\nPOP @teste_value\nINC @teste_value\nRET\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
     it('should compile: Support SetUnaryOperator in struct members', () => {
         const code = '#pragma optimizationLevel 0\nstruct KOMBI { long driver; long collector; long passenger[4]; } car; long a, b; ++car.driver; a=car.collector++;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^const SET @car_passenger #0000000000000006\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare a\n^declare b\n\nINC @car_driver\nSET @a $car_collector\nINC @car_collector\nFIN\n'
@@ -359,6 +366,13 @@ describe('API functions', () => {
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
+    })
+    it('should compile: Passing long inside struct (with offset)', () => {
+        const code = '#include APIFunctions\n#pragma optimizationLevel 0\nstruct KOMBI { long driver; long collector; long passenger; } ;struct KOMBI car[2]; long a;\nSet_A1(car[a].collector);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car\n^const SET @car #0000000000000004\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare a\n\nSET @r0 #0000000000000003\nMUL @r0 $a\nINC @r0\nSET @r1 $($car + $r0)\nFUN set_A1 $r1\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     test('should throw: Undeclared function when APIFunction is declared', () => {
         expect(() => {

@@ -72,7 +72,7 @@ export default function functionSolver (
                 // Override declaration protection rules
                 utils.setMemoryDeclaration(ArgGenObj.SolvedMem, fnArg.declaration)
             }
-            if (ArgGenObj.SolvedMem.size !== 1) {
+            if (ArgGenObj.SolvedMem.size !== 1 && ArgGenObj.SolvedMem.Offset === undefined) {
                 throw new Error(`At line: ${CurrentNode.Token.line}.` +
                 ' Overflow in argument size.')
             }
@@ -142,7 +142,7 @@ export default function functionSolver (
                 // Override declaration protection rules
                 utils.setMemoryDeclaration(ArgGenObj.SolvedMem, 'long')
             }
-            if (ArgGenObj.SolvedMem.size !== 1) {
+            if (ArgGenObj.SolvedMem.size !== 1 && ArgGenObj.SolvedMem.Offset === undefined) {
                 throw new Error(`At line: ${CurrentNode.Token.line}.` +
                 ' Overflow in argument size.')
             }
