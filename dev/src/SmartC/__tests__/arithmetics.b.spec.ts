@@ -137,9 +137,9 @@ describe('CheckOperator Unary', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile: mix', () => {
+    it('should compile: optimization on constant', () => {
         const code = 'long a, b; a=-2;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nCLR @a\nSET @r0 #0000000000000002\nSUB @a $r0\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nSET @a #fffffffffffffffe\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

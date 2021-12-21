@@ -136,14 +136,14 @@ describe('CheckOperator Binary', () => {
     })
     it('should compile: mix', () => {
         const code = 'long a, b, c; a=b*-2;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nCLR @a\nSET @r0 #0000000000000002\nSUB @a $r0\nMUL @a $b\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a #fffffffffffffffe\nMUL @a $b\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: mix', () => {
         const code = 'long a, b, c; a=-2&~b;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nCLR @a\nSET @r0 #0000000000000002\nSUB @a $r0\nSET @r0 $b\nNOT @r0\nAND @a $r0\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $b\nNOT @a\nSET @r0 #fffffffffffffffe\nAND @a $r0\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

@@ -158,6 +158,12 @@ export default function unaryAsnProcessor (
 
     function unaryMinusOpProc () : GENCODE_SOLVED_OBJECT {
         let { SolvedMem: CGenObj, asmCode } = traverseNotLogical()
+        if (CGenObj.type === 'constant') {
+            return {
+                SolvedMem: utils.createConstantMemObj(utils.subHexContents(0, CGenObj.hexContent)),
+                asmCode: asmCode
+            }
+        }
         const TmpMemObj = AuxVars.getNewRegister()
         TmpMemObj.declaration = utils.getDeclarationFromMemory(CGenObj)
         asmCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, utils.createConstantMemObj(0))
