@@ -303,15 +303,12 @@ export default function memoryProcessor (
         }, StructMemHeader.size)
         // Push items in memory
         retStructMemory.push(StructMemHeader)
-        for (let x = 0, i = 0; x < structArrDimensions.length; x++) {
-            for (let y = 0; y < structArrDimensions[x]; y++) {
-                retStructMemory.push(...createMemoryObjectFromSTD(
-                    currentStructNameDef,
-                    phraseCode[tokenCounter - structArrDimensions.length].value + '_' + i,
-                    isStructPointer
-                ))
-                i++
-            }
+        for (let i = 1; i < StructMemHeader.ArrayItem.totalSize; i += StructMemHeader.size) {
+            retStructMemory.push(...createMemoryObjectFromSTD(
+                currentStructNameDef,
+                phraseCode[tokenCounter - structArrDimensions.length].value + '_' + ((i - 1) / StructMemHeader.size).toString(),
+                isStructPointer
+            ))
         }
         // create array type definition
         programTD.push(createArrayTypeDefinition(StructMemHeader, structArrDimensions))

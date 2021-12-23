@@ -279,7 +279,7 @@ export default function lookupAsnProcessor (
         // Precedence 2: base memory type definition
         let typeDef = Memory.typeDefinition
         // precedence 1: type definition in offset property
-        if (Memory.Offset) {
+        if (Memory.Offset && Memory.Offset.declaration !== 'struct') {
             typeDef = Memory.Offset?.typeDefinition
         }
         return Program.typesDefinitions.find(obj => {

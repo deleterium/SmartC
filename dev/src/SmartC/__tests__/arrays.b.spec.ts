@@ -102,6 +102,24 @@ describe('Multi dimensional Arrays assignment (right side)', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: multidimensional array of structs', () => {
+        const code = `#pragma optimizationLevel 0
+struct BIDS {
+    long sender, value;
+} orderBook[3][3];
+struct BIDS *pbids;
+long a, b;
+a = orderBook[2][1].value;
+a = orderBook[b][1].value;
+pbids = &orderBook[2][1];
+pbids = &orderBook[b][1];
+orderBook[2][1].value = a;
+orderBook[b][1].value = a;`
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare orderBook\n^const SET @orderBook #0000000000000004\n^declare orderBook_0_sender\n^declare orderBook_0_value\n^declare orderBook_1_sender\n^declare orderBook_1_value\n^declare orderBook_2_sender\n^declare orderBook_2_value\n^declare orderBook_3_sender\n^declare orderBook_3_value\n^declare orderBook_4_sender\n^declare orderBook_4_value\n^declare orderBook_5_sender\n^declare orderBook_5_value\n^declare orderBook_6_sender\n^declare orderBook_6_value\n^declare orderBook_7_sender\n^declare orderBook_7_value\n^declare orderBook_8_sender\n^declare orderBook_8_value\n^declare pbids\n^declare a\n^declare b\n\nSET @a $orderBook_7_value\nSET @a #0000000000000006\nMUL @a $b\nINC @a\nINC @a\nINC @a\nSET @a $($orderBook + $a)\nSET @pbids #0000000000000012\nSET @r0 #0000000000000006\nMUL @r0 $b\nINC @r0\nINC @r0\nSET @r1 $orderBook\nADD @r1 $r0\nSET @pbids $r1\nSET @orderBook_7_value $a\nSET @r0 #0000000000000006\nMUL @r0 $b\nINC @r0\nINC @r0\nINC @r0\nSET @($orderBook + $r0) $a\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })
 
 describe('Array wrong usage:', () => {
