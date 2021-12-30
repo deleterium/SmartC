@@ -69,6 +69,9 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
                 if (preTokens[tokenID].value === 'asm' || preTokens[tokenID].value === 'struct') {
                     Node.extValue = preTokens[tokenID].extValue
                 }
+                if (preTokens[tokenID].value === 'sizeof') {
+                    Node.precedence = 2
+                }
                 return Node
             }
         },

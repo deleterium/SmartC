@@ -1,5 +1,6 @@
+import { assertNotUndefined } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
-import { END_ASN } from '../../typings/syntaxTypes'
+import { END_ASN, LONG_TYPE_DEFINITION, STRUCT_TYPE_DEFINITION } from '../../typings/syntaxTypes'
 import { createSimpleInstruction, createInstruction } from '../assemblyProcessor/createInstruction'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
@@ -91,6 +92,27 @@ export default function endAsnProcessor (
                 SolvedMem: utils.createVoidMemObj(),
                 asmCode: createInstruction(AuxVars, CurrentNode.Token)
             }
+        case 'void':
+            throw new Error(`At line: ${CurrentNode.Token.line}. ` +
+            "Invalid use of keyword 'void'.")
+        case 'long': {
+            const LongTypeDefinition = Program.typesDefinitions.find(
+                Obj => Obj.type === 'long'
+            ) as LONG_TYPE_DEFINITION | undefined
+            return {
+                SolvedMem: assertNotUndefined(LongTypeDefinition).MemoryTemplate,
+                asmCode: ''
+            }
+        }
+        case 'struct': {
+            const StructTypeDefinition = Program.typesDefinitions.find(
+                Obj => Obj.type === 'struct' && Obj.name === CurrentNode.Token.extValue
+            ) as STRUCT_TYPE_DEFINITION | undefined
+            return {
+                SolvedMem: assertNotUndefined(StructTypeDefinition).MemoryTemplate,
+                asmCode: ''
+            }
+        }
         case 'return':
             // this is 'return;'
             if (AuxVars.CurrentFunction === undefined) {
