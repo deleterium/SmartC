@@ -9,6 +9,7 @@ As C, can be one line `//` or multi-line `/* .... */`;
 ### Keywords
 Some keywords have the same meaning and use in C: `asm`, `break`, `continue`, `default`, `do`, `else`, `for`, `goto`, `if`, `long`, `return`, `struct`, `void`, `while`. Note differences for keywords:
 * `const`: Actually this will tell compiler to set a value to a variable at the contract creation. No problem setting it a value and then changing it later. It can be used during variable declaration or later, but it can be set only once. Using const can reduce the number of codepages of your program. Examples: `const long i=5;` to seta long; `long a[4]; const a[0]=5;` to set values for array.
+* `sizeof`: Usefull to get structs sizes. Return value will be the number of longs that the variable/type needs. One long is 8 bytes. Arrays sizes are one long greater than the length, because the first index is used to store the array starting location (a pointer). Pointers sizes are always 1.
 * `switch`: The standard C is fully supported. One addition is that switch expression can be `true` or `false`, and the cases will be evaluated to match the desired result.
 * `case`: The standard C is fully supported, featuring also that expressions can be added using parenthesis. If standard switch is used, an expression can be used: `switch (a) { case (b/2): ... }` and it will be evaluated as `if (a == b/2) ... `. If the logical switch statement is used, then it is possible to add a logical expression in `case` using parenthesis, in the form `switch (true) { case (a>5): ...}` and it will be evaluated as `if (a>5) ...` 
 
@@ -17,7 +18,7 @@ There are also additional keywords:
 * `exit`: Puts the contract in 'stop' mode and set program to restart from main function ('finished' mode). It will be inactive until a new transaction is received. Once a tx is received, it will start execution at `void main(void)` function. If main function is not defined, it will start again from beginning of code. `exit` takes no argument. If contract activation amount is zero, contract will resume execution on next block.
 * `halt`: Puts the contract in 'stop' mode. It will be inactive until a new transaction is received, then it will resume execution at next instruction. It takes no argument. If contract activation amount is zero, contract will resume execution on next block.
 
-Others keyword have no assembly support. They are disabled: `auto`, `double`, `float`, `register`, `volatile`. For future implementation these keywords can be added: `case`, `char`, `default`, `enum`, `extern`, `int`, `short`, `sizeof`, `signed`, `static`, `switch`, `typedef`, `union`, `unsigned`.
+Others keyword have no assembly support. They are disabled: `auto`, `double`, `float`, `register`, `volatile`. For future implementation these keywords can be added: `char`, `enum`, `extern`, `int`, `short`, `signed`, `static`, `typedef`, `union`, `unsigned`.
 
 ### Preprocessor
 Some special features can be enabled/disable via preprocessor directives:

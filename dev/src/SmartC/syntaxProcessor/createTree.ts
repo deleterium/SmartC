@@ -171,8 +171,7 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
     case 'sleep':
     case 'goto':
     case 'const':
-    case 'long':
-    case 'void':
+    case 'sizeof':
         if (tokens.length === 1) {
             throw new Error(`At line: ${tokens[0].line}. Missing arguments for keyword '${tokens[0].value}'.`)
         }
@@ -191,7 +190,23 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
             throw new Error(`At line: ${tokens[0].line}. Keyword '${tokens[0].value}' does not accept arguments.`)
         }
         return { type: 'endASN', Token: tokens[0] }
+    case 'long':
+    case 'void':
     case 'struct':
+        if (tokens.length === 1) {
+            // To be used by sizeof
+            return { type: 'endASN', Token: tokens[0] }
+        }
+        if (tokens.length === 2 && tokens[1].value === '*') {
+            // To be used by sizeof. Pointers are treated as 'long' in operations
+            tokens[0].value = 'long'
+            return { type: 'endASN', Token: tokens[0] }
+        }
+        return {
+            type: 'unaryASN',
+            Operation: tokens[0],
+            Center: createTree(tokens.slice(1))
+        }
     case 'return':
         if (tokens.length === 1) {
             return { type: 'endASN', Token: tokens[0] }

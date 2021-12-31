@@ -303,6 +303,8 @@ export default function unaryAsnProcessor (
             return gotoKeyProc()
         case 'sleep':
             return sleepKeyProc()
+        case 'sizeof':
+            return sizeofKeyProc()
         case 'struct':
             // nothing to do here
             return { SolvedMem: utils.createVoidMemObj(), asmCode: '' }
@@ -360,6 +362,18 @@ export default function unaryAsnProcessor (
         CGenObj.asmCode += createInstruction(AuxVars, CurrentNode.Operation, CGenObj.SolvedMem)
         AuxVars.freeRegister(CGenObj.SolvedMem.address)
         return { SolvedMem: utils.createVoidMemObj(), asmCode: CGenObj.asmCode }
+    }
+
+    function sizeofKeyProc () : GENCODE_SOLVED_OBJECT {
+        const CGenObj = traverseNotLogical()
+        if (CGenObj.SolvedMem.type === 'structRef' && CGenObj.SolvedMem.Offset !== undefined) {
+            throw new Error(`At line: ${CurrentNode.Operation.line}. Struct pointer members not supported by 'sizeof'.`)
+        }
+        let size = CGenObj.SolvedMem.size
+        if (CGenObj.SolvedMem.Offset === undefined && CGenObj.SolvedMem.ArrayItem !== undefined) {
+            size = CGenObj.SolvedMem.ArrayItem.totalSize
+        }
+        return { SolvedMem: utils.createConstantMemObj(size), asmCode: CGenObj.asmCode }
     }
 
     return unaryAsnProcessorMain()

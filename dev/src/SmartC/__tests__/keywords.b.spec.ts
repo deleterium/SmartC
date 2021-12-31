@@ -344,4 +344,32 @@ describe('Keywords wrong usage', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: sizeof wrong usage', () => {
+        expect(() => {
+            const code = 'long a; a=sizeof;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: sizeof wrong usage', () => {
+        expect(() => {
+            const code = 'long a; a=sizeof long;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: sizeof wrong usage', () => {
+        expect(() => {
+            const code = 'long a; a=sizeof(void);'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: sizeof wrong usage', () => {
+        expect(() => {
+            const code = 'long a; struct BIDS { long aa, bb[2];} *c; a=sizeof(c->aa);'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
 })
