@@ -283,4 +283,25 @@ describe('Keywords right usage', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: sizeof long and long array', () => {
+        const code = '#pragma optimizationLevel 0\nlong a, arr[2]; a=sizeof(a); a=sizeof(arr); a=sizeof(arr[1]); a=sizeof(long);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare arr\n^const SET @arr #0000000000000005\n^declare arr_0\n^declare arr_1\n\nSET @a #0000000000000001\nSET @a #0000000000000003\nSET @a #0000000000000001\nSET @a #0000000000000001\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: sizeof struct and struct array', () => {
+        const code = '#pragma optimizationLevel 0\n struct BIDS { long aa, bb[2];} stru, struArr[2]; long a; a=sizeof(stru); a=sizeof(struArr); a=sizeof(struArr[1]); a=sizeof(struArr[1].aa); a=sizeof(struArr[1].bb); a=sizeof(struArr[1].bb[0]); a=sizeof(struct BIDS);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare stru_aa\n^declare stru_bb\n^const SET @stru_bb #0000000000000005\n^declare stru_bb_0\n^declare stru_bb_1\n^declare struArr\n^const SET @struArr #0000000000000008\n^declare struArr_0_aa\n^declare struArr_0_bb\n^const SET @struArr_0_bb #000000000000000a\n^declare struArr_0_bb_0\n^declare struArr_0_bb_1\n^declare struArr_1_aa\n^declare struArr_1_bb\n^const SET @struArr_1_bb #000000000000000e\n^declare struArr_1_bb_0\n^declare struArr_1_bb_1\n^declare a\n\nSET @a #0000000000000004\nSET @a #0000000000000009\nSET @a #0000000000000004\nSET @a #0000000000000001\nSET @a #0000000000000003\nSET @a #0000000000000001\nSET @a #0000000000000004\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: sizeof pointers', () => {
+        const code = '#pragma optimizationLevel 0\n long a, *pa; void * pv; struct BIDS { long aa, bb[2];} *c; a=sizeof pa ; a=sizeof pv; a=sizeof c; a=sizeof (long *); a=sizeof(void *); a=sizeof(struct BIDS *);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare pa\n^declare pv\n^declare c\n\nSET @a #0000000000000001\nSET @a #0000000000000001\nSET @a #0000000000000001\nSET @a #0000000000000001\nSET @a #0000000000000001\nSET @a #0000000000000001\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })
