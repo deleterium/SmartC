@@ -7,7 +7,7 @@ Following table presents operators precedence order that are [based on C](https:
 | --- | --- | --- | --- |
 | 0 | Variable, Constant, Functions, `[]` `()` `{}` `.` `->` | Variables, constants, functions, arrays, scope, statements group,  members | Left-to-right |
 | 1 | `++`   `--` | Set unary operators | Depends* |
-| 2 | `!`   `~`   `-`   `+`   `*`   `&`    | Unary operators | Right-to-left |
+| 2 | `!`   `~`   `-`   `+`   `*`   `&`   `sizeof` | Unary operators and sizeof keyword | Right-to-left |
 | 3 | `*`   `/`   `%` | Multiplication, division, modulo | Left-to-right |
 | 4 | `+`   `-` | Addition and subtraction | Left-to-right |
 | 5 | `<<`   `>>` | Bitwise shift left and right  | Left-to-right |
@@ -17,7 +17,7 @@ Following table presents operators precedence order that are [based on C](https:
 | 9 | `||`   | Logical OR | Left-to-right |
 | 10 | `=`   `+=`   `-=`   `*=`   `/=`   `%=`   `&=`   `\=`   `;=`   `^=`   `<<=`   `>>=` | Assignment operators| Right-to-left |
 | 11 | `,`  | Delimiter, comma | Left-to-right |
-| 12 | `;` `keywords`  | Terminator, semi, keywords | Right-to-left |
+| 12 | `;` `keywords`  | Terminator, semi, keywords other than sizeof | Right-to-left |
 
 * Post increment and post decrement operators are exceptions, being applied on the neighbour variable.
 
