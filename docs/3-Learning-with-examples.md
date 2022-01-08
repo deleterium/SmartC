@@ -7,7 +7,7 @@ Following guide will show examples with progressive complexity and comments how 
 
 ### Always Running, doing nothing
 ```c
-#pragma version 0.3
+#pragma version dev
 
 #program name alwaysRuning
 #program description Always Running, doing nothing
@@ -26,7 +26,7 @@ while (true) {
 
 ### Counting transactions, easy way
 ```c
-#pragma version 0.3
+#pragma version dev
 
 #program name CountingTxDelayed
 #program description Counting transactions, easy way
@@ -42,7 +42,7 @@ void main(void) {
 
 ### Counting transactions without delay.
 ```c
-#pragma version 0.3
+#pragma version dev
 
 #program name CountingTx
 #program description Counting transactions without delay
@@ -92,7 +92,7 @@ void getTxDetails(void) {
 
 ### Sending signa
 ```c
-#pragma version 0.3
+#pragma version dev
 
 #program name SendSigna
 #program description Using a function to send signa.
@@ -154,7 +154,7 @@ void getTxDetails(void) {
 
 ### Sending a message
 ```c
-#pragma version 0.3
+#pragma version dev
 
 #program name SendMessage
 #program description Easy way to send messages

@@ -16,7 +16,7 @@
  * If message was undestood, contract sends a message with operation
  *    and the result MOD 100.000.000
  * ****************************************************************** */
-#pragma version 0.3
+#pragma version dev
 
 #program name Calculator
 #program description Do operations as requested by message.
