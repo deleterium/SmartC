@@ -1,4 +1,4 @@
 dev/node_modules/*
 dev/lib
 dev/coverage
-stable
+stable/htmlDocs/contents.json

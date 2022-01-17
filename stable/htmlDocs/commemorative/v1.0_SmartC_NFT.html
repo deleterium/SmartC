@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      /*! ADAPTED
+    Typeplate : Starter Kit
+    URL ........... http://typeplate.com
+    Version ....... 3.0.2
+    Github ........ https://github.com/typeplate/starter-kit
+    Authors ....... Dennis Gaebel (@gryghostvisuals) & Zachary Kain (@zakkain)
+    License ....... Creative Commmons Attribution 3.0
+    License URL ... https://github.com/typeplate/starter-kit/blob/master/license.txt
+    */
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        text-rendering: optimizeLegibility;
+        line-height: 1;
+        margin-top: 0;
+        color: #222;
+      }
+
+      blockquote + figcaption cite {
+        display: block;
+        font-size: inherit;
+        text-align: right;
+      }
+
+      body {
+        word-wrap: break-word;
+      }
+
+      pre code {
+        word-wrap: normal;
+      }
+
+      body {
+        -webkit-hyphens: auto;
+        -ms-hyphens: auto;
+        hyphens: auto;
+        color: #444;
+      }
+
+      h1 {
+        font-size: 2em;
+        /* 2*16 = 32 */
+      }
+
+      h2 {
+        font-size: 1.5em;
+        /* 1.5*16 = 24 */
+      }
+
+      h3 {
+        font-size: 1.17em;
+        /* 1.17*16 = 18.72 */
+      }
+
+      h4 {
+        font-size: 1em;
+        /* 1*16 = 16 */
+      }
+
+      h5 {
+        font-size: 0.83em;
+        /* 0.83*16 = 13.28 */
+      }
+
+      h6 {
+        font-size: 0.75em;
+        /* 0.75*16 = 12 */
+      }
+
+      h1 {
+        margin: 2.42424rem 0 1.454544rem;
+      }
+
+      h2 {
+        margin: 2.0202rem 0 1.21212rem;
+      }
+
+      h3 {
+        margin: 1.61616rem 0 1rem;
+      }
+
+      h4 {
+        margin: 1.21212rem 0 1;
+      }
+
+      h5 {
+        margin: 0.80808rem 0;
+      }
+
+      h6 {
+        margin: 0.70707rem 0;
+      }
+
+      p {
+        margin: auto auto 1.5rem;
+      }
+
+      small {
+        font-size: 65%;
+      }
+
+      input,
+      abbr,
+      acronym,
+      blockquote,
+      code,
+      kbd,
+      q,
+      samp,
+      var {
+        -webkit-hyphens: none;
+        -ms-hyphens: none;
+        hyphens: none;
+      }
+
+      pre {
+        white-space: pre;
+      }
+
+      pre code {
+        white-space: -moz-pre-wrap;
+        white-space: pre-wrap;
+      }
+
+      code {
+        white-space: pre;
+        font-family: SF Mono, Consolas, Dejavu Sans Mono, Menlo, monospace;
+      }
+
+      abbr {
+        -webkit-font-variant: small-caps;
+        -moz-font-variant: small-caps;
+        -ms-font-variant: small-caps;
+        font-variant: small-caps;
+        font-weight: 600;
+        text-transform: lowercase;
+        color: gray;
+      }
+
+      abbr[title]:hover {
+        cursor: help;
+      }
+
+      /* FROM http://purecss.io/layouts/side-menu/  adapted to remove pure classes*/
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+          "Segoe UI Symbol";
+        color: #444;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: auto;
+      }
+
+      code,
+      pre {
+        background-color: #f5f5f5;
+        color: #444;
+        border-radius: 2px;
+        text-shadow: 0px 1px 0px white;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+      }
+
+      pre code {
+        border: none;
+        box-shadow: none;
+      }
+
+      pre {
+        padding: 0.5em;
+      }
+
+      code {
+        display: inline-block;
+        padding: 0 0.5em;
+        line-height: 1.4;
+        font-size: 0.9em;
+      }
+
+      table {
+        border-spacing: 0;
+        margin-bottom: 1.5rem;
+      }
+
+      table th,
+      table td {
+        padding: 0.3em 0.7em;
+      }
+
+      table th {
+        background-color: #f4f4f4;
+        border-bottom: 2px solid #444;
+      }
+
+      table td {
+        border: 1px solid #f5f5f5;
+      }
+
+      /* Add transition to containers so they can push in and out. */
+
+      #layout,
+      #menu,
+      .menu-link {
+        -webkit-transition: all 0.2s ease-out;
+        -moz-transition: all 0.2s ease-out;
+        -ms-transition: all 0.2s ease-out;
+        -o-transition: all 0.2s ease-out;
+        transition: all 0.2s ease-out;
+      }
+
+      /* This is the parent `<div>` that contains the menu and the content area. */
+
+      #layout {
+        position: relative;
+        padding-left: 0;
+      }
+
+      #layout.active #menu {
+        left: 250px;
+        width: 250px;
+      }
+
+      #layout.active .menu-link {
+        left: 250px;
+      }
+
+      /* The content `<div>` is where all your content goes. */
+
+      .content {
+        margin: 50px auto;
+        padding: 0 2em;
+        max-width: 80ex;
+        line-height: 1.6em;
+      }
+
+      /*
+      The `#menu` `<div>` is the parent `<div>` that contains the menu that
+      appears on the left side of the page.
+      */
+
+      #menu {
+        margin-left: -250px;
+        /* "#menu" width */
+        width: 250px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 1000;
+        /* so the menu or its navicon stays above all content */
+        background: #f4f4f4;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        font-size: 0.9em;
+      }
+
+      @media print {
+        #menu,
+        .menu-link {
+          display: none !important;
+        }
+      }
+
+      a,
+      a * {
+        text-decoration: none;
+        color: #2483cc;
+      }
+
+      a:visited {
+        text-decoration: none;
+        color: #2483cc;
+      }
+
+      /* All anchors inside the menu should be styled like this. */
+
+      #menu a {
+        display: block;
+        padding: 0.5em 0.5em;
+      }
+
+      #menu a:first-letter {
+        text-transform: capitalize;
+      }
+
+      #menu ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 1em 0.5em;
+      }
+
+      #menu ul ul {
+        margin-top: 0.5em;
+        margin-left: 0.5em;
+        border-left: 4px solid rgba(255, 255, 255, 0.5);
+      }
+
+      /* Change color of the anchor links on hover/focus. */
+
+      #menu li a:hover,
+      #menu li a:focus {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      /* This styles the selected menu item `<li>`. */
+
+      #menu li a.active {
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      /* This styles a link within a selected menu item `<li>`. */
+
+      #menu li a.active {
+        color: #222;
+      }
+
+      /* This styles the menu heading. */
+
+      #menu li.heading {
+        font-size: 0.9em;
+        text-transform: uppercase;
+        color: #000;
+      }
+
+      #menu li.heading > * {
+        padding: 0.5em;
+        display: block;
+      }
+
+      #menu li.heading a {
+        color: #0c68af;
+      }
+
+      /* -- Dynamic Button For Responsive Menu -------------------------------------*/
+
+      /*
+      `.menu-link` represents the responsive menu toggle that shows/hides on
+      small screens.
+      */
+
+      .menu-link {
+        position: fixed;
+        display: block;
+        /* show this only on small screens */
+        top: 0;
+        left: 0;
+        /* "#menu width" */
+        font-size: 10px;
+        /* change this value to increase/decrease button size */
+        z-index: 10;
+        width: 2em;
+        height: auto;
+        padding: 1.6em 1.2em;
+        border-radius: 0 2px 2px 0;
+      }
+
+      .menu-link:hover {
+        background: #f4f4f4;
+      }
+
+      .menu-link span {
+        position: relative;
+        display: block;
+      }
+
+      .menu-link span,
+      .menu-link span:before,
+      .menu-link span:after {
+        background-color: #555;
+        width: 100%;
+        height: 0.2em;
+        border-radius: 1em;
+      }
+
+      .menu-link span:before,
+      .menu-link span:after {
+        position: absolute;
+        margin-top: -0.6em;
+        content: " ";
+      }
+
+      .menu-link span:after {
+        margin-top: 0.6em;
+      }
+
+      /* Hides the menu at `48em`, but modify this based on your app's needs. */
+
+      @media (min-width: 48em) {
+        .header,
+        .content {
+          padding-left: 2em;
+          padding-right: 2em;
+        }
+
+        #layout {
+          padding-left: 250px;
+          /* left col width "#menu" */
+          left: 0;
+        }
+        #menu {
+          left: 250px;
+        }
+
+        .menu-link {
+          position: fixed;
+          left: 250px;
+          display: none;
+        }
+
+        #layout.active .menu-link {
+          left: 250px;
+        }
+      }
+
+      @media (max-width: 48em) {
+        /* Only apply this when the window is small. Otherwise, the following case results in extra padding on the left:
+         * Make the window small.
+         * Tap the menu to trigger the active state.
+         * Make the window large again.
+         */
+        #layout.active {
+          position: relative;
+          left: 250px;
+        }
+      }
+
+      /* Heading anchors and permalinks */
+      h1[id],
+      h2[id],
+      h3[id],
+      h4[id],
+      h5[id],
+      h6[id] {
+        position: relative;
+      }
+      .heading-anchor-permalink {
+        /* Position the permalink to the left of the title */
+        position: absolute;
+        right: 100%;
+        /* Add some spacing as padding to not lose the hover */
+        padding-right: 0.6rem;
+        /* Make it only visible on heading hover, see below */
+        opacity: 0;
+      }
+      h1[id]:hover .heading-anchor-permalink,
+      h2[id]:hover .heading-anchor-permalink,
+      h3[id]:hover .heading-anchor-permalink,
+      h4[id]:hover .heading-anchor-permalink,
+      h5[id]:hover .heading-anchor-permalink,
+      h6[id]:hover .heading-anchor-permalink {
+        opacity: 0.5;
+      }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+  </head>
+
+  <body>
+    <div id="layout">
+      <!-- Menu toggle -->
+      <a href="#menu" id="menuLink" class="menu-link">
+        <!-- Hamburger icon -->
+        <span></span>
+      </a>
+      <nav id="menu">
+        <ul>
+<li><a class="" href="../README.html">README</a></li>
+<li><a class="" href="../1-Basis.html">Basis</a></li>
+<li><a class="" href="../2-API-Pseudo-Code.html">API Pseudo Code</a></li>
+<li><a class="" href="../3-Learning-with-examples.html">Learning with examples</a></li>
+<li><a class="" href="../4-Functions-repository.html">Functions repository</a></li>
+<li><a class="" href="../5-Comprehensive-example.html">Comprehensive example</a></li>
+<li><a class="" href="../6-Deeper-into-SmartC.html">Deeper into SmartC</a></li>
+<li><a class="" href="../Non-Technical-FAQ.html">Non Technical FAQ</a></li>
+<li class="heading"><span>commemorative</span></li>
+<ul>
+<li><a class="" href="README.html">README</a></li>
+<li><a class="" href="v0.1_SmartC_NFT.html">v0.1 SmartC NFT</a></li>
+<li><a class="" href="v0.2_PromotionalRaffle227.html">v0.2 PromotionalRaffle227</a></li>
+<li><a class="" href="v0.3_Hive_The_Tumbler.html">v0.3 Hive The Tumbler</a></li>
+<li><a class="active" href="v1.0_SmartC_NFT.html">v1.0 SmartC NFT</a></li>
+</ul>
+</ul>
+      </nav>
+      <article id="main" class="content">
+        <h1 id="smartc-nft-with-muscles">SmartC NFT with muscles <a class="heading-anchor-permalink" href="#smartc-nft-with-muscles">#</a></h1>
+<p>Be owner of SmartC keyword and receive dividends for this and future projects!</p>
+<h2 id="starting-help">Starting help <a class="heading-anchor-permalink" href="#starting-help">#</a></h2>
+<p>Use <a href="https://deleterium.info/NFTv2/">https://deleterium.info/NFTv2/</a> to create commands and check items status.
+The interactions with the smartc contract are made with binary messages.
+Please pay close attention when sendind command manually.
+The contract activation amount is one Signa.
+This is the minimum value to send in order to have the any message processed.
+It is used by the contract as gas.
+Excess balance will be refunded to sender.
+This activation amount does not include the transaction fee (at least 0.00735 Signa).
+If the message is processed, the contract will return a sucess message.
+If the message has an error or is invalid, the contract will send an error code.</p>
+<h2 id="instructions">Instructions <a class="heading-anchor-permalink" href="#instructions">#</a></h2>
+<h2 id="user-commands">User commands <a class="heading-anchor-permalink" href="#user-commands">#</a></h2>
+<ul>
+<li>Bid: Use to make an offer at some item. If the value is greater than the item price, the user will buy the item. Any excess value will be refunded. If the amout is less than price, the contract will hold the balance and add one offer at that item. Each item can have at most 3 offers. If this limit is reached, the contract will not accept bids less then the lower active offer. If the offer is greater than the minimum, the contract will revoke the minimum offer and add this new offer at that place. If the same user send a second offer, it will replace the old order and the previous order balance is refunded. It is possible to make offers on items that are not on sale (hold).</li>
+<li>Revoke: At any time the user can revoke the offer and get the balance back.</li>
+</ul>
+<h3 id="owner-commands">Owner commands <a class="heading-anchor-permalink" href="#owner-commands">#</a></h3>
+<ul>
+<li>Sell: used to change the item price, must be greater than zero. If there are active bids and the price is lower the highest bid, the item will be sold for the highest bid amount</li>
+<li>Hold: Items on hold are not on sale, but they still can receive bids.</li>
+<li>Transfer: select the user to transfer the item to. In order to pay the fees, the recipient must have an active bid in the item and the bid amount must be higher than the transfer fee (the excess value will be refunded). This also avoids transfering items to wrong accounts or burning them.</li>
+<li>Stop: By default, any new offer received at some item will generate a notification to owner. To stop these notifications, use this command. Notifications will be turned on again if owner send another command (sell, hold or transfer). This command is valid for one item and there is no command to stop all items if user is owner of many items.</li>
+</ul>
+<h3 id="fees">Fees <a class="heading-anchor-permalink" href="#fees">#</a></h3>
+<p>For each sale it is deducted from price 5% fee.
+The last sale price is stored, so transfers need to pay 5% of last sale.
+The fee is added to the balance to be distributed as dividend.</p>
+<h3 id="dividends">Dividends <a class="heading-anchor-permalink" href="#dividends">#</a></h3>
+<p>When the dividends balance is greater than 17 Signa, the contract will proceed the distribution to current owners.
+The unspent gas collected from commands will also be added to dividends.
+There is a special command allowing contract to receive dividends from another account.
+Each item is considered one share.</p>
+<h3 id="limitations">Limitations <a class="heading-anchor-permalink" href="#limitations">#</a></h3>
+<p>User can send many messages at same block, all of them will be processed.
+But the contract is limited to send only one reply, with the sum of all balances and only one text message.</p>
+<h3 id="error-codes">Error codes <a class="heading-anchor-permalink" href="#error-codes">#</a></h3>
+<ul>
+<li>01 - Error parsing the command. Following reasons: 1) No command sent or 2) Command was sent encrypted;</li>
+<li>02 - Error parsing the command. Invalid command or selected item not in collection range.</li>
+<li>03 - You are not the item owner. The selected option is restricted for owners.</li>
+<li>04 - Setting the item price: it is not possible to set price to zero or negative values.</li>
+<li>05 - Transfer item: Beneficiary must have a bid in the item.</li>
+<li>06 - Transfer item: Beneficiary has a bid in the item but the value is below 5% of last sale processed. This is needed to pay the transfer fee.</li>
+<li>07 - Your bid is lower than the lowest bid in the offer book.</li>
+<li>08 - Trying to revoke a bid, but there is no bid from you in selected item.</li>
+<li>09 - Error parsing the command. Command was sent as text. Remember to set “Message is text” to false if sending manually.</li>
+<li>10 - BID amount is zero. Bid must be greater than zero.</li>
+<li>11 - You are the item owner. Owner can not bid its own item.</li>
+</ul>
+<h2 id="smart-contract-source-code">Smart contract source code <a class="heading-anchor-permalink" href="#smart-contract-source-code">#</a></h2>
+<p>Currently deployed at address <a href="https://explorer.signum.network/at/13590302527003965216">S-NFT2-6MA4-KLA2-DNM8T</a></p>
+<pre><code class="language-c">#program name SmartCNFTv2
+#program description Be owner of SmartC keyword and receive dividends for this\
+ and future projects! Send at least one signa to receive the current NFT web\
+ page, where detailed information is available.
+#program activationAmount 1_0000_0000
+
+#pragma outputSourceLineNumber
+#pragma version 1.0
+#pragma maxAuxVars 2
+#pragma maxConstVars 3
+
+#define BID 0x9AFBF4C800000000
+#define SELL 0xE3B0C44200000000
+#define HOLD 0x98FC1C1400000000
+#define STOP 0x649B934C00000000
+#define REVOKE 0x996FB92400000000
+#define TRANSFER 0x27AE41E400000000
+#define DIVIDENDS 0x83CDA47900000000
+
+// #define SIMULATOR
+
+#define ITEM_MASK 0xFF
+#define OPTION_MASK 0xFFFFFFFF00000000
+#define MAX_ITEMS 23
+
+#define DIVIDENDS_MINIMUN_PAYOUT 17_0000_0000
+
+#include APIFunctions
+
+/*
+01 - Error parsing the command. Following reasons: 1) No command sent or 2) Command was sent encrypted;
+02 - Error parsing the command. Invalid command or selected item not in collection range.
+03 - You are not the item owner. The selected option is restricted for owners.
+04 - Setting the item price: it is not possible to set price to zero or negative values.
+05 - Transfer item: Beneficiary must have a bid in the item.
+06 - Transfer item: Beneficiary has a bid in the item but the value is below 5% of last sale processed. This is needed to pay the transfer fee.
+07 - Your bid is lower than the lowest bid in the offer book.
+08 - Trying to revoke a bid, but there is no bid from you in selected item.
+09 - Error parsing the command. Command was sent as text. Remember to set &quot;Message is text&quot; to false if sending manually.
+10 - BID amount is zero. Bid must be greater than zero.
+11 - You are the item owner. Owner can not bid its own item.
+*/
+
+// Remember: price zero means item in hold. No sell is possible.
+struct NFT {
+    long owner,
+        price,
+        nameA, nameB, nameC, nameD;
+} collection[MAX_ITEMS];
+
+// dimensions: Collection length, order (max 3 orders for item), details (sender, value)
+struct BIDS {
+    long sender, value;
+} orderBook[MAX_ITEMS][3], *tempBid;
+
+struct TXINFO {
+   long timestamp,
+       sender,
+       amount,
+       optionAndItem,
+       extInfo;
+} currentTX;
+
+struct NICESTATS {
+    long messagesProcessed;
+    long sales;
+    long transfers;
+    long bids;
+    long dividendsPaid;
+} lifetimeStats;
+
+struct CURRENT_ITEM {
+    struct NFT *details;
+    long index;
+    struct BIDS *bidDetails;
+} selectedItem;
+
+#define START_OWNER &quot;S-DKVF-VE8K-KUXB-DELET&quot;
+// #define START_PRICE 50_0000_0000
+
+// Collection length to be set on each carbon copy deployment
+const long collection_length = 21;
+
+//Setting up NFT
+const collection[ 0].nameA = &quot;asm: Ass&quot;;
+const collection[ 0].nameB = &quot;embly po&quot;;
+const collection[ 0].nameC = &quot;wer&quot;;
+
+const collection[ 1].nameA = &quot;break: L&quot;;
+const collection[ 1].nameB = &quot;oop enem&quot;;
+const collection[ 1].nameC = &quot;y&quot;;
+
+const collection[ 2].nameA = &quot;case: Up&quot;;
+const collection[ 2].nameB = &quot; the rig&quot;;
+const collection[ 2].nameC = &quot;ht side!&quot;;
+
+const collection[ 3].nameA = &quot;const: M&quot;;
+const collection[ 3].nameB = &quot;achine d&quot;;
+const collection[ 3].nameC = &quot;ata frie&quot;;
+const collection[ 3].nameD = &quot;nd&quot;;
+
+const collection[ 4].nameA = &quot;continue&quot;;
+const collection[ 4].nameB = &quot;: Let's &quot;;
+const collection[ 4].nameC = &quot;start ag&quot;;
+const collection[ 4].nameD = &quot;ain&quot;;
+
+const collection[ 5].nameA = &quot;default:&quot;;
+const collection[ 5].nameB = &quot; You sha&quot;;
+const collection[ 5].nameC = &quot;ll not p&quot;;
+const collection[ 5].nameD = &quot;ass!&quot;;
+
+const collection[ 6].nameA = &quot;do: Loop&quot;;
+const collection[ 6].nameB = &quot;ing like&quot;;
+const collection[ 6].nameC = &quot; crazy&quot;;
+
+const collection[ 7].nameA = &quot;else: Th&quot;;
+const collection[ 7].nameB = &quot;e gang o&quot;;
+const collection[ 7].nameC = &quot;f 'no'&quot;;
+
+const collection[ 8].nameA = &quot;exit: Ti&quot;;
+const collection[ 8].nameB = &quot;me to go&quot;;
+const collection[ 8].nameC = &quot; home&quot;;
+
+const collection[ 9].nameA = &quot;for: Ari&quot;;
+const collection[ 9].nameB = &quot;stocrat &quot;;
+const collection[ 9].nameC = &quot;loop&quot;;
+
+const collection[10].nameA = &quot;goto: Te&quot;;
+const collection[10].nameB = &quot;leport c&quot;;
+const collection[10].nameC = &quot;apabilit&quot;;
+const collection[10].nameD = &quot;y&quot;;
+
+const collection[11].nameA = &quot;halt: En&quot;;
+const collection[11].nameB = &quot;d of shi&quot;;
+const collection[11].nameC = &quot;ft&quot;;
+
+const collection[12].nameA = &quot;if: To b&quot;;
+const collection[12].nameB = &quot;e or not&quot;;
+const collection[12].nameC = &quot; to be&quot;;
+
+const collection[13].nameA = &quot;long: 64&quot;;
+const collection[13].nameB = &quot;-bit of &quot;;
+const collection[13].nameC = &quot;possibil&quot;;
+const collection[13].nameD = &quot;ities&quot;;
+
+const collection[14].nameA = &quot;return: &quot;;
+const collection[14].nameB = &quot;Like an &quot;;
+const collection[14].nameC = &quot;end, not&quot;;
+const collection[14].nameD = &quot;!&quot;;
+
+const collection[15].nameA = &quot;sizeof: &quot;;
+const collection[15].nameB = &quot;X-ray on&quot;;
+const collection[15].nameC = &quot; memory&quot;;
+
+const collection[16].nameA = &quot;sleep: P&quot;;
+const collection[16].nameB = &quot;lease co&quot;;
+const collection[16].nameC = &quot;me back &quot;;
+const collection[16].nameD = &quot;later&quot;;
+
+const collection[17].nameA = &quot;struct: &quot;;
+const collection[17].nameB = &quot;The data&quot;;
+const collection[17].nameC = &quot; skyscra&quot;;
+const collection[17].nameD = &quot;per&quot;;
+
+const collection[18].nameA = &quot;switch: &quot;;
+const collection[18].nameB = &quot;If, with&quot;;
+const collection[18].nameC = &quot; muscles&quot;;
+
+const collection[19].nameA = &quot;void: Be&quot;;
+const collection[19].nameB = &quot;ing and &quot;;
+const collection[19].nameC = &quot;nothingn&quot;;
+const collection[19].nameD = &quot;ess&quot;;
+
+const collection[20].nameA = &quot;while: L&quot;;
+const collection[20].nameB = &quot;oop prot&quot;;
+const collection[20].nameC = &quot;ector&quot;;
+
+const collection[ 0].owner = START_OWNER;
+const collection[ 1].owner = START_OWNER;
+const collection[ 2].owner = START_OWNER;
+const collection[ 3].owner = START_OWNER;
+const collection[ 4].owner = START_OWNER;
+const collection[ 5].owner = START_OWNER;
+const collection[ 6].owner = START_OWNER;
+const collection[ 7].owner = START_OWNER;
+const collection[ 8].owner = START_OWNER;
+const collection[ 9].owner = START_OWNER;
+const collection[10].owner = START_OWNER;
+const collection[11].owner = START_OWNER;
+const collection[12].owner = START_OWNER;
+const collection[13].owner = START_OWNER;
+const collection[14].owner = START_OWNER;
+const collection[15].owner = START_OWNER;
+const collection[16].owner = START_OWNER;
+const collection[17].owner = START_OWNER;
+const collection[18].owner = START_OWNER;
+const collection[19].owner = START_OWNER;
+const collection[20].owner = START_OWNER;
+
+long lastSalePrice;
+long startingBlock;
+long dividendsBalance;
+long stopNotificationBitTable;
+long helpSite0, helpSite1;
+B_To_Address_Of_Creator();
+long CREATOR = Get_B1();
+long i;
+
+const long n6 = 6, n100 = 100, n100000000 = 1_0000_0000;
+
+#ifdef SIMULATOR
+    Set_B1(555);
+    Send_All_To_Address_In_B();
+    #define BID 0xBDBDBDBD00000000
+    #define SELL 0x5e5e5e5e00000000
+    #define HOLD 0x8888888800000000
+    #define STOP 0x9999999900000000
+    #define REVOKE 0x3333333300000000
+    #define TRANSFER 0xaaaaaaaa00000000
+    #define DIVIDENDS 0xbbbbbbbb00000000
+#endif
+
+void main(void) {
+    startingBlock = Get_Block_Timestamp();
+    do {
+        A_To_Tx_After_Timestamp(currentTX.timestamp);
+        if (Get_A1() == 0) {
+            break;
+        }
+        getTxDetails();
+        processTX();
+    } while (true);
+    distributeDividends();
+}
+
+void getTxDetails(void) {
+    currentTX.amount = Get_Amount_For_Tx_In_A();
+    currentTX.timestamp = Get_Timestamp_For_Tx_In_A();
+    Message_From_Tx_In_A_To_B();
+    currentTX.optionAndItem = Get_B1();
+    currentTX.extInfo = Get_B2();
+    B_To_Address_Of_Tx_In_A();
+    currentTX.sender = Get_B1();
+}
+
+void processTX(void) {
+    long fee;
+    lifetimeStats.messagesProcessed++;
+
+    if (currentTX.optionAndItem == 0) {
+        CancelWithError(&quot;Err 01: &quot;);
+        return;
+    }
+    // Fill selectedItem
+    selectedItem.index = currentTX.optionAndItem &amp; ITEM_MASK;
+    if (selectedItem.index &gt;= collection_length) {
+        if (selectedItem.index == '0' ||
+            selectedItem.index == '1') {
+            CancelWithError(&quot;Err 09: &quot;);
+            return;
+        }
+        if (currentTX.sender == CREATOR) {
+            // Creator sent a message to set website
+            // No return signa (can be used to add gas to contract)
+            helpSite0 = currentTX.optionAndItem;
+            helpSite1 = currentTX.extInfo;
+            return;
+        }
+        CancelWithError(&quot;Err 02: &quot;);
+        return;
+    }
+    selectedItem.details = &amp;collection[selectedItem.index];
+
+    switch (currentTX.optionAndItem &amp; OPTION_MASK) {
+    case DIVIDENDS:
+        dividendsBalance += currentTX.amount;
+        return;
+    case SELL:
+        if (currentTX.sender != selectedItem.details-&gt;owner) {
+            CancelWithError(&quot;Err 03: &quot;);
+            return;
+        }
+        if (currentTX.extInfo &lt;= 0) {
+            CancelWithError(&quot;Err 04: &quot;);
+            return;
+        }
+        RefundSender();
+        stopNotificationBitTable &amp;= ~(1 &lt;&lt; selectedItem.index);
+        selectedItem.bidDetails = getHighestBid();
+        if (currentTX.extInfo &gt; selectedItem.bidDetails-&gt;value) {
+            // Update item price
+            if (selectedItem.details-&gt;price != currentTX.extInfo) {
+                NotifyBidders();
+            }
+            selectedItem.details-&gt;price = currentTX.extInfo;
+            NotifySucess();
+            return;
+        }
+        // We have a sale
+        lastSalePrice = selectedItem.bidDetails-&gt;value;
+        fee = lastSalePrice * 5 / 100;
+        dividendsBalance += fee;
+        Set_B1(currentTX.sender);
+        Send_To_Address_In_B(lastSalePrice - fee);
+        selectedItem.details-&gt;owner = selectedItem.bidDetails-&gt;sender;
+        selectedItem.details-&gt;price = lastSalePrice * 110 / 100;
+        selectedItem.bidDetails-&gt;sender = 0;
+        selectedItem.bidDetails-&gt;value = 0;
+        NotifySucess();
+        NotifyBidders();
+        NotifyNewOwnership();
+        lifetimeStats.sales++;
+        return;
+    case STOP:
+        if (currentTX.sender != selectedItem.details-&gt;owner) {
+            CancelWithError(&quot;Err 03: &quot;);
+            return;
+        }
+        RefundSender();
+        stopNotificationBitTable |= 1 &lt;&lt; selectedItem.index;
+        NotifySucess();
+        return;
+    case HOLD:
+        if (currentTX.sender != selectedItem.details-&gt;owner) {
+            CancelWithError(&quot;Err 03: &quot;);
+            return;
+        }
+        RefundSender();
+        if (selectedItem.details-&gt;price != 0) {
+            // Changing sell -&gt; hold
+            NotifyBidders();
+        }
+        selectedItem.details-&gt;price = 0;
+        NotifySucess();
+        return;
+    case TRANSFER:
+        if (currentTX.sender != selectedItem.details-&gt;owner) {
+            CancelWithError(&quot;Err 03: &quot;);
+            return;
+        }
+        fee = lastSalePrice * 5 / 100;
+        selectedItem.bidDetails = getBidFromUser(currentTX.extInfo);
+        if (selectedItem.bidDetails == NULL) {
+            CancelWithError(&quot;Err 05: &quot;);
+            return;
+        }
+        if (selectedItem.bidDetails-&gt;value &lt; fee) {
+            CancelWithError(&quot;Err 06: &quot;);
+            return;
+        }
+        RefundSender();
+        dividendsBalance += fee;
+        selectedItem.bidDetails-&gt;value -= fee;
+        selectedItem.details-&gt;owner = currentTX.extInfo;
+        selectedItem.details-&gt;price = selectedItem.details-&gt;price * 110 / 100;
+        stopNotificationBitTable &amp;= ~(1 &lt;&lt; selectedItem.index);
+        RevokeBid();
+        lifetimeStats.transfers++;
+        NotifySucess();
+        NotifyBidders();
+        NotifyNewOwnership();
+        return;
+    case BID:
+        if (currentTX.amount == 0) {
+            CancelWithError(&quot;Err 10: &quot;);
+            return;
+        }
+        if (currentTX.sender == selectedItem.details-&gt;owner) {
+            CancelWithError(&quot;Err 11: &quot;);
+            return;
+        }
+        selectedItem.bidDetails = getBidFromUser(currentTX.sender);
+        if (selectedItem.bidDetails != NULL) {
+            // Sender already have a bid. Revoke it.
+            RevokeBid();
+        }
+        if (selectedItem.details-&gt;price != 0 &amp;&amp; currentTX.amount &gt;= selectedItem.details-&gt;price) {
+            // We have a sale!
+            lastSalePrice = selectedItem.details-&gt;price;
+            fee = lastSalePrice * 5 / 100;
+            dividendsBalance += fee;
+            // Send money to previous owner
+            Set_B1(selectedItem.details-&gt;owner);
+            Send_To_Address_In_B(lastSalePrice - fee);
+            // Refund any excess amount to sender
+            Set_B1(currentTX.sender);
+            Send_To_Address_In_B(currentTX.amount - lastSalePrice);
+            // Change ownership
+            selectedItem.details-&gt;owner = currentTX.sender;
+            selectedItem.details-&gt;price = lastSalePrice * 110 / 100;
+            // Turn on owner notifications
+            stopNotificationBitTable &amp;= ~(1 &lt;&lt; selectedItem.index);
+            lifetimeStats.sales++;
+            // Send notifications
+            NotifyBidders();
+            NotifyNewOwnership();
+            return;
+        }
+        selectedItem.bidDetails = getLowestBid();
+        if (currentTX.amount &lt;= selectedItem.bidDetails-&gt;value) {
+            CancelWithError(&quot;Err 07: &quot;);
+            return;
+        }
+        lifetimeStats.bids++;
+        RevokeBid();
+        NotifyBidders();
+        // Store new bid
+        selectedItem.bidDetails-&gt;sender = currentTX.sender;
+        selectedItem.bidDetails-&gt;value = currentTX.amount;
+        NotifySucess();
+        NotifyBidChanges();
+        return;
+    case REVOKE:
+        selectedItem.bidDetails = getBidFromUser(currentTX.sender);
+        if (selectedItem.bidDetails == NULL) {
+            CancelWithError(&quot;Err 08: &quot;);
+            return;
+        }
+        RevokeBid();
+        NotifySucess();
+        NotifyBidChanges();
+        return;
+    default:
+        CancelWithError(&quot;Err 02: &quot;);
+    }
+}
+
+void CancelWithError(long errorMessage) {
+    Set_B1(currentTX.sender);
+    Set_A1_A2(errorMessage, &quot;Info at &quot;);
+    Set_A3_A4(helpSite0, helpSite1);
+    Send_A_To_Address_In_B();
+    if (currentTX.amount != 0) {
+        Send_To_Address_In_B(currentTX.amount);
+    }
+}
+
+void RefundSender(void) {
+    if (currentTX.amount != 0) {
+        Set_B1(currentTX.sender);
+        Send_To_Address_In_B(currentTX.amount);
+    }
+}
+
+void NotifySucess(void) {
+    Set_B1(currentTX.sender);
+    Set_A1_A2(&quot;Transact&quot;, &quot;ion proc&quot;);
+    Set_A3_A4(&quot;essed&quot;, &quot;&quot;);
+    Send_A_To_Address_In_B();
+}
+
+void NotifyBidders(void) {
+    Set_A1_A2(&quot;Changes &quot;, &quot;at item &quot;);
+    Set_A3_A4(selectedItem.details-&gt;nameA, selectedItem.details-&gt;nameB);
+    struct BIDS *ret;
+    ret = &amp;orderBook[selectedItem.index][0];
+    for (i=0; i&lt;3;i++) {
+        if (ret-&gt;sender != 0) {
+            Set_B1(ret-&gt;sender);
+            Send_A_To_Address_In_B();
+        }
+        ret += sizeof(struct BIDS);
+    }
+}
+
+void NotifyNewOwnership(void) {
+    Set_B1(selectedItem.details-&gt;owner);
+    Set_A1_A2(&quot;You boug&quot;, &quot;ht item &quot;);
+    Set_A3_A4(selectedItem.details-&gt;nameA, selectedItem.details-&gt;nameB);
+    Send_A_To_Address_In_B();
+}
+
+void NotifyBidChanges(void) {
+    if ((1 &lt;&lt; selectedItem.index) &amp; stopNotificationBitTable) {
+        return;
+    }
+    Set_B1(selectedItem.details-&gt;owner);
+    Set_A1_A2(&quot;Bid chan&quot;, &quot;ges at  &quot;);
+    Set_A3_A4(selectedItem.details-&gt;nameA, selectedItem.details-&gt;nameB);
+    Send_A_To_Address_In_B();
+}
+
+struct BIDS *getHighestBid(void) {
+    i = 0;
+    tempBid = &amp;orderBook[selectedItem.index][0];
+    for (i=1; i&lt;3;i++) {
+        if (orderBook[selectedItem.index][i].value &gt; tempBid-&gt;value) {
+            tempBid = &amp;orderBook[selectedItem.index][i];
+        }
+    }
+    return tempBid;
+}
+
+struct BIDS *getLowestBid(void) {
+    i = 0;
+    tempBid = &amp;orderBook[selectedItem.index][0];
+    for (i=1; i&lt;3;i++) {
+        if (orderBook[selectedItem.index][i].value &lt; tempBid-&gt;value) {
+            tempBid = &amp;orderBook[selectedItem.index][i];
+        }
+    }
+    return tempBid;
+}
+
+struct BIDS *getBidFromUser(long id) {
+    if (id == 0) {
+        return NULL;
+    }
+    for (i = 0; i &lt; 3; i++) {
+        if (orderBook[selectedItem.index][i].sender == id) {
+            return &amp;orderBook[selectedItem.index][i];
+        }
+    }
+    return NULL;
+}
+
+void RevokeBid(void) {
+    if (selectedItem.bidDetails-&gt;sender == 0) {
+        return;
+    }
+    Set_B1(selectedItem.bidDetails-&gt;sender);
+    Set_A1_A2(&quot;Bid revo&quot;, &quot;ked on  &quot;);
+    Set_A3_A4(selectedItem.details-&gt;nameA, selectedItem.details-&gt;nameB);
+    Send_A_To_Address_In_B();
+    Send_To_Address_In_B(selectedItem.bidDetails-&gt;value);
+    selectedItem.bidDetails-&gt;sender = 0;
+    selectedItem.bidDetails-&gt;value = 0;
+}
+
+void distributeDividends(void) {
+    if (dividendsBalance &lt; DIVIDENDS_MINIMUN_PAYOUT) {
+        return;
+    }
+    long bidsBalance = getAllBidsBalance();
+    long unspentFeesBalance = Get_Current_Balance() - bidsBalance - dividendsBalance;
+    if (Get_Block_Timestamp() != startingBlock) {
+        // Cancel distribution if this part is happening at different blockheight
+        // from contract start execution block. (Possible unprocessed transaction)
+        return;
+    }
+    switch (true) {
+    case (unspentFeesBalance &gt;= 2_0000_0000):
+        // Add to dividends excess balance from contract activations
+        dividendsBalance += unspentFeesBalance - 1_0000_0000;
+        break;
+    case (unspentFeesBalance &gt;= 1_0000_0000):
+        // Regular quantity of fees balance
+        break;
+    case (unspentFeesBalance &gt;= 0):
+        // Low fees balance, subtract from dividends
+        dividendsBalance -= 1_0000_0000;
+        break;
+    default:
+        // Excess balance is negative, something wrong... No dividends distribution.
+        Set_B1(CREATOR);
+        Set_A1_A2(&quot;Contract&quot;, &quot; balance&quot;);
+        Set_A3_A4(&quot; is too &quot;, &quot;low.&quot;);
+        Send_A_To_Address_In_B();
+        return;
+    }
+    long eachDividend = dividendsBalance / collection_length;
+    for (i = 0; i &lt; collection_length; i++) {
+        Set_B1(collection[i].owner);
+        Send_To_Address_In_B(eachDividend);
+    }
+    lifetimeStats.dividendsPaid += dividendsBalance;
+    dividendsBalance = 0;
+}
+
+long getAllBidsBalance(void) {
+    long retBalance = 0;
+    long *bidVal;
+    bidVal = &amp;orderBook[0][0].value;
+    for (i = 0; i &lt; collection_length; i++) {
+        retBalance += *bidVal;
+        bidVal += sizeof(struct BIDS);
+        retBalance += *bidVal;
+        bidVal += sizeof(struct BIDS);
+        retBalance += *bidVal;
+        bidVal += sizeof(struct BIDS);
+    }
+    return retBalance;
+}
+
+</code></pre>
+<h2 id="testnet-version">Testnet version <a class="heading-anchor-permalink" href="#testnet-version">#</a></h2>
+<p>Testnet <a href="https://deleterium.info/SmartCNftTestnet/">website</a>
+Deployed at address <a href="https://testnet.explorer.signum.network/at/5745255186679995298">TS-J8X4-6WB2-62W5-6ZTGZ</a>
+Note all testcases transactions and also json messages for running it in <a href="https://github.com/deleterium/SC-Simulator">SC-Simulator</a></p>
+<pre><code>/*
+
+Error tests OK
+
+3. No message 4080865530696624546 -&gt; 4720500482499742557
+4. Invalid index 863221232982267901 -&gt; 13494218675738889833
+5. Set up helpsite  13498466860280043030 -&gt; No response by default
+6. Invalid command  10921663505509046090 -&gt; 12639219340617341639
+[
+  {
+    &quot;sender&quot;: &quot;10000n&quot;,
+    &quot;recipient&quot;: &quot;999n&quot;,
+    &quot;amount&quot;: &quot;21_0000_0000n&quot;,
+    &quot;blockheight&quot;: 3
+  },
+  {
+    &quot;sender&quot;: &quot;10001n&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;61_0000_0000&quot;,
+    &quot;blockheight&quot;: 4,
+    &quot;messageHex&quot;: &quot;20000000bdbdbdbd6374696f6e20676f74203173742062696421000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;555&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_1000_0000&quot;,
+    &quot;blockheight&quot;: 5,
+    &quot;messageHex&quot;: &quot;6262626261616161646464646363636300000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;10002&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_1000_0000&quot;,
+    &quot;blockheight&quot;: 6,
+    &quot;messageHex&quot;: &quot;0100000055555e5e00e40b540200000000000000000000000000000000000000&quot;
+  }
+]
+
+SELL OK
+
+3. Sell but not owner 10430697441252300913 -&gt; 12619120283960572312
+4. Sell but zero price 2142189481225201501 -&gt; 1230333298252179005
+5. Sell -&gt; change price 13067347167277489910 -&gt; 5128429040639127881
+6. Bid -&gt; below sale price  13369703094544141152 -&gt; 15885571118920749931
+8. Sell -&gt; price below highest bid 17841327959193315288 -&gt; 17272717931318954320
+[
+  {
+    &quot;sender&quot;: &quot;10000&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_1000_0000&quot;,
+    &quot;blockheight&quot;: 3,
+    &quot;messageHex&quot;: &quot;020000005e5e5e5e00e40b540200000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;555&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_1000_0000&quot;,
+    &quot;blockheight&quot;: 4,
+    &quot;messageHex&quot;: &quot;020000005e5e5e5e000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;555&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_1000_0000&quot;,
+    &quot;blockheight&quot;: 5,
+    &quot;messageHex&quot;: &quot;020000005e5e5e5e00e40b540200000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1002&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;46_0000_0000&quot;,
+    &quot;blockheight&quot;: 6,
+    &quot;messageHex&quot;: &quot;02000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;555&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_0000_0000&quot;,
+    &quot;blockheight&quot;: 8,
+    &quot;messageHex&quot;: &quot;020000005e5e5e5e005ed0b20000000000000000000000000000000000000000&quot;
+  }
+]
+
+
+HOLD OK
+
+3. Hold -&gt; not owner 14357834538131755722 -&gt; 2795284281189580155
+4. Hold -&gt; owner 8032332451970925883 -&gt; 17299380224535248339
+6. Hold on item on hold -&gt; onwer 12344886569368138913 -&gt; 17346089949634276376
+[
+  {
+    &quot;sender&quot;: &quot;10000&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_1000_0000&quot;,
+    &quot;blockheight&quot;: 3,
+    &quot;messageHex&quot;: &quot;0100000088888888000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;555&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_1000_0000&quot;,
+    &quot;blockheight&quot;: 4,
+    &quot;messageHex&quot;: &quot;0100000088888888000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;555&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_1000_0000&quot;,
+    &quot;blockheight&quot;: 6,
+    &quot;messageHex&quot;: &quot;0100000088888888000000000000000000000000000000000000000000000000&quot;
+  }
+]
+
+BID OK
+
+2. bid at item 1 -&gt; low
+3. bid at item 1 -&gt; low
+4. bid at item 1 -&gt; low
+5. bid at item 1 -&gt; lower than the lowest 1536244389819873892 -&gt; 5802111202645827714
+6. bid at item 1 -&gt; revoke lowest and add new one  (same user) 9768373912038035762 -&gt; 8464717541901177025
+7. bid at item 1 -&gt; revoke lowest and add new one  (other user) 8746032778894699809  -&gt; block 379361
+7. bid at item 1 -&gt; equal price, process sale. 17170942619283083274 -&gt; block 379364 (with dividends distribution)
+[
+  {
+    &quot;sender&quot;: &quot;1001&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;40_0000_0000&quot;,
+    &quot;blockheight&quot;: 2,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1002&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;42_0000_0000&quot;,
+    &quot;blockheight&quot;: 3,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1003&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;44_0000_0000&quot;,
+    &quot;blockheight&quot;: 4,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1004&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;4_0000_0000&quot;,
+    &quot;blockheight&quot;: 5,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1003&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;49_0000_0000&quot;,
+    &quot;blockheight&quot;: 6,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1005&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;49_5000_0000&quot;,
+    &quot;blockheight&quot;: 7,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1006&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;51_0000_0000&quot;,
+    &quot;blockheight&quot;: 8,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  }
+]
+
+REVOKE ok
+
+3. Revoke but no bid found 377714883712129468 -&gt; 3092976869120433802
+4. bid -&gt; low
+5. revoke 1070190579153728366 -&gt; 968739666482281805
+[
+  {
+    &quot;sender&quot;: &quot;1005&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_0000_0000&quot;,
+    &quot;blockheight&quot;: 3,
+    &quot;messageHex&quot;: &quot;0000000033333333000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1003&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;49_0000_0000&quot;,
+    &quot;blockheight&quot;: 4,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1003&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_0000_0000&quot;,
+    &quot;blockheight&quot;: 5,
+    &quot;messageHex&quot;: &quot;0100000033333333000000000000000000000000000000000000000000000000&quot;
+  }
+]
+
+
+TRANSFER ok
+
+3. transfer but not owner 288088390977366653 -&gt; 11935239072155746229
+4. Transfer but no beneficiary 9541892855768235604 -&gt; 9828333510841127816
+5. bid -&gt; low
+6. transfer (last sale price was zero)
+7. bid -&gt; high, process sale at 50 signa
+8. bid -&gt; low
+9. transfer -&gt; not enought for fee 5075887527052308856 -&gt; 2115678464324094423
+testnet transfer (lastsale was 50 signa) 9460237934118134510 -&gt; block 379656
+[
+  {
+    &quot;sender&quot;: &quot;1005&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_0000_0000&quot;,
+    &quot;blockheight&quot;: 3,
+    &quot;messageHex&quot;: &quot;02000000aaaaaaaa000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;555&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_0000_0000&quot;,
+    &quot;blockheight&quot;: 4,
+    &quot;messageHex&quot;: &quot;01000000aaaaaaaa000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;0xaabb&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;2_0000_0000&quot;,
+    &quot;blockheight&quot;: 5,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;555&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_1000_0000&quot;,
+    &quot;blockheight&quot;: 6,
+    &quot;messageHex&quot;: &quot;01000000aaaaaaaabbaa00000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1005&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;51_0000_0000&quot;,
+    &quot;blockheight&quot;: 7,
+    &quot;messageHex&quot;: &quot;02000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;0xaabb&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;2_0000_0000&quot;,
+    &quot;blockheight&quot;: 8,
+    &quot;messageHex&quot;: &quot;00000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;555&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_0000_0000&quot;,
+    &quot;blockheight&quot;: 9,
+    &quot;messageHex&quot;: &quot;00000000aaaaaaaabbaa00000000000000000000000000000000000000000000&quot;
+  }
+]
+
+STOP
+
+4. bid -&gt; low
+5. stop 519084473278453352 -&gt; 11374633497844259874
+6. bid -&gt; low  16204101074999416357
+10. bid -&gt; high (sale) (verify stop bit) 2186659358212213584 -&gt; get details 379678 379680
+[
+  {
+    &quot;sender&quot;: &quot;1003&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;49_0000_0000&quot;,
+    &quot;blockheight&quot;: 4,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;555&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_0000_0000&quot;,
+    &quot;blockheight&quot;: 5,
+    &quot;messageHex&quot;: &quot;0100000099999999000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1004&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;10_0000_0000&quot;,
+    &quot;blockheight&quot;: 6,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1005&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;51_2000_0000&quot;,
+    &quot;blockheight&quot;: 10,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  }
+]
+
+DIVIDENDS
+* 3460583673673476455
+
+[
+  {
+    &quot;sender&quot;: &quot;1003&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;5_0000_0000&quot;,
+    &quot;blockheight&quot;: 4,
+    &quot;messageHex&quot;: &quot;00000000bbbbbbbb000000000000000000000000000000000000000000000000&quot;
+  }
+]
+
+DIVIDENDS distribution
+(must set item zero price to 1000 at deployment)
+4. bid -&gt; high: gas contract not enought to distribute dividends, decrease dividends
+[
+  {
+    &quot;sender&quot;: &quot;10000n&quot;,
+    &quot;recipient&quot;: &quot;999n&quot;,
+    &quot;amount&quot;: &quot;1001_0000_0000n&quot;,
+    &quot;blockheight&quot;: 3,
+    &quot;messageHex&quot;: &quot;00000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  }
+]
+
+getAllBidsBalance
+
+2, 3, 4 -&gt; adding bids -&gt; low
+5. sell -&gt; set price 1000
+7. bid -&gt; high (process sale and breakpoint to verify bids balance are correct, also unspent fees)
+[
+  {
+    &quot;sender&quot;: &quot;1001&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;40_0000_0000&quot;,
+    &quot;blockheight&quot;: 2,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1002&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;42_0000_0000&quot;,
+    &quot;blockheight&quot;: 3,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1003&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;44_0000_0000&quot;,
+    &quot;blockheight&quot;: 4,
+    &quot;messageHex&quot;: &quot;01000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1011&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;40_0000_0000&quot;,
+    &quot;blockheight&quot;: 2,
+    &quot;messageHex&quot;: &quot;06000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1012&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;42_0000_0000&quot;,
+    &quot;blockheight&quot;: 3,
+    &quot;messageHex&quot;: &quot;05000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;1013&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;44_0000_0000&quot;,
+    &quot;blockheight&quot;: 4,
+    &quot;messageHex&quot;: &quot;05000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;555&quot;,
+    &quot;recipient&quot;: &quot;999&quot;,
+    &quot;amount&quot;: &quot;1_1000_0000&quot;,
+    &quot;blockheight&quot;: 5,
+    &quot;messageHex&quot;: &quot;000000005e5e5e5e00E876481700000000000000000000000000000000000000&quot;
+  },
+  {
+    &quot;sender&quot;: &quot;10000n&quot;,
+    &quot;recipient&quot;: &quot;999n&quot;,
+    &quot;amount&quot;: &quot;1001_0000_0000n&quot;,
+    &quot;blockheight&quot;: 7,
+    &quot;messageHex&quot;: &quot;00000000bdbdbdbd000000000000000000000000000000000000000000000000&quot;
+  }
+]
+</code></pre>
+
+      </article>
+    </div>
+    <script>
+      // Load contents.json if you need it
+    </script>
+    <script>
+      // FROM http://purecss.io/js/ui.js
+      (function(window, document) {
+        var layout = document.getElementById("layout"),
+          menu = document.getElementById("menu"),
+          menuLink = document.getElementById("menuLink");
+
+        function toggleClass(element, className) {
+          var classes = element.className.split(/\s+/),
+            length = classes.length,
+            i = 0;
+
+          for (; i < length; i++) {
+            if (classes[i] === className) {
+              classes.splice(i, 1);
+              break;
+            }
+          }
+          // The className is not found
+          if (length === classes.length) {
+            classes.push(className);
+          }
+
+          element.className = classes.join(" ");
+        }
+
+        menuLink.onclick = function(e) {
+          var active = "active";
+
+          e.preventDefault();
+          toggleClass(layout, active);
+          toggleClass(menu, active);
+          toggleClass(menuLink, active);
+        };
+      })(this, this.document);
+    </script>
+  </body>
+</html>

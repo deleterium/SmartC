@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      /*! ADAPTED
+    Typeplate : Starter Kit
+    URL ........... http://typeplate.com
+    Version ....... 3.0.2
+    Github ........ https://github.com/typeplate/starter-kit
+    Authors ....... Dennis Gaebel (@gryghostvisuals) & Zachary Kain (@zakkain)
+    License ....... Creative Commmons Attribution 3.0
+    License URL ... https://github.com/typeplate/starter-kit/blob/master/license.txt
+    */
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        text-rendering: optimizeLegibility;
+        line-height: 1;
+        margin-top: 0;
+        color: #222;
+      }
+
+      blockquote + figcaption cite {
+        display: block;
+        font-size: inherit;
+        text-align: right;
+      }
+
+      body {
+        word-wrap: break-word;
+      }
+
+      pre code {
+        word-wrap: normal;
+      }
+
+      body {
+        -webkit-hyphens: auto;
+        -ms-hyphens: auto;
+        hyphens: auto;
+        color: #444;
+      }
+
+      h1 {
+        font-size: 2em;
+        /* 2*16 = 32 */
+      }
+
+      h2 {
+        font-size: 1.5em;
+        /* 1.5*16 = 24 */
+      }
+
+      h3 {
+        font-size: 1.17em;
+        /* 1.17*16 = 18.72 */
+      }
+
+      h4 {
+        font-size: 1em;
+        /* 1*16 = 16 */
+      }
+
+      h5 {
+        font-size: 0.83em;
+        /* 0.83*16 = 13.28 */
+      }
+
+      h6 {
+        font-size: 0.75em;
+        /* 0.75*16 = 12 */
+      }
+
+      h1 {
+        margin: 2.42424rem 0 1.454544rem;
+      }
+
+      h2 {
+        margin: 2.0202rem 0 1.21212rem;
+      }
+
+      h3 {
+        margin: 1.61616rem 0 1rem;
+      }
+
+      h4 {
+        margin: 1.21212rem 0 1;
+      }
+
+      h5 {
+        margin: 0.80808rem 0;
+      }
+
+      h6 {
+        margin: 0.70707rem 0;
+      }
+
+      p {
+        margin: auto auto 1.5rem;
+      }
+
+      small {
+        font-size: 65%;
+      }
+
+      input,
+      abbr,
+      acronym,
+      blockquote,
+      code,
+      kbd,
+      q,
+      samp,
+      var {
+        -webkit-hyphens: none;
+        -ms-hyphens: none;
+        hyphens: none;
+      }
+
+      pre {
+        white-space: pre;
+      }
+
+      pre code {
+        white-space: -moz-pre-wrap;
+        white-space: pre-wrap;
+      }
+
+      code {
+        white-space: pre;
+        font-family: SF Mono, Consolas, Dejavu Sans Mono, Menlo, monospace;
+      }
+
+      abbr {
+        -webkit-font-variant: small-caps;
+        -moz-font-variant: small-caps;
+        -ms-font-variant: small-caps;
+        font-variant: small-caps;
+        font-weight: 600;
+        text-transform: lowercase;
+        color: gray;
+      }
+
+      abbr[title]:hover {
+        cursor: help;
+      }
+
+      /* FROM http://purecss.io/layouts/side-menu/  adapted to remove pure classes*/
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+          "Segoe UI Symbol";
+        color: #444;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: auto;
+      }
+
+      code,
+      pre {
+        background-color: #f5f5f5;
+        color: #444;
+        border-radius: 2px;
+        text-shadow: 0px 1px 0px white;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+      }
+
+      pre code {
+        border: none;
+        box-shadow: none;
+      }
+
+      pre {
+        padding: 0.5em;
+      }
+
+      code {
+        display: inline-block;
+        padding: 0 0.5em;
+        line-height: 1.4;
+        font-size: 0.9em;
+      }
+
+      table {
+        border-spacing: 0;
+        margin-bottom: 1.5rem;
+      }
+
+      table th,
+      table td {
+        padding: 0.3em 0.7em;
+      }
+
+      table th {
+        background-color: #f4f4f4;
+        border-bottom: 2px solid #444;
+      }
+
+      table td {
+        border: 1px solid #f5f5f5;
+      }
+
+      /* Add transition to containers so they can push in and out. */
+
+      #layout,
+      #menu,
+      .menu-link {
+        -webkit-transition: all 0.2s ease-out;
+        -moz-transition: all 0.2s ease-out;
+        -ms-transition: all 0.2s ease-out;
+        -o-transition: all 0.2s ease-out;
+        transition: all 0.2s ease-out;
+      }
+
+      /* This is the parent `<div>` that contains the menu and the content area. */
+
+      #layout {
+        position: relative;
+        padding-left: 0;
+      }
+
+      #layout.active #menu {
+        left: 250px;
+        width: 250px;
+      }
+
+      #layout.active .menu-link {
+        left: 250px;
+      }
+
+      /* The content `<div>` is where all your content goes. */
+
+      .content {
+        margin: 50px auto;
+        padding: 0 2em;
+        max-width: 80ex;
+        line-height: 1.6em;
+      }
+
+      /*
+      The `#menu` `<div>` is the parent `<div>` that contains the menu that
+      appears on the left side of the page.
+      */
+
+      #menu {
+        margin-left: -250px;
+        /* "#menu" width */
+        width: 250px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 1000;
+        /* so the menu or its navicon stays above all content */
+        background: #f4f4f4;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        font-size: 0.9em;
+      }
+
+      @media print {
+        #menu,
+        .menu-link {
+          display: none !important;
+        }
+      }
+
+      a,
+      a * {
+        text-decoration: none;
+        color: #2483cc;
+      }
+
+      a:visited {
+        text-decoration: none;
+        color: #2483cc;
+      }
+
+      /* All anchors inside the menu should be styled like this. */
+
+      #menu a {
+        display: block;
+        padding: 0.5em 0.5em;
+      }
+
+      #menu a:first-letter {
+        text-transform: capitalize;
+      }
+
+      #menu ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 1em 0.5em;
+      }
+
+      #menu ul ul {
+        margin-top: 0.5em;
+        margin-left: 0.5em;
+        border-left: 4px solid rgba(255, 255, 255, 0.5);
+      }
+
+      /* Change color of the anchor links on hover/focus. */
+
+      #menu li a:hover,
+      #menu li a:focus {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      /* This styles the selected menu item `<li>`. */
+
+      #menu li a.active {
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      /* This styles a link within a selected menu item `<li>`. */
+
+      #menu li a.active {
+        color: #222;
+      }
+
+      /* This styles the menu heading. */
+
+      #menu li.heading {
+        font-size: 0.9em;
+        text-transform: uppercase;
+        color: #000;
+      }
+
+      #menu li.heading > * {
+        padding: 0.5em;
+        display: block;
+      }
+
+      #menu li.heading a {
+        color: #0c68af;
+      }
+
+      /* -- Dynamic Button For Responsive Menu -------------------------------------*/
+
+      /*
+      `.menu-link` represents the responsive menu toggle that shows/hides on
+      small screens.
+      */
+
+      .menu-link {
+        position: fixed;
+        display: block;
+        /* show this only on small screens */
+        top: 0;
+        left: 0;
+        /* "#menu width" */
+        font-size: 10px;
+        /* change this value to increase/decrease button size */
+        z-index: 10;
+        width: 2em;
+        height: auto;
+        padding: 1.6em 1.2em;
+        border-radius: 0 2px 2px 0;
+      }
+
+      .menu-link:hover {
+        background: #f4f4f4;
+      }
+
+      .menu-link span {
+        position: relative;
+        display: block;
+      }
+
+      .menu-link span,
+      .menu-link span:before,
+      .menu-link span:after {
+        background-color: #555;
+        width: 100%;
+        height: 0.2em;
+        border-radius: 1em;
+      }
+
+      .menu-link span:before,
+      .menu-link span:after {
+        position: absolute;
+        margin-top: -0.6em;
+        content: " ";
+      }
+
+      .menu-link span:after {
+        margin-top: 0.6em;
+      }
+
+      /* Hides the menu at `48em`, but modify this based on your app's needs. */
+
+      @media (min-width: 48em) {
+        .header,
+        .content {
+          padding-left: 2em;
+          padding-right: 2em;
+        }
+
+        #layout {
+          padding-left: 250px;
+          /* left col width "#menu" */
+          left: 0;
+        }
+        #menu {
+          left: 250px;
+        }
+
+        .menu-link {
+          position: fixed;
+          left: 250px;
+          display: none;
+        }
+
+        #layout.active .menu-link {
+          left: 250px;
+        }
+      }
+
+      @media (max-width: 48em) {
+        /* Only apply this when the window is small. Otherwise, the following case results in extra padding on the left:
+         * Make the window small.
+         * Tap the menu to trigger the active state.
+         * Make the window large again.
+         */
+        #layout.active {
+          position: relative;
+          left: 250px;
+        }
+      }
+
+      /* Heading anchors and permalinks */
+      h1[id],
+      h2[id],
+      h3[id],
+      h4[id],
+      h5[id],
+      h6[id] {
+        position: relative;
+      }
+      .heading-anchor-permalink {
+        /* Position the permalink to the left of the title */
+        position: absolute;
+        right: 100%;
+        /* Add some spacing as padding to not lose the hover */
+        padding-right: 0.6rem;
+        /* Make it only visible on heading hover, see below */
+        opacity: 0;
+      }
+      h1[id]:hover .heading-anchor-permalink,
+      h2[id]:hover .heading-anchor-permalink,
+      h3[id]:hover .heading-anchor-permalink,
+      h4[id]:hover .heading-anchor-permalink,
+      h5[id]:hover .heading-anchor-permalink,
+      h6[id]:hover .heading-anchor-permalink {
+        opacity: 0.5;
+      }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+  </head>
+
+  <body>
+    <div id="layout">
+      <!-- Menu toggle -->
+      <a href="#menu" id="menuLink" class="menu-link">
+        <!-- Hamburger icon -->
+        <span></span>
+      </a>
+      <nav id="menu">
+        <ul>
+<li><a class="" href="../README.html">README</a></li>
+<li><a class="" href="../1-Basis.html">Basis</a></li>
+<li><a class="" href="../2-API-Pseudo-Code.html">API Pseudo Code</a></li>
+<li><a class="" href="../3-Learning-with-examples.html">Learning with examples</a></li>
+<li><a class="" href="../4-Functions-repository.html">Functions repository</a></li>
+<li><a class="" href="../5-Comprehensive-example.html">Comprehensive example</a></li>
+<li><a class="" href="../6-Deeper-into-SmartC.html">Deeper into SmartC</a></li>
+<li><a class="" href="../Non-Technical-FAQ.html">Non Technical FAQ</a></li>
+<li class="heading"><span>commemorative</span></li>
+<ul>
+<li><a class="" href="README.html">README</a></li>
+<li><a class="" href="v0.1_SmartC_NFT.html">v0.1 SmartC NFT</a></li>
+<li><a class="active" href="v0.2_PromotionalRaffle227.html">v0.2 PromotionalRaffle227</a></li>
+<li><a class="" href="v0.3_Hive_The_Tumbler.html">v0.3 Hive The Tumbler</a></li>
+<li><a class="" href="v1.0_SmartC_NFT.html">v1.0 SmartC NFT</a></li>
+</ul>
+</ul>
+      </nav>
+      <article id="main" class="content">
+        <h1 id="promotional-raffle-227">Promotional Raffle 227 <a class="heading-anchor-permalink" href="#promotional-raffle-227">#</a></h1>
+<p>Advertise your brand making a fair raffle on signum blockchain! Contract online at S-GWV4-S4EK-HAG3-EWCJV.
+<strong>This is a promotional raffle, where the raffle starter or contract creator does not earn any fee!</strong></p>
+<h2 id="starting">Starting <a class="heading-anchor-permalink" href="#starting">#</a></h2>
+<p>Anyone can start a raffle. Raffle starter must send at least 205.3 signa to the contract with a message. This message is optional and will be the right code. Raffle starter makes a campaign styled <code>What is the best brand in the world?</code> and participants must send the righ answer and 0.3 signa to be registered. If no message is given, participants just need to send signa to join.</p>
+<h2 id="raffle-end">Raffle end <a class="heading-anchor-permalink" href="#raffle-end">#</a></h2>
+<p>Raffle will end when 227th unique participant is registered, or in 4 days (1440 blocks), which comes first.</p>
+<h2 id="draw">Draw <a class="heading-anchor-permalink" href="#draw">#</a></h2>
+<p>At the end, the contract stops receiving answers and randomly pick one winner from registered accounts. If there was no participants, the prize is returned to raffle starter. Draw is done mixing blockhashes for 3 blocks. Timeout event (raffle ending without reaching 227 participants) must be trigered by one transaction.</p>
+<h2 id="excess-balance">Excess balance <a class="heading-anchor-permalink" href="#excess-balance">#</a></h2>
+<p>Any balance in excess sent by participants are returned. Excess balance is the amount above activation amount of 0.3 signa needed to run contract.</p>
+<h2 id="smart-contract-source-code">Smart contract source code <a class="heading-anchor-permalink" href="#smart-contract-source-code">#</a></h2>
+<pre><code class="language-c">#program name PromotionalRaffle227
+#program description To start a raffle, raffle starter must send at least\
+ 205.3 signa to the contract with a message. This message is optional and\
+ will be the right code. Raffle starter makes a campaign styled `What is\
+ the best compiler for signum?` and participants must send the righ answer\
+ and 0.3 signa to be registered. If no message is given, participants just\
+ send signa to join. When 227th unique participant is registered, the\
+ contract stops receiving answers and randomly pick one winner. If total\
+ number is not reached in 1440 blocks, winner will be picked from\
+ registered accounts. Timeout event must be trigered by one\
+ transaction. Any balance in excess sent by participants are returned\
+ - but not the activation amount of 0.3 signa. The draw process consumes\
+ 5 signa to reorder data, always add up this amount when starting a\
+ raffle. Ex: Raffle to win 500 signa, start raffle with 505.3 signa.\
+ This is a promotional raffle, where the raffle starter or contract\
+ creator does not earn any fee.
+#program activationAmount 3000_0000
+
+#pragma version 0.2
+#pragma maxAuxVars 3
+#pragma maxConstVars 2
+#pragma enableLineLabels
+#pragma globalOptimization
+
+#include APIFunctions
+
+#define MAX_PLAYERS 227
+#define CLEAN_UP_FEE 3500_0000
+//TIMEOUT 4 days
+#define TIMEOUT_BLOCKS 1440
+#define MIN_ACTIVATION_MODE_RAFFLE 205_0000_0000
+
+
+const long n8 = 8, n32 = 32;
+
+long RaffleStarter;
+long correctAnswer[4];
+long messageToSend[4];
+
+//general use iterator
+long i;
+
+//Use to only allow creator to start raffle
+//B_To_Address_Of_Creator();
+//RaffleStarter=Get_B1();
+
+
+// Data structure variables
+#define DATASIZE MAX_PLAYERS
+#define hNULL n0xff
+#define HASHMASK n0xff
+#define HASHSIZE 32
+#define ALLOCSIZE 4
+#define HASHMOD 256
+const long n0x7777777777777777 = 0x7777777777777777;
+const long n0x3333333333333333 = 0x3333333333333333;
+const long n0x1111111111111111 = 0x1111111111111111;
+const long n0x0F0F0F0F0F0F0F0F = 0x0F0F0F0F0F0F0F0F;
+const long n64 = 64;
+const long n0xff = 0xff;
+//const long _HASHSIZE = HASHSIZE;
+#define _HASHSIZE n32
+const long _HASHMOD = HASHMOD;
+const long _MINUSONE = 0xffffffffffffffff;
+const long _DATASIZE = DATASIZE;
+long _TableData[DATASIZE];
+long _TableAlloc[ALLOCSIZE];
+long _TableHash[HASHSIZE];
+long _nRecords;
+long _shift;
+long _pointedData;
+long _fnHash;
+long _idx, _prevIdx;
+
+//Data structure initalization without consuming sigma
+const _TableHash[ 0] = 0xffffffffffffffff;
+const _TableHash[ 1] = 0xffffffffffffffff;
+const _TableHash[ 2] = 0xffffffffffffffff;
+const _TableHash[ 3] = 0xffffffffffffffff;
+const _TableHash[ 4] = 0xffffffffffffffff;
+const _TableHash[ 5] = 0xffffffffffffffff;
+const _TableHash[ 6] = 0xffffffffffffffff;
+const _TableHash[ 7] = 0xffffffffffffffff;
+const _TableHash[ 8] = 0xffffffffffffffff;
+const _TableHash[ 9] = 0xffffffffffffffff;
+const _TableHash[10] = 0xffffffffffffffff;
+const _TableHash[11] = 0xffffffffffffffff;
+const _TableHash[12] = 0xffffffffffffffff;
+const _TableHash[13] = 0xffffffffffffffff;
+const _TableHash[14] = 0xffffffffffffffff;
+const _TableHash[15] = 0xffffffffffffffff;
+const _TableHash[16] = 0xffffffffffffffff;
+const _TableHash[17] = 0xffffffffffffffff;
+const _TableHash[18] = 0xffffffffffffffff;
+const _TableHash[19] = 0xffffffffffffffff;
+const _TableHash[20] = 0xffffffffffffffff;
+const _TableHash[21] = 0xffffffffffffffff;
+const _TableHash[22] = 0xffffffffffffffff;
+const _TableHash[23] = 0xffffffffffffffff;
+const _TableHash[24] = 0xffffffffffffffff;
+const _TableHash[25] = 0xffffffffffffffff;
+const _TableHash[26] = 0xffffffffffffffff;
+const _TableHash[27] = 0xffffffffffffffff;
+const _TableHash[28] = 0xffffffffffffffff;
+const _TableHash[29] = 0xffffffffffffffff;
+const _TableHash[30] = 0xffffffffffffffff;
+const _TableHash[31] = 0xffffffffffffffff;
+
+
+void main(void)
+{
+    for (A_To_Tx_After_Timestamp(currentTX.timestamp); Get_A1() != 0; A_To_Tx_After_Timestamp(currentTX.timestamp))
+    {
+        //fill transaction information
+        //Contract on mode AVALIABLE
+        getTxDetails();
+
+        //Use to allow only creator to start raffle
+        //if (currentTX.sender == RaffleStarter &amp;&amp; currentTX.amount &gt;= MIN_ACTIVATION_MODE_RAFFLE) {
+        if (currentTX.amount &gt;= MIN_ACTIVATION_MODE_RAFFLE) {
+            //Set_B1(currentTX.sender);
+            messageToSend[] = &quot;Raffle activated!&quot;;
+            sendMessage();
+            correctAnswer[0] = currentTX.message[0];
+            correctAnswer[1] = currentTX.message[1];
+            correctAnswer[2] = currentTX.message[2];
+            correctAnswer[3] = currentTX.message[3];
+            RaffleStarter = currentTX.sender;
+            modeRaffle();
+            reset();
+        } else {
+            //return to sender
+            //Set_B1(currentTX.sender);
+            messageToSend[] = &quot;Raffle not active.&quot;;
+            sendMessage();
+            //Nothing was done, so we can give back some of activation amount.
+            Send_To_Address_In_B(currentTX.amount + 1500_0000);
+        }
+    }
+}
+
+void modeRaffle(void)
+{
+    long endGame = false;
+    long prize, winner;
+    long timeout = (Get_Block_Timestamp() &gt;&gt; n32) + TIMEOUT_BLOCKS;
+    //Contract on mode RAFFLE
+    while (true)
+    {
+        //loop all incoming TX
+        for (A_To_Tx_After_Timestamp(currentTX.timestamp); Get_A1() != 0; A_To_Tx_After_Timestamp(currentTX.timestamp) )
+        {
+            getTxDetails();
+
+            if (Get_Block_Timestamp() &gt;&gt; n32 &gt; timeout) {
+                if (_nRecords == 0) {
+                    if (currentTX.sender != RaffleStarter) {
+                        //Return any given excess amount
+                        //Set_B1(currentTX.sender);
+                        Send_To_Address_In_B(currentTX.amount);
+                    }
+
+                    //return prize to RaffleStarter, leaving sigma for clean up
+                    Set_B1(RaffleStarter);
+                    Send_To_Address_In_B(Get_Current_Balance() - CLEAN_UP_FEE );
+                    //end of raffle mode
+                    return;
+                }
+                endGame=true;
+            }
+
+            if (currentTX.sender == RaffleStarter) {
+                //No action for RaffleStarter in this mode
+                // maybe add more funds to raffle?
+                continue;
+            }
+
+            //Return any given excess amount
+            //Set_B1(currentTX.sender);
+            Send_To_Address_In_B(currentTX.amount);
+
+            if (endGame) {
+                //just return sigma for all incoming messages in last block!
+                messageToSend[] = &quot;Raffle ended.&quot;;
+                sendMessage();
+                continue;
+            }
+
+            if (currentTX.message[0] == correctAnswer[0] &amp;&amp;
+                currentTX.message[1] == correctAnswer[1] &amp;&amp;
+                currentTX.message[2] == correctAnswer[2] &amp;&amp;
+                currentTX.message[3] == correctAnswer[3] )
+            {
+                if (insert(currentTX.sender) == hNULL) {
+                    messageToSend[] = &quot;You are already registered...&quot;;
+                } else {
+                    messageToSend[] = &quot;Right! You are registered!&quot;;
+                }
+                sendMessage();
+
+                if (_nRecords == _DATASIZE)
+                    endGame = true;
+
+            } else {
+                //Set_B1(currentTX.sender);
+                messageToSend[] = &quot;Wrong answer... Try again!&quot;;
+                sendMessage();
+            }
+        }
+
+        if (endGame) {
+            //Translate data structure to list
+            createList();
+            //Set prize before draw, because it takes 3 blocks and
+            // maybe someone send balance during draw. These balance shall
+            // be returned!
+            prize = Get_Current_Balance() - CLEAN_UP_FEE;
+            winner = draw();
+            //send prize
+            Set_B1(winner);
+            messageToSend[] = &quot;Prize is yours!&quot;;
+            sendMessage();
+            Send_To_Address_In_B(prize);
+            //end of raffle mode
+            return;
+        }
+
+        //Wait until next transaction
+        halt;
+    }
+}
+
+// Mixes block hashes for 3 blocks and returns a winner.
+//   _TableData must be translated to list before!
+long draw(void)
+{
+    Clear_A_And_B();
+
+    i = 0;
+    do {
+        sleep 1;
+        Put_Last_Block_Hash_In_A();
+        XOR_B_with_A();
+        i++;
+    } while (i &lt;= 2);
+    //Can be done because there is no deletion on this contract,
+    //so we are sure the records were filled in order!
+    return _TableData[(Get_B2() &gt;&gt; 2) % _nRecords];
+}
+
+struct TXINFO
+{
+   long timestamp;
+   long sender;
+   long amount;
+   long message[4];
+} currentTX;
+
+void getTxDetails(void)
+{
+    currentTX.amount = Get_Amount_For_Tx_In_A();
+    currentTX.timestamp = Get_Timestamp_For_Tx_In_A();
+    Message_From_Tx_In_A_To_B();
+    currentTX.message[0] = Get_B1();
+    currentTX.message[1] = Get_B2();
+    currentTX.message[2] = Get_B3();
+    currentTX.message[3] = Get_B4();
+    B_To_Address_Of_Tx_In_A();
+    currentTX.sender = Get_B1();
+}
+
+//Remeber to Set_B1 before call!!! 
+void sendMessage(void)
+{
+    Set_A1_A2(messageToSend[0], messageToSend[1]);
+    Set_A3_A4(messageToSend[2], messageToSend[3]);
+    Send_A_To_Address_In_B();
+}
+
+//Scans TableAlloc elements to find first zero bit.
+//  Returns its location.
+//Thanks to comments on http://skalkoto.blogspot.com/2008/01/bit-operations-find-first-zero-bit.html
+//  and https://tekpool.wordpress.com/2006/09/25/bit-count-parallel-counting-mit-hakmem/
+long getFirstFreeLocation()
+{
+    //Reusing variable _idx
+    i = _MINUSONE;
+    do {
+        i++;
+        _idx = _TableAlloc[i];
+    } while (_idx == _MINUSONE);
+
+    _idx = (~_idx &amp; _idx + 1) - 1;
+
+    _idx = _idx - ((_idx &gt;&gt; 1) &amp; n0x7777777777777777)
+                - ((_idx &gt;&gt; 2) &amp; n0x3333333333333333)
+                - ((_idx &gt;&gt; 3) &amp; n0x1111111111111111);
+
+    i *= n64;
+    _idx = (((_idx + (_idx &gt;&gt; 4)) &amp; n0x0F0F0F0F0F0F0F0F) % HASHMASK) + i;
+
+    if (_idx == _DATASIZE)
+        return hNULL;
+    return _idx;
+}
+
+long getByte(long * buffer, long position)
+{
+    buffer += position / n8;
+    _shift =  position % n8 * n8;
+    return (*buffer &gt;&gt; _shift) &amp; HASHMASK;
+}
+
+void setByte(long *buffer, long position, long value)
+{
+    buffer += position / n8;
+    _shift =  position % n8 * n8;
+    value &lt;&lt;= _shift;
+    *buffer = (*buffer &amp; ~(HASHMASK &lt;&lt; _shift)) | value;
+}
+
+
+//Inserts one element into TableHash checking if value is unique.
+//  returns 0 on sucess or hNULL on error (memory full or item already
+//  on table)
+long insert(long newdata)
+{
+    long addr;
+
+    addr = getFirstFreeLocation();
+    if (addr == hNULL) {
+        //memory full
+        return hNULL;
+    }
+
+    _fnHash = newdata &amp; HASHMASK;
+
+    _idx = getByte(_TableHash, _fnHash);
+    if (_idx == hNULL) {
+        //First element with this hash.
+        //Set reference data to new element
+        setByte(_TableHash, _fnHash, addr);
+    } else {
+        //Not first. Look for last record on linked list
+        //Do this to find if it is already stored. If repeated
+        //value were allowed, could just only set TableHash to
+        //new element, and new element-&gt;next to next value.
+        do {
+            _pointedData = _TableData[_idx];
+            if (((_pointedData &amp; ~HASHMASK) | _fnHash) == newdata) {
+                //data already on memory
+                return hNULL;
+            }
+            _prevIdx = _idx;
+            _idx = _pointedData &amp; HASHMASK;
+        } while (_idx != hNULL);
+        //Set reference data to new element
+        _TableData[_prevIdx] = (_pointedData &amp; ~HASHMASK) | addr;
+    }
+
+    //Write value
+    _TableData[addr] = newdata | HASHMASK;
+    //Mark addr location as allocated
+    _TableAlloc[addr/n64] |= 1 &lt;&lt; (addr % n64);
+    _nRecords++;
+
+    return 0;
+}
+
+//This function replaces linked list values with the actual data, so it
+//  is possible to get a random value from list. It destroys data structure!!!
+//  so reset() must be call before adding new records.
+//Loops 256 times changing all _TableData values consuming more than 4 signa!
+void createList()
+{
+    long next;
+
+    for (i = 0; i &lt; _HASHMOD; i++)
+    {
+        //similar to: _idx=getByte(TableHash, i)
+        _shift = (i % n8) * n8;
+        _idx = (_TableHash[i/n8] &gt;&gt; _shift) &amp; HASHMASK;
+
+        while (_idx != hNULL)
+        {
+            _pointedData = _TableData[_idx];
+            next = _pointedData &amp; HASHMASK;
+            _TableData[_idx] = (_pointedData &amp; ~HASHMASK) | i;
+            _idx = next;
+        }
+    }
+}
+
+//clear all entries from memory
+void reset(void)
+{
+    for (i = 0; i &lt; _HASHSIZE; )
+    {
+        _TableHash[i++] = _MINUSONE;
+        _TableHash[i++] = _MINUSONE;
+    }
+    for (i = 0; i &lt; ALLOCSIZE; i++)
+    {
+        _TableAlloc[i] = 0;
+    }
+    _nRecords = 0;
+}
+
+</code></pre>
+
+      </article>
+    </div>
+    <script>
+      // Load contents.json if you need it
+    </script>
+    <script>
+      // FROM http://purecss.io/js/ui.js
+      (function(window, document) {
+        var layout = document.getElementById("layout"),
+          menu = document.getElementById("menu"),
+          menuLink = document.getElementById("menuLink");
+
+        function toggleClass(element, className) {
+          var classes = element.className.split(/\s+/),
+            length = classes.length,
+            i = 0;
+
+          for (; i < length; i++) {
+            if (classes[i] === className) {
+              classes.splice(i, 1);
+              break;
+            }
+          }
+          // The className is not found
+          if (length === classes.length) {
+            classes.push(className);
+          }
+
+          element.className = classes.join(" ");
+        }
+
+        menuLink.onclick = function(e) {
+          var active = "active";
+
+          e.preventDefault();
+          toggleClass(layout, active);
+          toggleClass(menu, active);
+          toggleClass(menuLink, active);
+        };
+      })(this, this.document);
+    </script>
+  </body>
+</html>
