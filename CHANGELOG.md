@@ -1,3 +1,13 @@
+## [v1.0](https://github.com/deleterium/SmartC/tree/v1.0) (2022-01-16)
+
+[Commits](https://github.com/deleterium/SmartC/commits/v1.0)
+
+- Massive code refactoring, decreasing code cognitive complexity. More than 80 commits
+- Changed strategy for code optimization. Better and safer
+- Added **switch :: case :: default** statement
+- Added **sizeof** keyword
+- Allow use of array of structs
+
 ## [v0.3](https://github.com/deleterium/SmartC/tree/v0.3) (2021-10-16)
 
 [Commits](https://github.com/deleterium/SmartC/commits/v0.3)

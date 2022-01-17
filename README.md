@@ -24,8 +24,7 @@ Check also [SmartC playlist on Youtube](https://www.youtube.com/playlist?list=PL
 Find [here](https://deleterium.github.io/SmartC/CHANGELOG) major upgrades between releases.
 
 ## Support
-Did you like the project? Consider be owner of one SmartC NFT keyword. More information on my [personal page](https://deleterium.info/NFT/).
-Donations are received on my address on signum: S-DKVF-VE8K-KUXB-DELET.
+Did you like the project? Consider be owner of one SmartC NFT keyword. The smart contract is online at S-NFT2-6MA4-KLA2-DNM8T. More information on  [NFTv2 website](https://deleterium.info/NFTv2/). My address: S-DKVF-VE8K-KUXB-DELET.
 
 ## Social media
 Join [SmartC Compiler](https://discord.gg/pQHnBRYE5c) server in Discord to stay tuned for news or ask questions.
