@@ -11,6 +11,8 @@
 // eslint-disable-next-line no-unused-vars
 export function asmHighlight (asmSourceCode: string) {
     const Config = {
+        divId: 'asmCodeline',
+        divClass: 'asmLine',
         spanErrorClass: 'asmError',
         spanLabelClass: 'asmLabel',
         spanNumberClass: 'asmNumber',
@@ -157,20 +159,22 @@ export function asmHighlight (asmSourceCode: string) {
      * @param addDivLine true: add a <div> for every line; false: add <br>
      * @returns HTML string
      */
-    function toHTML (assemblySource: string): string {
+    function toHTML (assemblySource: string, addDivLine: boolean = true): string {
         // process line by line
         const lines = assemblySource.split('\n')
+        let ret = ''
         // loop thru all lines
-        const highlighted = lines.map((line, idx) => {
+        lines.forEach((line, idx) => {
+            if (addDivLine === true) {
+                ret += `<div id='${Config.divId}${idx}' class='${Config.divClass}'>`
+            }
             // Find a rule for instruction
             const FoundRule = allowedCodes.find(Rule => Rule.regex.exec(line) !== null)
-            return `<div class='div_row'><div class='div_cell_a'>${idx + 1}</div><div class='div_cell_b'>` +
-                colorThisLine(line, FoundRule) +
-                '</div></div>'
+            ret += colorThisLine(line, FoundRule)
+            if (addDivLine === true) ret += '</div>'
+            else ret += '<br>'
         })
-        return "<div class='table'>" +
-            highlighted.join('') +
-            '</div>'
+        return ret
     }
 
     function toSpan (text: string, classname: string) {
@@ -346,5 +350,5 @@ export function asmHighlight (asmSourceCode: string) {
         }
     }
 
-    return toHTML(asmSourceCode)
+    return toHTML(asmSourceCode, false)
 }
