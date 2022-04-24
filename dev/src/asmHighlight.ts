@@ -9,7 +9,7 @@
  * @returns same text with syntax highlight in html
  */
 // eslint-disable-next-line no-unused-vars
-export function asmHighlight (asmSourceCode: string) {
+export function asmHighlight (asmSourceCode: string, addLineNumber: boolean) {
     const Config = {
         divId: 'asmCodeline',
         divClass: 'asmLine',
@@ -166,14 +166,17 @@ export function asmHighlight (asmSourceCode: string) {
         // loop thru all lines
         lines.forEach((line, idx) => {
             if (addDivLine === true) {
-                ret += `<div id='${Config.divId}${idx}' class='${Config.divClass}'>`
+                ret += `<div class='div_row'><div class='div_cell_a'>${idx + 1}</div><div class='div_cell_b'>`
             }
             // Find a rule for instruction
             const FoundRule = allowedCodes.find(Rule => Rule.regex.exec(line) !== null)
             ret += colorThisLine(line, FoundRule)
-            if (addDivLine === true) ret += '</div>'
+            if (addDivLine === true) ret += '</div></div>'
             else ret += '<br>'
         })
+        if (addDivLine) {
+            return "<div class='table'>" + ret + '</div>'
+        }
         return ret
     }
 
@@ -350,5 +353,5 @@ export function asmHighlight (asmSourceCode: string) {
         }
     }
 
-    return toHTML(asmSourceCode, false)
+    return toHTML(asmSourceCode, addLineNumber)
 }

@@ -125,7 +125,7 @@ function compileCode () {
         const asmCode = compiler.getAssemblyCode()
         const bcode = compiler.getMachineCode()
 
-        document.getElementById('assembly_output').innerHTML = asmHighlight(asmCode)
+        document.getElementById('assembly_output').innerHTML = asmHighlight(asmCode, false)
 
         const t1 = new Date()
         let compileMessage = `<span class='msg_success'>Compile sucessfull!!!</span> <small>Done at ${t1.getHours()}:${t1.getMinutes()}:${t1.getSeconds()} in ${t1 - t0} ms.`
@@ -200,7 +200,7 @@ function SetColorCode () {
         if (document.getElementById('source_is_c').checked) {
             dest.innerHTML = hljs.highlight(source.value, { language: 'c' }).value
         } else {
-            dest.innerHTML = asmHighlight(source.value)
+            dest.innerHTML = asmHighlight(source.value, true)
         }
         source.className = 'transp'
     }
