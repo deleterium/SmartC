@@ -49,7 +49,7 @@ export class SmartC {
         typesDefinitions: [],
         // Default configuration for compiler
         Config: {
-            compilerVersion: '1.1-dev',
+            compilerVersion: '2.0-dev',
             enableRandom: false,
             enableLineLabels: false,
             maxAuxVars: 3,
