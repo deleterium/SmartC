@@ -753,5 +753,75 @@ export const APITableTemplate: SC_FUNCTION[] = [
         declaration: 'long',
         sentences: [],
         name: 'Add_Minutes_To_Timestamp'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Check_Sig_B_With_A',
+        declaration: 'long',
+        sentences: [],
+        name: 'Check_Sig_B_With_A'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Get_Code_Hash_Id',
+        declaration: 'long',
+        sentences: [],
+        name: 'Get_Code_Hash_Id'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Get_Map_Value_Keys_In_A',
+        declaration: 'long',
+        sentences: [],
+        name: 'Get_Map_Value_Keys_In_A'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Set_Map_Value_Keys_In_A',
+        declaration: 'void',
+        sentences: [],
+        name: 'Set_Map_Value_Keys_In_A'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Issue_Asset',
+        declaration: 'long',
+        sentences: [],
+        name: 'Issue_Asset'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Mint_Asset',
+        declaration: 'void',
+        sentences: [],
+        name: 'Mint_Asset'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Distribute_To_Asset_Holders',
+        declaration: 'void',
+        sentences: [],
+        name: 'Distribute_To_Asset_Holders'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Get_Asset_Holders_Count',
+        declaration: 'long',
+        sentences: [],
+        name: 'Get_Asset_Holders_Count'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Get_Activation_Fee',
+        declaration: 'long',
+        sentences: [],
+        name: 'Get_Activation_Fee'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Put_Last_Block_GSig_In_A',
+        declaration: 'void',
+        sentences: [],
+        name: 'Put_Last_Block_GSig_In_A'
     }
 ]
