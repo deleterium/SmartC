@@ -57,6 +57,7 @@ export function asmHighlight (asmSourceCode: string, addLineNumber: boolean) {
         { opCode: 0x16, size: 9, regex: /^(\s*MOD\s+)(@\w+\s+)(\$\w+\s*)$/ },
         { opCode: 0x17, size: 9, regex: /^(\s*SHL\s+)(@\w+\s+)(\$\w+\s*)$/ },
         { opCode: 0x18, size: 9, regex: /^(\s*SHR\s+)(@\w+\s+)(\$\w+\s*)$/ },
+        { opCode: 0x19, size: 9, regex: /^(\s*POW\s+)(@\w+\s+)(\$\w+\s*)$/ }, // POW @var $var
         { opCode: 0x1a, size: 5, regex: /^(\s*JMP\s+)(:\w+\s*)$/ }, // JMP :label
         { opCode: 0x1b, size: 6, regex: /^(\s*BZR\s+)(\$\w+\s+)(:\w+\s*)$/ }, // BZR $var :label
         { opCode: 0x1e, size: 6, regex: /^(\s*BNZ\s+)(\$\w+\s+)(:\w+\s*)$/ }, // BZR $var :label
@@ -71,7 +72,9 @@ export function asmHighlight (asmSourceCode: string, addLineNumber: boolean) {
         { opCode: 0x27, size: 5, regex: /^(\s*STZ\s+)(\$\w+\s*)$/ },
         { opCode: 0x28, size: 1, regex: /^\s*FIN\s*$/ },
         { opCode: 0x29, size: 1, regex: /^\s*STP\s*$/ },
+        { opCode: 0x2a, size: 1, regex: /^\s*SLP\s*$/ },
         { opCode: 0x2b, size: 5, regex: /^(\s*ERR\s+)(:\w+\s*)$/ }, // ERR :label
+        { opCode: 0x2c, size: 13, regex: /^(\s*MDV\s+)(@\w+\s+)(\$\w+\s+)(\$\w+\s*)$/ }, // MDV @var $var $var
         { opCode: 0x30, size: 1, regex: /^\s*PCS\s*$/ },
         { opCode: 0x32, size: 3, regex: /^(\s*FUN\s+)(\w+\s*)$/ },
         { opCode: 0x33, size: 7, regex: /^(\s*FUN\s+)(\w+\s+)(\$\w+\s*)$/ },
@@ -132,6 +135,7 @@ export function asmHighlight (asmSourceCode: string, addLineNumber: boolean) {
         { fnCode: 0x0203, fnName: 'check_HASH160_A_with_B' },
         { fnCode: 0x0204, fnName: 'SHA256_A_to_B' },
         { fnCode: 0x0205, fnName: 'check_SHA256_A_with_B' },
+        { fnCode: 0x0206, fnName: 'Check_Sig_B_With_A' },
         { fnCode: 0x0300, fnName: 'get_Block_Timestamp' },
         { fnCode: 0x0301, fnName: 'get_Creation_Timestamp' },
         { fnCode: 0x0302, fnName: 'get_Last_Block_Timestamp' },
@@ -144,13 +148,22 @@ export function asmHighlight (asmSourceCode: string, addLineNumber: boolean) {
         { fnCode: 0x0309, fnName: 'message_from_Tx_in_A_to_B' },
         { fnCode: 0x030a, fnName: 'B_to_Address_of_Tx_in_A' },
         { fnCode: 0x030b, fnName: 'B_to_Address_of_Creator' },
+        { fnCode: 0x030c, fnName: 'Get_Code_Hash_Id' },
         { fnCode: 0x0400, fnName: 'get_Current_Balance' },
         { fnCode: 0x0401, fnName: 'get_Previous_Balance' },
         { fnCode: 0x0402, fnName: 'send_to_Address_in_B' },
         { fnCode: 0x0403, fnName: 'send_All_to_Address_in_B' },
         { fnCode: 0x0404, fnName: 'send_Old_to_Address_in_B' },
         { fnCode: 0x0405, fnName: 'send_A_to_Address_in_B' },
-        { fnCode: 0x0406, fnName: 'add_Minutes_to_Timestamp' }
+        { fnCode: 0x0406, fnName: 'add_Minutes_to_Timestamp' },
+        { fnCode: 0x0407, fnName: 'Get_Map_Value_Keys_In_A' },
+        { fnCode: 0x0408, fnName: 'Set_Map_Value_Keys_In_A' },
+        { fnCode: 0x0409, fnName: 'Issue_Asset' },
+        { fnCode: 0x040a, fnName: 'Mint_Asset' },
+        { fnCode: 0x040b, fnName: 'Distribute_To_Asset_Holders' },
+        { fnCode: 0x040c, fnName: 'Get_Asset_Holders_Count' },
+        { fnCode: 0x040d, fnName: 'Get_Activation_Fee' },
+        { fnCode: 0x040e, fnName: 'Put_Last_Block_GSig_In_A' }
     ]
 
     /**
@@ -228,6 +241,7 @@ export function asmHighlight (asmSourceCode: string, addLineNumber: boolean) {
         case 0x16:
         case 0x17:
         case 0x18:
+        case 0x19:
             return toSpan(parts[1], Config.spanInstructionClass) +
                 toSpan(parts[2], Config.spanVariableClass) +
                 toSpan(parts[3], Config.spanVariableClass)
@@ -245,6 +259,7 @@ export function asmHighlight (asmSourceCode: string, addLineNumber: boolean) {
         case 0x13:
         case 0x28:
         case 0x29:
+        case 0x2a:
         case 0x30:
         case 0x7f:
             return toSpan(parts[0], Config.spanInstructionClass)
@@ -296,6 +311,11 @@ export function asmHighlight (asmSourceCode: string, addLineNumber: boolean) {
                 toSpan(parts[2], Config.spanVariableClass) +
                 toSpan(parts[3], Config.spanVariableClass) +
                 toSpan(parts[4], Config.spanLabelClass)
+        case 0x2c:
+            return toSpan(parts[1], Config.spanInstructionClass) +
+                toSpan(parts[2], Config.spanVariableClass) +
+                toSpan(parts[3], Config.spanVariableClass) +
+                toSpan(parts[4], Config.spanVariableClass)
         case 0x32:
             apiName = parts[2].trim()
             if (allowedFunctions.findIndex(Obj => Obj.fnName === apiName) === -1) {
