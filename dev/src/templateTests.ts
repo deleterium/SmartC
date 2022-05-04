@@ -45,7 +45,6 @@ export const tests: CTestType [] = [
     ['long a, test_b; test(a); void test(long b) { long c; c++; }', true, ''],
 
     ['syntaxProcessor error tests', null, 'div'],
-    ['long a; sleep; a++;', true, ''],
     ['long a; const ;', true, ''],
     ['long a; goto; a++;', true, ''],
     ['long a, b; halt 1; a++;', true, ''],
