@@ -68,6 +68,8 @@ export type SC_FUNCTION = {
 }
 
 export type SC_GLOBAL = {
+    /** Definitions for Built-In functions */
+    BuiltInFunctions: SC_FUNCTION[]
     /** Definitions for API functions */
     APIFunctions: SC_FUNCTION[]
     /** macros values */

@@ -49,6 +49,76 @@ export function getTypeDefinitionTemplate<T extends 'register'|'long'|'struct'> 
     return RetObj as ObjectTypeDefinition<T>
 }
 
+export const BuiltInTemplate: SC_FUNCTION[] = [
+    /* Note here: asmName and name shall be the same */
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr1',
+                asmName: 'pow_addr1',
+                type: 'long',
+                scope: 'pow',
+                declaration: 'long',
+                size: 1,
+                isDeclared: true
+            },
+            {
+                address: -1,
+                name: 'addr2',
+                asmName: 'pow_addr2',
+                type: 'long',
+                scope: 'pow',
+                declaration: 'long',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'pow',
+        declaration: 'long',
+        sentences: [],
+        name: 'pow'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr1',
+                asmName: 'mdv_addr1',
+                type: 'long',
+                scope: 'mdf',
+                declaration: 'long',
+                size: 1,
+                isDeclared: true
+            },
+            {
+                address: -1,
+                name: 'addr2',
+                asmName: 'mdv_addr2',
+                type: 'long',
+                scope: 'mdv',
+                declaration: 'long',
+                size: 1,
+                isDeclared: true
+            },
+            {
+                address: -1,
+                name: 'addr3',
+                asmName: 'mdv_addr3',
+                type: 'long',
+                scope: 'mdv',
+                declaration: 'long',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'mdv',
+        declaration: 'long',
+        sentences: [],
+        name: 'mdv'
+    }
+]
+
 export function getMemoryTemplate (memType: MEMORY_BASE_TYPES) : MEMORY_SLOT {
     return {
         type: memType,

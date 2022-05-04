@@ -87,6 +87,32 @@ export function createAPICallInstruction (
     return assemblyCode + '\n'
 }
 
+/** Create assembly code for built-in functions */
+export function createBuiltInInstruction (
+    AstAuxVars: GENCODE_AUXVARS, BuiltInToken: TOKEN, RetMem: MEMORY_SLOT, argsMem: MEMORY_SLOT[]
+) : string {
+    let assemblyCode = ''
+    const tempArgsMem: MEMORY_SLOT[] = []
+    argsMem.forEach((VarObj) => {
+        const Temp = flattenMemory(AstAuxVars, VarObj, -1)
+        assemblyCode += Temp.asmCode
+        tempArgsMem.push(Temp.FlatMem)
+    })
+    switch (BuiltInToken.value) {
+    case 'pow':
+        assemblyCode += `SET @${RetMem.asmName} $${tempArgsMem[0].asmName}\n` +
+            `POW @${RetMem.asmName} $${tempArgsMem[1].asmName}\n`
+        break
+    case 'mdv':
+        assemblyCode += `SET @${RetMem.asmName} $${tempArgsMem[0].asmName}\n` +
+            `MDV @${RetMem.asmName} $${tempArgsMem[1].asmName} $${tempArgsMem[2].asmName}\n`
+        break
+    default:
+        throw new Error(`Internal error at line: ${BuiltInToken.line}. Built-in function not implemented.`)
+    }
+    return assemblyCode
+}
+
 /**
  * From ParamMemObj create an memory object suitable for assembly operations (a regular long variable).
  * Do do rely in createInstruction, all hardwork done internally. Returns also instructions maybe needed for

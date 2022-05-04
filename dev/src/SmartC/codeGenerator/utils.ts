@@ -76,6 +76,9 @@ export default {
     genAPICallToken (line: number, name?: string): TOKEN {
         return { type: 'APICall', precedence: 0, value: assertNotUndefined(name), line: line }
     },
+    genBuiltInToken (line: number, name?: string): TOKEN {
+        return { type: 'BuiltInCall', precedence: 0, value: assertNotUndefined(name), line: line }
+    },
     genPushToken (line: number): TOKEN {
         return { type: 'Push', precedence: 12, value: '', line: line }
     },

@@ -5,7 +5,9 @@ import {
     REGISTER_TYPE_DEFINITION
 } from '../typings/syntaxTypes'
 import { assertNotUndefined, deepCopy } from '../repository/repository'
-import { APITableTemplate, getMemoryTemplate, getTypeDefinitionTemplate } from './templates'
+import {
+    APITableTemplate, getMemoryTemplate, getTypeDefinitionTemplate, BuiltInTemplate
+} from './templates'
 import sentencesProcessor from './sentencesProcessor'
 import memoryProcessor from './memoryProcessor'
 import { SHAPER_AUXVARS } from './shaperTypes'
@@ -38,6 +40,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         if (Program.Config.APIFunctions) {
             Program.Global.APIFunctions = APITableTemplate.slice()
         }
+        Program.Global.BuiltInFunctions = BuiltInTemplate.slice()
         validateFunctions()
         validateMemory()
         consolidateMemory()
@@ -444,6 +447,12 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 if (Program.functions[i].name === Program.functions[j].name) {
                     throw new Error(`At line: ${Program.functions[j].line}.` +
                     ` Found second definition for function '${Program.functions[j].name}'.`)
+                }
+            }
+            for (j = 0; j < Program.Global.BuiltInFunctions.length; j++) {
+                if (Program.functions[i].name === Program.Global.BuiltInFunctions[j].name) {
+                    throw new Error(`At line: ${Program.functions[i].line}.` +
+                    ` Function '${Program.functions[i].name}' has same name of one built-in Functions.`)
                 }
             }
             if (Program.Config.APIFunctions === true) {

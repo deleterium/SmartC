@@ -10,7 +10,7 @@ export type PRE_TOKEN = {
 export type TOKEN_TYPES = 'Variable' | 'Constant' | 'Operator' | 'UnaryOperator' |
 'SetUnaryOperator' | 'Assignment'| 'SetOperator'|'Comparision'|'CheckOperator'|
 'Arr'|'CodeCave'|'CodeDomain'|'Delimiter'|'Terminator'|'Macro'|'Member'|'Colon'|
-'Keyword'|'Function' | 'APICall' | 'Push'
+'Keyword'|'Function' | 'APICall' | 'BuiltInCall' | 'Push'
 
 export type DECLARATION_TYPES = 'void' | 'long' | 'struct' | 'void_ptr' | 'long_ptr' | 'struct_ptr' | ''
 
