@@ -34,7 +34,9 @@ export default function keywordToAsm (
         }
         return TmpMemObj.asmCode
     case 'sleep':
-        FlatMem = assertNotUndefined(FlatMem)
+        if (FlatMem === undefined) {
+            return 'SLP\n'
+        }
         TmpMemObj = flattenMemory(AuxVars, assertNotUndefined(FlatMem), OperatorToken.line)
         TmpMemObj.asmCode += `SLP $${TmpMemObj.FlatMem.asmName}\n`
         AuxVars.freeRegister(FlatMem.address)

@@ -88,6 +88,7 @@ export default function endAsnProcessor (
         case 'asm':
         case 'exit':
         case 'halt':
+        case 'sleep':
             return {
                 SolvedMem: utils.createVoidMemObj(),
                 asmCode: createInstruction(AuxVars, CurrentNode.Token)

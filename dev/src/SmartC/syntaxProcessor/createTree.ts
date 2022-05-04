@@ -168,7 +168,6 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
         ` Probable missing ';' before keyword ${tokens[keywordLoc].value}.`)
     }
     switch (tokens[0].value) {
-    case 'sleep':
     case 'goto':
     case 'const':
     case 'sizeof':
@@ -208,6 +207,7 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
             Center: createTree(tokens.slice(1))
         }
     case 'return':
+    case 'sleep':
         if (tokens.length === 1) {
             return { type: 'endASN', Token: tokens[0] }
         }
