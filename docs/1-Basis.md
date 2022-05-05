@@ -70,6 +70,30 @@ Variables declarations can be inside other sentences, like `for (long i; i<10; i
 As avaliable in C, the developer can make use of functions to make coding easier or reuse code from other projects. There is no need to put function prototypes at the beginning, the function can be used before it is declared, because their definitions are collected a step before the compiling process. Functions arguments and return values are passed using user stack. Recursive functions are allowed but developer must set manually and carefully a new size for "user stack pages" thru macro definition. There are two special functions: `void main(void)` explained before and `void catch(void)` explained at **Contract states** topic. It is not obligatory to use them.
 Functions can return also arrays and structs; the returning values can be used directly: example `if ( arrFn(a)[2] == 25 )` or `b = structFn(a)->value;`
 
+### Built-in functions
+In 2022 it was introduced two new specific instructions. They are coded in SmartC as built-in functions, so no declaration is needed to use them.
+#### mdv
+* Prototype:
+`long mdv(long m1, long m2, long div);`
+* Description:
+Computes the value of `m1` multiplied by `m2` with 128-bit precision (no overflow) and then divides this result by `div`.
+The calculation is returned as value.
+* Notes:
+  1) This instruction will be used in optimizations, even if not explicit declared. Use this form to ensure the instruction, or check generated assembly code if in doubt.
+#### pow
+* Prototype:
+`long pow(long base, long expBy1e8);`
+* Description:
+Computes the value of `base` to the power of `expBy1e8`, where expBy1e8 is used as fixed point representation with 8 decimals (like the values in Signa). The result is returned as long value, decimals are truncated.
+* Examples:
+  * sqrt(49) = 7 :: `val = pow(49, 5000_0000);`
+  * 5 * 5 * 5 * 5 = 5^4 = 625 :: `val = pow(5, 4_0000_0000);`
+  * sqrt(48) = 6 :: `val = pow(48, 5000_0000);`
+* Notes
+  1) pow will return zero if the result is matematically undefined;
+  2) pow will return zero if base is negative;
+  3) pow will return zero if result is greater than 9223372036854775807 (max positive long).
+
 ### Global statements
 All global statements are grouped at the beginning of assembly code (even if after functions or end of file). When the contract is executed first time, it does not begin at main function, but will start at the beginning of file and run all global statements. If there is a main function, it will be then executed during this first run. If you stop execution in global statements (with `exit`), the main function will not be processed and the starting point for next transactions will be the start of code. In this case (not using main function) use `halt` keyword to wait next transaction.
 
