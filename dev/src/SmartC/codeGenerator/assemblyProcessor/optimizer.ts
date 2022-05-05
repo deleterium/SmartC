@@ -30,6 +30,7 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
                 codeLines.forEach(swapBranches)
                 codeLines.forEach(notOpt)
                 codeLines.forEach(popPushRegister)
+                codeLines.forEach(mdvOpt)
                 codeLines = codeLines.flatMap(branchOpt)
             }
             if (O >= 3) {
@@ -216,7 +217,7 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
      * NOT @r0    -> NOT @a
      * SET @a $r0 -> DELETE
      * ``` */
-    function notOpt (value: string, index: number, array: string[]) : void {
+     function notOpt (value: string, index: number, array: string[]) : void {
         const notdat = /^\s*NOT\s+@(r\d)\s*$/.exec(value)
         if (notdat === null) {
             return
@@ -229,6 +230,27 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         if (befSet[1] === aftSet[2] && befSet[2] === aftSet[1] && notdat[1] === befSet[1]) {
             array[index - 1] = 'DELETE'
             array[index] = 'NOT @' + befSet[2]
+            array[index + 1] = 'DELETE'
+            optimizedLines++
+        }
+    }
+
+    /** Optimizes MUL + DIV to MDV
+     * ```
+     * MUL @a $c -> DELETE
+     * DIV @a $d -> MDV @a $c $d
+     * ``` */
+    function mdvOpt (value: string, index: number, array: string[]) : void {
+        const muldat = /^\s*MUL\s+@(\w+)\s+\$(\w+)\s*$/.exec(value)
+        if (muldat === null) {
+            return
+        }
+        const divdat = /^\s*DIV\s+@(\w+)\s+\$(\w+)\s*$/.exec(array[index + 1])
+        if (divdat === null) {
+            return
+        }
+        if (muldat[1] === divdat[1]) {
+            array[index] = `MDV @${muldat[1]} $${muldat[2]} $${divdat[2]}`
             array[index + 1] = 'DELETE'
             optimizedLines++
         }
