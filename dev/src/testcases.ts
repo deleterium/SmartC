@@ -46,7 +46,7 @@ export function runTestCases (jestTest: boolean = false) : string {
             testMessageA = asmCompiler.getMachineCode().ByteCode
             testMessageB = asmCompiler.getMachineCode().ByteData
             testFailed = false
-        } catch (e) {
+        } catch (e: any) {
             testError = e
         }
         if (currentByteTest[1] === testFailed &&
@@ -79,7 +79,7 @@ export function runTestCases (jestTest: boolean = false) : string {
             cCompiler.compile()
             testMessage = cCompiler.getAssemblyCode()
             testFailed = false
-        } catch (e) {
+        } catch (e: any) {
             testError = e.message
         }
         if (currentTest[1] === testFailed && testMessage === currentTest[2]) {

@@ -217,7 +217,7 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
      * NOT @r0    -> NOT @a
      * SET @a $r0 -> DELETE
      * ``` */
-     function notOpt (value: string, index: number, array: string[]) : void {
+    function notOpt (value: string, index: number, array: string[]) : void {
         const notdat = /^\s*NOT\s+@(r\d)\s*$/.exec(value)
         if (notdat === null) {
             return
