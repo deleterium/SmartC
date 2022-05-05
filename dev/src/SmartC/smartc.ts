@@ -40,6 +40,7 @@ export class SmartC {
     private MachineCode?: MACHINE_OBJECT
     private Program: CONTRACT = {
         Global: {
+            BuiltInFunctions: [],
             APIFunctions: [],
             macros: [],
             sentences: []
