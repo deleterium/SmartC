@@ -105,6 +105,34 @@ describe('#program', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    it('should compile: codeHashId', () => {
+        const code = '#pragma optimizationLevel 0\n#program codeHashId    0   \n long a; a++;'
+        const assembly = '^program codeHashId 16984156175653688123\n^declare r0\n^declare r1\n^declare r2\n^declare a\n\nINC @a\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: codeHashId right', () => {
+        const code = '#pragma optimizationLevel 0\n#program codeHashId    16984156175653688123   \n long a; a++;'
+        const assembly = '^program codeHashId 16984156175653688123\n^declare r0\n^declare r1\n^declare r2\n^declare a\n\nINC @a\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    test('should throw: codeHashId wrong', () => {
+        expect(() => {
+            const code = '#pragma optimizationLevel 0\n#program codeHashId    1   \n long a; a++;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^assembler\(\)/)
+    })
+    test('should throw: codeHashId wrong', () => {
+        expect(() => {
+            const code = '#pragma optimizationLevel 0\n#program codeHashId    0x237a33   \n long a; a++;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
 })
 
 describe('#pragma', () => {
