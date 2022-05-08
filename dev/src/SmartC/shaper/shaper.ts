@@ -244,6 +244,13 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             }
             throw new Error(`At line: ${MacroToken.line}.` +
             ' Program code stack pages must be a number between 0 and 10, included.')
+        case 'codeHashId':
+            if (/^\d+\s*$/.test(MacroToken.value)) {
+                Program.Config.PCodeHashId = MacroToken.value.trim()
+                return
+            }
+            throw new Error(`At line: ${MacroToken.line}.` +
+            ' Program code hash id must be a decimal number. Use 0 to let compiler fill the value at assembly output.')
         default:
             throw new Error(`At line: ${MacroToken.line}.` +
             ` Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +

@@ -57,6 +57,10 @@ type ASM_OBJECT = {
     PUserStackPages: number
     /** Selected size for code stack */
     PCodeStackPages: number
+    /** Previous calculates codeHashId. If zero, it is ignored */
+    PCodeHashId: string
+    /** Calculated codeHashId for this run */
+    codeHashId: string
     /** hexstring of compiled program */
     bytecode: string
     /** hexstring for memory starting values */
@@ -238,6 +242,8 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         PActivationAmount: '',
         PUserStackPages: 0,
         PCodeStackPages: 0,
+        PCodeHashId: '',
+        codeHashId: '',
         bytecode: '',
         bytedata: ''
     }
@@ -275,6 +281,11 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         // last pass, join all contents in little endian notation (code and data)
         AsmObj.code.forEach(finishHim)
         AsmObj.bytedata = fatality(AsmObj.memory)
+        // codeHashId calculation and checks
+        AsmObj.codeHashId = hashMachineCode(AsmObj.bytecode)
+        if (AsmObj.PCodeHashId !== '' && AsmObj.PCodeHashId !== '0' && AsmObj.PCodeHashId !== AsmObj.codeHashId) {
+            throw new Error(`assembler() error #8. This compilation did not produce expected machine code hash id. Expected: ${AsmObj.PCodeHashId} Generated: ${AsmObj.codeHashId}.`)
+        }
         return buildRetObj()
     }
 
@@ -329,6 +340,9 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
                 break
             case 'codeStackPages':
                 AsmObj.PCodeStackPages = Number(parts[2].trim())
+                break
+            case 'codeHashId':
+                AsmObj.PCodeHashId = parts[2].trim()
                 break
             default:
                 throw new Error(`assembler() error #7. Unknow '^program' directive: '${parts[1]}'`)
@@ -512,7 +526,7 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
             CodePages: codepages,
             MinimumFeeNQT: minimumfee.toString(10),
             ByteCode: AsmObj.bytecode,
-            MachineCodeHashId: hashMachineCode(AsmObj.bytecode),
+            MachineCodeHashId: AsmObj.codeHashId,
             ByteData: AsmObj.bytedata,
             Memory: AsmObj.memory.map(Obj => Obj.name),
             Labels: AsmObj.labels,

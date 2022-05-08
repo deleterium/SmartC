@@ -32,6 +32,8 @@ export type SC_CONFIG = {
     PUserStackPages: number,
     /** Code stack pages to be available:: #program codeStackPages */
     PCodeStackPages: number,
+    /** Machine code hash id to be matched during compilation: #program codeHashId */
+    PCodeHashId: string,
     /** Adds a comment in generated assembly code with the respective C source code line number  */
     outputSourceLineNumber: boolean,
 }

@@ -125,6 +125,9 @@ export default function codeGenerator (Program: CONTRACT) {
         if (Program.Config.PCodeStackPages !== 0) {
             writeAsmLine(`^program codeStackPages ${Program.Config.PCodeStackPages}`)
         }
+        if (Program.Config.PCodeHashId !== '') {
+            writeAsmLine(`^program codeHashId ${Program.Config.PCodeHashId}`)
+        }
     }
 
     /** Handles variables declarations to assembly code. */
