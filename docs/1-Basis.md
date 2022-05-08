@@ -24,8 +24,16 @@ Others keyword have no assembly support. They are disabled: `auto`, `double`, `f
 Some special features can be enabled/disable via preprocessor directives:
 #### #program
 * `#program name YourProgramName`: Set program's name. Only regular letters and numbers allowed, max 30 chars in length.
+A value is mandatory for deployment.
 * `#program description Your program description`: Set program's description. No new lines and max length is 1000 chars.
+This is optional.
 * `#program activationAmount 100000000`: Set program's activation amount in NQT (1 Signum = 100000000 NQT). If an incoming transaction has an amount is less than this value, it will not be processed by program (but the amount will be received!). Set a low value but bigger than worst case amount needed to run in your program. If set too low, your program will be frozen during execution (out of gas). If set too high, program balance will be high after execution (unburned balance). Remember to handle this case if creating serious program!
+A value is mandatory for deployment.
+* `#program codeHashId N`: Ensure the compiled program will have this exact code hash id.
+Use `0` to make this information available at assembly output (during development).
+Use the actual number if you plan do distribute the source code, so the compiler will raise an error on divergency.
+This is optional.
+
 #### #include
 * `#include APIFunctions [true/false/1/0/]`: Make Signum API functions available for use as functions. Default value is `false`. It can be enabled by declaring it with empty argument, `true` or `1`. Function names follow the [ciyam at documentation](https://ciyam.org/at/at_api.html). All API names and a pseudo-code are avaliable also in section **API Pseudo-Code**.
 #### #define
