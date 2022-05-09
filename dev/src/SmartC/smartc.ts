@@ -101,7 +101,7 @@ export class SmartC {
             throw new Error('Invalid usage. Language must be "C" or "Assembly".')
         }
         this.MachineCode = assembler(this.assemblyCode)
-        this.assemblyCode = this.assemblyCode.replace(/(^\s*\^program\s+codeHashId)\s+0/, `$1 ${this.MachineCode.MachineCodeHashId}`)
+        this.assemblyCode = this.assemblyCode.replace(/(^\s*\^program\s+codeHashId)\s+0/m, `$1 ${this.MachineCode.MachineCodeHashId}`)
         return this
     }
 
