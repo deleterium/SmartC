@@ -1,6 +1,6 @@
 {
   "name": "smartc-signum-compiler",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "C Compiler for smart contracts on Signum network",
   "main": "dist/smartc.js",
   "types": "dist/smartc.d.ts",
@@ -25,8 +25,8 @@
   "homepage": "https://github.com/deleterium/SmartC#readme",
   "scripts": {
     "lint": "npx eslint './src/**/*'",
-    "test": "npx jest",
-    "test:ci": "npx jest --coverage",
+    "test": "JEST=true npx jest",
+    "test:ci": "JEST=true npx jest --coverage",
     "build": "npm run lint && node esbuild.config.js && npx tsc"
   },
   "devDependencies": {

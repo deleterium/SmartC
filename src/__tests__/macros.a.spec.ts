@@ -171,13 +171,6 @@ describe('#pragma', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    test('should throw: expecting other compiler version', () => {
-        expect(() => {
-            const code = '#pragma version abcd\nlong a;'
-            const compiler = new SmartC({ language: 'C', sourceCode: code })
-            compiler.compile()
-        }).toThrowError(/^This compiler is version/)
-    })
     test('should throw: maxAuxVars invalid parameter', () => {
         expect(() => {
             const code = '#pragma maxAuxVars a\nlong a;'

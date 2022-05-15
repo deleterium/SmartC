@@ -252,6 +252,10 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
      * @throws {Error} if not pass rules checks.
      */
     function checkCompilerVersion () : void {
+        if (process !== undefined && process.env.JEST === 'true') {
+            // avoid this check during jest tests
+            return
+        }
         if (Program.Config.sourcecodeVersion === '') {
             if (!Program.Config.compilerVersion.includes('dev')) {
                 throw new Error('Compiler version not set.' +
