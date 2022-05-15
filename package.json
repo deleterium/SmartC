@@ -1,0 +1,46 @@
+{
+  "name": "smartc-signum-compiler",
+  "version": "1.0.2",
+  "description": "C Compiler for smart contracts on Signum network",
+  "main": "dist/smartc.js",
+  "types": "dist/smartc.d.ts",
+  "files": ["dist"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deleterium/SmartC.git"
+  },
+  "keywords": [
+    "smartc",
+    "compiler",
+    "blockchain",
+    "c",
+    "signum"
+  ],
+  "author": "Rui Deleterium",
+  "private": false,
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/deleterium/SmartC/issues"
+  },
+  "homepage": "https://github.com/deleterium/SmartC#readme",
+  "scripts": {
+    "lint": "npx eslint './src/**/*'",
+    "test": "JEST=true npx jest",
+    "test:ci": "JEST=true npx jest --coverage",
+    "build": "npm run lint && node esbuild.config.js && npx tsc"
+  },
+  "devDependencies": {
+    "@types/jest": "^27.0.2",
+    "@typescript-eslint/eslint-plugin": "^4.29.1",
+    "@typescript-eslint/parser": "^4.29.1",
+    "esbuild": "^0.13.8",
+    "eslint": "^7.32.0",
+    "eslint-config-standard": "^16.0.3",
+    "eslint-plugin-import": "^2.24.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "jest": "^27.3.1",
+    "ts-jest": "^27.0.7",
+    "typescript": "^4.3.5"
+  }
+}

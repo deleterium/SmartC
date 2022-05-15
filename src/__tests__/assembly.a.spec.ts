@@ -127,14 +127,6 @@ describe('Assembly compilation:', () => {
         const result = new SmartC({ language: 'Assembly', sourceCode: code }).compile().getMachineCode()
         expect(result.MachineCodeHashId).toBe('17223659044509638052')
     })
-    it('should compile: atv3 opCodes and apiCodes', () => {
-        const code = '^comment new opCodes SIP-37\nSLP\nPOW @base $exp\nMDV @x $y $den\n^comment new APICodes SIP-37\nFUN @ret Check_Sig_B_With_A\nFUN @ret Get_Code_Hash_Id\nFUN @ret Get_Activation_Fee\nFUN Put_Last_Block_GSig_In_A\n^comment new APICodes SIP-38\nFUN @ret Get_Map_Value_Keys_In_A\nFUN Set_Map_Value_Keys_In_A\n^comment new APICodes SIP-39\nFUN @ret Issue_Asset\nFUN Mint_Asset\nFUN Distribute_To_Asset_Holders\nFUN @ret Get_Asset_Holders_Count\n'
-        const MachineCode = '2a1900000000010000002c02000000030000000400000035060205000000350c0305000000350d0405000000320e043507040500000032080435090405000000320a04320b04350c0405000000'
-        const MachineData = ''
-        const result = new SmartC({ language: 'Assembly', sourceCode: code }).compile().getMachineCode()
-        expect(result.ByteCode).toBe(MachineCode)
-        expect(result.ByteData).toBe(MachineData)
-    })
 })
 
 describe('Assembly wrong code', () => {
