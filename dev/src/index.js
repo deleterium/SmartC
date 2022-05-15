@@ -1,5 +1,5 @@
 import { SmartC } from './SmartC/smartc.js'
-import { asmHighlight } from './asmHighlight.js'
+import sah from 'smartc-assembly-highlight'
 import { runTestCases } from './testcases.js'
 
 /* Following global functions are define on the files:
@@ -125,7 +125,11 @@ function compileCode () {
         const asmCode = compiler.getAssemblyCode()
         const bcode = compiler.getMachineCode()
 
-        document.getElementById('assembly_output').innerHTML = asmHighlight(asmCode, false)
+        sah.Config.preAll = ''
+        sah.Config.postAll = ''
+        sah.Config.preLine = ''
+        sah.Config.postLine = '<br>'
+        document.getElementById('assembly_output').innerHTML = sah.colorText(asmCode)
 
         const t1 = new Date()
         let compileMessage = `<span class='msg_success'>Compile sucessfull!!!</span> <small>Done at ${t1.getHours()}:${t1.getMinutes()}:${t1.getSeconds()} in ${t1 - t0} ms.`
@@ -200,7 +204,11 @@ function SetColorCode () {
         if (document.getElementById('source_is_c').checked) {
             dest.innerHTML = hljs.highlight(source.value, { language: 'c' }).value
         } else {
-            dest.innerHTML = asmHighlight(source.value, true)
+            sah.Config.preAll = "<div class='table'>"
+            sah.Config.postAll = '<div>'
+            sah.Config.preLine = "<div class='div_row'><div class='div_cell_a'>%line%</div><div class='div_cell_b'>"
+            sah.Config.postLine = '</div></div>'
+            dest.innerHTML = sah.colorText(source.value)
         }
         source.className = 'transp'
     }
