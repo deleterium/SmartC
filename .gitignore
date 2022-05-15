@@ -1,4 +1,3 @@
-dev/node_modules/*
-dev/lib
-dev/coverage
-stable
+node_modules/*
+dist
+coverage
