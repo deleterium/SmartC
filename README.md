@@ -18,7 +18,7 @@ npm install smartc-signum-compiler
 # Usage
 ## Node
 ```ts
-import SmartC from 'smartc-signum-compiler';
+import { SmartC } from 'smartc-signum-compiler';
 
 //  Example: Simple compilation test
 try {
@@ -38,7 +38,7 @@ try {
 ## Browser
 Your javascript file must be imported as module in the html.
 ```ts
-import SmartC from 'https://cdn.jsdelivr.net/npm/smartc-assembly-highlight@1.0.0/dist/smartc.min.js';
+import { SmartC } from 'https://cdn.jsdelivr.net/npm/smartc-assembly-highlight@1.0.0/dist/smartc.min.js';
 
 //  Example: Simple compilation test
 try {
