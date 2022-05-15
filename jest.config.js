@@ -8,7 +8,7 @@ module.exports = {
         }
     },
     collectCoverageFrom: [
-        '**/src/**/*.ts',
+        'src/**/*.ts',
         '!**/e2e/**'
     ],
     transform: {
@@ -17,9 +17,7 @@ module.exports = {
     testPathIgnorePatterns: [
         'helpers',
         '.*\\.e2e\\.ts$',
-        'out',
-        'lib',
-        '3rd-party',
+        'dist',
         'node_modules'
     ],
     verbose: true
