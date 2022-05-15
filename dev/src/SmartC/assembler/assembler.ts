@@ -217,6 +217,7 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         { name: 'B_to_Address_of_Tx_in_A', apiCode: 0x030a, opCode: 0x32 },
         { name: 'B_to_Address_of_Creator', apiCode: 0x030b, opCode: 0x32 },
         { name: 'Get_Code_Hash_Id', apiCode: 0x030c, opCode: 0x35 },
+        { name: 'B_To_Assets_Of_Tx_In_A', apiCode: 0x030d, opCode: 0x32 },
         { name: 'get_Current_Balance', apiCode: 0x0400, opCode: 0x35 },
         { name: 'get_Previous_Balance', apiCode: 0x0401, opCode: 0x35 },
         { name: 'send_to_Address_in_B', apiCode: 0x0402, opCode: 0x33 },
@@ -231,7 +232,8 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         { name: 'Distribute_To_Asset_Holders', apiCode: 0x040b, opCode: 0x32 },
         { name: 'Get_Asset_Holders_Count', apiCode: 0x040c, opCode: 0x35 },
         { name: 'Get_Activation_Fee', apiCode: 0x040d, opCode: 0x35 },
-        { name: 'Put_Last_Block_GSig_In_A', apiCode: 0x040e, opCode: 0x32 }
+        { name: 'Put_Last_Block_GSig_In_A', apiCode: 0x040e, opCode: 0x32 },
+        { name: 'Get_Asset_Circulating', apiCode: 0x040f, opCode: 0x35 }
     ]
     const AsmObj: ASM_OBJECT = {
         memory: [],
