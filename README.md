@@ -9,16 +9,57 @@
 ## Objective
 To empower developers, allowing them to create complex and highly optimized smart contracts.
 
-## Usage
-[Run on gitpages](https://deleterium.github.io/SmartC/stable/index.html) the latest stable version.
-Optionally run the development version at [Vercel](https://smart-c.vercel.app) or choose a previous compiler version at [https://deleterium.info/SmartC/](https://deleterium.info/SmartC/).
-After compiling, information to create the Smart Contract is presented and it is possible to deploy the contract on your own local node.
+# Setup
+This library can be obtained through npm:
+```
+npm install smartc-signum-compiler
+```
+
+# Usage
+## Node
+```ts
+import SmartC from 'smartc-signum-compiler';
+
+//  Example: Simple compilation test
+try {
+    const startUpTest = new SmartC({
+        language: 'C',
+        sourceCode: '#pragma maxAuxVars 1\nlong a, b, c; a=b/~c;'
+    })
+    startUpTest.compile()
+    const assemblyText = startUpTest.getAssemblyCode()
+    const machineObject = startUpTest.getMachineCode()
+    // Do something
+} catch (e) {
+    return "Compilation error: " + e.message
+}
+```
+
+## Browser
+Your javascript file must be imported as module in the html.
+```ts
+import SmartC from 'https://cdn.jsdelivr.net/npm/smartc-assembly-highlight@1.0.0/dist/smartc.min.js';
+
+//  Example: Simple compilation test
+try {
+    const startUpTest = new SmartC({
+        language: 'C',
+        sourceCode: '#pragma maxAuxVars 1\nlong a, b, c; a=b/~c;'
+    })
+    startUpTest.compile()
+    const assemblyText = startUpTest.getAssemblyCode()
+    const machineObject = startUpTest.getMachineCode()
+    // Do something
+} catch (e) {
+    return "Compilation error: " + e.message
+}
+```
+
+## Web User Interface
+To be done
 
 ## Documentation / FAQ / Lessons
-Detailed technical information about the project can be found in compiler's page.
-After opening the desired version, click the **Help** button.
-A window will open with all avaliable documentation for that specific release.
-Check also [SmartC playlist on Youtube](https://www.youtube.com/playlist?list=PLyu0NNtb1eg3Gcg2JCrOle8MjtuFPb-Gi), with videos for starting, simulating and deploying a smart contract.
+Docs files can be found in this repo, at `doc` folder.
 
 ## Changelog
 Find [here](https://deleterium.github.io/SmartC/CHANGELOG) major upgrades between releases.
