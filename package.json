@@ -17,7 +17,7 @@
     "signum"
   ],
   "author": "Rui Deleterium",
-  "private": true,
+  "private": false,
   "license": "BSD-3-Clause",
   "bugs": {
     "url": "https://github.com/deleterium/SmartC/issues"
