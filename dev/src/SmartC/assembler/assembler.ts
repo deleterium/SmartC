@@ -59,6 +59,10 @@ type ASM_OBJECT = {
     PCodeStackPages: number
     /** Previous calculates codeHashId. If zero, it is ignored */
     PCodeHashId: string
+    /** Line of codeHashId preprocessor instruction */
+    PCodeHashIdLine: number
+    /** Modified assembly source code */
+    assembledCode: string
     /** Calculated codeHashId for this run */
     codeHashId: string
     /** hexstring of compiled program */
@@ -245,6 +249,8 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         PUserStackPages: 0,
         PCodeStackPages: 0,
         PCodeHashId: '',
+        PCodeHashIdLine: -1,
+        assembledCode: '',
         codeHashId: '',
         bytecode: '',
         bytedata: ''
@@ -255,12 +261,11 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         // process line by line
         const line = assemblyCode.split('\n')
         // first pass, fill address, opcodes, apicodes, constants
-        line.forEach((codeLine, idx) => {
+        AsmObj.code = line.map((codeLine, idx) => {
             for (const CurrRule of opCodeTable) {
                 const parts = CurrRule.regex.exec(codeLine)
                 if (parts !== null) {
-                    process(parts, CurrRule)
-                    return
+                    return process(parts, CurrRule, idx)
                 }
             }
             throw new Error(`assembler() error #1. No rule found to process line ${idx}: "${codeLine}".`)
@@ -285,9 +290,14 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         AsmObj.bytedata = fatality(AsmObj.memory)
         // codeHashId calculation and checks
         AsmObj.codeHashId = hashMachineCode(AsmObj.bytecode)
-        if (AsmObj.PCodeHashId !== '' && AsmObj.PCodeHashId !== '0' && AsmObj.PCodeHashId !== AsmObj.codeHashId) {
+        if (AsmObj.PCodeHashId === '0') {
+            AsmObj.PCodeHashId = AsmObj.codeHashId
+            line[AsmObj.PCodeHashIdLine] = `^program codeHashId ${AsmObj.codeHashId}`
+        }
+        if (AsmObj.PCodeHashId !== '' && AsmObj.PCodeHashId !== AsmObj.codeHashId) {
             throw new Error(`assembler() error #8. This compilation did not produce expected machine code hash id. Expected: ${AsmObj.PCodeHashId} Generated: ${AsmObj.codeHashId}.`)
         }
+        AsmObj.assembledCode = line.join('\n')
         return buildRetObj()
     }
 
@@ -301,30 +311,29 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
     }
 
     /** Process one matched instruction */
-    function process (parts: RegExpExecArray, Instruction: OPCODE_RULE) {
+    function process (parts: RegExpExecArray, Instruction: OPCODE_RULE, line: number): CODE_INSTRUCTION {
         // Create a new object
         const CodeObj = genCodeInstr()
         CodeObj.source = parts[0]
         switch (Instruction.opCode) {
         case 0xF0:
             // blank line
-            return
+            return CodeObj
         case 0xF1:
             // label:
             CodeObj.station = parts[1]
-            AsmObj.code.push(CodeObj)
-            return
+            return CodeObj
         case 0xF2:
             // '^comment user_comment'
-            return
+            return CodeObj
         case 0xF3:
             // '^declare varName'
             getMemoryAddress(parts[1])
-            return
+            return CodeObj
         case 0xF4:
             // '^const SET @(varName) #(hex_content)'
             AsmObj.memory[getMemoryAddress(parts[1])].value = BigInt('0x' + parts[2])
-            return
+            return CodeObj
         case 0xF5:
             // '^program type information'
             switch (parts[1]) {
@@ -345,11 +354,12 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
                 break
             case 'codeHashId':
                 AsmObj.PCodeHashId = parts[2].trim()
+                AsmObj.PCodeHashIdLine = line
                 break
             default:
                 throw new Error(`assembler() error #7. Unknow '^program' directive: '${parts[1]}'`)
             }
-            return
+            return CodeObj
         }
         CodeObj.size = Instruction.size
         CodeObj.instructionValues.push({ type: 'O', value: BigInt(Instruction.opCode) })
@@ -396,7 +406,7 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
                 throw new Error('Internal error.')
             }
         }
-        AsmObj.code.push(CodeObj)
+        return CodeObj
     }
 
     /** Returns a skeleton code instruction object */
@@ -532,6 +542,7 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
             ByteData: AsmObj.bytedata,
             Memory: AsmObj.memory.map(Obj => Obj.name),
             Labels: AsmObj.labels,
+            AssemblyCode: AsmObj.assembledCode,
             PName: AsmObj.PName,
             PDescription: AsmObj.PDescription,
             PActivationAmount: AsmObj.PActivationAmount

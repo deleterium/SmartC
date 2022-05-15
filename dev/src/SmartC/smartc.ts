@@ -36,7 +36,7 @@ import { CONTRACT, MACHINE_OBJECT } from './typings/contractTypes'
 export class SmartC {
     private readonly language
     private readonly sourceCode
-    private assemblyCode?: string
+    private preAssemblyCode?: string
     private MachineCode?: MACHINE_OBJECT
     private Program: CONTRACT = {
         Global: {
@@ -92,16 +92,15 @@ export class SmartC {
             parsed = parser(tokenized)
             shaper(this.Program, parsed)
             syntaxProcessor(this.Program)
-            this.assemblyCode = codeGenerator(this.Program)
+            this.preAssemblyCode = codeGenerator(this.Program)
             break
         case 'Assembly':
-            this.assemblyCode = this.sourceCode
+            this.preAssemblyCode = this.sourceCode
             break
         default:
             throw new Error('Invalid usage. Language must be "C" or "Assembly".')
         }
-        this.MachineCode = assembler(this.assemblyCode)
-        this.assemblyCode = this.assemblyCode.replace(/^(\s*\^program\s+codeHashId)\s+0\s*$/m, `$1 ${this.MachineCode.MachineCodeHashId}`)
+        this.MachineCode = assembler(this.preAssemblyCode)
         return this
     }
 
@@ -113,7 +112,7 @@ export class SmartC {
         if (!this.MachineCode) {
             throw new Error('Source code was not compiled.')
         }
-        return this.assemblyCode ?? ''
+        return this.MachineCode.AssemblyCode
     }
 
     /**

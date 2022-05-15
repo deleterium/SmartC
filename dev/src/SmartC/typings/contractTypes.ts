@@ -119,6 +119,8 @@ export type MACHINE_OBJECT = {
         label: string
         address: number
     }[]
+    /** Program assembly source code */
+    AssemblyCode: string
     /** Program name */
     PName: string
     /** Program description */
