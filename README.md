@@ -56,7 +56,7 @@ try {
 ```
 
 ## Web User Interface
-To be done
+A web user interface is available at https://github.com/deleterium/smartc-web-ui It is possible to use the latest stable version at https://smartc-web-ui.vercel.app/
 
 ## Documentation / FAQ / Lessons
 Docs files can be found in this repo, at `doc` folder.
