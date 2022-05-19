@@ -17,6 +17,15 @@ describe('Assembly compilation:', () => {
         expect(result.ByteCode).toBe(MachineCode)
         expect(result.ByteData).toBe(MachineData)
     })
+    it('should compile: all api functions (atv2)', () => {
+        const code = '^program name AllApiCodes\n^program description All Api Codes for AT version 2\n^program activationAmount 1000000000\n^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nFUN @a get_A1\nFUN @a get_A2\nFUN @a get_A3\nFUN @a get_A4\nFUN @b get_B1\nFUN @b get_B2\nFUN @b get_B3\nFUN @b get_B4\nFUN set_A1 $c\nFUN set_A2 $c\nFUN set_A3 $c\nFUN set_A4 $c\nFUN set_A1_A2 $a $b\nFUN set_A3_A4 $a $b\nFUN set_B1 $c\nFUN set_B2 $c\nFUN set_B3 $c\nFUN set_B4 $c\nFUN set_B1_B2 $a $b\nFUN set_B3_B4 $a $b\nFUN clear_A\nFUN clear_B\nFUN clear_A_B\nFUN copy_A_From_B\nFUN copy_B_From_A\nFUN @a check_A_Is_Zero\nFUN @b check_B_Is_Zero\nFUN @a check_A_equals_B\nFUN swap_A_and_B\nFUN OR_A_with_B\nFUN OR_B_with_A\nFUN AND_A_with_B\nFUN AND_B_with_A\nFUN XOR_A_with_B\nFUN XOR_B_with_A\nFUN add_A_to_B\nFUN add_B_to_A\nFUN sub_A_from_B\nFUN sub_B_from_A\nFUN mul_A_by_B\nFUN mul_B_by_A\nFUN div_A_by_B\nFUN div_B_by_A\nFUN MD5_A_to_B\nFUN @a check_MD5_A_with_B\nFUN HASH160_A_to_B\nFUN @a check_HASH160_A_with_B\nFUN SHA256_A_to_B\nFUN @a check_SHA256_A_with_B\nFUN @a get_Block_Timestamp\nFUN @a get_Creation_Timestamp\nFUN @a get_Last_Block_Timestamp\nFUN put_Last_Block_Hash_In_A\nFUN A_to_Tx_after_Timestamp $c\nFUN @a get_Type_for_Tx_in_A\nFUN @a get_Amount_for_Tx_in_A\nFUN @a get_Timestamp_for_Tx_in_A\nFUN @a get_Ticket_Id_for_Tx_in_A\nFUN message_from_Tx_in_A_to_B\nFUN B_to_Address_of_Tx_in_A\nFUN B_to_Address_of_Creator\nFUN @a get_Current_Balance\nFUN @a get_Previous_Balance\nFUN send_to_Address_in_B $c\nFUN send_All_to_Address_in_B\nFUN send_Old_to_Address_in_B\nFUN send_A_to_Address_in_B\nFUN @a add_Minutes_to_Timestamp $c $d\nFIN\n'
+        const MachineCode = '3500010300000035010103000000350201030000003503010300000035040104000000350501040000003506010400000035070104000000331001050000003311010500000033120105000000331301050000003414010300000004000000341501030000000400000033160105000000331701050000003318010500000033190105000000341a010300000004000000341b010300000004000000322001322101322201322301322401352501030000003526010400000035270103000000322801322901322a01322b01322c01322d01322e013240013241013242013243013244013245013246013247013200023501020300000032020235030203000000320402350502030000003500030300000035010303000000350203030000003203033304030500000035050303000000350603030000003507030300000035080303000000320903320a03320b0335000403000000350104030000003302040500000032030432040432050437060403000000050000000600000028'
+        const MachineData = ''
+        const result = new SmartC({ language: 'Assembly', sourceCode: code }).compile().getMachineCode()
+        expect(result.ByteCode).toBe(MachineCode)
+        expect(result.ByteData).toBe(MachineData)
+    })
+ 
     it('should compile: rare opCodes ', () => {
         const code = 'FIZ $a\nSTZ $a\nERR :__error\nINC @a\nNOP\nNOP\n__error:\nDEC @a'
         const MachineCode = '260000000027000000002b1600000004000000007f7f0500000000'
