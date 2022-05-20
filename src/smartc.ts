@@ -132,3 +132,8 @@ export class SmartC {
         return this.Program.Config.compilerVersion
     }
 }
+
+if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
+    // @ts-ignore: Browser only
+    window.SmartC = SmartC
+}
