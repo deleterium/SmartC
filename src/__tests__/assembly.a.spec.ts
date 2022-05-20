@@ -25,7 +25,6 @@ describe('Assembly compilation:', () => {
         expect(result.ByteCode).toBe(MachineCode)
         expect(result.ByteData).toBe(MachineData)
     })
- 
     it('should compile: rare opCodes ', () => {
         const code = 'FIZ $a\nSTZ $a\nERR :__error\nINC @a\nNOP\nNOP\n__error:\nDEC @a'
         const MachineCode = '260000000027000000002b1600000004000000007f7f0500000000'

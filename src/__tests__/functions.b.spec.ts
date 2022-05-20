@@ -15,6 +15,13 @@ describe('API functions', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: all new API (atv3)', () => {
+        const code = '#include APIFunctions\nlong a;\na = Check_Sig_B_With_A();\na = Get_Code_Hash_Id();\na = Get_Activation_Fee();\nPut_Last_Block_GSig_In_A();\nSet_Map_Value_Keys_In_A();\na = Get_Map_Value_Keys_In_A();\na = Issue_Asset();\nMint_Asset();\nDistribute_To_Asset_Holders();\na = Get_Asset_Holders_Count();\na = Get_Asset_Circulating();\nB_To_Assets_Of_Tx_In_A();\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFUN @a Check_Sig_B_With_A\nFUN @a Get_Code_Hash_Id\nFUN @a Get_Activation_Fee\nFUN Put_Last_Block_GSig_In_A\nFUN Set_Map_Value_Keys_In_A\nFUN @a Get_Map_Value_Keys_In_A\nFUN @a Issue_Asset\nFUN Mint_Asset\nFUN Distribute_To_Asset_Holders\nFUN @a Get_Asset_Holders_Count\nFUN @a Get_Asset_Circulating\nFUN B_To_Assets_Of_Tx_In_A\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
     test('should throw: missing argument', () => {
         expect(() => {
             const code = '#pragma optimizationLevel 0\n#include APIFunctions\nSet_A1();'

@@ -840,6 +840,13 @@ export const APITableTemplate: SC_FUNCTION[] = [
     },
     {
         argsMemObj: [],
+        asmName: 'B_To_Assets_Of_Tx_In_A',
+        declaration: 'void',
+        sentences: [],
+        name: 'B_To_Assets_Of_Tx_In_A'
+    },
+    {
+        argsMemObj: [],
         asmName: 'Get_Map_Value_Keys_In_A',
         declaration: 'long',
         sentences: [],
@@ -893,5 +900,12 @@ export const APITableTemplate: SC_FUNCTION[] = [
         declaration: 'void',
         sentences: [],
         name: 'Put_Last_Block_GSig_In_A'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Get_Asset_Circulating',
+        declaration: 'long',
+        sentences: [],
+        name: 'Get_Asset_Circulating'
     }
 ]
