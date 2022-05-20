@@ -36,10 +36,13 @@ try {
 ```
 
 ## Browser
-Your javascript file must be imported as module in the html.
-```ts
-import { SmartC } from 'https://cdn.jsdelivr.net/npm/smartc-assembly-highlight@1.0.0/dist/smartc.min.js';
+Import the minified javascript file. SmartC will be imported as global.
+```html
+<script src="https://cdn.jsdelivr.net/npm/smartc-assembly-highlight@1.0.3/dist/smartc.min.js"></script>
+```
 
+Then in your javascript file, just use it:
+```js
 //  Example: Simple compilation test
 try {
     const startUpTest = new SmartC({
