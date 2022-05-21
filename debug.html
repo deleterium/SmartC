@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="dist/smartc.dev.js"></script>
+    <script>
+
+        function compileCode () {
+            document.getElementById('assembly').innerHTML = '';
+            document.getElementById('debug-info').innerHTML = '';
+            const sourceCode = document.getElementById('sourcecode').value;
+            const t0 = new Date();
+            try {
+                const compiler = new SmartC({ language: 'C', sourceCode });
+                compiler.compile();
+                const asmCode = compiler.getAssemblyCode();
+                const bcode = compiler.getMachineCode();
+                const t1 = new Date();
+                document.getElementById('status').innerHTML = `<span class='msg_success'>Compile sucessfull!!!</span> Done at ${t1.getHours()}:${t1.getMinutes()}:${t1.getSeconds()} in ${t1 - t0} ms.`;
+                document.getElementById('assembly').innerText = asmCode;
+                document.getElementById('debug-info').innerHTML = JSON.stringify(bcode, null, '    ');
+            } catch (e) {
+                document.getElementById('status').innerHTML = `<span class='msg_failure'>Compile failed</span><br>${e.message}`
+                document.getElementById('debug-info').innerHTML = e.stack
+            }
+        }
+
+        function startUpTest () {
+            const startUpTest = new SmartC({
+                language: 'C',
+                sourceCode: '#pragma version dev\n#pragma maxAuxVars 1\nlong a, b, c; a=b/~c;'
+            })
+            try {
+                startUpTest.compile()
+                if (startUpTest.getMachineCode().MachineCodeHashId === '7488355358104845254') {
+                    document.getElementById('status').innerHTML = '<span class="msg_success">Start up test done!</span>'
+                } else {
+                    document.getElementById('status').innerHTML = '<span class="msg_failure">Start up test failed...</span>'
+                }
+            } catch (e) {
+                document.getElementById('status').innerHTML = '<span class="msg_failure">Start up test crashed...</span>'
+            }
+        }
+
+        window.onload = () => {
+            document.getElementById("compile").addEventListener('click', compileCode);
+            startUpTest();
+        }
+    </script>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=800, initial-scale=1.0">
+    <title>Simple debugger page</title>
+    <style type="text/css" media="all">
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14pt;
+            box-sizing: border-box;
+        }
+        textarea {
+            padding: 1ch;
+            height: 50vh;
+            font-size: inherit;
+            width: calc(100vw - 2ch);
+        }
+        pre {
+            padding: 1ch;
+            border: 1px black solid;
+            word-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+        .msg_failure {
+            font-weight: bold;
+            color: red;
+        }
+        .msg_success {
+            font-weight: bold;
+            color: green;
+        }
+    </style>
+
+</head>
+<body>
+    <header>Simple debugger page</header>
+    <p>Use this page to debug or inspect SmartC process, using a browser.</p>
+    <main>
+        <button id="compile">Compile this code:</button>
+    <textarea id="sourcecode" spellcheck="false"></textarea>
+    <pre id="status"></pre>
+    <pre id="assembly"></pre>
+    <pre id="debug-info"></pre>
+    </main>
+</body>
+</html>

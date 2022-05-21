@@ -4,7 +4,9 @@
   "description": "C Compiler for smart contracts on Signum network",
   "main": "dist/smartc.js",
   "types": "dist/smartc.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/deleterium/SmartC.git"
@@ -27,6 +29,7 @@
     "lint": "npx eslint './src/**/*'",
     "test": "JEST=true npx jest",
     "test:ci": "JEST=true npx jest --coverage",
+    "debug": "node esbuild.config.js && npx light-server -s . -p 7002 --no-reload --historyindex '/debug.html'",
     "build": "npm run lint && node esbuild.config.js && npx tsc"
   },
   "devDependencies": {
@@ -40,6 +43,7 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.1.0",
     "jest": "^27.3.1",
+    "light-server": "^2.9.1",
     "ts-jest": "^27.0.7",
     "typescript": "^4.3.5"
   }
