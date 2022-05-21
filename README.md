@@ -15,6 +15,8 @@ This library can be obtained through npm:
 npm install smartc-signum-compiler
 ```
 
+The development version is released under tag `@next` and will be released as version 2.0.
+
 # Usage
 ## Node
 ```ts
