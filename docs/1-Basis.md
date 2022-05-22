@@ -39,6 +39,10 @@ This is optional.
 #### #define
 * `#define CNAME`: Just define CNAME with an empty value, or delete its content if it was previously defined.
 * `#define CNAME value or expression`: Replaces all ocurrences of 'CNAME' to 'value or expression' starting on next line. Compiler defines: `true` for 1; `false` and `NULL` for 0; `SMARTC` with empty value.
+* `#define MACRO(arguments) (expression)`: Replaces all ocurrences of 'MACRO' to 'expression', starting on next line.
+It works similar to a function, but no function call is executed.
+Must be one line instruction (or use `\` at the end of line to escape the newline char).
+Many arguments can be used.
 * `#undef CNAME`: Undefine CNAME.
 * `#ifdef CNAME`: Start a block to be included if CNAME is defined. Note that CNAME value does not matter and can be empty value. Block must end with a '#endif' directive. Blocks can be nested.
 * `#ifndef CNAME`: Complementary of '#ifdef'. Includes a block if CNAME is not defined.
@@ -63,7 +67,7 @@ This is optional.
 * `#pragma outputSourceLineNumber[true/false/1/0/]`: Adds a comment in assembly output with the corresponding line number to the C source code. Very usefull for debug.
 
 #### Escaping new line
-Just end a line with `\` and it will be joined to the next one. It can be used anywhere, even inside "strings". Usefull for multiline program description, #define for a function, or in middle of a variable name!
+Just end a line with `\` and it will be joined to the next one. It can be used anywhere, even inside "strings". Usefull for multiline program description, #define for a macro, or in middle of a variable name!
 
 ### Variables
 At the moment, only `long` values are implemented. User can assign them with decimal values (default) (floating point not allowed) `i=2;`, hexadecimal values `i=0xff;`, strings (up to 8 bytes) `msg="Hello!";` or Signum addresses `addr="S-297Z-EKMN-4AVV-7YWXP";` (also valid starting with BURST or TS). Long values can be assigned during their declaration.
@@ -75,7 +79,7 @@ Global variables are available in all functions. Functions variables can only be
 Variables declarations can be inside other sentences, like `for (long i; i<10; i++)` or `if (a){ long i=0; ...}`, but their scope can only be 'global' or 'function', in other words, the result is the same as declaring variables at the program start (if global variables) or at the function start (if function variables).
 
 ### Functions
-As avaliable in C, the developer can make use of functions to make coding easier or reuse code from other projects. There is no need to put function prototypes at the beginning, the function can be used before it is declared, because their definitions are collected a step before the compiling process. Functions arguments and return values are passed using user stack. Recursive functions are allowed but developer must set manually and carefully a new size for "user stack pages" thru macro definition. There are two special functions: `void main(void)` explained before and `void catch(void)` explained at **Contract states** topic. It is not obligatory to use them.
+As avaliable in C, the developer can make use of functions to make coding easier or reuse code from other projects. There is no need to put function prototypes at the beginning, the function can be used before it is declared, because their definitions are collected a step before the compiling process. Functions arguments and return values are passed using user stack. Recursive functions are allowed but developer must set manually and carefully a new size for "user stack pages" thru preprocessor directives. There are two special functions: `void main(void)` explained before and `void catch(void)` explained at **Contract states** topic. It is not obligatory to use them.
 Functions can return also arrays and structs; the returning values can be used directly: example `if ( arrFn(a)[2] == 25 )` or `b = structFn(a)->value;`
 
 ### Built-in functions
