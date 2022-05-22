@@ -33,6 +33,8 @@ A value is mandatory for deployment.
 Use `0` to make this information available at assembly output (during development).
 Use the actual number if you plan do distribute the source code, so the compiler will raise an error on divergency.
 This is optional.
+* `#program codeStackPages N`: Code pages are used during function calls, to store the instruction pointer return position (also know as Program Counter). Default value is zero if not needed, or one if needed. Every page allows to store 16 values. Tweak this value if using many nested functions or recursive functions. Maximum value is 10 pages.
+* `#program userStackPages N`: User pages are used during function calls to pass arguments values, to store function return value, or to store function scope variables during recursive calls. Default value is zero if not needed, or one if needed. Tweak this value if using more than 16 arguments on functions or recursive functions. Maximum value is 10 pages.
 
 #### #include
 * `#include APIFunctions [true/false/1/0/]`: Make Signum API functions available for use as functions. Default value is `false`. It can be enabled by declaring it with empty argument, `true` or `1`. Function names follow the [ciyam at documentation](https://ciyam.org/at/at_api.html). All API names and a pseudo-code are avaliable also in section **API Pseudo-Code**.
@@ -50,8 +52,6 @@ Many arguments can be used.
 * `#endif`: Ends a block to be included.
 
 #### #pragma
-* `#pragma codeStackPages N`: Code pages are used during function calls, to store the instruction pointer return position (also know as Program Counter). Default value is zero if not needed, or one if needed. Every page allows to store 16 values. Tweak this value if using many nested functions or recursive functions. Maximum value is 10 pages.
-* `#pragma userStackPages N`: User pages are used during function calls to pass arguments values, to store function return value, or to store function scope variables during recursive calls. Default value is zero if not needed, or one if needed. Tweak this value if using more than 16 arguments on functions or recursive functions. Maximum value is 10 pages.
 * `#pragma enableRandom [true/false/1/0/]`: Makes labels for jumps and conditionals receive a random value. Default value is `false`. Default behaviour is labels having an increasing number starting with 1 (number is base 36).
 * `#pragma enableLineLabels [true/false/1/0/]`: Adds line number to labels in assembly. Only usefull for debug purposes. Default value is `false`.
 * `#pragma maxAuxVars N`: Used to tell compiler how many auxiliary variables will be available (they are used as registers). Default value is `3`, min value is `1` and max is `10`. If you are under memory pressure, try to reduce to minimal necessary for compiling. Simple contracts will use around 2 values, but this number depends on nested operations.
