@@ -1,6 +1,7 @@
 [Back](./)
 
 # API Functions pseudo code operations
+This documentation applies to Signum AT version 3.
 
 # Keep in mind!
 ### A and B registers
@@ -8,9 +9,11 @@ They are 256-bit registers and can be used as one big number (called A or B) or 
 
 ### Timestamps
 They are actually two integer 32-bit values joined in a 64-bit value. The most significant part (MSP) is the blockheight and the LSP is the transaction order when the block was forged.
+Do not be confused by transactions timestamps, that are the number of seconds since the genesis block (11-oct-2014 02:00:00 UTC)
 
 ### Messages
 An encrypted message to contract is the same as not sending a message.
+Messages are read and sent in batches of 32 bytes, they are called pages. The superregisters are used to store these values.
 
 # Pseudo code
 The code below is not valid for SmartC, but can give an idea what is happening when an API function is called.
@@ -157,20 +160,16 @@ void Copy_B_From_A(void) {
 
 long Check_A_Is_Zero(void) {
     // Assembly name: check_A_Is_Zero
-    /* Note that boolean logic is inverted.
-     * Try not use this function */
     if (A1 == 0 && A2 == 0 && A3 == 0 && A4 == 0)
-        return 0;
-    return 1;
+        return 1;
+    return 0;
 }
 
 long Check_B_Is_Zero(void) {
     // Assembly name: check_B_Is_Zero
-    /* Note that boolean logic is inverted.
-     * Try not use this function */
     if (B1 == 0 && B2 == 0 && B3 == 0 && B4 == 0)
-        return 0;
-    return 1;
+        return 1;
+    return 0;
 }
 
 long Check_A_Equals_B(void) {
@@ -337,6 +336,11 @@ long Check_SHA256_A_With_B(void) {
         return 1;
     return 0;
 }
+
+long Check_Sig_B_With_A(void) {
+    // Assembly name: Check_Sig_B_With_A
+    // Checks if the signature of [AT ID, B2, B3, B4] can be verified with the message attached on tx id in A1 (page in A2) for account id in A3
+}
 ```
 
 ## Generic functions that get block and tx info
@@ -359,6 +363,8 @@ long Get_Last_Block_Timestamp(void) {
 
 void Put_Last_Block_Hash_In_A(void) {
     // Assembly name: put_Last_Block_Hash_In_A
+    // For randomness source use the function Put_Last_Block_GSig_In_A.
+    // It is less prone to manipulations.
     A = Blockchain.LastBlock.Hash;
 }
 
@@ -372,11 +378,10 @@ void A_To_Tx_After_Timestamp(long value) {
 
 long Get_Type_For_Tx_In_A(void) {
     // Assembly name: get_Type_for_Tx_in_A
+    // Transaction types can be found via http api request: 'getConstants'
     if (Blockchain.IsThisTxValid(A1) == false)
         return -1;
-    if (Blockchain.IsThereMessageinTx(A1) == false)
-        return 0;
-    return 1;
+    return Blockchain.GetTransaction(A1).type;
 }
 
 long Get_Amount_For_Tx_In_A(void) {
@@ -403,12 +408,11 @@ long Get_Random_Id_For_Tx_In_A(void) {
 
 void Message_From_Tx_In_A_To_B(void) {
     // Assembly name: message_from_Tx_in_A_to_B
-    if (Blockchain.IsThisTxValid(A1) == false)
-        return -1;
     B = 0;
- 
+    if (Blockchain.IsThisTxValid(A1) == false)
+        return;
     if (Blockchain.IsThereMessageinTx(A1))
-        B = Blockchain.GetMessageFromTx(A1)
+        B = Blockchain.GetMessageFromTx(A1).AtPage(A2)
 }
 
 void B_To_Address_Of_Tx_In_A(void) {
@@ -421,7 +425,24 @@ void B_To_Address_Of_Tx_In_A(void) {
 void B_To_Address_Of_Creator(void) {
     // Assembly name: B_to_Address_of_Creator
     B = 0;
-    B1 = ContractCreator;
+    if (B2 == 0) {
+        B1 = ContractCreator;
+        return;
+    }
+    if (Blockchain.IsAT(B2)) {
+        B1 = Blockchain.GetCreatorFromAT(B2);
+    }
+}
+
+long Get_Code_Hash_Id(void) {
+    // Assembly name: Get_Code_Hash_Id
+    if (B2 == 0) {
+        return ThisContract.CodeHashId;
+    }
+    if (Blockchain.IsAT(B2)) {
+        return Blockchain.GetCodeHashIdFromAT(B2);
+    }
+    return 0;
 }
 ```
 
@@ -464,12 +485,34 @@ void Send_Old_To_Address_In_B(void) {
 
 void Send_A_To_Address_In_B(void) {
     // Assembly name: send_A_to_Address_in_B
-     Blockchain.SendMessageInATo(B1);
+    pendingMessage = ThisContract.GetPendingMessageTo(B1);
+    if (pendingMessage) {
+        pendingMessage += [A1..A4];
+        return;
+    }
+    thisContract.AddMessageTo(B1, [A1..A4])
 }
 
 long Add_Minutes_To_Timestamp(long timestamp,long minutes) {
     // Assembly name: add_Minutes_to_Timestamp
     return ((minutes/4) << 32) + timestamp
+}
+
+long Get_Activation_Fee(void) {
+    // Assembly name: Get_Activation_Fee
+    if (B2 == 0) {
+        return ThisContract.ActivationAmount;
+    }
+    if (Blockchain.IsAT(B2)) {
+        return Blockchain.GetActivationAmountFromAT(B2);
+    }
+    return 0;
+}
+
+void Put_Last_Block_GSig_In_A(void) {
+    // Assembly name: Put_Last_Block_GSig_In_A
+    // Generation Signature is a better random source to be used.
+    A = Blockchain.LastBlock.GenerationSignature;
 }
 ```
 
