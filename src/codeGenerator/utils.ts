@@ -214,6 +214,10 @@ export default {
             }
         }
         function lookupAsn (InspAst: LOOKUP_ASN): boolean {
+            const parts = vname.split('_')
+            if (parts.find(part => part === InspAst.Token.value)) {
+                return false
+            }
             const CanReuse = InspAst.modifiers.find(CurrentModifier => {
                 if (CurrentModifier.type === 'Array') {
                     if (recursiveFind(CurrentModifier.Center) === false) {

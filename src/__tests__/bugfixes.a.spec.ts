@@ -227,4 +227,11 @@ describe('Tests for bugfixes', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    it('should compile: bug 29 Must not reuse assigned var if it is array and present at both sides', () => {
+        const code = '#pragma optimizationLevel 0\nlong message[3];\nmessage[1] = (message[1] & 0x0707070000) >> 16;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare message\n^const SET @message #0000000000000004\n^declare message_0\n^declare message_1\n^declare message_2\n\nSET @r0 #0000000707070000\nAND @r0 $message_1\nSET @r1 #0000000000000010\nSHR @r0 $r1\nSET @message_1 $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })
