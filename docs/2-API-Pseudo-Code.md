@@ -498,6 +498,28 @@ long Add_Minutes_To_Timestamp(long timestamp,long minutes) {
     return ((minutes/4) << 32) + timestamp
 }
 
+long Get_Map_Value_Keys_In_A(void) {
+    // Assembly name: Get_Map_Value_Keys_In_A
+    if (A3 == 0) {
+        if (isSet(ThisContract.map[A1][A2])) {
+            return ThisContract.map[A1][A2];
+        }
+        return 0;
+    }
+    if (IsAT(A3)) {
+        otherContract = Blockchain.GetContractFromId(A3);
+        if (isSet(otherContract.map[A1][A2])) {
+            return otherContract.map[A1][A2];
+        }
+    }
+    return 0;
+}
+
+void Set_Map_Value_Keys_In_A(void) {
+    // Assembly name: Set_Map_Value_Keys_In_A
+    ThisContract.map[A1][A2] = A4;
+}
+
 long Get_Activation_Fee(void) {
     // Assembly name: Get_Activation_Fee
     if (B2 == 0) {
