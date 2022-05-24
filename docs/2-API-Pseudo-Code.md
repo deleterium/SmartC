@@ -386,9 +386,13 @@ long Get_Type_For_Tx_In_A(void) {
 
 long Get_Amount_For_Tx_In_A(void) {
     // Assembly name: get_Amount_for_Tx_in_A
-    if (Blockchain.IsThisTxValid(A1) == false)
+    asset = B2;
+    tx = Blockchain.GetTransactionWithId(A1);
+    if (!tx)
         return -1;
-    return Blockchain.GetAmountFromTx(A1) - ContractActivationAmount;
+    if (asset == 0 )
+        return tx.amount - ContractActivationAmount;
+    return tx.GetQuantityFromAsset(asset);
 }
 
 long Get_Timestamp_For_Tx_In_A(void) {
@@ -444,6 +448,28 @@ long Get_Code_Hash_Id(void) {
     }
     return 0;
 }
+
+void B_To_Assets_Of_Tx_In_A(void) {
+    // Assembly name: B_To_Assets_Of_Tx_In_A
+    B = 0;
+    tx = Blockchain.GetTransactionWithId(A1);
+    if (!tx) {
+        return;
+    }
+    if (!HasAssets(tx)) {
+        return;
+    }
+    B1 = tx.asset[0].id;
+    if (tx.asset[1]) {
+        B2 = tx.asset[1].id;
+    }
+    if (tx.asset[2]) {
+        B3 = tx.asset[2].id;
+    }
+    if (tx.asset[3]) {
+        B4 = tx.asset[3].id;
+    }
+}
 ```
 
 ## Generic functions that check balances and perform ops
@@ -451,7 +477,10 @@ long Get_Code_Hash_Id(void) {
 ``` c
 long Get_Current_Balance(void) {
     // Assembly name: get_Current_Balance
-    return Blockchain.GetMyBalanceNow();
+    if (B2 == 0) {
+        return Blockchain.GetMyBalanceNow();
+    }
+    return Blockchain.GetMyBalanceFromAsset(B2);
 }
 
 long Get_Previous_Balance(void) {
@@ -459,13 +488,25 @@ long Get_Previous_Balance(void) {
     return Blockchain.GetMyBalanceLastTimeIWasFrozen();
 }
 
-void Send_To_Address_In_B(long value) {
+void Send_To_Address_In_B(long amountOrQuantity) {
     // Assembly name: send_to_Address_in_B
-    long ContractBalance = Blockchain.GetMyBalanceNow();
-    if (value > ContractBalance)
-        Blockchain.SendAllMyBalanceTo(B1);
+    recipient = B1;
+    asset = B2;
+    if (asset == 0) {
+        // Send Signa
+        long ContractBalance = Blockchain.GetMyBalanceNow();
+        if (amountOrQuantity > ContractBalance)
+            Blockchain.SendAllMyBalanceTo(recipient);
+        else
+            Blockchain.SendBalanceTo(amountOrQuantity, recipient);
+        return;
+    }
+    // Send asset
+    long ContractQuantity = Blockchain.GetMyBalanceFromAsset(asset);
+    if (amountOrQuantity > ContractQuantity)
+        Blockchain.SendAllMyBalanceFromAssetTo(asset, recipient);
     else
-        Blockchain.SendBalanceTo(value, B1);
+        Blockchain.SendBalanceFromAssetTo(asset, recipient, amountOrQuantity);
 }
 
 void Send_All_To_Address_In_B(void) {
@@ -520,6 +561,61 @@ void Set_Map_Value_Keys_In_A(void) {
     ThisContract.map[A1][A2] = A4;
 }
 
+long Issue_Asset(void) {
+    // Assembly name: Issue_Asset
+    // This API costs 150 signa to be executed! Returns the assetId from created asset.
+    assetName = [A1, A2] // Limited to 10 chars
+    return Blockchain.IssueNewAssetWithName(assetName);
+}
+
+void Mint_Asset(void) {
+    // Assembly name: Mint_Asset
+    quantity = B1;
+    asset = B2;
+    if (!WasIssuedByMe(asset))
+        return;
+    ThisContract.BalanceFromAsset(B2) += quantity;
+}
+
+void Distribute_To_Asset_Holders(void) {
+    // Assembly name: Distribute_To_Asset_Holders
+    // amount refers to Signa values, quantity refers to asset values
+    // holders refers to asset to used in distribution calculation
+    // toDistribute refers to asset that will be distributed.
+    holdersAssetMinimumQuantity = B1
+    holdersAsset = B2
+    amountToDistribute = A1
+    assetToDistribute = A3
+    quantityToDistribute = A4
+
+    /*
+    1) Distribute 'amountToDistribute' Signa to holders of asset 'holdersAsset'
+       that have at least 'holdersAssetMinimumQuantity' in account.
+    2) Distribute 'quantityToDistribute' from 'assetToDistribute' to holders of
+       asset 'holdersAsset' that have at least 'holdersAssetMinimumQuantity'
+       in account.
+    Notes:
+    * Treasury accounts will not be included in this distribuition.
+    * This distribution is done thru indirect transaction.
+    * The 'assetToDistribute' and 'holdersAsset' can be the same
+    * Only the free quantity will be taken in account for distribution. Quantity
+      frozen in sell orders will be disregarded.
+    * All values will be rounded down (QNT or NQT). This remaining value will be added in
+      the transaction to the holder that has the greatest quantity.
+    */
+}
+
+long Get_Asset_Holders_Count(void) {
+    // Assembly name: Get_Asset_Holders_Count
+    mininumQuantity = B1;
+    asset = B2;
+
+    /*
+    1) Return the number of accounts that have at least 'mininumQuantity' of
+       'asset'. Does not consider treasury account.
+    */
+}
+
 long Get_Activation_Fee(void) {
     // Assembly name: Get_Activation_Fee
     if (B2 == 0) {
@@ -535,6 +631,16 @@ void Put_Last_Block_GSig_In_A(void) {
     // Assembly name: Put_Last_Block_GSig_In_A
     // Generation Signature is a better random source to be used.
     A = Blockchain.LastBlock.GenerationSignature;
+}
+
+long Get_Asset_Circulating(void) {
+    // Assembly name: Get_Asset_Circulating
+    asset = B2;
+
+    /*
+    1) Return the circulating quantity of 'asset', excluding the quantity in
+       treasury account.
+    */
 }
 ```
 
