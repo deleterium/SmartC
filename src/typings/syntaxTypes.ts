@@ -23,7 +23,7 @@ export type TOKEN = {
     value: string
     /** Only applicable to Arr, CodeCave, CodeDomain, Variable with modifier */
     params?: TOKEN[]
-    /** Only applicable to types: asm, break, continue, struct or label */
+    /** Only applicable to types: asm, break, continue, constant, struct or label */
     extValue?: string
 }
 

@@ -74,7 +74,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             addLength: 0
         },
         { // decimal numbers
-            start: /^(\d[\d_]*\b)/,
+            start: /(^\d[\d_.]*\b|^\.[\d_]+\b)/,
             pretokenType: 'numberDec',
             addLength: 0
         },

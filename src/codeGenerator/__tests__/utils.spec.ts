@@ -49,9 +49,31 @@ describe('codeGenerator utils functions', () => {
             utils.divHexContents(11, undefined)
         }).toThrowError('Division by zero')
     })
-    test('should throw: Fractional number in createConstantMemObj', () => {
-        expect(() => {
-            utils.createConstantMemObj(1.5)
-        }).toThrowError('Only integer numbers in createConstantMemObj().')
+    it('should create: createConstantMemObj Number', () => {
+        const MemObj = utils.createConstantMemObj(32)
+        expect(MemObj.hexContent).toBe('0000000000000020')
+        expect(MemObj.declaration).toBe('long')
+        expect(MemObj.size).toBe(1)
+    })
+    it('should create: createConstantMemObj Bigint', () => {
+        const MemObj = utils.createConstantMemObj(320n)
+        expect(MemObj.hexContent).toBe('0000000000000140')
+        expect(MemObj.declaration).toBe('long')
+    })
+    it('should create: createConstantMemObj Bigint overflow', () => {
+        const MemObj = utils.createConstantMemObj(18446744073709551616n)
+        expect(MemObj.hexContent).toBe('00000000000000010000000000000000')
+        expect(MemObj.declaration).toBe('long')
+        expect(MemObj.size).toBe(2)
+    })
+    it('should create: createConstantMemObj Fixed', () => {
+        const MemObj = utils.createConstantMemObj(1.5)
+        expect(MemObj.hexContent).toBe('0000000008f0d180')
+        expect(MemObj.declaration).toBe('fixed')
+    })
+    it('should create: createConstantMemObj String', () => {
+        const MemObj = utils.createConstantMemObj('feff')
+        expect(MemObj.hexContent).toBe('000000000000feff')
+        expect(MemObj.declaration).toBe('long')
     })
 })

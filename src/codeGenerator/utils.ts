@@ -17,24 +17,38 @@ type HEXCONTENTS = number | string | undefined
  */
 export default {
     /** Creates a constant Memory Object */
-    createConstantMemObj (value: number | string = ''): MEMORY_SLOT {
+    createConstantMemObj (value?: number | bigint | string): MEMORY_SLOT {
         let param: string
-        if (typeof (value) === 'number') {
+        let declaration : 'long' | 'fixed' = 'long'
+        switch (typeof (value)) {
+        case 'number':
             if (value % 1 !== 0) {
-                throw new Error('Only integer numbers in createConstantMemObj().')
+                const intPart = BigInt(Math.trunc(value))
+                const fractionalPart = BigInt(Math.trunc((value % 1) * 100000000))
+                param = (intPart * 100000000n + fractionalPart).toString(16)
+                declaration = 'fixed'
+                break
             }
-            param = value.toString(16).padStart(16, '0').slice(-16)
-        } else {
-            param = value.padStart(16, '0').slice(-16)
+            param = value.toString(16)
+            break
+        case 'bigint':
+            param = value.toString(16)
+            break
+        case 'string':
+            param = value
+            break
+        default:
+            param = ''
         }
+        param = param.padStart((Math.floor((param.length - 1) / 16) + 1) * 16, '0')
         return {
             address: -1,
             name: '',
             asmName: '',
             type: 'constant',
             scope: '',
-            size: 1,
-            declaration: 'long',
+            size: param.length / 16,
+            declaration,
             isDeclared: true,
             hexContent: param
         }

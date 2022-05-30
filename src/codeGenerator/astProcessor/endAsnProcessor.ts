@@ -44,9 +44,10 @@ export default function endAsnProcessor (
             }
             return { SolvedMem: utils.createVoidMemObj(), asmCode: '' }
         }
-        const RetMemObj = utils.createConstantMemObj()
-        RetMemObj.size = CurrentNode.Token.value.length / 16
-        RetMemObj.hexContent = CurrentNode.Token.value
+        const RetMemObj = utils.createConstantMemObj(CurrentNode.Token.value)
+        if (CurrentNode.Token.extValue === 'fixed') {
+            RetMemObj.declaration = 'fixed'
+        }
         return { SolvedMem: RetMemObj, asmCode: '' }
     }
 
