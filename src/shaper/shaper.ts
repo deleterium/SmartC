@@ -32,7 +32,11 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         splitCode()
         Program.Global.macros.forEach(processMacroControl)
         checkCompilerVersion()
-        Program.typesDefinitions = [getTypeDefinitionTemplate('register'), getTypeDefinitionTemplate('long')]
+        Program.typesDefinitions = [
+            getTypeDefinitionTemplate('register'),
+            getTypeDefinitionTemplate('long'),
+            getTypeDefinitionTemplate('fixed')
+        ]
         Program.memory.push(...addRegistersInMemory(Program.Config.maxAuxVars))
         Program.memory.push(...addConstantsInMemory(Program.Config.maxConstVars))
         processGlobalCode()

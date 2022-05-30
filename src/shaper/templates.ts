@@ -1,17 +1,18 @@
 import { SC_FUNCTION } from '../typings/contractTypes'
 import {
-    REGISTER_TYPE_DEFINITION, LONG_TYPE_DEFINITION, STRUCT_TYPE_DEFINITION, MEMORY_BASE_TYPES, MEMORY_SLOT
+    REGISTER_TYPE_DEFINITION, LONG_TYPE_DEFINITION, STRUCT_TYPE_DEFINITION, MEMORY_BASE_TYPES, MEMORY_SLOT, FIXED_TYPE_DEFINITION
 } from '../typings/syntaxTypes'
 
 type ObjectTypeDefinition<T> = T extends 'register' ? REGISTER_TYPE_DEFINITION :
     T extends 'long' ? LONG_TYPE_DEFINITION :
+    T extends 'fixed' ? LONG_TYPE_DEFINITION :
     T extends 'struct' ? STRUCT_TYPE_DEFINITION :
     never;
 
-export function getTypeDefinitionTemplate<T extends 'register'|'long'|'struct'> (
+export function getTypeDefinitionTemplate<T extends 'register'|'long'|'fixed'|'struct'|'void'> (
     templateType: T
 ) : ObjectTypeDefinition<T> {
-    let RetObj: REGISTER_TYPE_DEFINITION | LONG_TYPE_DEFINITION | STRUCT_TYPE_DEFINITION
+    let RetObj: REGISTER_TYPE_DEFINITION | LONG_TYPE_DEFINITION | STRUCT_TYPE_DEFINITION | FIXED_TYPE_DEFINITION
     switch (templateType) {
     case 'register':
         RetObj = {
@@ -24,12 +25,22 @@ export function getTypeDefinitionTemplate<T extends 'register'|'long'|'struct'> 
         RetObj.MemoryTemplate.isDeclared = true
         break
     case 'long':
+    case 'void':
         RetObj = {
             type: 'long',
             name: '',
             MemoryTemplate: getMemoryTemplate('long')
         }
         RetObj.MemoryTemplate.declaration = 'long'
+        RetObj.MemoryTemplate.size = 1
+        break
+    case 'fixed':
+        RetObj = {
+            type: 'fixed',
+            name: '',
+            MemoryTemplate: getMemoryTemplate('fixed')
+        }
+        RetObj.MemoryTemplate.declaration = 'fixed'
         RetObj.MemoryTemplate.size = 1
         break
     case 'struct':

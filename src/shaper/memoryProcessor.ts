@@ -30,8 +30,9 @@ export default function memoryProcessor (
         while (phraseCode[tokenCounter]?.type === 'Keyword') {
             switch (phraseCode[tokenCounter].value) {
             case 'long':
+            case 'fixed':
             case 'void':
-                retMem.push(...longOrVoidProcessControl(phraseCode[tokenCounter].value as 'long'|'void'))
+                retMem.push(...lfvProcessControl(phraseCode[tokenCounter].value as 'long'|'fixed'|'void'))
                 break
             case 'struct':
                 retMem.push(...structProcessControl())
@@ -43,9 +44,9 @@ export default function memoryProcessor (
         return retMem
     }
 
-    /** From Code containing long/void declaration, return an array of memory objects.
+    /** From Code containing long/fixed/void declaration, return an array of memory objects.
      * Handle regular variables, arrays and pointers. This is control flow */
-    function longOrVoidProcessControl (definition: 'long'|'void') : MEMORY_SLOT[] {
+    function lfvProcessControl (definition: 'long'|'fixed'|'void') : MEMORY_SLOT[] {
         const retMemory : MEMORY_SLOT[] = []
         const keywordIndex = tokenCounter
         let valid = true
@@ -66,7 +67,7 @@ export default function memoryProcessor (
                     tokenCounter++
                     break
                 }
-                retMemory.push(...longOrVoidToMemoryObject(definition))
+                retMemory.push(...lfvToMemoryObject(definition))
                 valid = false
                 tokenCounter++
                 break
@@ -80,60 +81,60 @@ export default function memoryProcessor (
 
     /** Return an array of memory objects. Handle regular variables, arrays and pointers.
      * This is the actual processing code. */
-    function longOrVoidToMemoryObject (definition: 'long'|'void') : MEMORY_SLOT[] {
-        const LongTD = getTypeDefinitionTemplate('long')
-        const isLovPointer = isItPointer()
+    function lfvToMemoryObject (definition: 'long'|'fixed'|'void') : MEMORY_SLOT[] {
+        const definitionTD = getTypeDefinitionTemplate(definition)
+        const isPointer = isItPointer()
         const startingTokenCounter = tokenCounter
-        const lovDimensions = getArrayDimensions()
+        const dimensions = getArrayDimensions()
         // tokenCounter was advanced by structArrDimensions.length
         // prepare lovHeader
-        const LovHeader = deepCopy(LongTD.MemoryTemplate)
-        LovHeader.name = phraseCode[startingTokenCounter].value
-        LovHeader.asmName = AuxVars.currentPrefix + phraseCode[startingTokenCounter].value
-        LovHeader.scope = AuxVars.currentScopeName
+        const header = deepCopy(definitionTD.MemoryTemplate)
+        header.name = phraseCode[startingTokenCounter].value
+        header.asmName = AuxVars.currentPrefix + phraseCode[startingTokenCounter].value
+        header.scope = AuxVars.currentScopeName
         if (definition === 'void') {
-            if (isLovPointer === false) {
+            if (isPointer === false) {
                 throw new Error(`At line: ${phraseCode[startingTokenCounter].line}.` +
                 ' Can not declare variables as void.')
             }
-            LovHeader.declaration = 'void_ptr'
-        } else { // phraseCode[keywordIndex].value === 'long'
-            if (isLovPointer) {
-                LovHeader.declaration += '_ptr'
+            header.declaration = 'void_ptr'
+        } else { // phraseCode[keywordIndex].value === 'long' | 'fixed'
+            if (isPointer) {
+                header.declaration += '_ptr'
             }
         }
-        LovHeader.isDeclared = AuxVars.isFunctionArgument
+        header.isDeclared = AuxVars.isFunctionArgument
         // If is not an array, just send the header
-        if (lovDimensions.length === 0) {
-            return [LovHeader]
+        if (dimensions.length === 0) {
+            return [header]
         }
         // But if it IS an array, update header
-        LovHeader.type = 'array'
-        LovHeader.typeDefinition = structPrefix + LovHeader.asmName
-        LovHeader.ArrayItem = {
+        header.type = 'array'
+        header.typeDefinition = structPrefix + header.asmName
+        header.ArrayItem = {
             type: 'long',
-            declaration: LovHeader.declaration,
-            typeDefinition: structPrefix + LovHeader.asmName,
+            declaration: header.declaration,
+            typeDefinition: structPrefix + header.asmName,
             totalSize: 0
         }
-        if (isLovPointer === false) {
-            LovHeader.declaration += '_ptr'
+        if (isPointer === false) {
+            header.declaration += '_ptr'
         }
-        LovHeader.ArrayItem.totalSize = 1 + lovDimensions.reduce(function (total, num) {
+        header.ArrayItem.totalSize = 1 + dimensions.reduce(function (total, num) {
             return total * num
         }, 1)
         // Push items into memory
-        const retArrMem = [LovHeader]
-        for (let i = 1; i < LovHeader.ArrayItem.totalSize; i++) {
-            const Mem2 = deepCopy(LongTD.MemoryTemplate)
-            Mem2.name = `${LovHeader.name}_${i - 1}`
-            Mem2.asmName = `${LovHeader.asmName}_${i - 1}`
+        const retArrMem = [header]
+        for (let i = 1; i < header.ArrayItem.totalSize; i++) {
+            const Mem2 = deepCopy(definitionTD.MemoryTemplate)
+            Mem2.name = `${header.name}_${i - 1}`
+            Mem2.asmName = `${header.asmName}_${i - 1}`
             Mem2.scope = AuxVars.currentScopeName
-            Mem2.declaration = LovHeader.ArrayItem.declaration
+            Mem2.declaration = header.ArrayItem.declaration
             retArrMem.push(Mem2)
         }
         // create array type definition
-        programTD.push(createArrayTypeDefinition(LovHeader, lovDimensions))
+        programTD.push(createArrayTypeDefinition(header, dimensions))
         return retArrMem
     }
 

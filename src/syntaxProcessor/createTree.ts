@@ -190,6 +190,7 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
         }
         return { type: 'endASN', Token: tokens[0] }
     case 'long':
+    case 'fixed':
     case 'void':
     case 'struct':
         if (tokens.length === 1) {

@@ -291,6 +291,7 @@ export default function unaryAsnProcessor (
     function unaryKeywordProcessor () : GENCODE_SOLVED_OBJECT {
         switch (CurrentNode.Operation.value) {
         case 'long':
+        case 'fixed':
         case 'void':
             AuxVars.isDeclaration = CurrentNode.Operation.value
             return traverseNotLogical()

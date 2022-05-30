@@ -12,7 +12,7 @@ export type TOKEN_TYPES = 'Variable' | 'Constant' | 'Operator' | 'UnaryOperator'
 'Arr'|'CodeCave'|'CodeDomain'|'Delimiter'|'Terminator'|'Macro'|'Member'|'Colon'|
 'Keyword'|'Function' | 'APICall' | 'BuiltInCall' | 'Push'
 
-export type DECLARATION_TYPES = 'void' | 'long' | 'struct' | 'void_ptr' | 'long_ptr' | 'struct_ptr' | ''
+export type DECLARATION_TYPES = 'void' | 'long' | 'fixed' | 'struct' | 'void_ptr' | 'long_ptr' | 'struct_ptr' | ''
 
 export type TOKEN = {
     line: number
@@ -27,7 +27,7 @@ export type TOKEN = {
     extValue?: string
 }
 
-export type MEMORY_BASE_TYPES = 'register' | 'long' | 'constant' | 'struct' | 'structRef' | 'array' | 'label' | 'void'
+export type MEMORY_BASE_TYPES = 'register' | 'long' | 'fixed' | 'constant' | 'struct' | 'structRef' | 'array' | 'label' | 'void'
 
 /** If constant, it is the number to shift. If variable, it is the address containing the value to shift.
  * Stores information about variable it is pointing to.
@@ -256,4 +256,9 @@ export type LONG_TYPE_DEFINITION = {
     name: '',
     MemoryTemplate: MEMORY_SLOT
 }
-export type TYPE_DEFINITIONS = STRUCT_TYPE_DEFINITION | ARRAY_TYPE_DEFINITION | REGISTER_TYPE_DEFINITION | LONG_TYPE_DEFINITION
+export type FIXED_TYPE_DEFINITION = {
+    type: 'fixed'
+    name: '',
+    MemoryTemplate: MEMORY_SLOT
+}
+export type TYPE_DEFINITIONS = STRUCT_TYPE_DEFINITION | ARRAY_TYPE_DEFINITION | REGISTER_TYPE_DEFINITION | LONG_TYPE_DEFINITION | FIXED_TYPE_DEFINITION
