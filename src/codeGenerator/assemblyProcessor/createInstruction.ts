@@ -252,6 +252,18 @@ export function createInstruction (
 
 /** Create instruction for SetUnaryOperator `++`, `--`. Create instruction for Unary operator `~` and `+`. */
 function unaryOperatorToAsm (OperatorToken: TOKEN, Variable: MEMORY_SLOT): string {
+    if (Variable.type === 'fixed') {
+        switch (OperatorToken.value) {
+        case '++':
+            return `ADD @${Variable.asmName} $f100000000\n`
+        case '--':
+            return `SUB @${Variable.asmName} $f100000000\n`
+        case '~':
+            return `NOT @${Variable.asmName}\n`
+        default:
+            throw new Error(`Internal error at line: ${OperatorToken.line}.`)
+        }
+    }
     switch (OperatorToken.value) {
     case '++':
         return `INC @${Variable.asmName}\n`

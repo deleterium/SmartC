@@ -295,6 +295,10 @@ export default function lookupAsnProcessor (
         if (Previous.SolvedMem.ArrayItem === undefined) {
             throw new Error('Internal error.')
         }
+        if (utils.getDeclarationFromMemory(Param) === 'fixed') {
+            throw new Error(`At line ${CurrentNode.Token.line}. ` +
+            'Array index cannot be fixed type.')
+        }
         switch (paramType) {
         case 'constant':
             Previous.SolvedMem.Offset = {

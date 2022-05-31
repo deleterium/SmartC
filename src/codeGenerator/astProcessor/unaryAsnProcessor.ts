@@ -138,7 +138,7 @@ export default function unaryAsnProcessor (
         CGenObj.SolvedMem.Offset = {
             type: 'constant',
             value: 0,
-            declaration: 'long'
+            declaration: declar.slice(0, -4) as DECLARATION_TYPES
         }
         if (ScopeInfo.logicalOp === true) {
             CGenObj.asmCode += createInstruction(
@@ -276,8 +276,9 @@ export default function unaryAsnProcessor (
             TmpMemObj.declaration = 'struct_ptr'
             break
         case 'long':
+        case 'fixed':
             TmpMemObj = utils.createConstantMemObj(RetMem.address)
-            TmpMemObj.declaration = 'long'
+            TmpMemObj.declaration = RetMem.type
             break
         default:
             throw new Error(`Internal error at line ${CurrentNode.Operation.line}.`)

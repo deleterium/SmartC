@@ -93,11 +93,13 @@ export default function binaryAsnProcessor (
             RGenObj = LGenObj
             LGenObj = Temp
         }
+        const leftDeclaration = utils.getDeclarationFromMemory(LGenObj.SolvedMem)
+        const rightDeclaration = utils.getDeclarationFromMemory(RGenObj.SolvedMem)
         // Prepare return object
         let TmpMemObj: MEMORY_SLOT
         if (LGenObj.SolvedMem.type !== 'register') {
             TmpMemObj = AuxVars.getNewRegister()
-            TmpMemObj.declaration = utils.getDeclarationFromMemory(LGenObj.SolvedMem)
+            TmpMemObj.declaration = leftDeclaration
             assemblyCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, LGenObj.SolvedMem)
             AuxVars.freeRegister(LGenObj.SolvedMem.address)
         } else {
@@ -105,15 +107,15 @@ export default function binaryAsnProcessor (
         }
         // fixed verification
         if (TmpMemObj.declaration !== 'fixed' &&
-                utils.getDeclarationFromMemory(RGenObj.SolvedMem) === 'fixed') {
+                rightDeclaration === 'fixed') {
             assemblyCode += createSimpleInstruction('LongToFixed', TmpMemObj.asmName)
             TmpMemObj.declaration = 'fixed'
         }
         // Pointer verifications 1
-        if (utils.getDeclarationFromMemory(RGenObj.SolvedMem).includes('_ptr') &&
+        if (rightDeclaration.includes('_ptr') &&
             !TmpMemObj.declaration.includes('_ptr')) {
             // Operation with pointers
-            TmpMemObj.declaration += '_ptr'
+            TmpMemObj.declaration = rightDeclaration
         }
         // Pointer verifications 2
         if (TmpMemObj.declaration.includes('_ptr')) {
@@ -298,9 +300,15 @@ export default function binaryAsnProcessor (
     function assignmentDeclarationTests (
         Left: MEMORY_SLOT, Right: MEMORY_SLOT, operVal: string, line: number
     ) : void {
-        if (utils.isNotValidDeclarationOp(utils.getDeclarationFromMemory(Left), Right)) {
+        if (!utils.isNotValidDeclarationOp(utils.getDeclarationFromMemory(Left), Right)) {
+            return
+        }
             const lDecl = utils.getDeclarationFromMemory(Left)
             const rDecl = utils.getDeclarationFromMemory(Right)
+        // Allow >>= and <<= with fixed / long types
+        if ((lDecl === 'fixed' && rDecl === 'long') && (operVal === '>>=' || operVal === '<<=')) {
+            return
+        }
             // Allow SetOperator and pointer operation
             if (!(lDecl === rDecl + '_ptr' && (operVal === '+=' || operVal === '-='))) {
                 if (Program.Config.warningToError) {
@@ -310,7 +318,6 @@ export default function binaryAsnProcessor (
                 }
                 // Override declaration protection rules
                 Left.declaration = Right.declaration
-            }
         }
     }
 
