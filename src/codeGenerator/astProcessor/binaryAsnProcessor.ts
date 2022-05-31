@@ -103,6 +103,12 @@ export default function binaryAsnProcessor (
         } else {
             TmpMemObj = LGenObj.SolvedMem
         }
+        // fixed verification
+        if (TmpMemObj.declaration !== 'fixed' &&
+                utils.getDeclarationFromMemory(RGenObj.SolvedMem) === 'fixed') {
+            assemblyCode += createSimpleInstruction('LongToFixed', TmpMemObj.asmName)
+            TmpMemObj.declaration = 'fixed'
+        }
         // Pointer verifications 1
         if (utils.getDeclarationFromMemory(RGenObj.SolvedMem).includes('_ptr') &&
             !TmpMemObj.declaration.includes('_ptr')) {
@@ -235,7 +241,7 @@ export default function binaryAsnProcessor (
     function assignmentRightSideSolver (Left: MEMORY_SLOT) : GENCODE_SOLVED_OBJECT {
         if (CurrentNode.Operation.type !== 'Assignment' ||
             Program.Config.reuseAssignedVar === false ||
-            Left.type !== 'long' ||
+            (Left.type !== 'long' && Left.type !== 'fixed') ||
             Left.Offset !== undefined ||
             !utils.findVarNameInAst(Left.name, CurrentNode.Right)) {
             // Can not reuse assigned var.
@@ -250,7 +256,7 @@ export default function binaryAsnProcessor (
         const registerInitialState = deepCopy(AuxVars.registerInfo)
         const NewRegister: MEMORY_SLOT = deepCopy(Left)
         NewRegister.type = 'register'
-        NewRegister.declaration = 'long'
+        NewRegister.declaration = Left.declaration
         AuxVars.registerInfo.unshift({
             inUse: false,
             Template: NewRegister
@@ -484,6 +490,9 @@ export default function binaryAsnProcessor (
             break
         default:
             return false
+        }
+        if (Left.declaration === 'fixed' && Right.declaration !== 'fixed') {
+            return true
         }
         // Try optimization if left side is constant (only commutativa operations!)
         if (checkOperatorOptimization(operatorVal, Left)) {

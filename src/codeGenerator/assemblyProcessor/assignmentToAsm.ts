@@ -16,6 +16,7 @@ export default function assignmentToAsm (
         switch (Left.type) {
         case 'register':
         case 'long':
+        case 'fixed':
         case 'structRef':
             return leftRegularToAsm()
         case 'array':
@@ -37,6 +38,7 @@ export default function assignmentToAsm (
                 return leftRegularOffsetUndefinedAndRightConstantToAsm()
             case 'register':
             case 'long':
+            case 'fixed':
             case 'structRef':
                 return leftRegularOffsetUndefinedAndRightRegularToAsm()
             case 'array':

@@ -6,7 +6,7 @@ import {
 } from '../typings/syntaxTypes'
 import { assertNotUndefined, deepCopy } from '../repository/repository'
 import {
-    APITableTemplate, getMemoryTemplate, getTypeDefinitionTemplate, BuiltInTemplate
+    APITableTemplate, getMemoryTemplate, getTypeDefinitionTemplate, BuiltInTemplate, fixedBaseTemplate
 } from './templates'
 import sentencesProcessor from './sentencesProcessor'
 import memoryProcessor from './memoryProcessor'
@@ -39,6 +39,9 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         ]
         Program.memory.push(...addRegistersInMemory(Program.Config.maxAuxVars))
         Program.memory.push(...addConstantsInMemory(Program.Config.maxConstVars))
+        if (fixedDetected()) {
+            Program.memory.push(fixedBaseTemplate)
+        }
         processGlobalCode()
         Program.functions.forEach(processFunctionCodeAndArguments)
         if (Program.Config.APIFunctions) {
@@ -322,6 +325,13 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             retObj.push(MemTemplate)
         }
         return retObj
+    }
+
+    /** Detects if fixed point calculations will be needed */
+    function fixedDetected () : boolean {
+        return !!tokenAST.find((Tkn) => (
+            (Tkn.type === 'Keyword' && Tkn.value === 'fixed') ||
+            (Tkn.type === 'Constant' && Tkn.extValue === 'fixed')))
     }
 
     /** Process global code, transforming them into global sentences properties  */

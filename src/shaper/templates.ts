@@ -143,6 +143,18 @@ export function getMemoryTemplate (memType: MEMORY_BASE_TYPES) : MEMORY_SLOT {
     }
 }
 
+export const fixedBaseTemplate : MEMORY_SLOT = {
+    address: -1,
+    asmName: 'f100000000',
+    declaration: 'fixed',
+    isDeclared: false,
+    name: 'f100000000',
+    hexContent: '0000000005f5e100',
+    scope: '',
+    size: 1,
+    type: 'fixed'
+}
+
 export const APITableTemplate: SC_FUNCTION[] = [
     {
         argsMemObj: [],

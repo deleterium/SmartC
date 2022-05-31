@@ -13,10 +13,118 @@ export default function operatorToAsm (
 ) : string {
     const FlatLeft = flattenMemory(AuxVars, LeftMem, OperatorToken.line)
     const FlatRight = flattenMemory(AuxVars, RightMem, OperatorToken.line)
+    let assemblyCode = ''
 
-    function operatorToAsmMain () {
+    function operatorToAsmMain () : string {
         assertExpression(LeftMem.type !== 'constant')
-        let assemblyCode = ''
+
+        switch (FlatLeft.FlatMem.declaration) {
+        case 'fixed':
+            return leftFixedToAsm()
+        default:
+            if (FlatRight.FlatMem.declaration === 'fixed') {
+                throw new Error('Internal error')
+            }
+            return leftRegularRightRegularToAsm()
+        }
+    }
+
+    function leftFixedToAsm () : string {
+        switch (FlatRight.FlatMem.declaration) {
+        case 'fixed':
+            return leftFixedRightFixedToAsm()
+        default:
+            return leftFixedRightRegularToAsm()
+        }
+    }
+
+    function leftFixedRightFixedToAsm () : string {
+        switch (OperatorToken.value) {
+        case '%':
+        case '%=':
+        case '&':
+        case '&=':
+        case '|':
+        case '|=':
+        case '^':
+        case '^=':
+            throw new Error(`At line ${OperatorToken.line}. ` +
+            `Cannot use operator ${OperatorToken.value} with 'fixed' types.`)
+        case '<<':
+        case '<<=':
+        case '>>':
+        case '>>=':
+            throw new Error(`At line ${OperatorToken.line}. ` +
+                `Cannot use operator ${OperatorToken.value} with 'fixed' type on right side.`)
+        case '*':
+        case '*=':
+            assemblyCode = `MDV @${FlatLeft.FlatMem.asmName} $${FlatRight.FlatMem.asmName} $f100000000\n`
+            break
+        case '/':
+        case '/=':
+            assemblyCode = `MDV @${FlatLeft.FlatMem.asmName} $f100000000 $${FlatRight.FlatMem.asmName}\n`
+            break
+        default: // + -
+            assemblyCode = chooseOperator(OperatorToken.value) +
+                ` @${FlatLeft.FlatMem.asmName} $${FlatRight.FlatMem.asmName}\n`
+        }
+        freeRegisters()
+        return FlatLeft.asmCode + FlatRight.asmCode + assemblyCode
+    }
+
+    function leftFixedRightRegularToAsm () : string {
+        switch (OperatorToken.value) {
+        case '%':
+        case '%=':
+        case '&':
+        case '&=':
+        case '|':
+        case '|=':
+        case '^':
+        case '^=':
+            throw new Error(`At line ${OperatorToken.line}. ` +
+                `Cannot use operator ${OperatorToken.value} with 'fixed' types.`)
+        case '+':
+        case '+=':
+        case '-':
+        case '-=':
+            if (FlatRight.isNew === true) {
+                assemblyCode = `MUL @${FlatRight.FlatMem.asmName} $f100000000\n`
+                assemblyCode += chooseOperator(OperatorToken.value) +
+                        ` @${FlatLeft.FlatMem.asmName} $${FlatRight.FlatMem.asmName}\n`
+            } else {
+                const RetObj = AuxVars.getNewRegister()
+                assemblyCode = `SET @${RetObj.asmName} $${FlatRight.FlatMem.asmName}\n`
+                assemblyCode += `MUL @${RetObj.asmName} $f100000000\n`
+                assemblyCode += chooseOperator(OperatorToken.value) +
+                        ` @${FlatLeft.FlatMem.asmName} $${RetObj.asmName}\n`
+                AuxVars.freeRegister(RetObj.address)
+            }
+            break
+        default: // << >>
+            assemblyCode = chooseOperator(OperatorToken.value) +
+                ` @${FlatLeft.FlatMem.asmName} $${FlatRight.FlatMem.asmName}\n`
+        }
+        freeRegisters()
+        return FlatLeft.asmCode + FlatRight.asmCode + assemblyCode
+    }
+
+    function leftRegularRightRegularToAsm () : string {
+        const optimized = tryOptimization()
+        if (optimized !== undefined) {
+            return optimized
+        }
+        assemblyCode = chooseOperator(OperatorToken.value) +
+            ` @${FlatLeft.FlatMem.asmName} $${FlatRight.FlatMem.asmName}\n`
+        AuxVars.freeRegister(FlatRight.FlatMem.address)
+        if (FlatLeft.isNew === true) {
+            assemblyCode += createInstruction(AuxVars, utils.genAssignmentToken(OperatorToken.line), LeftMem, FlatLeft.FlatMem)
+            AuxVars.freeRegister(FlatLeft.FlatMem.address)
+        }
+        return FlatLeft.asmCode + FlatRight.asmCode + assemblyCode
+    }
+
+    function tryOptimization () : string | undefined {
         if (RightMem.type === 'constant') {
             const optimizationResult = testOptimizations()
             if (optimizationResult === undefined) {
@@ -29,17 +137,7 @@ export default function operatorToAsm (
                 return FlatLeft.asmCode + optimizationResult
             }
         }
-        // No optimization was possible, do regular operations
-        assemblyCode = chooseOperator(OperatorToken.value) +
-            ` @${FlatLeft.FlatMem.asmName} $${FlatRight.FlatMem.asmName}\n`
-        AuxVars.freeRegister(FlatRight.FlatMem.address)
-        if (FlatLeft.isNew === true) {
-            assemblyCode += createInstruction(AuxVars, utils.genAssignmentToken(OperatorToken.line), LeftMem, FlatLeft.FlatMem)
-            AuxVars.freeRegister(FlatLeft.FlatMem.address)
-        }
-        return FlatLeft.asmCode + FlatRight.asmCode + assemblyCode
     }
-
     /** Check and do optimization on a constant right side.
      * Returns undefined if optimization is do nothing
      * Returns empty string if no optimization was found
@@ -112,6 +210,14 @@ export default function operatorToAsm (
             return
         }
         return ''
+    }
+
+    function freeRegisters () : void {
+        AuxVars.freeRegister(FlatRight.FlatMem.address)
+        if (FlatLeft.isNew === true) {
+            assemblyCode += createInstruction(AuxVars, utils.genAssignmentToken(OperatorToken.line), LeftMem, FlatLeft.FlatMem)
+            AuxVars.freeRegister(FlatLeft.FlatMem.address)
+        }
     }
 
     return operatorToAsmMain()

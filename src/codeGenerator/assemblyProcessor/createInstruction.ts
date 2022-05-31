@@ -59,6 +59,8 @@ export function createSimpleInstruction (instruction: string, param1: string = '
         return `${param1}:\n`
     case 'Function':
         return `JSR :__fn_${param1}\n`
+    case 'LongToFixed':
+        return `MUL @${param1} $f100000000\n`
     default:
         throw new Error(`Unknow simple instruction: ${instruction}`)
     }
@@ -180,8 +182,12 @@ export function flattenMemory (
         }
         hexString = hexString.padStart(16, '0')
         assertExpression(hexString.length <= 16)
+        let prefix = 'n'
+        if (paramDec === 'fixed') {
+            prefix = 'f'
+        }
         const OptMem = AuxVars.memory.find(MEM => {
-            return MEM.asmName === 'n' + Number('0x' + hexString) && MEM.hexContent === hexString
+            return MEM.asmName === prefix + Number('0x' + hexString) && MEM.hexContent === hexString
         })
         if (OptMem) {
             return { FlatMem: OptMem, asmCode: '', isNew: false }
