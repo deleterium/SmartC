@@ -1,5 +1,5 @@
 import { assertExpression, assertNotUndefined } from '../../repository/repository'
-import { DECLARATION_TYPES, MEMORY_SLOT, TOKEN } from '../../typings/syntaxTypes'
+import { MEMORY_SLOT, TOKEN } from '../../typings/syntaxTypes'
 import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_AUXVARS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 
 import utils from '../utils'
@@ -89,43 +89,6 @@ export function toRegister (
         SolvedMem: retObj.FlatMem,
         asmCode: InSolved.asmCode + retObj.asmCode
     }
-}
-
-export function typeCasting (
-    AuxVars: GENCODE_AUXVARS, InSolved: GENCODE_SOLVED_OBJECT, toType: DECLARATION_TYPES, line: number
-) : GENCODE_SOLVED_OBJECT {
-    const fromType = utils.getDeclarationFromMemory(InSolved.SolvedMem)
-    if (fromType === toType) {
-        return InSolved
-    }
-    if (fromType === 'fixed' || toType === 'fixed') {
-        // fixed type casting required
-        const retObj = flattenMemory(AuxVars, InSolved.SolvedMem, line)
-        if (retObj.FlatMem.type === 'register') {
-            if (fromType === 'fixed') {
-                retObj.asmCode += createSimpleInstruction('FixedToLong', retObj.FlatMem.asmName)
-            } else {
-                retObj.asmCode += createSimpleInstruction('LongToFixed', retObj.FlatMem.asmName)
-            }
-        } else {
-            const TmpMemObj = AuxVars.getNewRegister(line)
-            retObj.asmCode += `SET @${TmpMemObj.asmName} $${retObj.FlatMem.asmName}\n`
-            if (fromType === 'fixed') {
-                retObj.asmCode += createSimpleInstruction('FixedToLong', TmpMemObj.asmName)
-            } else {
-                retObj.asmCode += createSimpleInstruction('LongToFixed', TmpMemObj.asmName)
-            }
-            AuxVars.freeRegister(retObj.FlatMem.address)
-            retObj.FlatMem = TmpMemObj
-        }
-        utils.setMemoryDeclaration(retObj.FlatMem, toType)
-        return {
-            SolvedMem: retObj.FlatMem,
-            asmCode: InSolved.asmCode + retObj.asmCode
-        }
-    }
-    utils.setMemoryDeclaration(InSolved.SolvedMem, toType)
-    return InSolved
 }
 
 /** Create assembly code for one api function call */

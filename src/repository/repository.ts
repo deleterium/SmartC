@@ -2,6 +2,8 @@
 // Using them with regular error messages will lead to condition not beeing checked
 // in coverage report.
 
+import { DECLARATION_TYPES } from '../typings/syntaxTypes'
+
 /**
  * Ensure the value is not undefined
  * @param argument Anything
@@ -185,4 +187,19 @@ export function ReedSalomonAddressDecode (RSString: string, currLine: number) : 
     }
 
     return run()
+}
+
+export function isDeclarationType (str: string) : str is DECLARATION_TYPES {
+    switch (str) {
+    case 'void':
+    case 'long':
+    case 'fixed':
+    case 'struct':
+    case 'void_ptr':
+    case 'long_ptr':
+    case 'fixed_ptr':
+    case 'struct_ptr':
+        return true
+    }
+    return false
 }

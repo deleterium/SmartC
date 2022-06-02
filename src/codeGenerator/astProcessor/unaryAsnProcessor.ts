@@ -2,6 +2,7 @@ import { deepCopy } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
 import { MEMORY_SLOT, DECLARATION_TYPES, UNARY_ASN } from '../../typings/syntaxTypes'
 import { createSimpleInstruction, createInstruction } from '../assemblyProcessor/createInstruction'
+import { typeCasting } from '../assemblyProcessor/typeCastingToAsm'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
 import genCode from './genCode'
@@ -18,6 +19,8 @@ export default function unaryAsnProcessor (
             return UnaryOperatorProcessor()
         case 'Keyword':
             return unaryKeywordProcessor()
+        case 'CodeCave':
+            return CodeCaveProcessor()
         default:
             throw new Error(`Internal error at line: ${CurrentNode.Operation.line}.`)
         }
@@ -376,6 +379,18 @@ export default function unaryAsnProcessor (
             size = CGenObj.SolvedMem.ArrayItem.totalSize
         }
         return { SolvedMem: utils.createConstantMemObj(size), asmCode: CGenObj.asmCode }
+    }
+
+    function CodeCaveProcessor () : GENCODE_SOLVED_OBJECT {
+        if (CurrentNode.Operation.declaration === '' || CurrentNode.Operation.declaration === undefined) {
+            throw new Error('Internal error.')
+        }
+        const CGenObj = traverseNotLogical()
+        const cDecl = utils.getDeclarationFromMemory(CGenObj.SolvedMem)
+        if (cDecl === CurrentNode.Operation.declaration) {
+            return CGenObj
+        }
+        return typeCasting(AuxVars, CGenObj, CurrentNode.Operation.declaration, CurrentNode.Operation.line)
     }
 
     return unaryAsnProcessorMain()
