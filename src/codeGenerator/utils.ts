@@ -69,6 +69,9 @@ export default {
     genMulToken (line: number = -1): TOKEN {
         return { type: 'Operator', precedence: 3, value: '*', line: line }
     },
+    genDivToken (line: number = -1): TOKEN {
+        return { type: 'Operator', precedence: 3, value: '/', line: line }
+    },
     genAddToken (line: number = -1): TOKEN {
         return { type: 'Operator', precedence: 4, value: '+', line: line }
     },
@@ -166,11 +169,11 @@ export default {
             return false
         }
         if (desiredDeclaration === 'void_ptr' &&
-            (memoDeclaration === 'long_ptr' || memoDeclaration === 'struct_ptr')) {
+            memoDeclaration.includes('_ptr')) {
             return false
         }
         if (memoDeclaration === 'void_ptr' &&
-            (desiredDeclaration === 'long_ptr' || desiredDeclaration === 'struct_ptr')) {
+            desiredDeclaration.includes('_ptr')) {
             return false
         }
         if (desiredDeclaration.includes('_ptr') && MemoObj.type === 'constant') {

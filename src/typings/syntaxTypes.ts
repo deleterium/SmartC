@@ -12,7 +12,7 @@ export type TOKEN_TYPES = 'Variable' | 'Constant' | 'Operator' | 'UnaryOperator'
 'Arr'|'CodeCave'|'CodeDomain'|'Delimiter'|'Terminator'|'Macro'|'Member'|'Colon'|
 'Keyword'|'Function' | 'APICall' | 'BuiltInCall' | 'Push'
 
-export type DECLARATION_TYPES = 'void' | 'long' | 'fixed' | 'struct' | 'void_ptr' | 'long_ptr' | 'struct_ptr' | ''
+export type DECLARATION_TYPES = 'void' | 'long' | 'fixed' | 'struct' | 'void_ptr' | 'long_ptr' | 'fixed_ptr' | 'struct_ptr' | ''
 
 export type TOKEN = {
     line: number

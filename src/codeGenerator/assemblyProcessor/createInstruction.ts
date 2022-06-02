@@ -1,6 +1,6 @@
 import { assertExpression, assertNotUndefined } from '../../repository/repository'
-import { MEMORY_SLOT, TOKEN } from '../../typings/syntaxTypes'
-import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_AUXVARS } from '../codeGeneratorTypes'
+import { DECLARATION_TYPES, MEMORY_SLOT, TOKEN } from '../../typings/syntaxTypes'
+import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_AUXVARS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 
 import utils from '../utils'
 import assignmentToAsm from './assignmentToAsm'
@@ -61,9 +61,71 @@ export function createSimpleInstruction (instruction: string, param1: string = '
         return `JSR :__fn_${param1}\n`
     case 'LongToFixed':
         return `MUL @${param1} $f100000000\n`
+    case 'FixedToLong':
+        return `DIV @${param1} $f100000000\n`
     default:
         throw new Error(`Unknow simple instruction: ${instruction}`)
     }
+}
+
+export function toRegister (
+    AuxVars: GENCODE_AUXVARS, InSolved: GENCODE_SOLVED_OBJECT, line: number
+) : GENCODE_SOLVED_OBJECT {
+    const retObj = flattenMemory(AuxVars, InSolved.SolvedMem, line)
+
+    if (retObj.FlatMem.type !== 'register') {
+        const inType = utils.getDeclarationFromMemory(InSolved.SolvedMem)
+        const TmpMemObj = AuxVars.getNewRegister(line)
+        retObj.asmCode += `SET @${TmpMemObj.asmName} $${retObj.FlatMem.asmName}\n`
+        utils.setMemoryDeclaration(TmpMemObj, inType)
+        AuxVars.freeRegister(retObj.FlatMem.address)
+        AuxVars.freeRegister(InSolved.SolvedMem.address)
+        retObj.FlatMem = TmpMemObj
+    }
+    if (retObj.isNew === true) {
+        AuxVars.freeRegister(InSolved.SolvedMem.address)
+    }
+    return {
+        SolvedMem: retObj.FlatMem,
+        asmCode: InSolved.asmCode + retObj.asmCode
+    }
+}
+
+export function typeCasting (
+    AuxVars: GENCODE_AUXVARS, InSolved: GENCODE_SOLVED_OBJECT, toType: DECLARATION_TYPES, line: number
+) : GENCODE_SOLVED_OBJECT {
+    const fromType = utils.getDeclarationFromMemory(InSolved.SolvedMem)
+    if (fromType === toType) {
+        return InSolved
+    }
+    if (fromType === 'fixed' || toType === 'fixed') {
+        // fixed type casting required
+        const retObj = flattenMemory(AuxVars, InSolved.SolvedMem, line)
+        if (retObj.FlatMem.type === 'register') {
+            if (fromType === 'fixed') {
+                retObj.asmCode += createSimpleInstruction('FixedToLong', retObj.FlatMem.asmName)
+            } else {
+                retObj.asmCode += createSimpleInstruction('LongToFixed', retObj.FlatMem.asmName)
+            }
+        } else {
+            const TmpMemObj = AuxVars.getNewRegister(line)
+            retObj.asmCode += `SET @${TmpMemObj.asmName} $${retObj.FlatMem.asmName}\n`
+            if (fromType === 'fixed') {
+                retObj.asmCode += createSimpleInstruction('FixedToLong', TmpMemObj.asmName)
+            } else {
+                retObj.asmCode += createSimpleInstruction('LongToFixed', TmpMemObj.asmName)
+            }
+            AuxVars.freeRegister(retObj.FlatMem.address)
+            retObj.FlatMem = TmpMemObj
+        }
+        utils.setMemoryDeclaration(retObj.FlatMem, toType)
+        return {
+            SolvedMem: retObj.FlatMem,
+            asmCode: InSolved.asmCode + retObj.asmCode
+        }
+    }
+    utils.setMemoryDeclaration(InSolved.SolvedMem, toType)
+    return InSolved
 }
 
 /** Create assembly code for one api function call */
@@ -252,7 +314,7 @@ export function createInstruction (
 
 /** Create instruction for SetUnaryOperator `++`, `--`. Create instruction for Unary operator `~` and `+`. */
 function unaryOperatorToAsm (OperatorToken: TOKEN, Variable: MEMORY_SLOT): string {
-    if (Variable.type === 'fixed') {
+    if (Variable.declaration === 'fixed') {
         switch (OperatorToken.value) {
         case '++':
             return `ADD @${Variable.asmName} $f100000000\n`

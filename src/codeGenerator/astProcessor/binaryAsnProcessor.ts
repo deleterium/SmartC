@@ -1,7 +1,7 @@
 import { deepCopy } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
 import { MEMORY_SLOT, DECLARATION_TYPES, BINARY_ASN } from '../../typings/syntaxTypes'
-import { createSimpleInstruction, createInstruction, setConstAsmCode } from '../assemblyProcessor/createInstruction'
+import { createSimpleInstruction, createInstruction, setConstAsmCode, typeCasting, toRegister } from '../assemblyProcessor/createInstruction'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
 import genCode from './genCode'
@@ -65,7 +65,6 @@ export default function binaryAsnProcessor (
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        assemblyCode += LGenObj.asmCode
         let RGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Right,
             logicalOp: false,
@@ -73,7 +72,7 @@ export default function binaryAsnProcessor (
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        assemblyCode += RGenObj.asmCode
+        LGenObj.asmCode += RGenObj.asmCode
         // Error handling
         if (LGenObj.SolvedMem.type === 'void' || RGenObj.SolvedMem.type === 'void') {
             throw new Error(`At line: ${CurrentNode.Operation.line}. Can not make operations with void values.`)
@@ -85,65 +84,57 @@ export default function binaryAsnProcessor (
             CurrentNode.Operation.value
         )
         if (PossibleRetObj) {
-            return { SolvedMem: PossibleRetObj, asmCode: assemblyCode }
+            return { SolvedMem: PossibleRetObj, asmCode: LGenObj.asmCode }
         }
         // Optimizations 2
         if (OperatorOptBySwap(LGenObj.SolvedMem, RGenObj.SolvedMem, CurrentNode.Operation.value)) {
             const Temp = RGenObj
             RGenObj = LGenObj
             LGenObj = Temp
+            LGenObj.asmCode = RGenObj.asmCode
         }
         const leftDeclaration = utils.getDeclarationFromMemory(LGenObj.SolvedMem)
         const rightDeclaration = utils.getDeclarationFromMemory(RGenObj.SolvedMem)
         // Prepare return object
-        let TmpMemObj: MEMORY_SLOT
-        if (LGenObj.SolvedMem.type !== 'register') {
-            TmpMemObj = AuxVars.getNewRegister()
-            TmpMemObj.declaration = leftDeclaration
-            assemblyCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, LGenObj.SolvedMem)
-            AuxVars.freeRegister(LGenObj.SolvedMem.address)
-        } else {
-            TmpMemObj = LGenObj.SolvedMem
-        }
+        LGenObj = toRegister(AuxVars, LGenObj, CurrentNode.Operation.line)
         // fixed verification
-        if (TmpMemObj.declaration !== 'fixed' &&
+        if (leftDeclaration === 'long' &&
                 rightDeclaration === 'fixed') {
-            assemblyCode += createSimpleInstruction('LongToFixed', TmpMemObj.asmName)
-            TmpMemObj.declaration = 'fixed'
+            LGenObj = typeCasting(AuxVars, LGenObj, 'fixed', CurrentNode.Operation.line)
         }
         // Pointer verifications 1
         if (rightDeclaration.includes('_ptr') &&
-            !TmpMemObj.declaration.includes('_ptr')) {
+            !LGenObj.SolvedMem.declaration.includes('_ptr')) {
             // Operation with pointers
-            TmpMemObj.declaration = rightDeclaration
+            LGenObj.SolvedMem.declaration = rightDeclaration
         }
         // Pointer verifications 2
-        if (TmpMemObj.declaration.includes('_ptr')) {
+        if (LGenObj.SolvedMem.declaration.includes('_ptr')) {
             if (CurrentNode.Operation.value !== '+' && CurrentNode.Operation.value !== '-') {
                 throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
                 "Operation not allowed on pointers. Only '+', '-', '++' and '--' are.")
             }
         }
         // Create instruction
-        assemblyCode += createInstruction(AuxVars, CurrentNode.Operation, TmpMemObj, RGenObj.SolvedMem)
+        LGenObj.asmCode += createInstruction(AuxVars, CurrentNode.Operation, LGenObj.SolvedMem, RGenObj.SolvedMem)
         // Handle logical operation
         if (ScopeInfo.logicalOp === true) {
-            assemblyCode += createInstruction(
+            LGenObj.asmCode += createInstruction(
                 AuxVars,
                 utils.genNotEqualToken(),
-                TmpMemObj,
+                LGenObj.SolvedMem,
                 utils.createConstantMemObj(0),
                 ScopeInfo.revLogic,
                 ScopeInfo.jumpFalse,
                 ScopeInfo.jumpTrue
             )
             AuxVars.freeRegister(RGenObj.SolvedMem.address)
-            AuxVars.freeRegister(TmpMemObj.address)
-            return { SolvedMem: utils.createVoidMemObj(), asmCode: assemblyCode }
+            AuxVars.freeRegister(LGenObj.SolvedMem.address)
+            return { SolvedMem: utils.createVoidMemObj(), asmCode: LGenObj.asmCode }
         }
         // Return arithmetic result
         AuxVars.freeRegister(RGenObj.SolvedMem.address)
-        return { SolvedMem: TmpMemObj, asmCode: assemblyCode }
+        return LGenObj
     }
 
     function assignmentProc () : GENCODE_SOLVED_OBJECT {
@@ -157,7 +148,6 @@ export default function binaryAsnProcessor (
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        assemblyCode += LGenObj.asmCode
         AuxVars.isLeftSideOfAssignment = false
         assignmentLeftSideErrorTests(LGenObj.SolvedMem)
         // Clear isDeclaration before right side evaluation.
@@ -174,14 +164,19 @@ export default function binaryAsnProcessor (
             )
         }
         // Get right side gencode object
-        const RGenObj = assignmentRightSideSolver(LGenObj.SolvedMem)
-        assemblyCode += RGenObj.asmCode
+        let RGenObj = assignmentRightSideSolver(LGenObj.SolvedMem)
         // Restore isDeclaration value
         AuxVars.isDeclaration = savedDeclaration
         // Error check for Right side
         if (RGenObj.SolvedMem.type === 'void') {
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
             `Invalid right value for '${CurrentNode.Operation.type}'. Possible void value.`)
+        }
+        // Implicit type casting on assignment
+        const lDecl = utils.getDeclarationFromMemory(LGenObj.SolvedMem)
+        const rDecl = utils.getDeclarationFromMemory(RGenObj.SolvedMem)
+        if (assigmentImplicitTypeCastingTest(CurrentNode.Operation.value, lDecl, rDecl)) {
+            RGenObj = typeCasting(AuxVars, RGenObj, lDecl, CurrentNode.Operation.line)
         }
         // Check declaration types
         assignmentDeclarationTests(
@@ -191,18 +186,18 @@ export default function binaryAsnProcessor (
             CurrentNode.Operation.line
         )
         // Create instruction
-        assemblyCode += createInstruction(AuxVars, CurrentNode.Operation, LGenObj.SolvedMem, RGenObj.SolvedMem)
+        LGenObj.asmCode += RGenObj.asmCode + createInstruction(AuxVars, CurrentNode.Operation, LGenObj.SolvedMem, RGenObj.SolvedMem)
         // Process use of 'const' keyword
         if (AuxVars.isConstSentence === true) {
             return assignmentConstSolver(
                 LGenObj.SolvedMem,
                 RGenObj.SolvedMem,
-                assemblyCode,
+                LGenObj.asmCode,
                 CurrentNode.Operation.line
             )
         }
         AuxVars.freeRegister(RGenObj.SolvedMem.address)
-        return { SolvedMem: LGenObj.SolvedMem, asmCode: assemblyCode }
+        return LGenObj
     }
 
     function assignmentStartErrorTests () : void {
@@ -240,6 +235,7 @@ export default function binaryAsnProcessor (
         }
     }
 
+    /** Checks if left side can be reused and solve right side of assigment */
     function assignmentRightSideSolver (Left: MEMORY_SLOT) : GENCODE_SOLVED_OBJECT {
         if (CurrentNode.Operation.type !== 'Assignment' ||
             Program.Config.reuseAssignedVar === false ||
@@ -297,28 +293,53 @@ export default function binaryAsnProcessor (
         return RetGenObj
     }
 
+    /** Tests if implicit type casting is needed (returns true if needed) */
+    function assigmentImplicitTypeCastingTest (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : boolean {
+        if (operVal === '=') {
+            if (lDecl === 'long' && rDecl === 'fixed') return true
+            if (lDecl === 'fixed' && rDecl === 'long') return true
+            return false
+        }
+        // else SetOperator
+        if ((lDecl === 'long' && rDecl === 'fixed') ||
+            (lDecl === 'fixed' && rDecl === 'long')) {
+            switch (operVal) {
+            case '+=':
+            case '-=':
+            case '*=':
+            case '/=':
+                return true
+            }
+            return false
+        }
+        return false
+    }
+
+    /** Test both sides declaration and throws error */
     function assignmentDeclarationTests (
         Left: MEMORY_SLOT, Right: MEMORY_SLOT, operVal: string, line: number
     ) : void {
-        if (!utils.isNotValidDeclarationOp(utils.getDeclarationFromMemory(Left), Right)) {
+        const lDecl = utils.getDeclarationFromMemory(Left)
+        const rDecl = utils.getDeclarationFromMemory(Right)
+        if (!utils.isNotValidDeclarationOp(lDecl, Right)) {
             return
         }
-            const lDecl = utils.getDeclarationFromMemory(Left)
-            const rDecl = utils.getDeclarationFromMemory(Right)
         // Allow >>= and <<= with fixed / long types
         if ((lDecl === 'fixed' && rDecl === 'long') && (operVal === '>>=' || operVal === '<<=')) {
             return
         }
-            // Allow SetOperator and pointer operation
-            if (!(lDecl === rDecl + '_ptr' && (operVal === '+=' || operVal === '-='))) {
-                if (Program.Config.warningToError) {
-                    throw new Error(`At line: ${line}.` +
-                    ' Warning: Left and right values does not match.' +
-                    ` Values are: '${Left.declaration}' and '${Right.declaration}'.`)
-                }
-                // Override declaration protection rules
-                Left.declaration = Right.declaration
+        // Allow SetOperator and pointer operation
+        if ((lDecl === rDecl + '_ptr' && (operVal === '+=' || operVal === '-='))) {
+            return
         }
+        // Operation not allowed. Throws
+        if (Program.Config.warningToError) {
+            throw new Error(`At line: ${line}.` +
+            ' Warning: Left and Right types of assignment does not match.' +
+            ` Types are: '${lDecl}' and '${rDecl}'.`)
+        }
+        // Override declaration protection rules
+        utils.setMemoryDeclaration(Left, rDecl)
     }
 
     function assignmentConstSolver (
