@@ -155,6 +155,10 @@ export default function binaryAsnProcessor (
         // If it is an array item we know, change to the item
         if (LGenObj.SolvedMem.type === 'array' &&
             LGenObj.SolvedMem.Offset?.type === 'constant') {
+            if (LGenObj.SolvedMem.ArrayItem !== undefined && LGenObj.SolvedMem.ArrayItem.totalSize <= LGenObj.SolvedMem.Offset.value + 1) {
+                throw new Error(`At line ${CurrentNode.Operation.line}. ` +
+                    'Array index is outside array size.')
+            }
             LGenObj.SolvedMem = AuxVars.getMemoryObjectByLocation(
                 utils.addHexContents(LGenObj.SolvedMem.hexContent, LGenObj.SolvedMem.Offset.value)
             )

@@ -68,10 +68,10 @@ export default function functionSolver (
             })
             const fnArg = FunctionToCall.argsMemObj[i]
             if (utils.isNotValidDeclarationOp(fnArg.declaration, ArgGenObj.SolvedMem)) {
-                    throw new Error(`At line: ${CurrentNode.Token.line}.` +
+                throw new Error(`At line: ${CurrentNode.Token.line}.` +
                     ` Function parameter type is different from variable: '${fnArg.declaration}'` +
                     ` and '${ArgGenObj.SolvedMem.declaration}'.`)
-                }
+            }
             if (ArgGenObj.SolvedMem.size !== 1 && ArgGenObj.SolvedMem.Offset === undefined) {
                 throw new Error(`At line: ${CurrentNode.Token.line}.` +
                 ' Overflow in argument size.')
@@ -117,6 +117,7 @@ export default function functionSolver (
             FnRetObj = utils.createVoidMemObj()
         } else {
             FnRetObj = AuxVars.getNewRegister() // reserve tempvar for return type
+            FnRetObj.declaration = ifnToCall.declaration
         }
         if (rawArgs[0].type === 'nullASN') {
             rawArgs.pop()
@@ -134,7 +135,7 @@ export default function functionSolver (
             })
             returnAssemblyCode += ArgGenObj.asmCode
             if (utils.getDeclarationFromMemory(ArgGenObj.SolvedMem) !== 'long') {
-                    throw new Error(`At line: ${CurrentNode.Token.line}.` +
+                throw new Error(`At line: ${CurrentNode.Token.line}.` +
                     ' API Function parameter type is different from variable: ' +
                     ` 'long' and '${ArgGenObj.SolvedMem.declaration}'.`)
             }

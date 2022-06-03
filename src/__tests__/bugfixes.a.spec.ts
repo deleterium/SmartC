@@ -234,4 +234,18 @@ describe('Tests for bugfixes', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    test('should throw: bug 30 Internal functions not setting right return type', () => {
+        expect(() => {
+            const code = '#include APIFunctions\nlong a, *b; b = Get_A1();'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: bug 31 It was allowed to set array item outside range', () => {
+        expect(() => {
+            const code = 'long a[4], b; a[4] = 25;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
 })
