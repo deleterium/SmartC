@@ -1,0 +1,74 @@
+import { SmartC } from '../smartc'
+
+describe('Castings', () => {
+    it('should compile: special verification on long <=> fixed', () => {
+        const code = '#pragma optimizationLevel 0\nfixed fa, fb; long la, lb;\n la = lb + (long)fa; fa = la + (fixed)lb;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare fa\n^declare fb\n^declare la\n^declare lb\n\nSET @la $fa\nDIV @la $f100000000\nADD @la $lb\nSET @fa $lb\nMUL @fa $f100000000\nSET @r0 $la\nMUL @r0 $f100000000\nADD @fa $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: from void to all', () => {
+        const code = ' #pragma optimizationLevel 0\n void *pv; long l, *pl; fixed f, *pf; struct TEST { long aa, bb; } s, *ps;\n l = (long)(); f = (fixed)(); pv = (void *)(); pl = (long *)(); pf = (fixed *)(); ps = (struct BB *)();'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare pv\n^declare l\n^declare pl\n^declare f\n^declare pf\n^declare s_aa\n^declare s_bb\n^declare ps\n\nCLR @l\nCLR @f\nCLR @pv\nCLR @pl\nCLR @pf\nCLR @ps\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: from all to void', () => {
+        const code = ' #pragma optimizationLevel 0\nvoid *pv; long l, *pl; fixed f, *pf; struct TEST { long aa, bb; } s, *ps;\n (void)(l+1); (void)(f+1.2);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare pv\n^declare l\n^declare pl\n^declare f\n^declare pf\n^declare s_aa\n^declare s_bb\n^declare ps\n\nSET @r0 $l\nINC @r0\nSET @r0 #0000000007270e00\nADD @r0 $f\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: from long to all', () => {
+        const code = '#pragma optimizationLevel 0\nvoid *pv;long l, *pl;fixed f, *pf;struct TEST { long aa, bb; } s, *ps;\n l = (long)l; f = (fixed)l; pv = (void *)l; pl = (long *)l; pf = (fixed *)l; ps = (struct BB *)l;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare pv\n^declare l\n^declare pl\n^declare f\n^declare pf\n^declare s_aa\n^declare s_bb\n^declare ps\n\nSET @f $l\nMUL @f $f100000000\nSET @pv $l\nSET @pl $l\nSET @pf $l\nSET @ps $l\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    test('should throw: from fixed to pointers', () => {
+        expect(() => {
+            const code = '#pragma optimizationLevel 0\nvoid *pv;long l, *pl;fixed f, *pf;struct TEST { long aa, bb; } s, *ps;\n pv = (void *)f;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    it('should compile: from struct to all', () => {
+        const code = '#pragma optimizationLevel 0\nvoid *pv;long l, *pl;fixed f, *pf;struct TEST { long aa, bb; } s, *ps;\n pv = (void *)s; pl = (long *)s; pf = (fixed *)s; ps = (struct BB *)s;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare pv\n^declare l\n^declare pl\n^declare f\n^declare pf\n^declare s_aa\n^declare s_bb\n^declare ps\n\nSET @pv #0000000000000009\nSET @pl #0000000000000009\nSET @pf #0000000000000009\nSET @ps #0000000000000009\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    test('should throw: from struct to long', () => {
+        expect(() => {
+            const code = '#pragma optimizationLevel 0\nvoid *pv;long l, *pl;fixed f, *pf;struct TEST { long aa, bb; } s, *ps;\n l = (long)s;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: from struct to fixed', () => {
+        expect(() => {
+            const code = '#pragma optimizationLevel 0\nvoid *pv;long l, *pl;fixed f, *pf;struct TEST { long aa, bb; } s, *ps;\n f = (fixed)s;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    it('should compile: from pointer to all', () => {
+        const code = '#pragma optimizationLevel 0\nvoid *pv;long l, *pl;fixed f, *pf;struct TEST { long aa, bb; } s, *ps;\n l = (long)pl; pv = (void *)pl; pl = (long *)pl; pf = (fixed *)pl; ps = (struct BB *)pl;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare pv\n^declare l\n^declare pl\n^declare f\n^declare pf\n^declare s_aa\n^declare s_bb\n^declare ps\n\nSET @l $pl\nSET @pv $pl\nSET @pf $pl\nSET @ps $pl\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    test('should throw: from pointer to fixed', () => {
+        expect(() => {
+            const code = '#pragma optimizationLevel 0\nvoid *pv;long l, *pl;fixed f, *pf;struct TEST { long aa, bb; } s, *ps;\n f = (fixed)pv;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+})
