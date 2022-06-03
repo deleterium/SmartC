@@ -290,7 +290,7 @@ export default function binaryAsnProcessor (
         return RetGenObj
     }
 
-    /** Tests if implicit type casting is needed and also checks valid operations.
+    /** Tests if implicit type casting is needed and also checks valid operations for binary operators.
      * @returns the side needed to be changed
      * @throws Error if operation is not allowed */
     function implicitTypeCastingTest (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : 'left' | 'right' | 'none' {
@@ -300,15 +300,15 @@ export default function binaryAsnProcessor (
             }
             return 'none'
         }
-        const fixedRet = fixedImplicitTC(operVal, lDecl, rDecl)
-        if (fixedRet !== 'notFixed') {
+        const fixedRet = fixedLongImplicitTC(operVal, lDecl, rDecl)
+        if (fixedRet !== 'notFixedLong') {
             return fixedRet
         }
         const pointerRet = remainingImplicitTC(operVal, lDecl, rDecl)
         return pointerRet
     }
 
-    function fixedImplicitTC (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : 'left' | 'right' | 'none' | 'notFixed' {
+    function fixedLongImplicitTC (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : 'left' | 'right' | 'none' | 'notFixedLong' {
         let fixedSide: 'left' | 'right' | 'none' = 'none'
         if (lDecl === 'long' && rDecl === 'fixed') {
             fixedSide = 'right'
@@ -317,7 +317,7 @@ export default function binaryAsnProcessor (
             fixedSide = 'left'
         }
         if (fixedSide === 'none') {
-            return 'notFixed'
+            return 'notFixedLong'
         }
         // now there is only one fixed and one long
         switch (operVal) {
@@ -351,6 +351,13 @@ export default function binaryAsnProcessor (
         case '/=':
         case '*=':
             return fixedSide === 'left' ? 'none' : 'right'
+        case '==':
+        case '!=':
+        case '<=':
+        case '>=':
+        case '<':
+        case '>':
+            return fixedSide === 'left' ? 'right' : 'left'
         default:
             throw new Error('Internal error')
         }
@@ -403,23 +410,24 @@ export default function binaryAsnProcessor (
                 return 'left'
             }
             throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
-        case '/':
-        case '*':
-        case '%':
-        case '&':
-        case '|':
-        case '^':
-        case '%=':
-        case '&=':
-        case '|=':
-        case '^=':
-        case '>>':
-        case '<<':
-        case '>>=':
-        case '<<=':
-        case '/=':
-        case '*=':
+        case '==':
+        case '!=':
+        case '<=':
+        case '>=':
+        case '<':
+        case '>':
+            if (lDecl.includes('_ptr') && rDecl.includes('_ptr')) {
+                return 'right'
+            }
+            if (lDecl.includes('_ptr') && rDecl === 'long') {
+                return 'right'
+            }
+            if (lDecl === 'long' && rDecl.includes('_ptr')) {
+                return 'left'
+            }
+            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
         default:
+            // / * % & | ^ %= &= |= ^= >> << >>= <<= /= *=
             throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
         }
     }
@@ -544,18 +552,27 @@ export default function binaryAsnProcessor (
     }
 
     function defaultLogicalOpProc () : GENCODE_SOLVED_OBJECT {
-        const LGenObj = genCode(Program, AuxVars, {
+        let LGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Left,
             logicalOp: false,
             revLogic: ScopeInfo.revLogic
         }) // ScopeInfo.jumpFalse and ScopeInfo.jumpTrue must be undefined to evaluate expressions
-        assemblyCode += LGenObj.asmCode
-        const RGenObj = genCode(Program, AuxVars, {
+        let RGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Right,
             logicalOp: false,
             revLogic: ScopeInfo.revLogic
         }) // ScopeInfo.jumpFalse and ScopeInfo.jumpTrue must be undefined to evaluate expressions
-        assemblyCode += RGenObj.asmCode
+        const leftDeclaration = utils.getDeclarationFromMemory(LGenObj.SolvedMem)
+        const rightDeclaration = utils.getDeclarationFromMemory(RGenObj.SolvedMem)
+        const castSide = implicitTypeCastingTest(CurrentNode.Operation.value, leftDeclaration, rightDeclaration)
+        switch (castSide) {
+        case 'left':
+            LGenObj = typeCasting(AuxVars, LGenObj, rightDeclaration, CurrentNode.Operation.line)
+            break
+        case 'right':
+            RGenObj = typeCasting(AuxVars, RGenObj, leftDeclaration, CurrentNode.Operation.line)
+        }
+        assemblyCode = LGenObj.asmCode + RGenObj.asmCode
         assemblyCode += createInstruction(
             AuxVars,
             CurrentNode.Operation,

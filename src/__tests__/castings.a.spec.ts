@@ -1,6 +1,6 @@
 import { SmartC } from '../smartc'
 
-describe('Castings', () => {
+describe('Castings arithmetic', () => {
     it('should compile: special verification on long <=> fixed', () => {
         const code = '#pragma optimizationLevel 0\nfixed fa, fb; long la, lb;\n la = lb + (long)fa; fa = la + (fixed)lb;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare fa\n^declare fb\n^declare la\n^declare lb\n\nSET @la $fa\nDIV @la $f100000000\nADD @la $lb\nSET @fa $lb\nMUL @fa $f100000000\nSET @r0 $la\nMUL @r0 $f100000000\nADD @fa $r0\nFIN\n'
@@ -67,6 +67,23 @@ describe('Castings', () => {
     test('should throw: from pointer to fixed', () => {
         expect(() => {
             const code = '#pragma optimizationLevel 0\nvoid *pv;long l, *pl;fixed f, *pf;struct TEST { long aa, bb; } s, *ps;\n f = (fixed)pv;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+})
+
+describe('Castings logical', () => {
+    it('should compile: all permitted types', () => {
+        const code = '#pragma optimizationLevel 0\nlong la, lb, *pl; fixed fa, fb, *pf; void * pv;\n if (la > fb) la++; if (fa > lb) la++; if (fa >= fb) la++; if (la < pl) la++; if (la <= pf) la++; if (pv == pl) la++; if (pf != pl) la++;'
+        const assembly = ''
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    test('should throw: pointer vs fixed', () => {
+        expect(() => {
+            const code = 'long la, lb, *pl; fixed fa, fb, *pf; void * pv;\n if (la > fb) la++; if (fa > pv) la++;'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
