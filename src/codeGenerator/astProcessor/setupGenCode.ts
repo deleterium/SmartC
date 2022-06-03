@@ -62,14 +62,13 @@ export default function setupGenCode (
     }
 
     function validateReturnedVariable (InitAST: AST, RetObj: MEMORY_SLOT) {
-        if (Globals.Program.Config.warningToError &&
-                CodeGenInfo.initialJumpTarget === undefined &&
+        if (CodeGenInfo.initialJumpTarget === undefined &&
                 RetObj.type === 'register') {
             if ((InitAST.type === 'unaryASN' && InitAST.Operation.value !== '*') ||
                     (InitAST.type === 'binaryASN' &&
                         (InitAST.Operation.type === 'Comparision' || InitAST.Operation.type === 'Operator'))) {
                 throw new Error(`At line: ${InitAST.Operation.line}. ` +
-                    'Warning: Operation returning a value that is not being used.')
+                    'Operation returning a value that is not being used. Use casting to (void) to avoid this error.')
             }
         }
     }

@@ -116,16 +116,13 @@ export default function unaryAsnProcessor (
         }
         const declar = utils.getDeclarationFromMemory(CGenObj.SolvedMem)
         if (declar.includes('_ptr') === false) {
-            if (Program.Config.warningToError) {
-                if (CurrentNode.Center.type === 'endASN' || CurrentNode.Center.type === 'lookupASN') {
-                    throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                    ` Warning: Trying to read/set content of variable ${CurrentNode.Center.Token.value}` +
-                    ' that is not declared as pointer.')
-                }
+            if (CurrentNode.Center.type === 'endASN' || CurrentNode.Center.type === 'lookupASN') {
                 throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                ' Warning: Trying to read/set content of a value that is not declared as pointer.')
+                ` Trying to read/set content of variable ${CurrentNode.Center.Token.value}` +
+                ' that is not declared as pointer.')
             }
-            utils.setMemoryDeclaration(CGenObj.SolvedMem, (declar + '_ptr') as DECLARATION_TYPES)
+            throw new Error(`At line: ${CurrentNode.Operation.line}.` +
+            ' Trying to read/set content of a value that is not declared as pointer.')
         }
         if (CGenObj.SolvedMem.Offset) {
             // Double deference: deference and continue
@@ -336,14 +333,10 @@ export default function unaryAsnProcessor (
         const CGenObj = traverseNotLogical()
         CGenObj.asmCode += AuxVars.getPostOperations()
         if (utils.isNotValidDeclarationOp(AuxVars.CurrentFunction.declaration, CGenObj.SolvedMem)) {
-            if (Program.Config.warningToError) {
-                throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                ` Warning: Function ${AuxVars.CurrentFunction.name} must return` +
+            throw new Error(`At line: ${CurrentNode.Operation.line}.` +
+                ` Function ${AuxVars.CurrentFunction.name} must return` +
                 ` '${AuxVars.CurrentFunction.declaration}' value,` +
                 ` but it is returning '${CGenObj.SolvedMem.declaration}'.`)
-            }
-            // Override declaration protection rules
-            utils.setMemoryDeclaration(CGenObj.SolvedMem, AuxVars.CurrentFunction.declaration)
         }
         CGenObj.asmCode += createInstruction(AuxVars, CurrentNode.Operation, CGenObj.SolvedMem)
         AuxVars.freeRegister(CGenObj.SolvedMem.address)
