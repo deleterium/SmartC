@@ -58,15 +58,19 @@
         }
         textarea {
             padding: 1ch;
-            height: 50vh;
+            height: 75vh;
             font-size: inherit;
-            width: calc(100vw - 2ch);
+            width: 50vw;
+        }
+        td {
+            vertical-align: top;
         }
         pre {
             padding: 1ch;
             border: 1px black solid;
             word-wrap: anywhere;
             white-space: pre-wrap;
+            margin: 0;
         }
         .msg_failure {
             font-weight: bold;
@@ -83,11 +87,19 @@
     <header>Simple debugger page</header>
     <p>Use this page to debug or inspect SmartC process, using a browser.</p>
     <main>
-        <button id="compile">Compile this code:</button>
-    <textarea id="sourcecode" spellcheck="false"></textarea>
-    <pre id="status"></pre>
-    <pre id="assembly"></pre>
-    <pre id="debug-info"></pre>
+    <table>
+        <tbody>
+            <tr>
+                <td><textarea id="sourcecode" spellcheck="false"></textarea><br><button id="compile" accesskey="c">Compile</button></td>
+                <td><pre id="status"></pre>
+                    <pre id="assembly"></pre>
+                    <pre id="debug-info"></pre></td>
+            </tr>
+        </tbody>
+    </table>
+        
+    
+    
     </main>
 </body>
 </html>
