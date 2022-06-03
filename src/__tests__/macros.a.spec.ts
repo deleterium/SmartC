@@ -41,6 +41,13 @@ describe('#program', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: forbidden char in name', () => {
+        expect(() => {
+            const code = '#program name test2 d\n long a;  a++;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
     test('should throw: description bigger than 1000 chars', () => {
         expect(() => {
             const code = '#program description Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam efficitur mollis mauris eu pretium. Vivamus ut nisl eget elit aliquam finibus eget a ex. Interdum et malesuada fames ac ante ipsum primis in faucibus. Vivamus vel neque risus. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse potenti. Sed eget lacinia lorem, et luctus orci. Praesent ut lorem pretium, iaculis dui eu, convallis sem. Ut lorem metus, eleifend eu velit in, volutpat ullamcorper sem. Donec hendrerit ornare posuere. Curabitur vitae lacus non dolor lacinia mollis. Sed ex felis, fringilla ac fringilla id, lobortis condimentum mi. Vestibulum nec orci vel lectus pulvinar imperdiet sit amet id nulla. Morbi quis orci tristique, pharetra libero pharetra, fermentum nunc. Nulla vestibulum felis risus, at cursus leo blandit ut. Praesent interdum commodo ex, sed vehicula sem luctus eu. Ut sed diam quis lectus lobortis maximus. Etiam hendrerit tincidunt ligula nec efficitur. Donec pulvinar mauris ac integer.\nlong a;  a++;'

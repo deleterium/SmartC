@@ -295,6 +295,13 @@ describe('Keywords wrong usage', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: Trying to get the address of a register', () => {
+        expect(() => {
+            const code = 'long a, *b; b = &r1;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
     test('should throw: const and variable in right side', () => {
         expect(() => {
             const code = 'long a, d; const d=a;'

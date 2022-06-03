@@ -63,7 +63,6 @@ Many arguments can be used.
   * 3: Dangerous optimizations no well tested. Result must be inspected by developer.
 * `#pragma reuseAssignedVar [true/false/1/0/]`: When set, compiler will try to use a variable on left side of and `Assignment` as a register. If variable is also used on right side, the compiler will not reuse it. This can save one assembly instruction for every expression used! Default value is `true` and it is highly recomended to maintain it active.
 * `#pragma version N`: Informs which compiler's version the code was developed. Must be set if not using development version. To skip this check, set it to `dev`.
-* `#pragma warningToError [true/false/1/0/]`: All warnings to compiler errors. Default value is `true`. Warning messages begin with WARNING, other ones are actually errors.
 * `#pragma outputSourceLineNumber[true/false/1/0/]`: Adds a comment in assembly output with the corresponding line number to the C source code. Very usefull for debug.
 
 #### Escaping new line

@@ -18,8 +18,6 @@ export type SC_CONFIG = {
     /** Default version for user's programs. If not on a dev version, user must
      * specify #pragma version to set source code version */
     sourcecodeVersion: string,
-    /** Warning to error: #pragma warningToError */
-    warningToError: boolean,
     /** Support for API Functions: #include APIFunctions */
     APIFunctions: boolean,
     /** Program Name: #program name */

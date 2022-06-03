@@ -102,13 +102,6 @@ describe('Pointer/Array assignment', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
-    it('should compile: Address of array to regular variable (disregard warning)', () => {
-        const code = '#pragma warningToError false\nlong a[4], *b, c; c=&a; c=&a[0]; c=&c;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare b\n^declare c\n\nSET @c #0000000000000003\nSET @c #0000000000000004\nSET @c #0000000000000009\nFIN\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
     it('should compile: Operation with pointer before deferencing', () => {
         const code = 'long *a, b, c;\n*(a+1)=b; *(a+30)=b; *(a+c)=b;\nb=*(a+1); b=*(a+30); b=*(a+c);'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @r0 $a\nINC @r0\nSET @($r0) $b\nSET @r0 #000000000000001e\nADD @r0 $a\nSET @($r0) $b\nSET @r0 $a\nADD @r0 $c\nSET @($r0) $b\nSET @b $a\nINC @b\nSET @b $($b)\nSET @b #000000000000001e\nADD @b $a\nSET @b $($b)\nSET @b $a\nADD @b $c\nSET @b $($b)\nFIN\n'

@@ -201,9 +201,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         case 'version':
             Program.Config.sourcecodeVersion = MacroToken.value
             return false
-        case 'warningToError':
-            Program.Config.warningToError = bool
-            return true
         case 'outputSourceLineNumber':
             Program.Config.outputSourceLineNumber = bool
             return true

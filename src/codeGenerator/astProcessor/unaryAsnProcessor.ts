@@ -230,12 +230,8 @@ export default function unaryAsnProcessor (
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
             'Trying to get address of void value.')
         case 'register':
-            if (Program.Config.warningToError) {
-                throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-                'Warning: Returning address of a register.')
-            }
-            TmpMemObj = utils.createConstantMemObj(RetMem.address)
-            break
+            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
+                'Returning address of a register.')
         case 'constant':
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
             'Trying to get address of a constant value.')
