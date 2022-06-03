@@ -1,7 +1,8 @@
 import { deepCopy } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
 import { MEMORY_SLOT, DECLARATION_TYPES, BINARY_ASN } from '../../typings/syntaxTypes'
-import { createSimpleInstruction, createInstruction, setConstAsmCode, typeCasting, toRegister } from '../assemblyProcessor/createInstruction'
+import { createSimpleInstruction, createInstruction, setConstAsmCode, toRegister } from '../assemblyProcessor/createInstruction'
+import { typeCasting } from '../assemblyProcessor/typeCastingToAsm'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
 import genCode from './genCode'
@@ -97,23 +98,18 @@ export default function binaryAsnProcessor (
         const rightDeclaration = utils.getDeclarationFromMemory(RGenObj.SolvedMem)
         // Prepare return object
         LGenObj = toRegister(AuxVars, LGenObj, CurrentNode.Operation.line)
-        // fixed verification
-        if (leftDeclaration === 'long' &&
-                rightDeclaration === 'fixed') {
-            LGenObj = typeCasting(AuxVars, LGenObj, 'fixed', CurrentNode.Operation.line)
+        // implicit type casting tests and operations
+        const castSide = implicitTypeCastingTest(CurrentNode.Operation.value, leftDeclaration, rightDeclaration)
+        switch (castSide) {
+        case 'left':
+            LGenObj = typeCasting(AuxVars, LGenObj, rightDeclaration, CurrentNode.Operation.line)
+            break
+        case 'right': {
+            const oldAsm = RGenObj.asmCode
+            RGenObj = typeCasting(AuxVars, RGenObj, leftDeclaration, CurrentNode.Operation.line)
+            // append only the diff
+            LGenObj.asmCode += RGenObj.asmCode.slice(oldAsm.length)
         }
-        // Pointer verifications 1
-        if (rightDeclaration.includes('_ptr') &&
-            !LGenObj.SolvedMem.declaration.includes('_ptr')) {
-            // Operation with pointers
-            LGenObj.SolvedMem.declaration = rightDeclaration
-        }
-        // Pointer verifications 2
-        if (LGenObj.SolvedMem.declaration.includes('_ptr')) {
-            if (CurrentNode.Operation.value !== '+' && CurrentNode.Operation.value !== '-') {
-                throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-                "Operation not allowed on pointers. Only '+', '-', '++' and '--' are.")
-            }
         }
         // Create instruction
         LGenObj.asmCode += createInstruction(AuxVars, CurrentNode.Operation, LGenObj.SolvedMem, RGenObj.SolvedMem)
@@ -175,16 +171,13 @@ export default function binaryAsnProcessor (
         // Implicit type casting on assignment
         const lDecl = utils.getDeclarationFromMemory(LGenObj.SolvedMem)
         const rDecl = utils.getDeclarationFromMemory(RGenObj.SolvedMem)
-        if (assigmentImplicitTypeCastingTest(CurrentNode.Operation.value, lDecl, rDecl)) {
+        const castSide = implicitTypeCastingTest(CurrentNode.Operation.value, lDecl, rDecl)
+        switch (castSide) {
+        case 'left':
+            throw new Error('Internal error')
+        case 'right':
             RGenObj = typeCasting(AuxVars, RGenObj, lDecl, CurrentNode.Operation.line)
         }
-        // Check declaration types
-        assignmentDeclarationTests(
-            LGenObj.SolvedMem,
-            RGenObj.SolvedMem,
-            CurrentNode.Operation.value,
-            CurrentNode.Operation.line
-        )
         // Create instruction
         LGenObj.asmCode += RGenObj.asmCode + createInstruction(AuxVars, CurrentNode.Operation, LGenObj.SolvedMem, RGenObj.SolvedMem)
         // Process use of 'const' keyword
@@ -293,53 +286,138 @@ export default function binaryAsnProcessor (
         return RetGenObj
     }
 
-    /** Tests if implicit type casting is needed (returns true if needed) */
-    function assigmentImplicitTypeCastingTest (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : boolean {
-        if (operVal === '=') {
-            if (lDecl === 'long' && rDecl === 'fixed') return true
-            if (lDecl === 'fixed' && rDecl === 'long') return true
-            return false
-        }
-        // else SetOperator
-        if ((lDecl === 'long' && rDecl === 'fixed') ||
-            (lDecl === 'fixed' && rDecl === 'long')) {
-            switch (operVal) {
-            case '+=':
-            case '-=':
-            case '*=':
-            case '/=':
-                return true
+    /** Tests if implicit type casting is needed and also checks valid operations.
+     * @returns the side needed to be changed
+     * @throws Error if operation is not allowed */
+    function implicitTypeCastingTest (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : 'left' | 'right' | 'none' {
+        if (lDecl === rDecl) {
+            if (lDecl === 'fixed') {
+                return fixedFixedImplicitTC(operVal)
             }
-            return false
+            return 'none'
         }
-        return false
+        const fixedRet = fixedImplicitTC(operVal, lDecl, rDecl)
+        if (fixedRet !== 'notFixed') {
+            return fixedRet
+        }
+        const pointerRet = remainingImplicitTC(operVal, lDecl, rDecl)
+        return pointerRet
     }
 
-    /** Test both sides declaration and throws error */
-    function assignmentDeclarationTests (
-        Left: MEMORY_SLOT, Right: MEMORY_SLOT, operVal: string, line: number
-    ) : void {
-        const lDecl = utils.getDeclarationFromMemory(Left)
-        const rDecl = utils.getDeclarationFromMemory(Right)
-        if (!utils.isNotValidDeclarationOp(lDecl, Right)) {
-            return
+    function fixedImplicitTC (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : 'left' | 'right' | 'none' | 'notFixed' {
+        let fixedSide: 'left' | 'right' | 'none' = 'none'
+        if (lDecl === 'long' && rDecl === 'fixed') {
+            fixedSide = 'right'
         }
-        // Allow >>= and <<= with fixed / long types
-        if ((lDecl === 'fixed' && rDecl === 'long') && (operVal === '>>=' || operVal === '<<=')) {
-            return
+        if (lDecl === 'fixed' && rDecl === 'long') {
+            fixedSide = 'left'
         }
-        // Allow SetOperator and pointer operation
-        if ((lDecl === rDecl + '_ptr' && (operVal === '+=' || operVal === '-='))) {
-            return
+        if (fixedSide === 'none') {
+            return 'notFixed'
         }
-        // Operation not allowed. Throws
-        if (Program.Config.warningToError) {
-            throw new Error(`At line: ${line}.` +
-            ' Warning: Left and Right types of assignment does not match.' +
-            ` Types are: '${lDecl}' and '${rDecl}'.`)
+        // now there is only one fixed and one long
+        switch (operVal) {
+        case '=':
+        case '+=':
+        case '-=':
+            return 'right'
+        case '+':
+        case '-':
+            return fixedSide === 'left' ? 'right' : 'left'
+        case '/':
+        case '*':
+            return fixedSide === 'left' ? 'none' : 'left'
+        case '%':
+        case '&':
+        case '|':
+        case '^':
+        case '%=':
+        case '&=':
+        case '|=':
+        case '^=':
+            throw new Error(`At line ${CurrentNode.Operation.line}. Cannot use operator ${operVal} with fixed type numbers.`)
+        case '>>':
+        case '<<':
+        case '>>=':
+        case '<<=':
+            if (fixedSide === 'right') {
+                throw new Error(`At line ${CurrentNode.Operation.line}. Cannot use operator ${operVal} with fixed type numbers on right side.`)
+            }
+            return 'none'
+        case '/=':
+        case '*=':
+            return fixedSide === 'left' ? 'none' : 'right'
+        default:
+            throw new Error('Internal error')
         }
-        // Override declaration protection rules
-        utils.setMemoryDeclaration(Left, rDecl)
+    }
+
+    function fixedFixedImplicitTC (operVal: string) : 'left' | 'right' | 'none' {
+        switch (operVal) {
+        case '%':
+        case '&':
+        case '|':
+        case '^':
+        case '%=':
+        case '&=':
+        case '|=':
+        case '^=':
+        case '>>':
+        case '<<':
+            throw new Error(`At line ${CurrentNode.Operation.line}. Cannot use operator ${operVal} with fixed type numbers.`)
+        case '>>=':
+        case '<<=':
+            throw new Error(`At line ${CurrentNode.Operation.line}. Cannot use operator ${operVal} with fixed type numbers on right side.`)
+        default:
+            return 'none'
+        }
+    }
+
+    function remainingImplicitTC (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : 'left' | 'right' | 'none' {
+        switch (operVal) {
+        case '=':
+            if ((lDecl === 'void_ptr' && rDecl.includes('_ptr')) ||
+                    (lDecl.includes('_ptr') && rDecl === 'void_ptr')) {
+                return 'right'
+            }
+            if (lDecl.includes('ptr') && rDecl === 'long' && AuxVars.hasVoidArray) {
+                return 'none'
+            }
+            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of assigment does not match. Types are '${lDecl}' and '${rDecl}'.`)
+        case '+=':
+        case '-=':
+            if (lDecl === rDecl + '_ptr') {
+                return 'none'
+            }
+            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
+        case '+':
+        case '-':
+            if (lDecl.includes('_ptr') && rDecl === 'long') {
+                return 'right'
+            }
+            if (rDecl.includes('_ptr') && lDecl === 'long') {
+                return 'left'
+            }
+            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
+        case '/':
+        case '*':
+        case '%':
+        case '&':
+        case '|':
+        case '^':
+        case '%=':
+        case '&=':
+        case '|=':
+        case '^=':
+        case '>>':
+        case '<<':
+        case '>>=':
+        case '<<=':
+        case '/=':
+        case '*=':
+        default:
+            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
+        }
     }
 
     function assignmentConstSolver (
@@ -519,8 +597,8 @@ export default function binaryAsnProcessor (
         default:
             return false
         }
-        if (Left.declaration === 'fixed' && Right.declaration !== 'fixed') {
-            return true
+        if (Left.declaration === 'fixed' && Right.declaration === 'long') {
+            return operatorVal === '+'
         }
         // Try optimization if left side is constant (only commutativa operations!)
         if (checkOperatorOptimization(operatorVal, Left)) {

@@ -95,15 +95,13 @@ export default function assignmentToAsm (
     /** Left type is 'register', 'long' or 'structRef', with offset undefined. Right type is 'register', 'long', or
      * 'structRef' with offset undefined. Create assembly instruction. */
     function leftRegularOffsetUndefinedAndRightRegularOffsetUndefinedToAsm (): string {
-        if ((Left.declaration === Right.declaration) ||
-            (Left.declaration === 'void_ptr' && Right.declaration.includes('ptr')) ||
-            (Left.declaration.includes('ptr') && Right.declaration === 'void_ptr')) {
-            if (Left.address === Right.address) {
-                return ''
-            }
-            return `SET @${Left.asmName} $${Right.asmName}\n`
+        if (Left.declaration !== Right.declaration) {
+            throw new Error(`Internal error at line: ${operationLine}.`)
         }
-        throw new Error(`Internal error at line: ${operationLine}.`)
+        if (Left.address === Right.address) {
+            return ''
+        }
+        return `SET @${Left.asmName} $${Right.asmName}\n`
     }
 
     /** Left type is 'register', 'long' or 'structRef', with offset undefined. Right type is 'register', 'long' or
