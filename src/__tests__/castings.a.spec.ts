@@ -83,7 +83,7 @@ describe('Castings arithmetic', () => {
 describe('Castings logical', () => {
     it('should compile: all permitted types', () => {
         const code = '#pragma optimizationLevel 0\nlong la, lb, *pl; fixed fa, fb, *pf; void * pv;\n if (la > fb) la++; if (fa > lb) la++; if (fa >= fb) la++; if (la < pl) la++; if (la <= pf) la++; if (pv == pl) la++; if (pf != pl) la++;'
-        const assembly = ''
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare la\n^declare lb\n^declare pl\n^declare fa\n^declare fb\n^declare pf\n^declare pv\n\nSET @r0 $la\nMUL @r0 $f100000000\nBLE $r0 $fb :__if1_endif\n__if1_start:\nINC @la\n__if1_endif:\nSET @r0 $lb\nMUL @r0 $f100000000\nBLE $fa $r0 :__if2_endif\n__if2_start:\nINC @la\n__if2_endif:\nBLT $fa $fb :__if3_endif\n__if3_start:\nINC @la\n__if3_endif:\nBGE $la $pl :__if4_endif\n__if4_start:\nINC @la\n__if4_endif:\nBGT $la $pf :__if5_endif\n__if5_start:\nINC @la\n__if5_endif:\nBNE $pv $pl :__if6_endif\n__if6_start:\nINC @la\n__if6_endif:\nBEQ $pf $pl :__if7_endif\n__if7_start:\nINC @la\n__if7_endif:\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

@@ -60,7 +60,7 @@
             padding: 1ch;
             height: 75vh;
             font-size: inherit;
-            width: 50vw;
+            width: calc(50vw - 2ch);
         }
         td {
             vertical-align: top;
@@ -87,19 +87,16 @@
     <header>Simple debugger page</header>
     <p>Use this page to debug or inspect SmartC process, using a browser.</p>
     <main>
-    <table>
-        <tbody>
-            <tr>
-                <td><textarea id="sourcecode" spellcheck="false"></textarea><br><button id="compile" accesskey="c">Compile</button></td>
-                <td><pre id="status"></pre>
-                    <pre id="assembly"></pre>
-                    <pre id="debug-info"></pre></td>
-            </tr>
-        </tbody>
-    </table>
-        
-    
-    
+        <div style="width: 100%;">
+            <div style="width: 50vw; float: left;"> 
+                <textarea id="sourcecode" spellcheck="false"></textarea><br><button id="compile" accesskey="c">Compile</button>
+            </div>
+            <div style="margin-left: 53vw;"> 
+                <pre id="status"></pre>
+                <pre id="assembly"></pre>
+                <pre id="debug-info"></pre>
+            </div>
+        </div>
     </main>
 </body>
 </html>
