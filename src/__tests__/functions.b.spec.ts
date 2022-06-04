@@ -112,4 +112,18 @@ describe('Built-in functions', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: powf()', () => {
+        const code = '#pragma optimizationLevel 0\nlong a, b; fixed fc; a=powf(b,fc);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n^declare fc\n\nSET @a $b\nPOW @a $fc\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: memcopy()', () => {
+        const code = '#pragma optimizationLevel 0\nfixed fa, *pf; long la, *pl; memcopy(&fa, &la); memcopy(pf, &la); memcopy(&la, pf); memcopy(pf, pl); memcopy(pf+1, pl+4);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare fa\n^declare pf\n^declare la\n^declare pl\n\nSET @fa $la\nSET @($pf) $la\nSET @la $($pf)\nSET @r0 $($pl)\nSET @($pf) $r0\nSET @r0 $pf\nINC @r0\nSET @r1 #0000000000000004\nADD @r1 $pl\nSET @r2 $($r1)\nSET @($r0) $r2\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })

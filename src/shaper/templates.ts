@@ -127,6 +127,62 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         declaration: 'long',
         sentences: [],
         name: 'mdv'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr1',
+                asmName: 'powf_addr1',
+                type: 'long',
+                scope: 'powf',
+                declaration: 'long',
+                size: 1,
+                isDeclared: true
+            },
+            {
+                address: -1,
+                name: 'addr2',
+                asmName: 'powf_addr2',
+                type: 'fixed',
+                scope: 'powf',
+                declaration: 'fixed',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'powf',
+        declaration: 'long',
+        sentences: [],
+        name: 'powf'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr1',
+                asmName: 'memcopy_addr1',
+                type: 'long',
+                scope: 'memcopy',
+                declaration: 'void_ptr',
+                size: 1,
+                isDeclared: true
+            },
+            {
+                address: -1,
+                name: 'addr2',
+                asmName: 'memcopy_addr2',
+                type: 'long',
+                scope: 'memcopy',
+                declaration: 'void_ptr',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'memcopy',
+        declaration: 'void',
+        sentences: [],
+        name: 'memcopy'
     }
 ]
 

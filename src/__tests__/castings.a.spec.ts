@@ -71,6 +71,13 @@ describe('Castings arithmetic', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    it('should compile: complex hack', () => {
+        const code = '#pragma optimizationLevel 0\nfixed fa, *pf; long la, *pl; la = *((long*)(&fa)); fa = *((fixed*)(&la));'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare fa\n^declare pf\n^declare la\n^declare pl\n\nSET @la $fa\nSET @fa $la\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })
 
 describe('Castings logical', () => {

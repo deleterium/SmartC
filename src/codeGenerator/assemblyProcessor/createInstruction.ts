@@ -118,25 +118,70 @@ export function createAPICallInstruction (
 export function createBuiltInInstruction (
     AstAuxVars: GENCODE_AUXVARS, BuiltInToken: TOKEN, RetMem: MEMORY_SLOT, argsMem: MEMORY_SLOT[]
 ) : string {
+    let memcopyType : 'SIMPLE' | 'MIXED_LEFT' | 'MIXED_RIGHT' | 'COMPLEX'
+    let AuxRegister: MEMORY_SLOT
     let assemblyCode = ''
-    const tempArgsMem: MEMORY_SLOT[] = []
-    argsMem.forEach((VarObj) => {
-        const Temp = flattenMemory(AstAuxVars, VarObj, -1)
-        assemblyCode += Temp.asmCode
-        tempArgsMem.push(Temp.FlatMem)
-    })
+    const tempArgsMem = argsMem.map((VarObj) => flattenMemory(AstAuxVars, VarObj, -1))
     switch (BuiltInToken.value) {
     case 'pow':
-        assemblyCode += `SET @${RetMem.asmName} $${tempArgsMem[0].asmName}\n` +
-            `POW @${RetMem.asmName} $${tempArgsMem[1].asmName}\n`
+    case 'powf':
+        assemblyCode = tempArgsMem[0].asmCode +
+            tempArgsMem[1].asmCode +
+            `SET @${RetMem.asmName} $${tempArgsMem[0].FlatMem.asmName}\n` +
+            `POW @${RetMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n`
         break
     case 'mdv':
-        assemblyCode += `SET @${RetMem.asmName} $${tempArgsMem[0].asmName}\n` +
-            `MDV @${RetMem.asmName} $${tempArgsMem[1].asmName} $${tempArgsMem[2].asmName}\n`
+        assemblyCode = tempArgsMem[0].asmCode +
+            tempArgsMem[1].asmCode +
+            `SET @${RetMem.asmName} $${tempArgsMem[0].FlatMem.asmName}\n` +
+            `MDV @${RetMem.asmName} $${tempArgsMem[1].FlatMem.asmName} $${tempArgsMem[2].FlatMem.asmName}\n`
+        break
+    case 'memcopy':
+        memcopyType = 'COMPLEX'
+        if (argsMem[0].type === 'constant' || argsMem[1].type === 'constant') {
+            if (argsMem[0].type === 'constant' && argsMem[1].type === 'constant') {
+                memcopyType = 'SIMPLE'
+            } else if (argsMem[0].type === 'constant') {
+                memcopyType = 'MIXED_LEFT'
+            } else {
+                memcopyType = 'MIXED_RIGHT'
+            }
+        }
+        switch (memcopyType) {
+        case 'SIMPLE':
+            argsMem[0].hexContent = assertNotUndefined(argsMem[0].hexContent)
+            argsMem[1].hexContent = assertNotUndefined(argsMem[1].hexContent)
+            assemblyCode = `SET @${AstAuxVars.getMemoryObjectByLocation(argsMem[0].hexContent).asmName} $${AstAuxVars.getMemoryObjectByLocation(argsMem[1].hexContent).asmName}\n`
+            break
+        case 'MIXED_LEFT':
+            argsMem[0].hexContent = assertNotUndefined(argsMem[0].hexContent)
+            assemblyCode = tempArgsMem[1].asmCode +
+                `SET @${AstAuxVars.getMemoryObjectByLocation(argsMem[0].hexContent).asmName} $($${tempArgsMem[1].FlatMem.asmName})\n`
+            break
+        case 'MIXED_RIGHT':
+            argsMem[1].hexContent = assertNotUndefined(argsMem[1].hexContent)
+            assemblyCode = tempArgsMem[0].asmCode +
+                `SET @($${tempArgsMem[0].FlatMem.asmName}) $${AstAuxVars.getMemoryObjectByLocation(argsMem[1].hexContent).asmName}\n`
+            break
+        default:
+            // 'COMPLEX'
+            AuxRegister = AstAuxVars.getNewRegister()
+            assemblyCode = tempArgsMem[1].asmCode +
+                tempArgsMem[0].asmCode +
+                `SET @${AuxRegister.asmName} $($${tempArgsMem[1].FlatMem.asmName})\n` +
+                `SET @($${tempArgsMem[0].FlatMem.asmName}) $${AuxRegister.asmName}\n`
+            AstAuxVars.freeRegister(AuxRegister.address)
+            break
+        }
         break
     default:
         throw new Error(`Internal error at line: ${BuiltInToken.line}. Built-in function not implemented.`)
     }
+    tempArgsMem.forEach(tmpArg => {
+        if (tmpArg.isNew) {
+            AstAuxVars.freeRegister(tmpArg.FlatMem.address)
+        }
+    })
     return assemblyCode
 }
 

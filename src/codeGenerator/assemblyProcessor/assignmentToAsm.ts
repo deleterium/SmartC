@@ -60,6 +60,20 @@ export default function assignmentToAsm (
     /** Left type is 'register', 'long' or ''structRef', with offset undefined. Right type is 'constant'.
      * Create assembly instruction. */
     function leftRegularOffsetUndefinedAndRightConstantToAsm () : string {
+        let newVarName: string
+        switch (Right.Offset?.type) {
+        case undefined:
+            return leftRegularOffsetUndefinedAndRightConstantOffsetUndefinedToAsm()
+        case 'constant':
+            Right.hexContent = assertNotUndefined(Right.hexContent)
+            newVarName = auxVars.getMemoryObjectByLocation(utils.addHexContents(Right.Offset.value, Right.hexContent), operationLine).asmName
+            return `SET @${Left.asmName} $${newVarName}\n`
+        case 'variable':
+            throw new Error('Not implemented.')
+        }
+    }
+
+    function leftRegularOffsetUndefinedAndRightConstantOffsetUndefinedToAsm () : string {
         Right.hexContent = assertNotUndefined(Right.hexContent)
         if (Right.hexContent.length > 17) {
             throw new Error(`At line: ${operationLine}.` +
