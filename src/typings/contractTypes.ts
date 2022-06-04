@@ -20,6 +20,8 @@ export type SC_CONFIG = {
     sourcecodeVersion: string,
     /** Support for API Functions: #include APIFunctions */
     APIFunctions: boolean,
+    /** Support for API Functions with fixed numbers: #include fixedAPIFunctions */
+    fixedAPIFunctions: boolean,
     /** Program Name: #program name */
     PName: string,
     /** Program description: #program description */

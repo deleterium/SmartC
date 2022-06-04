@@ -69,8 +69,8 @@ export default function functionSolver (
             const fnArg = FunctionToCall.argsMemObj[i]
             if (utils.isNotValidDeclarationOp(fnArg.declaration, ArgGenObj.SolvedMem)) {
                 throw new Error(`At line: ${CurrentNode.Token.line}.` +
-                    ` Function parameter type is different from variable: '${fnArg.declaration}'` +
-                    ` and '${ArgGenObj.SolvedMem.declaration}'.`)
+                    ` Type of function argument #${i + 1} is different from variable: ` +
+                    ` Expecting '${fnArg.declaration}', got '${ArgGenObj.SolvedMem.declaration}'.`)
             }
             if (ArgGenObj.SolvedMem.size !== 1 && ArgGenObj.SolvedMem.Offset === undefined) {
                 throw new Error(`At line: ${CurrentNode.Token.line}.` +
@@ -127,17 +127,17 @@ export default function functionSolver (
             ` Wrong number of arguments for function '${ifnToCall.name}'.` +
             ` It must have '${ifnToCall.argsMemObj.length}' args.`)
         }
-        rawArgs.forEach(RawSentence => {
+        rawArgs.forEach((RawSentence, idx) => {
             const ArgGenObj = genCode(Program, AuxVars, {
                 RemAST: RawSentence,
                 logicalOp: false,
                 revLogic: false
             })
             returnAssemblyCode += ArgGenObj.asmCode
-            if (utils.getDeclarationFromMemory(ArgGenObj.SolvedMem) !== 'long') {
+            if (utils.isNotValidDeclarationOp(ifnToCall.argsMemObj[idx].declaration, ArgGenObj.SolvedMem)) {
                 throw new Error(`At line: ${CurrentNode.Token.line}.` +
-                    ' API Function parameter type is different from variable: ' +
-                    ` 'long' and '${ArgGenObj.SolvedMem.declaration}'.`)
+                    ` Type of API Function argument #${idx + 1} is different from variable. ` +
+                    ` Expecting '${ifnToCall.argsMemObj[idx].declaration}', got '${ArgGenObj.SolvedMem.declaration}'.`)
             }
             if (ArgGenObj.SolvedMem.size !== 1 && ArgGenObj.SolvedMem.Offset === undefined) {
                 throw new Error(`At line: ${CurrentNode.Token.line}.` +

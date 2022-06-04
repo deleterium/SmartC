@@ -66,6 +66,37 @@ describe('API functions', () => {
     })
 })
 
+describe('fixed API functions', () => {
+    it('should compile: right use', () => {
+        const code = '#pragma optimizationLevel 0\n#include fixedAPIFunctions\n fixed fa;F_Set_A1(fa);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare fa\n\nFUN set_A1 $fa\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: all fixed API', () => {
+        const code = '#include fixedAPIFunctions\nfixed fa; fa = F_Get_A1();\n fa = F_Get_A2();\n fa = F_Get_A3();\n fa = F_Get_A4();\n fa = F_Get_B1();\n fa = F_Get_B2();\n fa = F_Get_B3();\n fa = F_Get_B4();\n F_Set_A1(fa);\n F_Set_A2(fa);\n F_Set_A3(fa);\n F_Set_A4(fa);\n F_Set_B1(fa);\n F_Set_B2(fa);\n F_Set_B3(fa);\n F_Set_B4(2.33);\n fa = F_Get_Amount_For_Tx_In_A();\n fa = F_Get_Current_Balance();\n fa = F_Get_Previous_Balance();\n F_Send_To_Address_In_B(fa);\n fa = F_Get_Map_Value_Keys_In_A();\n fa = F_Get_Activation_Fee();\n fa = F_Get_Asset_Circulating();\n '
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare fa\n\nFUN @fa get_A1\nFUN @fa get_A2\nFUN @fa get_A3\nFUN @fa get_A4\nFUN @fa get_B1\nFUN @fa get_B2\nFUN @fa get_B3\nFUN @fa get_B4\nFUN set_A1 $fa\nFUN set_A2 $fa\nFUN set_A3 $fa\nFUN set_A4 $fa\nFUN set_B1 $fa\nFUN set_B2 $fa\nFUN set_B3 $fa\nSET @r0 #000000000de34c40\nFUN set_B4 $r0\nFUN @fa get_Amount_for_Tx_in_A\nFUN @fa get_Current_Balance\nFUN @fa get_Previous_Balance\nFUN send_to_Address_in_B $fa\nFUN @fa Get_Map_Value_Keys_In_A\nFUN @fa Get_Activation_Fee\nFUN @fa Get_Asset_Circulating\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    test('should throw: wrong argument (expect long, got fixed)', () => {
+        expect(() => {
+            const code = '#include APIFunctions\nfixed fa; Set_A1(fa);'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: wrong argument (expected fixed, got long)', () => {
+        expect(() => {
+            const code = '#include APIFunctions\nlong a; F_Set_A1(a);'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+})
+
 describe('Built-in functions', () => {
     it('should compile: mdv()', () => {
         const code = '#pragma optimizationLevel 0\nlong a, b, c, d; a = mdv(b, c, d);'

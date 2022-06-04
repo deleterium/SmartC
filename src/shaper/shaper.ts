@@ -6,7 +6,7 @@ import {
 } from '../typings/syntaxTypes'
 import { assertNotUndefined, deepCopy } from '../repository/repository'
 import {
-    APITableTemplate, getMemoryTemplate, getTypeDefinitionTemplate, BuiltInTemplate, fixedBaseTemplate
+    APITableTemplate, getMemoryTemplate, getTypeDefinitionTemplate, BuiltInTemplate, fixedBaseTemplate, fixedAPITableTemplate
 } from './templates'
 import sentencesProcessor from './sentencesProcessor'
 import memoryProcessor from './memoryProcessor'
@@ -39,13 +39,16 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         ]
         Program.memory.push(...addRegistersInMemory(Program.Config.maxAuxVars))
         Program.memory.push(...addConstantsInMemory(Program.Config.maxConstVars))
-        if (fixedDetected()) {
+        if (Program.Config.fixedAPIFunctions || fixedDetected()) {
             Program.memory.push(fixedBaseTemplate)
         }
         processGlobalCode()
         Program.functions.forEach(processFunctionCodeAndArguments)
         if (Program.Config.APIFunctions) {
             Program.Global.APIFunctions = APITableTemplate.slice()
+        }
+        if (Program.Config.fixedAPIFunctions) {
+            Program.Global.APIFunctions.push(...fixedAPITableTemplate)
         }
         Program.Global.BuiltInFunctions = BuiltInTemplate.slice()
         validateFunctions()
@@ -147,6 +150,11 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         case 'include':
             if (Token.property === 'APIFunctions') {
                 Program.Config.APIFunctions = boolVal
+                usedBoolVal = true
+                break
+            }
+            if (Token.property === 'fixedAPIFunctions') {
+                Program.Config.fixedAPIFunctions = boolVal
                 usedBoolVal = true
                 break
             }

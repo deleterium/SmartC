@@ -932,3 +932,266 @@ export const APITableTemplate: SC_FUNCTION[] = [
         name: 'Get_Asset_Circulating'
     }
 ]
+
+export const fixedAPITableTemplate: SC_FUNCTION[] = [
+    {
+        argsMemObj: [],
+        asmName: 'get_A1',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_A1'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'get_A2',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_A2'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'get_A3',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_A3'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'get_A4',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_A4'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'get_B1',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_B1'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'get_B2',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_B2'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'get_B3',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_B3'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'get_B4',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_B4'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr',
+                asmName: 'F_Set_A1_addr',
+                type: 'fixed',
+                scope: 'F_Set_A1',
+                declaration: 'fixed',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'set_A1',
+        declaration: 'void',
+        sentences: [],
+        name: 'F_Set_A1'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr',
+                asmName: 'F_Set_A2_addr',
+                type: 'fixed',
+                scope: 'F_Set_A2',
+                declaration: 'fixed',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'set_A2',
+        declaration: 'void',
+        sentences: [],
+        name: 'F_Set_A2'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr',
+                asmName: 'F_Set_A3_addr',
+                type: 'fixed',
+                scope: 'F_Set_A3',
+                declaration: 'fixed',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'set_A3',
+        declaration: 'void',
+        sentences: [],
+        name: 'F_Set_A3'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr',
+                asmName: 'F_Set_A4_addr',
+                type: 'fixed',
+                scope: 'F_Set_A4',
+                declaration: 'fixed',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'set_A4',
+        declaration: 'void',
+        sentences: [],
+        name: 'F_Set_A4'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr',
+                asmName: 'F_Set_B1_addr',
+                type: 'fixed',
+                scope: 'F_Set_B1',
+                declaration: 'fixed',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'set_B1',
+        declaration: 'void',
+        sentences: [],
+        name: 'F_Set_B1'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr',
+                asmName: 'F_Set_B2_addr',
+                type: 'fixed',
+                scope: 'F_Set_B2',
+                declaration: 'fixed',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'set_B2',
+        declaration: 'void',
+        sentences: [],
+        name: 'F_Set_B2'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr',
+                asmName: 'F_Set_B3_addr',
+                type: 'fixed',
+                scope: 'F_Set_B3',
+                declaration: 'fixed',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'set_B3',
+        declaration: 'void',
+        sentences: [],
+        name: 'F_Set_B3'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr',
+                asmName: 'F_Set_B4_addr',
+                type: 'fixed',
+                scope: 'F_Set_B4',
+                declaration: 'fixed',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'set_B4',
+        declaration: 'void',
+        sentences: [],
+        name: 'F_Set_B4'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'get_Amount_for_Tx_in_A',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_Amount_For_Tx_In_A'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'get_Current_Balance',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_Current_Balance'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'get_Previous_Balance',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_Previous_Balance'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr',
+                asmName: 'F_Send_To_Address_In_B_addr',
+                type: 'fixed',
+                scope: 'F_Send_To_Address_In_B',
+                declaration: 'fixed',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'send_to_Address_in_B',
+        declaration: 'void',
+        sentences: [],
+        name: 'F_Send_To_Address_In_B'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Get_Map_Value_Keys_In_A',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_Map_Value_Keys_In_A'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Get_Activation_Fee',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_Activation_Fee'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Get_Asset_Circulating',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_Asset_Circulating'
+    }
+]

@@ -59,6 +59,7 @@ export class SmartC {
             reuseAssignedVar: true,
             sourcecodeVersion: '',
             APIFunctions: false,
+            fixedAPIFunctions: false,
             PName: '',
             PDescription: '',
             PActivationAmount: '',
