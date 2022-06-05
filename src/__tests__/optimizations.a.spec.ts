@@ -23,6 +23,13 @@ describe('Optimizations level zero', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: Optimization with const fX variables', () => {
+        const code = '#pragma optimizationLevel 0\nconst fixed f20000000 = .2; fixed fb; long a= fb * .2;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare f20000000\n^declare fb\n^declare a\n\n^const SET @f20000000 #0000000001312d00\nSET @a $f20000000\nMDV @a $fb $f100000000\nDIV @a $f100000000\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
     it('should compile: Specifc operator optimization with WRONG const n2 variables', () => {
         const code = '#pragma optimizationLevel 0\nlong a , b; const long n2 = 20; a=b+2;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare n2\n\n^const SET @n2 #0000000000000014\nSET @a $b\nINC @a\nINC @a\nFIN\n'

@@ -82,9 +82,12 @@ export default function assignmentToAsm (
         if (Right.hexContent === '0000000000000000') {
             return `CLR @${Left.asmName}\n`
         }
-        const findOpt = auxVars.memory.find(MEM => {
-            return MEM.asmName === `n${Number('0x' + Right.hexContent)}` && MEM.hexContent === Right.hexContent
-        })
+        let optVarName = 'n'
+        if (Right.declaration === 'fixed') {
+            optVarName = 'f'
+        }
+        optVarName += Number('0x' + Right.hexContent).toString(10)
+        const findOpt = auxVars.memory.find(MEM => MEM.asmName === optVarName && MEM.hexContent === Right.hexContent)
         if (findOpt) {
             return `SET @${Left.asmName} $${findOpt.asmName}\n`
         }
