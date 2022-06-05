@@ -1,4 +1,4 @@
-import { stringToHexstring, ReedSalomonAddressDecode, assertNotUndefined, assertNotEqual, assertExpression, deepCopy } from '../repository'
+import { stringToHexstring, ReedSalomonAddressDecode, assertNotUndefined, assertNotEqual, assertExpression, deepCopy, parseDecimalNumber } from '../repository'
 
 describe('Strings to hexstring', () => {
     it('should convert: simple string ( <= 0x7f)', () => {
@@ -179,5 +179,18 @@ describe('assert/deepcopy functions', () => {
         expect(copy).toBeInstanceOf(Date)
         expect(data).toEqual(copy)
         expect(data).not.toBe(copy)
+    })
+})
+
+describe('parseDecimal error', () => {
+    test('should throw: two decimal points', () => {
+        expect(() => {
+            parseDecimalNumber('2.234.33', -1)
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: more than 8 decimals', () => {
+        expect(() => {
+            parseDecimalNumber('2.123456789', -1)
+        }).toThrowError(/^At line/)
     })
 })

@@ -160,7 +160,7 @@ export default function binaryAsnProcessor (
                     'Array index is outside array size.')
             }
             LGenObj.SolvedMem = AuxVars.getMemoryObjectByLocation(
-                utils.addHexContents(LGenObj.SolvedMem.hexContent, LGenObj.SolvedMem.Offset.value)
+                utils.addHexSimple(LGenObj.SolvedMem.hexContent, LGenObj.SolvedMem.Offset.value)
             )
         }
         // Get right side gencode object
@@ -592,15 +592,17 @@ export default function binaryAsnProcessor (
     ) : MEMORY_SLOT | undefined {
         // If left and right side are constants, do the math now for basic operations
         if (Left.type === 'constant' && Right.type === 'constant') {
+            const LeftConstant = utils.memoryToConstantContent(Left)
+            const RightConstant = utils.memoryToConstantContent(Right)
             switch (operatorVal) {
             case '+':
-                return utils.createConstantMemObj(utils.addHexContents(Left.hexContent, Right.hexContent))
+                return utils.createConstantMemObjWithDeclaration(utils.addConstants(LeftConstant, RightConstant))
             case '*':
-                return utils.createConstantMemObj(utils.mulHexContents(Left.hexContent, Right.hexContent))
+                return utils.createConstantMemObjWithDeclaration(utils.mulConstants(LeftConstant, RightConstant))
             case '/':
-                return utils.createConstantMemObj(utils.divHexContents(Left.hexContent, Right.hexContent))
+                return utils.createConstantMemObjWithDeclaration(utils.divConstants(LeftConstant, RightConstant))
             case '-':
-                return utils.createConstantMemObj(utils.subHexContents(Left.hexContent, Right.hexContent))
+                return utils.createConstantMemObjWithDeclaration(utils.subConstants(LeftConstant, RightConstant))
             }
         }
     }

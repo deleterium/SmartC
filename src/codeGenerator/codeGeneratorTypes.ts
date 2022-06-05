@@ -84,7 +84,7 @@ export type GENCODE_AUXVARS = {
      * Object can be global or local function scope.
      * if not found, throws exception with line number.
      */
-    getMemoryObjectByLocation (loc: number|string, line?: number): MEMORY_SLOT
+    getMemoryObjectByLocation (loc: number|bigint|string, line?: number): MEMORY_SLOT
     /** Get a new jump id according to current Configs (genCode scope) */
     getNewJumpID(currLine: number): string
 }

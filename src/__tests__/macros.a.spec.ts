@@ -62,12 +62,15 @@ describe('#program', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
-    test('should throw: forbiden activation amount in hex', () => {
+    it('should compile: activation amount in hex', () => {
         expect(() => {
             const code = '#program activationAmount 0xff\n long a;  a++;'
+            const assembly = '^program activationAmount 500000000\n^declare r0\n^declare r1\n^declare r2\n\nFIN\n'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
-        }).toThrowError(/^At line/)
+            expect(compiler.getAssemblyCode()).toBe(assembly)
+            expect(compiler.getMachineCode().PActivationAmount).toBe('255')
+        })
     })
     it('should compile: allow _ in activationAmount', () => {
         const code = '#program activationAmount 5_0000_0000'

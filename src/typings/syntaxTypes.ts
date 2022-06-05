@@ -6,6 +6,13 @@ export type PRE_TOKEN = {
     extValue?: string
 }
 
+export type HEX_CONTENT = number | bigint | string
+
+export type CONSTANT_CONTENT = {
+    value: HEX_CONTENT
+    declaration: 'long' | 'fixed'
+}
+
 /** Allowed token types */
 export type TOKEN_TYPES = 'Variable' | 'Constant' | 'Operator' | 'UnaryOperator' |
 'SetUnaryOperator' | 'Assignment'| 'SetOperator'|'Comparision'|'CheckOperator'|

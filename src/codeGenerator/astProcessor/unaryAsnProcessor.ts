@@ -160,7 +160,10 @@ export default function unaryAsnProcessor (
         let { SolvedMem: CGenObj, asmCode } = traverseNotLogical()
         if (CGenObj.type === 'constant') {
             return {
-                SolvedMem: utils.createConstantMemObj(utils.subHexContents(0, CGenObj.hexContent)),
+                SolvedMem: utils.createConstantMemObjWithDeclaration(utils.subConstants(
+                    { value: 0, declaration: 'long' },
+                    utils.memoryToConstantContent(CGenObj)
+                )),
                 asmCode: asmCode
             }
         }
@@ -239,7 +242,7 @@ export default function unaryAsnProcessor (
             if (RetMem.Offset !== undefined) {
                 if (RetMem.Offset.type === 'constant') {
                     TmpMemObj = utils.createConstantMemObj(
-                        utils.addHexContents(RetMem.hexContent, RetMem.Offset.value)
+                        utils.addHexSimple(RetMem.hexContent, RetMem.Offset.value)
                     )
                     TmpMemObj.declaration = RetMem.declaration
                     break

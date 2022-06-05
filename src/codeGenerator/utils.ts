@@ -1,5 +1,5 @@
-import { assertNotUndefined } from '../repository/repository'
-import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES, LOOKUP_ASN, BINARY_ASN, END_ASN, EXCEPTION_ASN, NULL_ASN, UNARY_ASN, SWITCH_ASN } from '../typings/syntaxTypes'
+import { assertExpression, assertNotUndefined } from '../repository/repository'
+import { MEMORY_SLOT, TOKEN, AST, DECLARATION_TYPES, LOOKUP_ASN, BINARY_ASN, END_ASN, EXCEPTION_ASN, NULL_ASN, UNARY_ASN, SWITCH_ASN, CONSTANT_CONTENT, HEX_CONTENT } from '../typings/syntaxTypes'
 
 type OBJECT_ASN_TYPE<T> = T extends 'binaryASN' ? BINARY_ASN :
 T extends 'unaryASN' ? UNARY_ASN :
@@ -10,8 +10,6 @@ T extends 'exceptionASN' ? EXCEPTION_ASN :
 T extends 'switchASN' ? SWITCH_ASN :
 never;
 
-type HEXCONTENTS = number | string | undefined
-
 /**
  * Simple functions that do not depend external variables.
  */
@@ -19,16 +17,9 @@ export default {
     /** Creates a constant Memory Object */
     createConstantMemObj (value?: number | bigint | string): MEMORY_SLOT {
         let param: string
-        let declaration : 'long' | 'fixed' = 'long'
         switch (typeof (value)) {
         case 'number':
-            if (value % 1 !== 0) {
-                const intPart = BigInt(Math.trunc(value))
-                const fractionalPart = BigInt(Math.trunc((value % 1) * 100000000))
-                param = (intPart * 100000000n + fractionalPart).toString(16)
-                declaration = 'fixed'
-                break
-            }
+            if (value % 1 !== 0) throw new Error('Internal error')
             param = value.toString(16)
             break
         case 'bigint':
@@ -48,10 +39,16 @@ export default {
             type: 'constant',
             scope: '',
             size: param.length / 16,
-            declaration,
+            declaration: 'long',
             isDeclared: true,
             hexContent: param
         }
+    },
+    /** Creates a constant Memory Object with a given declaration */
+    createConstantMemObjWithDeclaration (input: CONSTANT_CONTENT): MEMORY_SLOT {
+        const retObj = this.createConstantMemObj(input.value)
+        retObj.declaration = input.declaration
+        return retObj
     },
     /** Creates a constant Memory Object */
     createVoidMemObj (): MEMORY_SLOT {
@@ -99,42 +96,130 @@ export default {
     genPushToken (line: number): TOKEN {
         return { type: 'Push', precedence: 12, value: '', line: line }
     },
-    mulHexContents (param1: HEXCONTENTS, param2: HEXCONTENTS) {
-        const n1 = this.HexContentsToBigint(param1)
-        const n2 = this.HexContentsToBigint(param2)
-        return (n1 * n2).toString(16).padStart(16, '0').slice(-16)
+    memoryToConstantContent (MemObj: MEMORY_SLOT) : CONSTANT_CONTENT {
+        assertExpression(MemObj.type === 'constant')
+        return {
+            value: MemObj.hexContent ?? '',
+            declaration: MemObj.declaration === 'fixed' ? 'fixed' : 'long'
+        }
     },
-    divHexContents (param1: HEXCONTENTS, param2: HEXCONTENTS) {
-        const n1 = this.HexContentsToBigint(param1)
-        const n2 = this.HexContentsToBigint(param2)
+    mulConstants (param1: CONSTANT_CONTENT, param2: CONSTANT_CONTENT) : CONSTANT_CONTENT {
+        const n1 = this.HexContentToBigint(param1.value)
+        const n2 = this.HexContentToBigint(param2.value)
+        switch (param1.declaration + param2.declaration) {
+        case 'fixedfixed':
+            return {
+                value: ((n1 * n2) / 100000000n) % 18446744073709551616n,
+                declaration: 'fixed'
+            }
+        case 'fixedlong':
+        case 'longfixed':
+            return {
+                value: (n1 * n2) % 18446744073709551616n,
+                declaration: 'fixed'
+            }
+        default:
+            return {
+                value: (n1 * n2) % 18446744073709551616n,
+                declaration: 'long'
+            }
+        }
+    },
+    divConstants (param1: CONSTANT_CONTENT, param2: CONSTANT_CONTENT) : CONSTANT_CONTENT {
+        const n1 = this.HexContentToBigint(param1.value)
+        const n2 = this.HexContentToBigint(param2.value)
         if (n2 === 0n) {
             throw new Error('Division by zero')
         }
-        return (n1 / n2).toString(16).padStart(16, '0').slice(-16)
+        switch (param1.declaration + param2.declaration) {
+        case 'fixedfixed':
+            return {
+                value: ((n1 * 100000000n) / n2) % 18446744073709551616n,
+                declaration: 'fixed'
+            }
+        case 'fixedlong':
+            return {
+                value: n1 / n2,
+                declaration: 'fixed'
+            }
+        case 'longfixed':
+            return {
+                value: ((n1 * 100000000n * 100000000n) / n2),
+                declaration: 'fixed'
+            }
+        default:
+            // longlong':
+            return {
+                value: n1 / n2,
+                declaration: 'long'
+            }
+        }
     },
-    addHexContents (param1: HEXCONTENTS, param2: HEXCONTENTS) {
-        const n1 = this.HexContentsToBigint(param1)
-        const n2 = this.HexContentsToBigint(param2)
+    addHexSimple (param1: HEX_CONTENT = '', param2: HEX_CONTENT = '') {
+        const n1 = this.HexContentToBigint(param1)
+        const n2 = this.HexContentToBigint(param2)
         return (n1 + n2).toString(16).padStart(16, '0').slice(-16)
     },
-    subHexContents (param1: HEXCONTENTS, param2: HEXCONTENTS) {
-        const n1 = this.HexContentsToBigint(param1)
-        const n2 = this.HexContentsToBigint(param2)
-        let sub = n1 - n2
-        if (sub < 0) {
-            sub += 18446744073709551616n
+    addConstants (param1: CONSTANT_CONTENT, param2: CONSTANT_CONTENT) : CONSTANT_CONTENT {
+        const n1 = this.HexContentToBigint(param1.value)
+        const n2 = this.HexContentToBigint(param2.value)
+        switch (param1.declaration + param2.declaration) {
+        case 'fixedlong':
+            return {
+                value: (n1 + (n2 * 100000000n)) % 18446744073709551616n,
+                declaration: 'fixed'
+            }
+        case 'longfixed':
+            return {
+                value: ((n1 * 100000000n) + n2) % 18446744073709551616n,
+                declaration: 'fixed'
+            }
+        default:
+            // 'fixedfixed' or 'longlong':
+            return {
+                value: (n1 + n2) % 18446744073709551616n,
+                declaration: param1.declaration
+            }
         }
-        return sub.toString(16).padStart(16, '0').slice(-16)
     },
-    /** Converts a hex string or number to bigint */
-    HexContentsToBigint (arg: HEXCONTENTS) : bigint {
-        if (typeof arg === 'undefined') {
+    subConstants (param1: CONSTANT_CONTENT, param2: CONSTANT_CONTENT) {
+        const n1 = this.HexContentToBigint(param1.value)
+        const n2 = this.HexContentToBigint(param2.value)
+        let value: bigint
+        let declaration: 'fixed'|'long'
+        switch (param1.declaration + param2.declaration) {
+        case 'fixedfixed':
+        case 'longlong':
+            value = n1 - n2
+            declaration = param1.declaration
+            break
+        case 'fixedlong':
+            value = n1 - (n2 * 100000000n)
+            declaration = 'fixed'
+            break
+        default:
+            // 'longfixed':
+            value = (n1 * 100000000n) - n2
+            declaration = 'fixed'
+        }
+        if (value < 0) {
+            value += 18446744073709551616n
+        }
+        return { value, declaration }
+    },
+    /** Converts a hex string or number to bigint NO FIXED NUMBER! */
+    HexContentToBigint (arg: HEX_CONTENT | undefined) : bigint {
+        switch (typeof (arg)) {
+        case 'number':
+            return BigInt(arg)
+        case 'bigint':
+            return arg
+        case 'string':
+            if (arg === '') return 0n
+            return BigInt('0x' + arg)
+        default:
             return 0n
         }
-        if (typeof arg === 'number') {
-            return BigInt(arg)
-        }
-        return BigInt('0x' + arg)
     },
     /** Splits an AST into array of AST based on delimiters */
     splitASTOnDelimiters (Obj: AST) {

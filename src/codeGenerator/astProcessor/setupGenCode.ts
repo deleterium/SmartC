@@ -130,12 +130,12 @@ export default function setupGenCode (
         return deepCopy(MemFound)
     }
 
-    function auxvarsGetMemoryObjectByLocation (loc: number|string, line: number = sentenceLine): MEMORY_SLOT {
+    function auxvarsGetMemoryObjectByLocation (loc: number|bigint|string, line: number = sentenceLine): MEMORY_SLOT {
         let addr:number
-        if (typeof loc === 'number') {
-            addr = loc
-        } else {
-            addr = parseInt(loc, 16)
+        switch (typeof loc) {
+        case 'number': addr = loc; break
+        case 'string': addr = parseInt(loc, 16); break
+        default: addr = Number(loc)
         }
         const FoundMemory = AuxVars.memory.find(obj => obj.address === addr)
         if (FoundMemory === undefined) {

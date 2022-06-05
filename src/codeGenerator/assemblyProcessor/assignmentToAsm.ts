@@ -66,7 +66,7 @@ export default function assignmentToAsm (
             return leftRegularOffsetUndefinedAndRightConstantOffsetUndefinedToAsm()
         case 'constant':
             Right.hexContent = assertNotUndefined(Right.hexContent)
-            newVarName = auxVars.getMemoryObjectByLocation(utils.addHexContents(Right.Offset.value, Right.hexContent), operationLine).asmName
+            newVarName = auxVars.getMemoryObjectByLocation(utils.addHexSimple(Right.Offset.value, Right.hexContent), operationLine).asmName
             return `SET @${Left.asmName} $${newVarName}\n`
         case 'variable':
             throw new Error('Not implemented.')
@@ -139,7 +139,7 @@ export default function assignmentToAsm (
             return `SET @${Left.asmName} $${Right.asmName}\n`
         }
         if (Right.Offset.type === 'constant') {
-            const memLoc = utils.addHexContents(Right.hexContent, Right.Offset.value)
+            const memLoc = utils.addHexSimple(Right.hexContent, Right.Offset.value)
             const RightMem = auxVars.getMemoryObjectByLocation(memLoc, operationLine)
             return `SET @${Left.asmName} $${RightMem.asmName}\n`
         }
@@ -199,7 +199,7 @@ export default function assignmentToAsm (
         const paddedLong = assertNotUndefined(Right.hexContent).padStart(arraySize * 16, '0')
         let assemblyCode = ''
         for (let i = 0; i < arraySize; i++) {
-            const newLeft = auxVars.getMemoryObjectByLocation(utils.addHexContents(Left.hexContent, i), operationLine)
+            const newLeft = auxVars.getMemoryObjectByLocation(utils.addHexSimple(Left.hexContent, i), operationLine)
             const newRight = utils.createConstantMemObj(
                 paddedLong.slice(16 * (arraySize - i - 1), 16 * (arraySize - i))
             )

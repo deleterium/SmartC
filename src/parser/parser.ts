@@ -1,5 +1,5 @@
 import { PRE_TOKEN, TOKEN, TOKEN_TYPES } from '../typings/syntaxTypes'
-import { stringToHexstring, ReedSalomonAddressDecode } from '../repository/repository'
+import { stringToHexstring, ReedSalomonAddressDecode, parseDecimalNumber } from '../repository/repository'
 
 type TOKEN_SPEC = {
     sequence: string[]
@@ -79,27 +79,10 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
             sequence: ['numberDec'],
             action (tokenID): TOKEN {
                 const PreTkn = preTokens[tokenID]
-                PreTkn.value = PreTkn.value.replace(/_/g, '')
-                let val: bigint = 0n
-                let extValue = 'long'
-                if (PreTkn.value.includes('.')) {
-                    const parts = PreTkn.value.split('.')
-                    if (parts.length !== 2) {
-                        throw new Error(`At line ${PreTkn.line}. ` +
-                        ' Found more than one decimal point in number.')
-                    }
-                    if (parts[1].length > 8) {
-                        throw new Error(`At line ${PreTkn.line}. ` +
-                        'Fixed numbers cannot have more than 8 digits as decimal fraction.')
-                    }
-                    val = BigInt(parts[0]) * 100000000n + BigInt(parts[1].padEnd(8, '0'))
-                    extValue = 'fixed'
-                } else {
-                    val = BigInt(PreTkn.value)
-                }
-                const valString = val.toString(16)
+                const Parsed = parseDecimalNumber(PreTkn.value, PreTkn.line)
+                const valString = Parsed.value.toString(16)
                 const paddedValString = valString.padStart((Math.floor((valString.length - 1) / 16) + 1) * 16, '0')
-                return { type: 'Constant', precedence: 0, value: paddedValString, line: PreTkn.line, extValue }
+                return { type: 'Constant', precedence: 0, value: paddedValString, line: PreTkn.line, extValue: Parsed.declaration }
             }
         },
         {
@@ -108,7 +91,7 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
                 const PreTkn = preTokens[tokenID]
                 let val = PreTkn.value.replace(/_/g, '').toLowerCase()
                 val = val.padStart((Math.floor((val.length - 1) / 16) + 1) * 16, '0')
-                return { type: 'Constant', precedence: 0, value: val, line: PreTkn.line }
+                return { type: 'Constant', precedence: 0, value: val, line: PreTkn.line, extValue: 'long' }
             }
         },
         {

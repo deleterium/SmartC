@@ -4,7 +4,7 @@ import {
     MEMORY_SLOT,
     REGISTER_TYPE_DEFINITION
 } from '../typings/syntaxTypes'
-import { assertNotUndefined, deepCopy } from '../repository/repository'
+import { assertNotUndefined, deepCopy, parseDecimalNumber } from '../repository/repository'
 import {
     APITableTemplate, getMemoryTemplate, getTypeDefinitionTemplate, BuiltInTemplate, fixedBaseTemplate, fixedAPITableTemplate
 } from './templates'
@@ -237,11 +237,8 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             Program.Config.PDescription = MacroToken.value
             return
         case 'activationAmount':
-            if (/^[0-9_]{1,20}$/.test(MacroToken.value)) {
-                Program.Config.PActivationAmount = MacroToken.value.replace(/_/g, '')
-                return
-            }
-            throw new Error(`At line: ${MacroToken.line}. Program activation must be only numbers or '_'.`)
+            Program.Config.PActivationAmount = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
+            return
         case 'userStackPages':
             if (/^\d\s*$|^10\s*$/.test(MacroToken.value)) {
                 Program.Config.PUserStackPages = Number(MacroToken.value)

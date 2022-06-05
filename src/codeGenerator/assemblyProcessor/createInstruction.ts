@@ -233,7 +233,7 @@ export function flattenMemory (
         case 'array':
             // Looks like an array but can be converted to regular variable
             RetObj = AuxVars.getMemoryObjectByLocation(
-                utils.addHexContents(StuffedMemory.hexContent, StuffedMemory.Offset.value), line
+                utils.addHexSimple(StuffedMemory.hexContent, StuffedMemory.Offset.value), line
             )
             AuxVars.freeRegister(StuffedMemory.address)
             return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
