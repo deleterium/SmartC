@@ -209,8 +209,8 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         case 'version':
             Program.Config.sourcecodeVersion = MacroToken.value
             return false
-        case 'outputSourceLineNumber':
-            Program.Config.outputSourceLineNumber = bool
+        case 'verboseAssembly':
+            Program.Config.verboseAssembly = bool
             return true
         default:
             throw new Error(`At line: ${MacroToken.line}.` +

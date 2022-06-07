@@ -34,8 +34,8 @@ export type SC_CONFIG = {
     PCodeStackPages: number,
     /** Machine code hash id to be matched during compilation: #program codeHashId */
     PCodeHashId: string,
-    /** Adds a comment in generated assembly code with the respective C source code line number  */
-    outputSourceLineNumber: boolean,
+    /** Adds a comment in generated assembly code with source code line number and content */
+    verboseAssembly: boolean,
 }
 
 export type SC_MACRO = {
@@ -83,6 +83,8 @@ export type SC_GLOBAL = {
 }
 
 export type CONTRACT = {
+    /** Source code splitted by lines */
+    sourceLines: string[],
     /** Global statements and information */
     Global: SC_GLOBAL,
     /** Declared functions */

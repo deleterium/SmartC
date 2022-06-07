@@ -39,6 +39,7 @@ export class SmartC {
     private preAssemblyCode?: string
     private MachineCode?: MACHINE_OBJECT
     private Program: CONTRACT = {
+        sourceLines: [],
         Global: {
             BuiltInFunctions: [],
             APIFunctions: [],
@@ -66,11 +67,12 @@ export class SmartC {
             PUserStackPages: 0,
             PCodeStackPages: 0,
             PCodeHashId: '',
-            outputSourceLineNumber: false
+            verboseAssembly: false
         }
     }
 
     constructor (Options: { language: 'C' | 'Assembly', sourceCode: string }) {
+        this.Program.sourceLines = Options.sourceCode.split('\n')
         this.language = Options.language
         this.sourceCode = Options.sourceCode
     }

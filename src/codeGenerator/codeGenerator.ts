@@ -86,10 +86,10 @@ export default function codeGenerator (Program: CONTRACT) {
     }
 
     function writeAsmLine (lineContent: string, sourceCodeLine: number = 0) {
-        if (Program.Config.outputSourceLineNumber === true &&
+        if (Program.Config.verboseAssembly === true &&
             sourceCodeLine !== 0 &&
             sourceCodeLine !== GlobalCodeVars.currSourceLine) {
-            GlobalCodeVars.assemblyCode += `^comment line ${sourceCodeLine}\n`
+            GlobalCodeVars.assemblyCode += `^comment line ${sourceCodeLine} ${Program.sourceLines[sourceCodeLine - 1]}\n`
             GlobalCodeVars.currSourceLine = sourceCodeLine
         }
         GlobalCodeVars.assemblyCode += lineContent + '\n'
@@ -99,10 +99,10 @@ export default function codeGenerator (Program: CONTRACT) {
         if (lines.length === 0) {
             return
         }
-        if (Program.Config.outputSourceLineNumber === true &&
+        if (Program.Config.verboseAssembly === true &&
             sourceCodeLine !== 0 &&
             sourceCodeLine !== GlobalCodeVars.currSourceLine) {
-            GlobalCodeVars.assemblyCode += `^comment line ${sourceCodeLine}\n`
+            GlobalCodeVars.assemblyCode += `^comment line ${sourceCodeLine} ${Program.sourceLines[sourceCodeLine - 1]}\n`
             GlobalCodeVars.currSourceLine = sourceCodeLine
         }
         GlobalCodeVars.assemblyCode += lines

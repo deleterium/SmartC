@@ -153,9 +153,9 @@ describe('#program', () => {
 })
 
 describe('#pragma', () => {
-    it('should compile: outputSourceLineNumber', () => {
-        const code = '#pragma outputSourceLineNumber\nlong a=5;\nif (a){\nwhile (a<5) {\n    a--;\n    }\n    a--;\n}\n#pragma optimizationLevel 0\n'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n^comment line 2\nSET @a #0000000000000005\n^comment line 3\nBZR $a :__if1_endif\n__if1_start:\n^comment line 4\n__loop2_continue:\nSET @r0 #0000000000000005\nBGE $a $r0 :__loop2_break\n__loop2_start:\n^comment line 5\nDEC @a\nJMP :__loop2_continue\n__loop2_break:\n^comment line 7\nDEC @a\n__if1_endif:\nFIN\n'
+    it('should compile: verboseAssembly', () => {
+        const code = '#pragma verboseAssembly\nlong a=5;\nif (a){\nwhile (a<5) {\n    a--;\n    }\n    a--;\n}\n#pragma optimizationLevel 0\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n^comment line 2 long a=5;\nSET @a #0000000000000005\n^comment line 3 if (a){\nBZR $a :__if1_endif\n__if1_start:\n^comment line 4 while (a<5) {\n__loop2_continue:\nSET @r0 #0000000000000005\nBGE $a $r0 :__loop2_break\n__loop2_start:\n^comment line 5     a--;\nDEC @a\nJMP :__loop2_continue\n__loop2_break:\n^comment line 7     a--;\nDEC @a\n__if1_endif:\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -209,9 +209,9 @@ describe('#pragma', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile: outputSourceLineNumber', () => {
-        const code = '#pragma outputSourceLineNumber true\n long a;\n if (a) a++;\n a++;\n#pragma optimizationLevel 0\n'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n^comment line 3\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\n^comment line 4\nINC @a\nFIN\n'
+    it('should compile: verboseAssembly', () => {
+        const code = '#pragma verboseAssembly true\n long a;\n if (a) a++;\n a++;\n#pragma optimizationLevel 0\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n^comment line 3  if (a) a++;\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\n^comment line 4  a++;\nINC @a\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
