@@ -1,5 +1,5 @@
 import { assertExpression, assertNotUndefined } from '../../repository/repository'
-import { MEMORY_SLOT, TOKEN } from '../../typings/syntaxTypes'
+import { MEMORY_SLOT, OFFSET_MODIFIER_CONSTANT, TOKEN } from '../../typings/syntaxTypes'
 import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_AUXVARS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 
 import utils from '../utils'
@@ -198,7 +198,15 @@ export function flattenMemory (
     function flattenMemoryMain (): FLATTEN_MEMORY_RETURN_OBJECT {
         let retInstructions = ''
         if (StuffedMemory.type === 'constant') {
-            return flattenConstant(StuffedMemory.hexContent)
+            switch (StuffedMemory.Offset?.type) {
+            case undefined:
+                return flattenConstant(StuffedMemory.hexContent)
+            case 'constant':
+                return flattenConstantWithOffsetConstant(StuffedMemory.Offset)
+            default:
+                // 'variable'
+                throw new Error('Not implemented')
+            }
         }
         if (StuffedMemory.Offset === undefined) {
             return { FlatMem: StuffedMemory, asmCode: '', isNew: false }
@@ -240,6 +248,14 @@ export function flattenMemory (
         default:
             throw new Error(`Internal error at line: ${line}. Not implemented type in flattenMemory()`)
         }
+    }
+
+    function flattenConstantWithOffsetConstant (ConstOffset: OFFSET_MODIFIER_CONSTANT) : FLATTEN_MEMORY_RETURN_OBJECT {
+        const deferencedVar = AuxVars.getMemoryObjectByLocation(utils.addHexSimple(ConstOffset.value, StuffedMemory.hexContent), line)
+        if (AuxVars.isTemp(deferencedVar.address)) {
+            deferencedVar.declaration = paramDec
+        }
+        return { FlatMem: deferencedVar, asmCode: '', isNew: false }
     }
 
     function flattenConstant (hexParam: string|number|undefined): FLATTEN_MEMORY_RETURN_OBJECT {

@@ -632,7 +632,7 @@ export default function binaryAsnProcessor (
             return true
         }
         // Try optimization if right side is constant, but do not mess if already optimized
-        if (Right.type === 'constant' && !checkOperatorOptimization(operatorVal, Right)) {
+        if (Right.type === 'constant' && Right.Offset === undefined && !checkOperatorOptimization(operatorVal, Right)) {
             return true
         }
         return false

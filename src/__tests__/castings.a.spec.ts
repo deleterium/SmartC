@@ -78,6 +78,13 @@ describe('Castings arithmetic', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: casting hack on returning function', () => {
+        const code = '#pragma optimizationLevel 0\n#include APIFunctions\nfixed a, b; a = b + (*(fixed *)(&Get_A1()));'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nFUN @r0 get_A1\nSET @a $b\nADD @a $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })
 
 describe('Castings logical', () => {
