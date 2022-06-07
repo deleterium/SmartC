@@ -113,7 +113,7 @@ export default function functionSolver (
         let FnRetObj: MEMORY_SLOT
         const processedArgs: MEMORY_SLOT [] = []
         let returnAssemblyCode = ''
-        if (ifnToCall.declaration === 'void') {
+        if (ifnToCall.declaration === 'void' || ifnToCall.name === 'bcftol' || ifnToCall.name === 'bcltof') {
             FnRetObj = utils.createVoidMemObj()
         } else {
             FnRetObj = AuxVars.getNewRegister() // reserve tempvar for return type
@@ -153,6 +153,10 @@ export default function functionSolver (
                 processedArgs
             )
         } else {
+            if (ifnToCall.name === 'bcftol' || ifnToCall.name === 'bcltof') {
+                utils.setMemoryDeclaration(processedArgs[0], ifnToCall.declaration)
+                return { SolvedMem: processedArgs[0], asmCode: returnAssemblyCode }
+            }
             returnAssemblyCode += createBuiltInInstruction(
                 AuxVars,
                 utils.genBuiltInToken(CurrentNode.Token.line, ifnToCall.asmName),

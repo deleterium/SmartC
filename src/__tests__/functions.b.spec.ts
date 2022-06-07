@@ -126,4 +126,11 @@ describe('Built-in functions', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: bcltof() and bcftol()', () => {
+        const code = '#pragma optimizationLevel 0\n#include APIFunctions\n#include fixedAPIFunctions\n fixed fa; long la; fa = bcltof(Get_A1()+25); la = bcftol(F_Get_A1()+25.0);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare fa\n^declare la\n\nFUN @r0 get_A1\nSET @fa #0000000000000019\nADD @fa $r0\nFUN @r0 get_A1\nSET @la #000000009502f900\nADD @la $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })

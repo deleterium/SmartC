@@ -183,6 +183,42 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         declaration: 'void',
         sentences: [],
         name: 'memcopy'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr',
+                asmName: 'bcftol_addr',
+                type: 'fixed',
+                scope: 'bcftol',
+                declaration: 'fixed',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'bcftol',
+        declaration: 'long',
+        sentences: [],
+        name: 'bcftol'
+    },
+    {
+        argsMemObj: [
+            {
+                address: -1,
+                name: 'addr',
+                asmName: 'bcltof_addr',
+                type: 'long',
+                scope: 'bcltof',
+                declaration: 'long',
+                size: 1,
+                isDeclared: true
+            }
+        ],
+        asmName: 'bcltof',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'bcltof'
     }
 ]
 
