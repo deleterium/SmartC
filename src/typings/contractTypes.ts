@@ -3,10 +3,6 @@ import { DECLARATION_TYPES, MEMORY_SLOT, SENTENCES, TOKEN, TYPE_DEFINITIONS } fr
 export type SC_CONFIG = {
     /** Hardcoded compiler version!!! */
     compilerVersion: string,
-    /** Add random string to labels: #pragma enableRandom  */
-    enableRandom: boolean,
-    /** Add line number to labels: #pragma enableLineLabels */
-    enableLineLabels: boolean,
     /** Number of auxiliary vars to be declared by compiler: #pragma maxAuxVars */
     maxAuxVars: number,
     /** Number of auxiliary Constants to be declared by compiler: #pragma maxConstVars */

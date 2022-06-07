@@ -52,8 +52,6 @@ export class SmartC {
         // Default configuration for compiler
         Config: {
             compilerVersion: '2.0-dev',
-            enableRandom: false,
-            enableLineLabels: false,
             maxAuxVars: 3,
             maxConstVars: 0,
             optimizationLevel: 2,

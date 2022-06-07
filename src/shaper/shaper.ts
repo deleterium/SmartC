@@ -194,12 +194,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         case 'reuseAssignedVar':
             Program.Config.reuseAssignedVar = bool
             return true
-        case 'enableRandom':
-            Program.Config.enableRandom = bool
-            return true
-        case 'enableLineLabels':
-            Program.Config.enableLineLabels = bool
-            return true
         case 'optimizationLevel':
             if (num >= 0 && num <= 3) {
                 Program.Config.optimizationLevel = num

@@ -146,15 +146,8 @@ export default function setupGenCode (
 
     function auxvarsGetNewJumpID (line: number) : string {
         // This code shall be equal GlobalCodeVars.getNewJumpID()
-        let id = ''
-        if (Globals.Program.Config.enableLineLabels) {
-            id += line + '_'
-        }
-        if (Globals.Program.Config.enableRandom === true) {
-            return id + Math.random().toString(36).substr(2, 5)
-        }
         AuxVars.jumpId++
-        return id + AuxVars.jumpId.toString(36)
+        return AuxVars.jumpId.toString(36)
     }
 
     return setupGenCodeMain()

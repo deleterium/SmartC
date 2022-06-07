@@ -21,16 +21,8 @@ export default function codeGenerator (Program: CONTRACT) {
         currSourceLine: 0,
         getNewJumpID: function (line: number) {
             // Any changes here, also change function auxvarsGetNewJumpID
-            let id = ''
-            if (this.Program.Config.enableLineLabels) {
-                id += line + '_'
-            }
-            if (this.Program.Config.enableRandom === true) {
-                return id + Math.random().toString(36).substr(2, 5)
-            }
-
             this.jumpId++
-            return id + this.jumpId.toString(36)
+            return this.jumpId.toString(36)
         },
         getLatestLoopID: function () {
             // error check must be in code!
