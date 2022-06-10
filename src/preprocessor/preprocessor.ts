@@ -28,7 +28,7 @@ export default function preprocessor (sourcecode: string) : string {
     const preprocessorCodes: PREPROCESSOR_RULE[] = [
         // Regex order is important!
         { regex: /^\s*#\s*define\s+(\w+)\s*$/, type: 'DEFINE_NULL' },
-        { regex: /^\s*#\s*define\s+(\w+)\s*(\([^)]+\))\s*(\(.+\))\s*$/, type: 'DEFINE_MACRO' },
+        { regex: /^\s*#\s*define\s+(\w+)\s*(\([^)]*\))\s*(\(.+\))\s*$/, type: 'DEFINE_MACRO' },
         { regex: /^\s*#\s*define\s+(\w+\b)(.+)$/, type: 'DEFINE_VAL' },
         { regex: /^\s*#\s*undef\s+(\w+)\s*$/, type: 'UNDEF' },
         { regex: /^\s*#\s*ifdef\s+(\w+)\s*$/, type: 'IFDEF' },
@@ -153,11 +153,21 @@ export default function preprocessor (sourcecode: string) : string {
             if (currChar === ')') {
                 pLevel--
                 if (pLevel === 0) {
-                    argArray.push(currArg.trim())
+                    const endArg = currArg.trim()
+                    if (endArg.length === 0 && argArray.length !== 0) {
+                        throw new Error(`At line: ${line + 1}. Found empty argument on macro declaration.`)
+                    }
+                    if (endArg.length !== 0) {
+                        argArray.push(currArg.trim())
+                    }
                     break
                 }
             }
             if (currChar === ',' && pLevel === 1) {
+                const newArg = currArg.trim()
+                if (newArg.length === 0) {
+                    throw new Error(`At line: ${line + 1}. Found empty argument on macro declaration.`)
+                }
                 argArray.push(currArg.trim())
                 currArg = ''
                 continue
