@@ -234,6 +234,13 @@ describe('Tests for bugfixes', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: bug 29 Must reuse assigned var if it is struct and present at both sides', () => {
+        const code = '#pragma optimizationLevel 0\nstruct TXINFO { long txId, timestamp, deadline, sender; } currentTX; currentTX.deadline = currentTX.txId >> 1;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare currentTX_txId\n^declare currentTX_timestamp\n^declare currentTX_deadline\n^declare currentTX_sender\n\nSET @currentTX_deadline $currentTX_txId\nSET @r0 #0000000000000001\nSHR @currentTX_deadline $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
     test('should throw: bug 30 Internal functions not setting right return type', () => {
         expect(() => {
             const code = '#include APIFunctions\nlong a, *b; b = Get_A1();'

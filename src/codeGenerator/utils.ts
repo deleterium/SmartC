@@ -317,7 +317,9 @@ export default {
         }
         function lookupAsn (InspAst: LOOKUP_ASN): boolean {
             const parts = vname.split('_')
-            if (parts.find(part => part === InspAst.Token.value)) {
+            const idx = parts.findIndex(part => part === InspAst.Token.value)
+            if (idx !== -1 && /^\d+$/.test(parts[idx + 1])) {
+                // Inpect next part. If is number, it is an array. Cancel reuseAssignedVar
                 return false
             }
             const CanReuse = InspAst.modifiers.find(CurrentModifier => {
