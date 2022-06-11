@@ -105,9 +105,23 @@ describe('Built-in functions', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: mdv() (using flatmem)', () => {
+        const code = '#pragma optimizationLevel 0\nlong a, b, c, d; a = mdv(2, 4, 6);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n^declare d\n\nSET @r0 #0000000000000002\nSET @a $r0\nSET @r1 #0000000000000004\nSET @r2 #0000000000000006\nMDV @a $r1 $r2\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
     it('should compile: pow()', () => {
         const code = '#pragma optimizationLevel 0\nlong a, b, c; a=pow(b,c);'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @a $b\nPOW @a $c\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: pow() (using flatmem)', () => {
+        const code = '#pragma optimizationLevel 0\nlong a, b, c; a=pow(2,4);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nSET @r0 #0000000000000002\nSET @a $r0\nSET @r1 #0000000000000004\nPOW @a $r1\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

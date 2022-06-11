@@ -126,14 +126,15 @@ export function createBuiltInInstruction (
     case 'pow':
     case 'powf':
         assemblyCode = tempArgsMem[0].asmCode +
-            tempArgsMem[1].asmCode +
             `SET @${RetMem.asmName} $${tempArgsMem[0].FlatMem.asmName}\n` +
+            tempArgsMem[1].asmCode +
             `POW @${RetMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n`
         break
     case 'mdv':
         assemblyCode = tempArgsMem[0].asmCode +
-            tempArgsMem[1].asmCode +
             `SET @${RetMem.asmName} $${tempArgsMem[0].FlatMem.asmName}\n` +
+            tempArgsMem[1].asmCode +
+            tempArgsMem[2].asmCode +
             `MDV @${RetMem.asmName} $${tempArgsMem[1].FlatMem.asmName} $${tempArgsMem[2].FlatMem.asmName}\n`
         break
     case 'memcopy':
