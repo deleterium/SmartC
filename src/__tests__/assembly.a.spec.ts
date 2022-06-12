@@ -130,6 +130,14 @@ describe('Assembly compilation:', () => {
         expect(result.UserStackPages).toBe(10)
         expect(result.CodeStackPages).toBe(10)
     })
+    it('should compile: reserved ^program directives for sc-simulator', () => {
+        const code = '^program creator 555\n^program contract 121314\nFIN\n'
+        const MachineCode = '28'
+        const MachineData = ''
+        const result = new SmartC({ language: 'Assembly', sourceCode: code }).compile().getMachineCode()
+        expect(result.ByteCode).toBe(MachineCode)
+        expect(result.ByteData).toBe(MachineData)
+    })
     it('should compile: hashMachineCode test', () => {
         const code = '^declare var00\n^declare var01\n^declare var02\n^declare var03\n^declare var04\n^declare var05\n\nFUN set_B1 $var05\nFUN send_All_to_Address_in_B\nFIN'
         const result = new SmartC({ language: 'Assembly', sourceCode: code }).compile().getMachineCode()

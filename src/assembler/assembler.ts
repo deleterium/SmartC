@@ -356,6 +356,10 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
                 AsmObj.PCodeHashId = parts[2].trim()
                 AsmObj.PCodeHashIdLine = line
                 break
+            case 'creator':
+            case 'contract':
+                // Reserved for use in SC-Simulator. Do nothing here
+                break
             default:
                 throw new Error(`assembler() error #7. Unknow '^program' directive: '${parts[1]}'`)
             }
