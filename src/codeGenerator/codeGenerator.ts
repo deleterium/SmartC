@@ -111,6 +111,12 @@ export default function codeGenerator (Program: CONTRACT) {
         if (Program.Config.PActivationAmount !== '') {
             writeAsmLine('^program activationAmount ' + Program.Config.PActivationAmount)
         }
+        if (Program.Config.PCreator !== '') {
+            writeAsmLine(`^program creator ${Program.Config.PCreator}`)
+        }
+        if (Program.Config.PContract !== '') {
+            writeAsmLine(`^program contract ${Program.Config.PContract}`)
+        }
         if (Program.Config.PUserStackPages !== 0) {
             writeAsmLine(`^program userStackPages ${Program.Config.PUserStackPages}`)
         }

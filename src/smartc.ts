@@ -62,6 +62,8 @@ export class SmartC {
             PName: '',
             PDescription: '',
             PActivationAmount: '',
+            PCreator: '',
+            PContract: '',
             PUserStackPages: 0,
             PCodeStackPages: 0,
             PCodeHashId: '',

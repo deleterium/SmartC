@@ -233,6 +233,12 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         case 'activationAmount':
             Program.Config.PActivationAmount = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
             return
+        case 'creator':
+            Program.Config.PCreator = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
+            return
+        case 'contract':
+            Program.Config.PContract = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
+            return
         case 'userStackPages':
             if (/^\d\s*$|^10\s*$/.test(MacroToken.value)) {
                 Program.Config.PUserStackPages = Number(MacroToken.value)

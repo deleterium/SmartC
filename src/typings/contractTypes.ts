@@ -24,6 +24,10 @@ export type SC_CONFIG = {
     PDescription: string,
     /** Program activationAmount: #program activationAmount */
     PActivationAmount: string,
+    /** Program creator: Used only in SC-Simulator. Ignored in machine code output. */
+    PCreator: string,
+    /** Program contract ID: Used only in SC-Simulator. Ignored in machine code output. */
+    PContract: string,
     /** User stack pages to be available: #program userStackPages */
     PUserStackPages: number,
     /** Code stack pages to be available:: #program codeStackPages */
