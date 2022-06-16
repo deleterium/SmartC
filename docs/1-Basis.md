@@ -1,4 +1,4 @@
-[Back](./)
+[Back](./README.md)
 
 ## Language rules
 This project aims to be as close to C as possible. But given special characteristics in Signum assembly language (derived from CIYAM) some differences will occur.
@@ -78,4 +78,4 @@ This can save one instruction for each use and also make your code smaller. But 
 * Run testcases to check tested operations. It shall be no failed cases.
 * Please report a bug if any strange behavior is found.
 
-[Back](./)
+[Back](./README.md)

@@ -1,4 +1,4 @@
-[Back](./)
+[Back](./README.md)
 
 ### Operators precedence
 Following table presents operators precedence order that are [based on C](https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence) but with some simplifications.  When two or more symbols with same precedence are in an expression, the operations will be evaluated from left to right, with exception for unary operators, assignment and keyword. Example: `a=16/4/4` will be evaluated as `a=(16/4)/4`, just like in C. If in doubt, use parenthesis!
@@ -48,4 +48,4 @@ Tokens are divided in groups and later on checked if their combinations are synt
 ### Internal object structure
 Please refer to typescript source code for details.
 
-[Back](./)
+[Back](./README.md)

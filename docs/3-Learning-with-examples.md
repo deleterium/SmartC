@@ -1,7 +1,7 @@
-[Back](./)
+[Back](./README.md)
 
 # Lessons and examples to create smart contracts in Signum network
-Following guide will show examples with progressive complexity and comments how they works. It is expected that you know C language. It is a good idea to read all docs from SmartC. If you plan to debug programs it is good to read also ciyam official documentation available [here](https://ciyam.org/at/) for more specific knowledge in assembly code. There is also some videos compiling these examples at my [personal Youtube channel](https://www.youtube.com/playlist?list=PLyu0NNtb1eg3Gcg2JCrOle8MjtuFPb-Gi).
+Following guide will show examples with progressive complexity and comments how they works. It is expected that you know C language. It is a good idea to read all docs from SmartC. If you plan to be expert, read ciyam official documentation available [here](https://ciyam.org/at/) and Signum [SIP-37](https://github.com/signum-network/SIPs/blob/master/SIP/sip-37.md), [SIP-38](https://github.com/signum-network/SIPs/blob/master/SIP/sip-38.md), [SIP-39](https://github.com/signum-network/SIPs/blob/master/SIP/sip-39.md) for major changes introduced in JUN/2022. There is also some videos compiling these examples at my [personal Youtube channel](https://www.youtube.com/playlist?list=PLyu0NNtb1eg3Gcg2JCrOle8MjtuFPb-Gi).
 
 ## Basic contracts
 
@@ -49,9 +49,7 @@ void main(void) {
 #include APIFunctions
 
 void main(void) {
-    for (A_To_Tx_After_Timestamp(currentTX.timestamp); Get_A1() != 0; A_To_Tx_After_Timestamp(currentTX.timestamp)) {
-        // Update transaction variables
-        getTxDetails();
+    while (getNextTxDetails()) {
         // Process transaction in a specific function
         processTX();
     }
@@ -71,10 +69,16 @@ struct TXINFO {
         message[4];
 } currentTX;
 
-// A must have a TX_Timestamp!
-void getTxDetails(void) {
-    currentTX.amount  = Get_Amount_For_Tx_In_A();
+/* Checks if there is a new transaction. If there is, fill currentTX struct
+   and returns true. Returns false otherwise. */
+long getNextTxDetails(void) {
+    // Do not change the value of currentTX.timestamp on your code!!!
+    A_To_Tx_After_Timestamp(currentTX.timestamp);
+    if (Get_A1() == 0) {
+        return false;
+    }
     currentTX.timestamp = Get_Timestamp_For_Tx_In_A();
+    currentTX.amount = Get_Amount_For_Tx_In_A();
     Message_From_Tx_In_A_To_B();
     currentTX.message[0]=Get_B1();
     currentTX.message[1]=Get_B2();
@@ -82,13 +86,14 @@ void getTxDetails(void) {
     currentTX.message[3]=Get_B4();
     B_To_Address_Of_Tx_In_A();
     currentTX.sender = Get_B1();
+    return true;
 }
 ```
 * To get details from incoming transaction, we will use the API functions. Tell the compiler you will need them with macro `#include APIFunctions`.
-* It is presented the function `getTxDetails()` that will get all details from incoming message to a global variable `currentTX`. This struct has members to store all information that can be retrieved from a TX. Remember to comment values not needed you your code, because every API call costs 0.00735 signa to be executed.
+* It is presented the function `getTxDetails()` that will get all details from incoming message to a global variable `currentTX`. This struct has members to store information that can be retrieved from a TX. Remember to comment values not needed you your code, because every API call costs 0.01 signa to be executed.
 * The `main` function will loop thru all TX received in same block. When the API `A_To_Tx_After_Timestamp` returns timestamp zero or -1, it means there is no more pending transactions, so the contract can be finished.
 * Counter value will be set to 10 during contract deployment (keyword const!). Then it will be increased for each new valid tx received.
-* Global variable is used because it needs less instructions to make same thing. It is important to note, because every assembly instructions will be charged a fee of 0.000735 signa for execution and there are limitations for code and memory sizes when deploying an smart contract in the blockchain.
+* Global variable is used because it needs less instructions to make same thing. It is important to note, because every assembly instructions will be charged a fee of 0.001 signa for execution and there are limitations for code and memory sizes when deploying an smart contract in the blockchain.
 
 ### Sending signa
 ```c
@@ -96,61 +101,66 @@ void getTxDetails(void) {
 
 #program name SendSigna
 #program description Using a function to send signa.
-#program activationAmount 2000_0000
+#program activationAmount 0.3
 
 #include APIFunctions
+#include fixedAPIFunctions
 
-const long ONE_SIGNUM = 1_0000_0000;
+B_To_Address_Of_Creator();
+long creatorId = Get_B1();
 
 void main(void) {
-    for (A_To_Tx_After_Timestamp(currentTX.timestamp); Get_A1() != 0; A_To_Tx_After_Timestamp(currentTX.timestamp)) {
-        // Update transaction variables
-        getTxDetails();
-        if (currentTX.amount > 5 * ONE_SIGNUM) {
-            // If TX is bigger than 5 signa, send 5 signa to creator and refund
-            // remaining amount to sender.
-            B_To_Address_Of_Creator();
-            Send_To_Address_In_B(5 * ONE_SIGNUM);
-            Set_B1(currentTX.sender);
-            Send_To_Address_In_B(currentTX.amount - (5 * ONE_SIGNUM));
+    const fixed cashBackPercent = 0.05;
+    while (getNextTxDetails()) {
+        if (currentTX.amount > 5.2) {
+            // If TX is bigger than 5.2 signa, refund 5% to sender
+            // CashBack to sender.
+            Set_B1_B2(currentTX.sender, 0);
+            F_Send_To_Address_In_B(currentTX.amount * cashBackPercent);
+            // Remaining to creator
+            Set_B1_B2(creatorId, 0);
+            F_Send_To_Address_In_B(currentTX.amount * (1.0 - cashBackPercent));
         } else {
-            // Send tx amount to creator.
-            B_To_Address_Of_Creator();
-            Send_To_Address_In_B(currentTX.amount);
+            // Low amount, no cashBack.
+            Set_B1_B2(creatorId, 0);
+            F_Send_To_Address_In_B(currentTX.amount);
         }
     }
     // After all transactions processed
-    if (Get_Current_Balance() > ONE_SIGNUM) {
-        B_To_Address_Of_Creator();
-        Send_To_Address_In_B(7000_0000);
+    if (F_Get_Current_Balance() > 1.0) {
+        Set_B1_B2(creatorId, 0);
+        F_Send_To_Address_In_B(.7);
     }
 }
 
 struct TXINFO {
    long timestamp;
    long sender;
-   long amount;
-   long message[4];
+   fixed amount;
 } currentTX;
 
-// A must have a TX_Timestamp!
-void getTxDetails(void) {
-    currentTX.amount  = Get_Amount_For_Tx_In_A();
+/* Checks if there is a new transaction. If there is, fill currentTX struct
+   and returns true. Returns false otherwise. */
+long getNextTxDetails(void) {
+    // Do not change the value of currentTX.timestamp on your code!!!
+    A_To_Tx_After_Timestamp(currentTX.timestamp);
+    if (Get_A1() == 0) {
+        return false;
+    }
     currentTX.timestamp = Get_Timestamp_For_Tx_In_A();
-    Message_From_Tx_In_A_To_B();
-    currentTX.message[0]=Get_B1();
-    currentTX.message[1]=Get_B2();
-    currentTX.message[2]=Get_B3();
-    currentTX.message[3]=Get_B4();
+    currentTX.amount = F_Get_Amount_For_Tx_In_A();
     B_To_Address_Of_Tx_In_A();
     currentTX.sender = Get_B1();
+    return true;
 }
 
 ```
-* `#program activationAmount 2000_0000` ensures that only transactions with an amount greater or equal 0.2 signa will be processed.
-* For every transaction, if value is greater than 5 signa, contract sends 5 signa to creator and refund excess amount to sender. Else, sends all incoming amount to creator.
-* To avoid balance accumulation, when all transactions were processed, contract checks if current balance is greater than 1 signum and then sends 0.7 signa to creator.
-* Signum quantity is always specified in NQT. 1 signum is 100000000 NQT. I prefer to group the 'decimal amount' in in two parts with 4 zeros for easier counting. Signa is plural of signum.
+* In this contract the Signa amount is handled with fixed point variables. They have the same 8 decimal numbers the people is used to and can be calculated with operators + - * / >> and <<.
+* Compiler will throw error when trying to use fixed values in the original API functions. So there is a new fixedAPIFunctions that will handle fixed numbers.
+* `#program activationAmount 0.3` ensures that only transactions with an amount greater or equal 0.3 signa will be processed.
+* For every transaction, if value is greater than 5.2 signa, contract sends 5 percent back to sender and the remaining 95% is sent to the creator. If the value is lower or equal to 5.2 sends all incoming amount to creator. This amount has discounted the activationAmount, so user will need to send 5.5 signa to get the cashback.
+* Every transaction processed, some unspent balance will build up in the contract. To avoid this situation, when all transactions were processed, contract checks if current balance is greater than 1 signum and then sends 0.7 signa to creator.
+* If not using fixed numbers, signum quantity is always specified in NQT. 1 signum is 100000000 NQT. I prefer to group the 'decimal amount' in in two parts with 4 zeros for easier counting. Signa is plural of signum.
 
 ### Sending a message
 ```c
@@ -164,9 +174,7 @@ void getTxDetails(void) {
 
 // main loop
 while (true) {
-    for (A_To_Tx_After_Timestamp(currentTX.timestamp); Get_A1() != 0; A_To_Tx_After_Timestamp(currentTX.timestamp)) {
-        // Update transaction variables
-        getTxDetails();
+    while (getNextTxDetails()) {
 
         // Process TX
         send_message.recipient = currentTX.sender;
@@ -174,6 +182,7 @@ while (true) {
         Send_Message();
     }
     // After all processed, send all balance to creator.
+    Clear_B();
     B_To_Address_Of_Creator();
     Send_All_To_Address_In_B();
 }
@@ -194,25 +203,26 @@ struct TXINFO {
    long timestamp;
    long sender;
    long amount;
-   long message[4];
 } currentTX;
 
-// A must have a TX_Timestamp!
-void getTxDetails(void) {
-    currentTX.amount  = Get_Amount_For_Tx_In_A();
+/* Checks if there is a new transaction. If there is, fill currentTX struct
+   and returns true. Returns false otherwise. */
+long getNextTxDetails(void) {
+    // Do not change the value of currentTX.timestamp on your code!!!
+    A_To_Tx_After_Timestamp(currentTX.timestamp);
+    if (Get_A1() == 0) {
+        return false;
+    }
     currentTX.timestamp = Get_Timestamp_For_Tx_In_A();
-    Message_From_Tx_In_A_To_B();
-    currentTX.message[0]=Get_B1();
-    currentTX.message[1]=Get_B2();
-    currentTX.message[2]=Get_B3();
-    currentTX.message[3]=Get_B4();
+    currentTX.amount = Get_Amount_For_Tx_In_A();
     B_To_Address_Of_Tx_In_A();
     currentTX.sender = Get_B1();
+    return true;
 }
 ```
 * Presenting function `Send_Message()` thats sends a message with content in global variable `send_message`.
-* If the contract sends two messages to same recipient in same block, recipient will receive only the last one.
-* Messages are limited to 32 bytes, the size of superregister A. Text is encoded with UTF-8, so some characters need more than one byte.
+* If the contract sends two messages to same recipient in same block, recipient will receive the concatenation of messages.
+* Messages are added in pages, each page has 32 bytes, the size of superregister A. Text is encoded with UTF-8, so some characters need more than one byte.
 * There is no main function. The main loop will process transactions and then send all contract balance to creator. When the API `Send_All_To_Address_In_B` sends all balance, then the contract execution will stop because there is no more balance to run it (it will be frozen). When a new transaction above activation amoun is received, contract resumes execution and process all incoming transactions again.
 
 ### Sending a message and signa
@@ -234,4 +244,4 @@ void Send_Message_And_Signa(long amount) {
 * Easy, just join the API call to send message and send signa. Function and global variable is show in example.
 * Signum node will join message and signa instructions and recipient will receive only one transaction.
 
-[Back](./)
+[Back](./README.md)

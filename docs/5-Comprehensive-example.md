@@ -1,11 +1,12 @@
-[Back](./)
+[Back](./README.md)
 
 ```c
 /* ****************************************************************** *
  * Program: calculator.c
  * Author: Rui Deleterium
  *
- * This contract is online at S-6CPX-Y8EH-6G3E-FW3R3
+ * A previous version of this contract is online at
+ *    S-6CPX-Y8EH-6G3E-FW3R3. Currently it was upgraded to SmartC v2.0
  *
  * Contract expects a message with 3 arguments: Number Operator Number.
  * Arguments must have only one space between them.
@@ -29,8 +30,41 @@
 long ONE_SIGNUM = 1_0000_0000;
 long n8 = 8, n10 = 10, n255 = 0xff;
 
-void process_TX(void) {
+void main(void) {
+    while (getNextTxDetails()) {
+        process_TX();
+    }
+    //clean_up();
+}
 
+struct TXINFO {
+   long timestamp;
+   long sender;
+   long amount;
+   long message[4];
+} currentTX;
+
+/* Checks if there is a new transaction. If there is, fill currentTX struct
+   and returns true. Returns false otherwise. */
+long getNextTxDetails(void) {
+    // Do not change the value of currentTX.timestamp on your code!!!
+    A_To_Tx_After_Timestamp(currentTX.timestamp);
+    if (Get_A1() == 0) {
+        return false;
+    }
+    currentTX.timestamp = Get_Timestamp_For_Tx_In_A();
+    currentTX.amount = Get_Amount_For_Tx_In_A();
+    Message_From_Tx_In_A_To_B();
+    currentTX.message[0]=Get_B1();
+    currentTX.message[1]=Get_B2();
+    currentTX.message[2]=Get_B3();
+    currentTX.message[3]=Get_B4();
+    B_To_Address_Of_Tx_In_A();
+    currentTX.sender = Get_B1();
+    return true;
+}
+
+void process_TX(void) {
     long values[3], beauty_msg[7], result;
 
     if (currentTX.message[0] == 0) { //no message
@@ -53,35 +87,36 @@ void process_TX(void) {
         return;
     }
 
-    if (values[1] == "+") {
-        result = ltoa(atol(values[0]) + atol(values[2]));
-
-    } else if (values[1] == "*") {
-        result = ltoa(atol(values[0]) * atol(values[2]));
-
-    } else if (values[1] == "-") {
-        result = atol(values[0]) - atol(values[2]);
-        if (result < 0){
-            beauty_msg[0] = '-';
-            beauty_msg[1] = ltoa(-result);
-            concat(beauty_msg, 2, &result, 1);
-        } else {
-            result = ltoa(result);
-        }
-
-    } else if (values[1] == "/") {
-        result = atol(values[2]);
-        if (result == 0) {
-            result = "div/0";
-        } else {
-            result = ltoa(atol(values[0]) / result);
-        }
-
-    } else {
-        send_message.recipient = currentTX.sender;
-        send_message.message[] = "Unknow operator. Use +-*/";
-        Send_Message();
-        return;
+    switch (values[1]) {
+        case "+":
+            result = ltoa(atol(values[0]) + atol(values[2]));
+            break;
+        case "*":
+            result = ltoa(atol(values[0]) * atol(values[2]));
+            break;
+        case "-":
+            result = atol(values[0]) - atol(values[2]);
+            if (result < 0){
+                beauty_msg[0] = '-';
+                beauty_msg[1] = ltoa(-result);
+                concat(beauty_msg, 2, &result, 1);
+            } else {
+                result = ltoa(result);
+            }
+            break;
+        case "/":
+            result = atol(values[2]);
+            if (result == 0) {
+                result = "div/0";
+            } else {
+                result = ltoa(atol(values[0]) / result);
+            }
+            break;
+        default:
+            send_message.recipient = currentTX.sender;
+            send_message.message[] = "Unknow operator. Use +-*/";
+            Send_Message();
+            return;
     }
 
     beauty_msg[0] = values[0];
@@ -97,30 +132,11 @@ void process_TX(void) {
     Send_Message();
 }
 
-struct TXINFO {
-   long timestamp;
-   long sender;
-   long amount;
-   long message[4];
-} currentTX;
-
-// A must have a TX_Timestamp!
-void getTxDetails(void) {
-    currentTX.amount  = Get_Amount_For_Tx_In_A();
-    currentTX.timestamp = Get_Timestamp_For_Tx_In_A();
-    Message_From_Tx_In_A_To_B();
-    currentTX.message[0]=Get_B1();
-    currentTX.message[1]=Get_B2();
-    currentTX.message[2]=Get_B3();
-    currentTX.message[3]=Get_B4();
-    B_To_Address_Of_Tx_In_A();
-    currentTX.sender = Get_B1();
-}
-
 struct SENDMESSAGE {
    long recipient;
    long message[4];
 } send_message;
+
 void Send_Message(void) {
     Set_B1(send_message.recipient);
     Set_A1_A2(send_message.message[0], send_message.message[1]);
@@ -157,7 +173,7 @@ long split(long separator, long * source, long source_length, long * ret, long r
     while (i_param < source_length) {
         act_arg = source[i_param];
         chr = act_arg & 0xff;
-        while (chr != 0) { 
+        while (chr != 0) {
             if (chr == separator){
                 field++;
                 i_ret = 0;
@@ -258,6 +274,7 @@ long atol(long val)
     } while (true);
     return ret;
 }
+
 // Integer to ASCII (base10 positive and less than 100.000.000)
 // Iterative function to implement itoa() clone function in C
 // Expects a long. If number is negative or bigger than MAX_LTOA
@@ -276,15 +293,6 @@ long ltoa(long val)
     } while (val != 0);
     return ret;
 }
-
-void main(void) {
-    for (A_To_Tx_After_Timestamp(currentTX.timestamp); Get_A1() != 0; A_To_Tx_After_Timestamp(currentTX.timestamp)) {
-        // Update transaction variables
-        getTxDetails();
-        process_TX();
-    }
-    //clean_up();
-}
 ```
 
-[Back](./)
+[Back](./README.md)

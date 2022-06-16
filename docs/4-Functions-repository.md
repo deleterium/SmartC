@@ -1,7 +1,33 @@
-[Back](./)
+[Back](./README.md)
 
 # Functions repository
-These functions can be added to projects and speed up development time!
+These functions and macros can be added to projects and speed up development time!
+
+## Macros
+Macro functions are elaborated substitutions done during compilation. Check some options:
+
+```c
+
+#define getCurrentBlock() (Get_Block_Timestamp() >> 32)
+
+#define sendSigna(recipient, amount) (\
+    Set_B1_B2(recipient, 0), \
+    F_Send_To_Address_In_B(amount))
+
+#define sendMessage1(recipient, m1) (\
+    Clear_A_And_B(), \
+    Set_B1(recipient), \
+    Set_A1(m1), \
+    Send_A_To_Address_In_B())
+
+#define sendMessage4(recipient, m1, m2, m3, m4) (\
+    Set_B1_B2(recipient, 0), \
+    Set_A1_A2(m1, m2), \
+    Set_A3_A4(m3, m4), \
+    Send_A_To_Address_In_B())
+
+// You got it!
+```
 
 ## Text to number: atol()
 
@@ -169,4 +195,4 @@ long concat(long * source, long source_length, long * ret, long ret_length)
 }
 ```
 
-[Back](./)
+[Back](./README.md)
