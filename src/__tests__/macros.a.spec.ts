@@ -261,3 +261,12 @@ describe('#include and misc', () => {
         }).toThrowError(/^At line/)
     })
 })
+describe('#define macro() ()', () => {
+    it('should compile: macro returning value', () => {
+        const code = '#pragma optimizationLevel 0\n#include APIFunctions\n#define getCreator() (Clear_A(), B_To_Address_Of_Creator(), Get_B1())\n long a; if (getCreator() == 0) a++;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFUN clear_A\nFUN B_to_Address_of_Creator\nFUN @r0 get_B1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+})

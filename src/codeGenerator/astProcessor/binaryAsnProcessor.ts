@@ -51,11 +51,9 @@ export default function binaryAsnProcessor (
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        LGenObj.asmCode += RGenObj.asmCode
-        LGenObj.asmCode += AuxVars.getPostOperations()
-        // Note: RGenObj always have MemObj, because jumpTarget is undefined.
-        AuxVars.freeRegister(RGenObj.SolvedMem.address)
-        return LGenObj
+        RGenObj.asmCode = LGenObj.asmCode + RGenObj.asmCode + AuxVars.getPostOperations()
+        AuxVars.freeRegister(LGenObj.SolvedMem.address)
+        return RGenObj
     }
 
     function operatorProc () : GENCODE_SOLVED_OBJECT {
