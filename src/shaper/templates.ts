@@ -60,97 +60,46 @@ export function getTypeDefinitionTemplate<T extends 'register'|'long'|'fixed'|'s
     return RetObj as ObjectTypeDefinition<T>
 }
 
+const longArg : MEMORY_SLOT = {
+    address: -1,
+    name: 'dummy',
+    asmName: 'dummy_dummy',
+    type: 'long',
+    scope: 'dummy',
+    declaration: 'long',
+    size: 1,
+    isDeclared: true
+}
+
+const fixedArg : MEMORY_SLOT = {
+    address: -1,
+    name: 'dummy',
+    asmName: 'dummy_dummy',
+    type: 'fixed',
+    scope: 'dummy',
+    declaration: 'fixed',
+    size: 1,
+    isDeclared: true
+}
+
 export const BuiltInTemplate: SC_FUNCTION[] = [
     /* Note here: asmName and name shall be the same */
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr1',
-                asmName: 'pow_addr1',
-                type: 'long',
-                scope: 'pow',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            },
-            {
-                address: -1,
-                name: 'addr2',
-                asmName: 'pow_addr2',
-                type: 'long',
-                scope: 'pow',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg, longArg],
         asmName: 'pow',
         declaration: 'long',
         sentences: [],
         name: 'pow'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr1',
-                asmName: 'mdv_addr1',
-                type: 'long',
-                scope: 'mdf',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            },
-            {
-                address: -1,
-                name: 'addr2',
-                asmName: 'mdv_addr2',
-                type: 'long',
-                scope: 'mdv',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            },
-            {
-                address: -1,
-                name: 'addr3',
-                asmName: 'mdv_addr3',
-                type: 'long',
-                scope: 'mdv',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg, longArg, longArg],
         asmName: 'mdv',
         declaration: 'long',
         sentences: [],
         name: 'mdv'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr1',
-                asmName: 'powf_addr1',
-                type: 'long',
-                scope: 'powf',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            },
-            {
-                address: -1,
-                name: 'addr2',
-                asmName: 'powf_addr2',
-                type: 'fixed',
-                scope: 'powf',
-                declaration: 'fixed',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg, fixedArg],
         asmName: 'powf',
         declaration: 'long',
         sentences: [],
@@ -185,36 +134,14 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         name: 'memcopy'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'bcftol_addr',
-                type: 'fixed',
-                scope: 'bcftol',
-                declaration: 'fixed',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [fixedArg],
         asmName: 'bcftol',
         declaration: 'long',
         sentences: [],
         name: 'bcftol'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'bcltof_addr',
-                type: 'long',
-                scope: 'bcltof',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg],
         asmName: 'bcltof',
         declaration: 'fixed',
         sentences: [],
@@ -305,256 +232,84 @@ export const APITableTemplate: SC_FUNCTION[] = [
         name: 'Get_B4'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'Set_A1_addr',
-                type: 'long',
-                scope: 'Set_A1',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg],
         asmName: 'set_A1',
         declaration: 'void',
         sentences: [],
         name: 'Set_A1'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'Set_A2_addr',
-                type: 'long',
-                scope: 'Set_A2',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg],
         asmName: 'set_A2',
         declaration: 'void',
         sentences: [],
         name: 'Set_A2'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'Set_A3_addr',
-                type: 'long',
-                scope: 'Set_A3',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg],
         asmName: 'set_A3',
         declaration: 'void',
         sentences: [],
         name: 'Set_A3'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'Set_A4_addr',
-                type: 'long',
-                scope: 'Set_A4',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg],
         asmName: 'set_A4',
         declaration: 'void',
         sentences: [],
         name: 'Set_A4'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr1',
-                asmName: 'Set_A1_A2_addr1',
-                type: 'long',
-                scope: 'Set_A1_A2',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            },
-            {
-                address: -1,
-                name: 'addr2',
-                asmName: 'Set_A1_A2_addr2',
-                type: 'long',
-                scope: 'Set_A1_A2',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg, longArg],
         asmName: 'set_A1_A2',
         declaration: 'void',
         sentences: [],
         name: 'Set_A1_A2'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr1',
-                asmName: 'Set_A3_A4_addr1',
-                type: 'long',
-                scope: 'Set_A3_A4',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            },
-            {
-                address: -1,
-                name: 'addr2',
-                asmName: 'Set_A3_A4_addr2',
-                type: 'long',
-                scope: 'Set_A3_A4',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg, longArg],
         asmName: 'set_A3_A4',
         declaration: 'void',
         sentences: [],
         name: 'Set_A3_A4'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'Set_B1_addr',
-                type: 'long',
-                scope: 'Set_B1',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg],
         asmName: 'set_B1',
         declaration: 'void',
         sentences: [],
         name: 'Set_B1'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'Set_B2_addr',
-                type: 'long',
-                scope: 'Set_B2',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg],
         asmName: 'set_B2',
         declaration: 'void',
         sentences: [],
         name: 'Set_B2'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'Set_B3_addr',
-                type: 'long',
-                scope: 'Set_B3',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg],
         asmName: 'set_B3',
         declaration: 'void',
         sentences: [],
         name: 'Set_B3'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'Set_B4_addr',
-                type: 'long',
-                scope: 'Set_B4',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg],
         asmName: 'set_B4',
         declaration: 'void',
         sentences: [],
         name: 'Set_B4'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr1',
-                asmName: 'Set_B1_B2_addr1',
-                type: 'long',
-                scope: 'Set_B1_B2',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            },
-            {
-                address: -1,
-                name: 'addr2',
-                asmName: 'Set_B1_B2_addr2',
-                type: 'long',
-                scope: 'Set_B1_B2',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg, longArg],
         asmName: 'set_B1_B2',
         declaration: 'void',
         sentences: [],
         name: 'Set_B1_B2'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr1',
-                asmName: 'Set_B3_B4_addr1',
-                type: 'long',
-                scope: 'Set_B3_B4',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            },
-            {
-                address: -1,
-                name: 'addr2',
-                asmName: 'Set_B3_B4_addr2',
-                type: 'long',
-                scope: 'Set_B3_B4',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg, longArg],
         asmName: 'set_B3_B4',
         declaration: 'void',
         sentences: [],
@@ -792,18 +547,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         name: 'Put_Last_Block_Hash_In_A'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'A_To_Tx_After_Timestamp_addr',
-                type: 'long',
-                scope: 'A_To_Tx_After_Timestamp',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg],
         asmName: 'A_to_Tx_after_Timestamp',
         declaration: 'void',
         sentences: [],
@@ -873,18 +617,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         name: 'Get_Previous_Balance'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'Send_To_Address_In_B_addr',
-                type: 'long',
-                scope: 'Send_To_Address_In_B',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg],
         asmName: 'send_to_Address_in_B',
         declaration: 'void',
         sentences: [],
@@ -912,28 +645,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         name: 'Send_A_To_Address_In_B'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr2',
-                asmName: 'Add_Minutes_To_Timestamp_addr2',
-                type: 'long',
-                scope: 'Add_Minutes_To_Timestamp',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            },
-            {
-                address: -1,
-                name: 'addr3',
-                asmName: 'Add_Minutes_To_Timestamp_addr3',
-                type: 'long',
-                scope: 'Add_Minutes_To_Timestamp',
-                declaration: 'long',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [longArg, longArg],
         asmName: 'add_Minutes_to_Timestamp',
         declaration: 'long',
         sentences: [],
@@ -1083,144 +795,56 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         name: 'F_Get_B4'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'F_Set_A1_addr',
-                type: 'fixed',
-                scope: 'F_Set_A1',
-                declaration: 'fixed',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [fixedArg],
         asmName: 'set_A1',
         declaration: 'void',
         sentences: [],
         name: 'F_Set_A1'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'F_Set_A2_addr',
-                type: 'fixed',
-                scope: 'F_Set_A2',
-                declaration: 'fixed',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [fixedArg],
         asmName: 'set_A2',
         declaration: 'void',
         sentences: [],
         name: 'F_Set_A2'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'F_Set_A3_addr',
-                type: 'fixed',
-                scope: 'F_Set_A3',
-                declaration: 'fixed',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [fixedArg],
         asmName: 'set_A3',
         declaration: 'void',
         sentences: [],
         name: 'F_Set_A3'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'F_Set_A4_addr',
-                type: 'fixed',
-                scope: 'F_Set_A4',
-                declaration: 'fixed',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [fixedArg],
         asmName: 'set_A4',
         declaration: 'void',
         sentences: [],
         name: 'F_Set_A4'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'F_Set_B1_addr',
-                type: 'fixed',
-                scope: 'F_Set_B1',
-                declaration: 'fixed',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [fixedArg],
         asmName: 'set_B1',
         declaration: 'void',
         sentences: [],
         name: 'F_Set_B1'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'F_Set_B2_addr',
-                type: 'fixed',
-                scope: 'F_Set_B2',
-                declaration: 'fixed',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [fixedArg],
         asmName: 'set_B2',
         declaration: 'void',
         sentences: [],
         name: 'F_Set_B2'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'F_Set_B3_addr',
-                type: 'fixed',
-                scope: 'F_Set_B3',
-                declaration: 'fixed',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [fixedArg],
         asmName: 'set_B3',
         declaration: 'void',
         sentences: [],
         name: 'F_Set_B3'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'F_Set_B4_addr',
-                type: 'fixed',
-                scope: 'F_Set_B4',
-                declaration: 'fixed',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [fixedArg],
         asmName: 'set_B4',
         declaration: 'void',
         sentences: [],
@@ -1248,18 +872,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         name: 'F_Get_Previous_Balance'
     },
     {
-        argsMemObj: [
-            {
-                address: -1,
-                name: 'addr',
-                asmName: 'F_Send_To_Address_In_B_addr',
-                type: 'fixed',
-                scope: 'F_Send_To_Address_In_B',
-                declaration: 'fixed',
-                size: 1,
-                isDeclared: true
-            }
-        ],
+        argsMemObj: [fixedArg],
         asmName: 'send_to_Address_in_B',
         declaration: 'void',
         sentences: [],
