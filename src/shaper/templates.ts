@@ -71,6 +71,17 @@ const longArg : MEMORY_SLOT = {
     isDeclared: true
 }
 
+const longPtrArg : MEMORY_SLOT = {
+    address: -1,
+    name: 'dummy',
+    asmName: 'dummy_dummy',
+    type: 'long',
+    scope: 'dummy',
+    declaration: 'long_ptr',
+    size: 1,
+    isDeclared: true
+}
+
 const fixedArg : MEMORY_SLOT = {
     address: -1,
     name: 'dummy',
@@ -80,6 +91,17 @@ const fixedArg : MEMORY_SLOT = {
     declaration: 'fixed',
     size: 1,
     isDeclared: true
+}
+
+export const autoCounterTemplate : MEMORY_SLOT = {
+    address: -1,
+    asmName: '_counterTimestamp',
+    declaration: 'long',
+    isDeclared: true,
+    name: '_counterTimestamp',
+    scope: '',
+    size: 1,
+    type: 'long'
 }
 
 export const BuiltInTemplate: SC_FUNCTION[] = [
@@ -146,6 +168,288 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         declaration: 'fixed',
         sentences: [],
         name: 'bcltof'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'getNextTx',
+        declaration: 'long',
+        sentences: [],
+        name: 'getNextTx'
+    },
+    {
+        argsMemObj: [longArg],
+        asmName: 'getNextTxFromBlockheight',
+        declaration: 'long',
+        sentences: [],
+        name: 'getNextTxFromBlockheight'
+    },
+    {
+        argsMemObj: [longArg],
+        asmName: 'getBlockheight',
+        declaration: 'long',
+        sentences: [],
+        name: 'getBlockheight'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'getCurrentBlockheight',
+        declaration: 'long',
+        sentences: [],
+        name: 'getCurrentBlockheight'
+    },
+    {
+        argsMemObj: [longArg],
+        asmName: 'getAmount',
+        declaration: 'long',
+        sentences: [],
+        name: 'getAmount'
+    },
+    {
+        argsMemObj: [longArg],
+        asmName: 'getSender',
+        declaration: 'long',
+        sentences: [],
+        name: 'getSender'
+    },
+    {
+        argsMemObj: [longArg],
+        asmName: 'getType',
+        declaration: 'long',
+        sentences: [],
+        name: 'getType'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'getCreator',
+        declaration: 'long',
+        sentences: [],
+        name: 'getCreator'
+    },
+    {
+        argsMemObj: [longArg],
+        asmName: 'getCreatorOf',
+        declaration: 'long',
+        sentences: [],
+        name: 'getCreatorOf'
+    },
+    {
+        argsMemObj: [longArg],
+        asmName: 'getCodeHashOf',
+        declaration: 'long',
+        sentences: [],
+        name: 'getCodeHashOf'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'getWeakRandomNumber',
+        declaration: 'long',
+        sentences: [],
+        name: 'getWeakRandomNumber'
+    },
+    {
+        argsMemObj: [longArg],
+        asmName: 'getActivationOf',
+        declaration: 'long',
+        sentences: [],
+        name: 'getActivationOf'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'getCurrentBalance',
+        declaration: 'long',
+        sentences: [],
+        name: 'getCurrentBalance'
+    },
+    {
+        argsMemObj: [longArg, longArg, longPtrArg],
+        asmName: 'readMessage',
+        declaration: 'void',
+        sentences: [],
+        name: 'readMessage'
+    },
+    {
+        argsMemObj: [longPtrArg, longArg],
+        asmName: 'sendMessage',
+        declaration: 'void',
+        sentences: [],
+        name: 'sendMessage'
+    },
+    {
+        argsMemObj: [longArg, longPtrArg, longArg],
+        asmName: 'sendAmountAndMessage',
+        declaration: 'void',
+        sentences: [],
+        name: 'sendAmountAndMessage'
+    },
+    {
+        argsMemObj: [longArg, longArg],
+        asmName: 'sendAmount',
+        declaration: 'void',
+        sentences: [],
+        name: 'sendAmount'
+    },
+    {
+        argsMemObj: [longArg],
+        asmName: 'sendBalance',
+        declaration: 'void',
+        sentences: [],
+        name: 'sendBalance'
+    },
+    {
+        argsMemObj: [longArg, longArg],
+        asmName: 'getMapValue',
+        declaration: 'long',
+        sentences: [],
+        name: 'getMapValue'
+    },
+    {
+        argsMemObj: [longArg, longArg, longArg],
+        asmName: 'getExtMapValue',
+        declaration: 'long',
+        sentences: [],
+        name: 'getExtMapValue'
+    },
+    {
+        argsMemObj: [longArg, longArg, longArg],
+        asmName: 'setMapValue',
+        declaration: 'void',
+        sentences: [],
+        name: 'setMapValue'
+    },
+    {
+        argsMemObj: [longArg, longArg, longArg],
+        asmName: 'issueAsset',
+        declaration: 'long',
+        sentences: [],
+        name: 'issueAsset'
+    },
+    {
+        argsMemObj: [longArg, longArg],
+        asmName: 'mintAsset',
+        declaration: 'void',
+        sentences: [],
+        name: 'mintAsset'
+    },
+    {
+        argsMemObj: [longArg, longArg, longArg],
+        asmName: 'sendQuantity',
+        declaration: 'void',
+        sentences: [],
+        name: 'sendQuantity'
+    },
+    {
+        argsMemObj: [longArg],
+        asmName: 'getAssetBalance',
+        declaration: 'long',
+        sentences: [],
+        name: 'getAssetBalance'
+    },
+    {
+        argsMemObj: [longArg, longArg, longArg, longArg, longArg, longArg],
+        asmName: 'checkSignature',
+        declaration: 'long',
+        sentences: [],
+        name: 'checkSignature'
+    },
+    {
+        argsMemObj: [longArg, longArg, longArg, longArg, longArg],
+        asmName: 'distributeToHolders',
+        declaration: 'void',
+        sentences: [],
+        name: 'distributeToHolders'
+    },
+    {
+        argsMemObj: [longArg, longArg],
+        asmName: 'getAssetHoldersCount',
+        declaration: 'long',
+        sentences: [],
+        name: 'getAssetHoldersCount'
+    },
+    {
+        argsMemObj: [longArg, longPtrArg],
+        asmName: 'readAssets',
+        declaration: 'void',
+        sentences: [],
+        name: 'readAssets'
+    },
+    {
+        argsMemObj: [longArg, longArg],
+        asmName: 'getQuantity',
+        declaration: 'long',
+        sentences: [],
+        name: 'getQuantity'
+    },
+    {
+        argsMemObj: [longArg],
+        asmName: 'getAssetCirculating',
+        declaration: 'long',
+        sentences: [],
+        name: 'getAssetCirculating'
+    },
+
+    /* fixed number versions */
+    {
+        argsMemObj: [longArg],
+        asmName: 'getAmountFx',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'getAmountFx'
+    },
+    {
+        argsMemObj: [longArg],
+        asmName: 'getActivationOfFx',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'getActivationOfFx'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'getCurrentBalanceFx',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'getCurrentBalanceFx'
+    },
+    {
+        argsMemObj: [fixedArg, longPtrArg, longArg],
+        asmName: 'sendAmountAndMessageFx',
+        declaration: 'void',
+        sentences: [],
+        name: 'sendAmountAndMessageFx'
+    },
+    {
+        argsMemObj: [fixedArg, longArg],
+        asmName: 'sendAmountFx',
+        declaration: 'void',
+        sentences: [],
+        name: 'sendAmountFx'
+    },
+    {
+        argsMemObj: [longArg, longArg],
+        asmName: 'getMapValueFx',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'getMapValueFx'
+    },
+    {
+        argsMemObj: [longArg, longArg, longArg],
+        asmName: 'getExtMapValueFx',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'getExtMapValueFx'
+    },
+    {
+        argsMemObj: [longArg, longArg, fixedArg],
+        asmName: 'setMapValueFx',
+        declaration: 'void',
+        sentences: [],
+        name: 'setMapValueFx'
+    },
+    {
+        argsMemObj: [longArg, longArg, fixedArg, longArg, longArg],
+        asmName: 'distributeToHoldersFx',
+        declaration: 'void',
+        sentences: [],
+        name: 'distributeToHoldersFx'
     }
 ]
 

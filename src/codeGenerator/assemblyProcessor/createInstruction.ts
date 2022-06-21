@@ -120,8 +120,20 @@ export function createBuiltInInstruction (
 ) : string {
     let memcopyType : 'SIMPLE' | 'MIXED_LEFT' | 'MIXED_RIGHT' | 'COMPLEX'
     let AuxRegister: MEMORY_SLOT
+    let AuxRegisterA: MEMORY_SLOT
+    let AuxRegisterB: MEMORY_SLOT
+    let newJump: string
+    let auxFlatMem: FLATTEN_MEMORY_RETURN_OBJECT
     let assemblyCode = ''
-    const tempArgsMem = argsMem.map((VarObj) => flattenMemory(AstAuxVars, VarObj, -1))
+
+    switch (BuiltInToken.value) {
+    case 'checkSignature':
+    case 'distributeToHolders':
+    case 'distributeToHoldersFx':
+        return createBuiltIn4ArgsPlusInstruction(AstAuxVars, BuiltInToken, RetMem, argsMem)
+    }
+
+    const tempArgsMem = argsMem.map((VarObj) => flattenMemory(AstAuxVars, VarObj, BuiltInToken.line))
     switch (BuiltInToken.value) {
     case 'pow':
     case 'powf':
@@ -175,6 +187,319 @@ export function createBuiltInInstruction (
             break
         }
         break
+    case 'getNextTx':
+        newJump = '__GNT_' + AstAuxVars.getNewJumpID(BuiltInToken.line)
+        assemblyCode = 'FUN A_to_Tx_after_Timestamp $_counterTimestamp\n' +
+            `FUN @${RetMem.asmName} get_A1\n` +
+            `BZR $${RetMem.asmName} :${newJump}\n` +
+            'FUN @_counterTimestamp get_Timestamp_for_Tx_in_A\n' +
+            `${newJump}:\n`
+        break
+    case 'getNextTxFromBlockheight':
+        newJump = '__GNT_' + AstAuxVars.getNewJumpID(BuiltInToken.line)
+        assemblyCode = tempArgsMem[0].asmCode
+        if (tempArgsMem[0].FlatMem.type !== 'register') {
+            AuxRegister = AstAuxVars.getNewRegister()
+            assemblyCode += `SET @${AuxRegister.asmName} $${tempArgsMem[0].FlatMem.asmName}\n`
+        } else {
+            AuxRegister = tempArgsMem[0].FlatMem
+        }
+        auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(32), BuiltInToken.line)
+        assemblyCode += auxFlatMem.asmCode +
+            `SHL @${AuxRegister.asmName} $${auxFlatMem.FlatMem.asmName}\n` +
+            `FUN A_to_Tx_after_Timestamp $${AuxRegister.asmName}\n` +
+            `FUN @${RetMem.asmName} get_A1\n` +
+            `BZR $${RetMem.asmName} :${newJump}\n` +
+            'FUN @_counterTimestamp get_Timestamp_for_Tx_in_A\n' +
+            `${newJump}:\n`
+        AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
+        AstAuxVars.freeRegister(AuxRegister.address)
+        break
+    case 'getBlockheight':
+        assemblyCode = tempArgsMem[0].asmCode +
+            `FUN set_A1 $${tempArgsMem[0].FlatMem.asmName}\n` +
+            `FUN @${RetMem.asmName} get_Timestamp_for_Tx_in_A\n`
+        AstAuxVars.freeRegister(tempArgsMem[0].FlatMem.address)
+        auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(32), BuiltInToken.line)
+        assemblyCode += auxFlatMem.asmCode +
+            `SHR @${RetMem.asmName} $${auxFlatMem.FlatMem.asmName}\n`
+        AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
+        break
+    case 'getCurrentBlockheight':
+        assemblyCode = `FUN @${RetMem.asmName} get_Block_Timestamp\n`
+        auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(32), BuiltInToken.line)
+        assemblyCode += auxFlatMem.asmCode +
+            `SHR @${RetMem.asmName} $${auxFlatMem.FlatMem.asmName}\n`
+        AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
+        break
+    case 'getAmount':
+    case 'getAmountFx':
+        auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltInToken.line)
+        assemblyCode = tempArgsMem[0].asmCode + auxFlatMem.asmCode +
+            `FUN set_A1_A2 $${tempArgsMem[0].FlatMem.asmName} $${auxFlatMem.FlatMem.asmName}\n` +
+            `FUN @${RetMem.asmName} get_Amount_for_Tx_in_A\n`
+        AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
+        break
+    case 'getSender':
+        assemblyCode = tempArgsMem[0].asmCode +
+            `FUN set_A1 $${tempArgsMem[0].FlatMem.asmName}\n` +
+            'FUN B_to_Address_of_Tx_in_A\n' +
+            `FUN @${RetMem.asmName} get_B1\n`
+        break
+    case 'getType':
+        assemblyCode = tempArgsMem[0].asmCode +
+            `FUN set_A1 $${tempArgsMem[0].FlatMem.asmName}\n` +
+            `FUN @${RetMem.asmName} get_Type_for_Tx_in_A\n`
+        break
+    case 'getCreator':
+        assemblyCode = 'FUN clear_A\n' +
+            'FUN B_to_Address_of_Creator\n' +
+            `FUN @${RetMem.asmName} get_B1\n`
+        break
+    case 'getCreatorOf':
+        assemblyCode = tempArgsMem[0].asmCode +
+            `FUN set_B2 $${tempArgsMem[0].FlatMem.asmName}\n` +
+            'FUN B_to_Address_of_Creator\n' +
+            `FUN @${RetMem.asmName} get_B1\n`
+        break
+    case 'getCodeHashOf':
+        assemblyCode = tempArgsMem[0].asmCode +
+            `FUN set_B2 $${tempArgsMem[0].FlatMem.asmName}\n` +
+            `FUN @${RetMem.asmName} Get_Code_Hash_Id\n`
+        break
+    case 'getWeakRandomNumber':
+        assemblyCode = 'FUN Put_Last_Block_GSig_In_A\n' +
+        `FUN @${RetMem.asmName} get_A2\n`
+        break
+    case 'getActivationOf':
+    case 'getActivationOfFx':
+        assemblyCode = tempArgsMem[0].asmCode +
+            `FUN set_B2 $${tempArgsMem[0].FlatMem.asmName}\n` +
+            `FUN @${RetMem.asmName} Get_Activation_Fee\n`
+        break
+    case 'getCurrentBalance':
+    case 'getCurrentBalanceFx':
+        assemblyCode = 'FUN clear_A\n' +
+            `FUN @${RetMem.asmName} get_Current_Balance\n`
+        break
+    case 'readMessage':
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
+            `FUN set_A1_A2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
+            'FUN message_from_Tx_in_A_to_B\n'
+        AstAuxVars.freeRegister(tempArgsMem[0].FlatMem.address)
+        AstAuxVars.freeRegister(tempArgsMem[1].FlatMem.address)
+        if (argsMem[2].type === 'constant' || (argsMem[2].type === 'array' && argsMem[2].Offset === undefined)) {
+            argsMem[2].hexContent = assertNotUndefined(argsMem[2].hexContent)
+            const m1 = AstAuxVars.getMemoryObjectByLocation(argsMem[2].hexContent).asmName
+            const m2 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(argsMem[2].hexContent, 1)).asmName
+            const m3 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(argsMem[2].hexContent, 2)).asmName
+            const m4 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(argsMem[2].hexContent, 3)).asmName
+            assemblyCode +=
+                `FUN @${m1} get_B1\n` +
+                `FUN @${m2} get_B2\n` +
+                `FUN @${m3} get_B3\n` +
+                `FUN @${m4} get_B4\n`
+            break
+        }
+        assemblyCode += tempArgsMem[2].asmCode
+        if (tempArgsMem[2].FlatMem.type !== 'register') {
+            AuxRegister = AstAuxVars.getNewRegister()
+            assemblyCode += `SET @${AuxRegister.asmName} $${tempArgsMem[2].FlatMem.asmName}\n`
+        } else {
+            AuxRegister = tempArgsMem[2].FlatMem
+        }
+        AuxRegisterA = AstAuxVars.getNewRegister()
+        assemblyCode +=
+            `FUN @${AuxRegisterA.asmName} get_B1\n` +
+            `SET @($${AuxRegister.asmName}) $${AuxRegisterA.asmName}\n` +
+            `FUN @${AuxRegisterA.asmName} get_B2\n` +
+            `INC @${AuxRegister.asmName}\n` +
+            `SET @($${AuxRegister.asmName}) $${AuxRegisterA.asmName}\n` +
+            `FUN @${AuxRegisterA.asmName} get_B3\n` +
+            `INC @${AuxRegister.asmName}\n` +
+            `SET @($${AuxRegister.asmName}) $${AuxRegisterA.asmName}\n` +
+            `FUN @${AuxRegisterA.asmName} get_B4\n` +
+            `INC @${AuxRegister.asmName}\n` +
+            `SET @($${AuxRegister.asmName}) $${AuxRegisterA.asmName}\n`
+        AstAuxVars.freeRegister(AuxRegister.address)
+        AstAuxVars.freeRegister(AuxRegisterA.address)
+        break
+    case 'sendMessage':
+    case 'sendAmountAndMessage':
+    case 'sendAmountAndMessageFx': {
+        let amountArg = 0
+        let messageArg = 1
+        let recipientArg = 2
+        if (BuiltInToken.value === 'sendMessage') {
+            amountArg = -1
+            messageArg = 0
+            recipientArg = 1
+        }
+        if (amountArg !== -1) {
+            assemblyCode = 'FUN clear_A\n' +
+                tempArgsMem[recipientArg].asmCode +
+                `FUN set_B1 $${tempArgsMem[recipientArg].FlatMem.asmName}\n` +
+                tempArgsMem[amountArg].asmCode +
+                `FUN send_to_Address_in_B $${tempArgsMem[amountArg].FlatMem.asmName}\n`
+            AstAuxVars.freeRegister(tempArgsMem[amountArg].FlatMem.address)
+        } else {
+            assemblyCode = tempArgsMem[recipientArg].asmCode +
+                `FUN set_B1 $${tempArgsMem[recipientArg].FlatMem.asmName}\n`
+        }
+        AstAuxVars.freeRegister(tempArgsMem[recipientArg].FlatMem.address)
+        assemblyCode += tempArgsMem[messageArg].asmCode
+        if (argsMem[messageArg].type === 'constant' || (argsMem[messageArg].type === 'array' && argsMem[messageArg].Offset === undefined)) {
+            const theHexContent = assertNotUndefined(argsMem[messageArg].hexContent)
+            const m1 = AstAuxVars.getMemoryObjectByLocation(theHexContent).asmName
+            const m2 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 1)).asmName
+            const m3 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 2)).asmName
+            const m4 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 3)).asmName
+            assemblyCode +=
+                `FUN set_A1_A2 $${m1} $${m2}\n` +
+                `FUN set_A3_A4 $${m3} $${m4}\n` +
+                'FUN send_A_to_Address_in_B\n'
+            break
+        }
+        if (tempArgsMem[messageArg].FlatMem.type !== 'register') {
+            AuxRegister = AstAuxVars.getNewRegister()
+            assemblyCode += `SET @${AuxRegister.asmName} $${tempArgsMem[messageArg].FlatMem.asmName}\n`
+        } else {
+            AuxRegister = tempArgsMem[messageArg].FlatMem
+        }
+        AuxRegisterA = AstAuxVars.getNewRegister()
+        AuxRegisterB = AstAuxVars.getNewRegister()
+        assemblyCode +=
+            `SET @${AuxRegisterA.asmName} $($${AuxRegister.asmName})\n` +
+            `INC @${AuxRegister.asmName}\n` +
+            `SET @${AuxRegisterB.asmName} $($${AuxRegister.asmName})\n` +
+            `FUN set_A1_A2 $${AuxRegisterA.asmName} $${AuxRegisterB.asmName}\n` +
+            `INC @${AuxRegister.asmName}\n` +
+            `SET @${AuxRegisterA.asmName} $($${AuxRegister.asmName})\n` +
+            `INC @${AuxRegister.asmName}\n` +
+            `SET @${AuxRegisterB.asmName} $($${AuxRegister.asmName})\n` +
+            `FUN set_A3_A4 $${AuxRegisterA.asmName} $${AuxRegisterB.asmName}\n` +
+            'FUN send_A_to_Address_in_B\n'
+        AstAuxVars.freeRegister(AuxRegister.address)
+        AstAuxVars.freeRegister(AuxRegisterA.address)
+        AstAuxVars.freeRegister(AuxRegisterB.address)
+        break
+    }
+    case 'sendAmount':
+    case 'sendAmountFx':
+        auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltInToken.line)
+        assemblyCode = tempArgsMem[1].asmCode + auxFlatMem.asmCode +
+            `FUN set_B1_B2 $${tempArgsMem[1].FlatMem.asmName} $${auxFlatMem.FlatMem.asmName}\n` +
+            tempArgsMem[0].asmCode +
+            `FUN send_to_Address_in_B $${tempArgsMem[0].FlatMem.asmName}\n`
+        AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
+        break
+    case 'sendBalance':
+        assemblyCode = tempArgsMem[0].asmCode +
+            `FUN set_B1 $${tempArgsMem[0].FlatMem.asmName}\n` +
+            'FUN send_All_to_Address_in_B\n'
+        break
+    case 'getMapValue':
+    case 'getMapValueFx':
+        assemblyCode = 'FUN clear_A\n' +
+            tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
+            `FUN set_A1_A2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
+            `FUN @${RetMem.asmName} Get_Map_Value_Keys_In_A\n`
+        break
+    case 'getExtMapValue':
+    case 'getExtMapValueFx':
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
+            `FUN set_A1_A2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
+            tempArgsMem[2].asmCode +
+            `FUN set_A3 $${tempArgsMem[2].FlatMem.asmName}\n` +
+            `FUN @${RetMem.asmName} Get_Map_Value_Keys_In_A\n`
+        break
+    case 'setMapValue':
+    case 'setMapValueFx':
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
+            `FUN set_A1_A2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
+            tempArgsMem[2].asmCode +
+            `FUN set_A4 $${tempArgsMem[2].FlatMem.asmName}\n` +
+            'FUN Set_Map_Value_Keys_In_A\n'
+        break
+    case 'issueAsset':
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
+            `FUN set_A1_A2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
+            tempArgsMem[2].asmCode +
+            `FUN set_B1 $${tempArgsMem[2].FlatMem.asmName}\n` +
+            `FUN @${RetMem.asmName} Issue_Asset\n`
+        break
+    case 'mintAsset':
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
+        `FUN set_B1_B2 $${tempArgsMem[1].FlatMem.asmName} $${tempArgsMem[0].FlatMem.asmName}\n` +
+        'FUN Mint_Asset\n'
+        break
+    case 'sendQuantity':
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[2].asmCode +
+            `FUN set_B1_B2 $${tempArgsMem[2].FlatMem.asmName} $${tempArgsMem[0].FlatMem.asmName}\n` +
+            tempArgsMem[1].asmCode +
+            `FUN send_to_Address_in_B $${tempArgsMem[1].FlatMem.asmName}\n`
+        break
+    case 'getAssetBalance':
+        assemblyCode = tempArgsMem[0].asmCode +
+            `FUN set_B2 $${tempArgsMem[0].FlatMem.asmName}\n` +
+            `FUN @${RetMem.asmName} get_Current_Balance\n`
+        break
+    case 'getAssetHoldersCount':
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
+            `FUN set_B1_B2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
+            `FUN @${RetMem.asmName} Get_Asset_Holders_Count\n`
+        break
+    case 'readAssets':
+        assemblyCode = tempArgsMem[0].asmCode +
+            `FUN set_A1 $${tempArgsMem[0].FlatMem.asmName}\n` +
+            'FUN B_To_Assets_Of_Tx_In_A\n'
+        if (argsMem[1].type === 'constant' || (argsMem[1].type === 'array' && argsMem[1].Offset === undefined)) {
+            argsMem[1].hexContent = assertNotUndefined(argsMem[1].hexContent)
+            const m1 = AstAuxVars.getMemoryObjectByLocation(argsMem[1].hexContent).asmName
+            const m2 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(argsMem[1].hexContent, 1)).asmName
+            const m3 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(argsMem[1].hexContent, 2)).asmName
+            const m4 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(argsMem[1].hexContent, 3)).asmName
+            assemblyCode +=
+                `FUN @${m1} get_B1\n` +
+                `FUN @${m2} get_B2\n` +
+                `FUN @${m3} get_B3\n` +
+                `FUN @${m4} get_B4\n`
+            break
+        }
+        AstAuxVars.freeRegister(tempArgsMem[0].FlatMem.address)
+        assemblyCode += tempArgsMem[1].asmCode
+        if (tempArgsMem[1].FlatMem.type !== 'register') {
+            AuxRegister = AstAuxVars.getNewRegister()
+            assemblyCode += `SET @${AuxRegister.asmName} $${tempArgsMem[1].FlatMem.asmName}\n`
+        } else {
+            AuxRegister = tempArgsMem[1].FlatMem
+        }
+        AuxRegisterA = AstAuxVars.getNewRegister()
+        assemblyCode +=
+            `FUN @${AuxRegisterA.asmName} get_B1\n` +
+            `SET @($${AuxRegister.asmName}) $${AuxRegisterA.asmName}\n` +
+            `FUN @${AuxRegisterA.asmName} get_B2\n` +
+            `INC @${AuxRegister.asmName}\n` +
+            `SET @($${AuxRegister.asmName}) $${AuxRegisterA.asmName}\n` +
+            `FUN @${AuxRegisterA.asmName} get_B3\n` +
+            `INC @${AuxRegister.asmName}\n` +
+            `SET @($${AuxRegister.asmName}) $${AuxRegisterA.asmName}\n` +
+            `FUN @${AuxRegisterA.asmName} get_B4\n` +
+            `INC @${AuxRegister.asmName}\n` +
+            `SET @($${AuxRegister.asmName}) $${AuxRegisterA.asmName}\n`
+        AstAuxVars.freeRegister(AuxRegister.address)
+        AstAuxVars.freeRegister(AuxRegisterA.address)
+        break
+    case 'getQuantity':
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
+            `FUN set_A1_A2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
+            `FUN @${RetMem.asmName} get_Amount_for_Tx_in_A\n`
+        break
+    case 'getAssetCirculating':
+        assemblyCode = tempArgsMem[0].asmCode +
+            `FUN set_A2 $${tempArgsMem[0].FlatMem.asmName}\n` +
+            `FUN @${RetMem.asmName} Get_Asset_Circulating\n`
+        break
     default:
         throw new Error(`Internal error at line: ${BuiltInToken.line}. Built-in function not implemented.`)
     }
@@ -184,6 +509,66 @@ export function createBuiltInInstruction (
         }
     })
     return assemblyCode
+}
+
+/** Create assembly code for built-in functions */
+export function createBuiltIn4ArgsPlusInstruction (
+    AstAuxVars: GENCODE_AUXVARS, BuiltInToken: TOKEN, RetMem: MEMORY_SLOT, argsMem: MEMORY_SLOT[]
+) : string {
+    let auxFlatMemA: FLATTEN_MEMORY_RETURN_OBJECT
+    let auxFlatMemB: FLATTEN_MEMORY_RETURN_OBJECT
+    let assemblyCode = ''
+
+    switch (BuiltInToken.value) {
+    case 'checkSignature':
+        auxFlatMemA = flattenMemory(AstAuxVars, argsMem[3], BuiltInToken.line)
+        auxFlatMemB = flattenMemory(AstAuxVars, argsMem[4], BuiltInToken.line)
+        assemblyCode += auxFlatMemA.asmCode + auxFlatMemB.asmCode +
+            `FUN set_A1_A2 $${auxFlatMemA.FlatMem.asmName} $${auxFlatMemB.FlatMem.asmName}\n`
+        AstAuxVars.freeRegister(auxFlatMemA.FlatMem.address)
+        AstAuxVars.freeRegister(auxFlatMemB.FlatMem.address)
+        auxFlatMemA = flattenMemory(AstAuxVars, argsMem[5], BuiltInToken.line)
+        auxFlatMemB = flattenMemory(AstAuxVars, argsMem[0], BuiltInToken.line)
+        assemblyCode += auxFlatMemA.asmCode +
+            `FUN set_A3 $${auxFlatMemA.FlatMem.asmName}\n` +
+            auxFlatMemB.asmCode +
+            `FUN set_B2 $${auxFlatMemB.FlatMem.asmName}\n`
+        AstAuxVars.freeRegister(auxFlatMemA.FlatMem.address)
+        AstAuxVars.freeRegister(auxFlatMemB.FlatMem.address)
+
+        auxFlatMemA = flattenMemory(AstAuxVars, argsMem[1], BuiltInToken.line)
+        auxFlatMemB = flattenMemory(AstAuxVars, argsMem[2], BuiltInToken.line)
+        assemblyCode += auxFlatMemA.asmCode + auxFlatMemB.asmCode +
+            `FUN set_B3_B4 $${auxFlatMemA.FlatMem.asmName} $${auxFlatMemB.FlatMem.asmName}\n` +
+            `FUN @${RetMem.asmName} Check_Sig_B_With_A\n`
+        AstAuxVars.freeRegister(auxFlatMemA.FlatMem.address)
+        AstAuxVars.freeRegister(auxFlatMemB.FlatMem.address)
+        return assemblyCode
+    case 'distributeToHolders':
+    case 'distributeToHoldersFx':
+        auxFlatMemA = flattenMemory(AstAuxVars, argsMem[0], BuiltInToken.line)
+        auxFlatMemB = flattenMemory(AstAuxVars, argsMem[1], BuiltInToken.line)
+        assemblyCode += auxFlatMemA.asmCode + auxFlatMemB.asmCode +
+            `FUN set_B1_B2 $${auxFlatMemA.FlatMem.asmName} $${auxFlatMemB.FlatMem.asmName}\n`
+        AstAuxVars.freeRegister(auxFlatMemA.FlatMem.address)
+        AstAuxVars.freeRegister(auxFlatMemB.FlatMem.address)
+
+        auxFlatMemA = flattenMemory(AstAuxVars, argsMem[2], BuiltInToken.line)
+        assemblyCode += auxFlatMemA.asmCode +
+            `FUN set_A1 $${auxFlatMemA.FlatMem.asmName}\n`
+        AstAuxVars.freeRegister(auxFlatMemA.FlatMem.address)
+
+        auxFlatMemA = flattenMemory(AstAuxVars, argsMem[3], BuiltInToken.line)
+        auxFlatMemB = flattenMemory(AstAuxVars, argsMem[4], BuiltInToken.line)
+        assemblyCode += auxFlatMemA.asmCode + auxFlatMemB.asmCode +
+            `FUN set_A3_A4 $${auxFlatMemA.FlatMem.asmName} $${auxFlatMemB.FlatMem.asmName}\n` +
+            'FUN Distribute_To_Asset_Holders\n'
+        AstAuxVars.freeRegister(auxFlatMemA.FlatMem.address)
+        AstAuxVars.freeRegister(auxFlatMemB.FlatMem.address)
+        return assemblyCode
+    default:
+        throw new Error('Internal error')
+    }
 }
 
 /**

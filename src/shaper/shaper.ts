@@ -6,7 +6,7 @@ import {
 } from '../typings/syntaxTypes'
 import { assertNotUndefined, deepCopy, parseDecimalNumber } from '../repository/repository'
 import {
-    APITableTemplate, getMemoryTemplate, getTypeDefinitionTemplate, BuiltInTemplate, fixedBaseTemplate, fixedAPITableTemplate
+    APITableTemplate, getMemoryTemplate, getTypeDefinitionTemplate, BuiltInTemplate, fixedBaseTemplate, fixedAPITableTemplate, autoCounterTemplate
 } from './templates'
 import sentencesProcessor from './sentencesProcessor'
 import memoryProcessor from './memoryProcessor'
@@ -41,6 +41,9 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         Program.memory.push(...addConstantsInMemory(Program.Config.maxConstVars))
         if (Program.Config.fixedAPIFunctions || fixedDetected()) {
             Program.memory.push(fixedBaseTemplate)
+        }
+        if (autoCounterDetected(tokenAST)) {
+            Program.memory.push(autoCounterTemplate)
         }
         processGlobalCode()
         Program.functions.forEach(processFunctionCodeAndArguments)
@@ -334,6 +337,22 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         return !!tokenAST.find((Tkn) => (
             (Tkn.type === 'Keyword' && Tkn.value === 'fixed') ||
             (Tkn.type === 'Constant' && Tkn.extValue === 'fixed')))
+    }
+
+    /** Detects if hidden variable for timestamp loop will be needed */
+    function autoCounterDetected (tokenTrain: TOKEN[] | undefined) : boolean {
+        if (tokenTrain === undefined) return false
+        return !!tokenTrain.find((Tkn) => {
+            if (Tkn.type === 'Variable' && (Tkn.value === 'getNextTx' || Tkn.value === 'getNextTxFromBlockheight')) {
+                return true
+            }
+            if (Tkn.type === 'CodeDomain') {
+                if (autoCounterDetected(Tkn.params) === true) {
+                    return true
+                }
+            }
+            return false
+        })
     }
 
     /** Process global code, transforming them into global sentences properties  */
