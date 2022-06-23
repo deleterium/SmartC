@@ -198,7 +198,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             Program.Config.reuseAssignedVar = bool
             return true
         case 'optimizationLevel':
-            if (num >= 0 && num <= 3) {
+            if (num >= 0 && num <= 4) {
                 Program.Config.optimizationLevel = num
                 return false
             }

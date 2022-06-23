@@ -1,10 +1,13 @@
+import { CONTRACT } from './optimizerVM/index'
+
 /**
  * Optimize assembly code with peephole strategy.
  * @param O Optimization level:
  * - 0: No optimization
  * - 1: Very basic optimization, just remove silly/unused code
  * - 2: Safely changes and delete code for smarter outcome
- * - 3: Dangerous deep optimizations. Must be checked by developer
+ * - 3: Use final optimizations tracing variable contents (beta)
+ * - 4: Dangerous deep optimizations. Must be checked by developer
  * @param assemblyCode Input assembly
  * @param labels Array with labels (they will not be removed)
  * @returns Assembly code processed
@@ -33,7 +36,7 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
                 codeLines.forEach(mdvOpt)
                 codeLines = codeLines.flatMap(branchOpt)
             }
-            if (O >= 3) {
+            if (O >= 4) {
                 codeLines.forEach(operatorSetSwap)
                 codeLines.forEach(pushOpt)
                 codeLines.forEach(setOperatorSwap)
@@ -42,7 +45,16 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
                 codeLines.forEach(pointerZeroOpt)
             }
         } while (optimizedLines !== 0)
-        return codeLines.join('\n')
+        const partialOptimized = codeLines.join('\n')
+        if (O >= 3) {
+            const OptVM = new CONTRACT(codeLines)
+            try {
+                return OptVM.optimize().join('\n')
+            } catch (error) {
+                return partialOptimized
+            }
+        }
+        return partialOptimized
     }
 
     // Collect jumps information
