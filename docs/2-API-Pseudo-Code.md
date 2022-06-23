@@ -1,10 +1,10 @@
 [Back](./README.md)
 
 # API Functions pseudo code operations
-This documentation applies to Signum AT version 3.
+Ok, you are unleashing the full potencial of machine code. To use this functions, you must include them by `#include APIFunctions` for regular functions or `#include fixedAPIFunctions` if using the fixed version of them (prepended by 'F_').
 
 # Keep in mind!
-### A and B registers
+### A and B superregisters
 They are 256-bit registers and can be used as one big number (called A or B) or in 64-bit pieces (called A1..A4 or B1..B4). A1 is the least significative long. They have the same "mixed" mode as long vars: unsigned for bit operations and signed for aritmetics.
 
 ### Timestamps
@@ -15,10 +15,13 @@ Do not be confused by transactions timestamps, that are the number of seconds si
 An encrypted message to contract is the same as not sending a message.
 Messages are read and sent in batches of 32 bytes, they are called pages. The superregisters are used to store these values.
 
-# Pseudo code
-The code below is not valid for SmartC, but can give an idea what is happening when an API function is called.
+# Pseudo code for regular functions
+The code below is not valid for SmartC, but can give an idea what is happening when an API function is called. Good luck!
+<details>
+<summary>
 
-## Get/Set functions for "pseudo registers"
+## Get/Set functions for "superregisters" 
+</summary>
 
 ``` c
 long Get_A1(void){
@@ -129,7 +132,6 @@ void Clear_A(void) {
     // Assembly name: clear_A
     A1 = A2 = A3 = A4 = 0;
 }
-
 
 void Clear_B(void) {
     // Assembly name: clear_B
@@ -285,8 +287,12 @@ void Div_B_By_A(void) {
     A = B / A;
 }
 ```
+</details>
+<details>
+<summary>
 
 ## Functions that perform hash operations
+</summary>
 
 ``` c
 void MD5_A_To_B(void) {
@@ -342,8 +348,12 @@ long Check_Sig_B_With_A(void) {
     // Checks if the signature of [AT ID, B2, B3, B4] can be verified with the message attached on tx id in A1 (page in A2) for account id in A3
 }
 ```
+</details>
+<details>
+<summary>
 
 ## Generic functions that get block and tx info
+</summary>
 
 ``` c
 long Get_Block_Timestamp(void) {
@@ -399,7 +409,8 @@ long Get_Timestamp_For_Tx_In_A(void) {
     // Assembly name: get_Timestamp_for_Tx_in_A
     if (Blockchain.IsThisTxValid(A1) == false)
         return -1;
-    return Blockchain.GetTimestampFromTx(A1) - ContractActivationAmount;}
+    return Blockchain.GetTimestampFromTx(A1);
+}
 
 long Get_Random_Id_For_Tx_In_A(void) {
     // Assembly name: get_Ticket_Id_for_Tx_in_A
@@ -471,8 +482,12 @@ void B_To_Assets_Of_Tx_In_A(void) {
     }
 }
 ```
+</details>
+<details>
+<summary>
 
 ## Generic functions that check balances and perform ops
+</summary>
 
 ``` c
 long Get_Current_Balance(void) {
@@ -643,5 +658,170 @@ long Get_Asset_Circulating(void) {
     */
 }
 ```
+</details>
+<details>
+<summary>
+
+# Pseudo code for fixed version functions
+</summary>
+
+``` c
+// Get/Set functions for "superregisters" 
+
+fixed F_Get_A1(void){
+    // Assembly name: get_A1
+    return A1;
+}
+
+fixed F_Get_A2(void) {
+    // Assembly name: get_A2
+    return A2;
+}
+
+fixed F_Get_A3(void) {
+    // Assembly name: get_A3
+    return A3;
+}
+
+fixed F_Get_A4(void) {
+    // Assembly name: get_A4
+    return A4;
+}
+
+fixed F_Get_B1(void) {
+    // Assembly name: get_B1
+    return B1;
+}
+
+fixed F_Get_B2(void) {
+    // Assembly name: get_B2
+    return B2;
+}
+
+fixed F_Get_B3(void) {
+    // Assembly name: get_B3
+    return B3;
+}
+
+fixed F_Get_B4(void) {
+    // Assembly name: get_B4
+    return B4;
+}
+
+void F_Set_A1(fixed value) {
+    // Assembly name: set_A1
+    A1 = value;
+}
+
+void F_Set_A2(fixed value) {
+    // Assembly name: set_A2
+    A2 = value;
+}
+
+void F_Set_A3(fixed value) {
+    // Assembly name: set_A3
+    A3 = value;
+}
+
+void F_Set_A4(fixed value) {
+    // Assembly name: set_A4
+    A4 = value;
+}
+
+void F_Set_B1(fixed value) {
+    // Assembly name: set_B1
+    B1 = value;
+}
+
+void F_Set_B2(fixed value) {
+    // Assembly name: set_B2
+    B2 = value;
+}
+
+void F_Set_B3(fixed value) {
+    // Assembly name: set_B3
+    B3 = value;
+}
+
+void F_Set_B4(fixed value) {
+    // Assembly name: set_B4
+    B4 = value;
+}
+
+
+// Generic functions that get block and tx info
+
+fixed F_Get_Amount_For_Tx_In_A(void) {
+    // Assembly name: get_Amount_for_Tx_in_A
+    asset = B2;
+    tx = Blockchain.GetTransactionWithId(A1);
+    if (!tx)
+        return -1;
+    if (asset == 0 )
+        return tx.amount - ContractActivationAmount;
+    return tx.GetQuantityFromAsset(asset);
+}
+
+
+// Generic functions that check balances and perform ops
+
+fixed F_Get_Current_Balance(void) {
+    // Assembly name: get_Current_Balance
+    if (B2 == 0) {
+        return Blockchain.GetMyBalanceNow();
+    }
+    return Blockchain.GetMyBalanceFromAsset(B2);
+}
+
+void F_Send_To_Address_In_B(fixed amountOrQuantity) {
+    // Assembly name: send_to_Address_in_B
+    recipient = B1;
+    asset = B2;
+    if (asset == 0) {
+        // Send Signa
+        long ContractBalance = Blockchain.GetMyBalanceNow();
+        if (amountOrQuantity > ContractBalance)
+            Blockchain.SendAllMyBalanceTo(recipient);
+        else
+            Blockchain.SendBalanceTo(amountOrQuantity, recipient);
+        return;
+    }
+    // Send asset
+    long ContractQuantity = Blockchain.GetMyBalanceFromAsset(asset);
+    if (amountOrQuantity > ContractQuantity)
+        Blockchain.SendAllMyBalanceFromAssetTo(asset, recipient);
+    else
+        Blockchain.SendBalanceFromAssetTo(asset, recipient, amountOrQuantity);
+}
+
+fixed F_Get_Map_Value_Keys_In_A(void) {
+    // Assembly name: Get_Map_Value_Keys_In_A
+    if (A3 == 0) {
+        if (isSet(ThisContract.map[A1][A2])) {
+            return ThisContract.map[A1][A2];
+        }
+        return 0;
+    }
+    if (IsAT(A3)) {
+        otherContract = Blockchain.GetContractFromId(A3);
+        if (isSet(otherContract.map[A1][A2])) {
+            return otherContract.map[A1][A2];
+        }
+    }
+    return 0;
+}
+
+fixed F_Get_Activation_Fee(void) {
+    // Assembly name: Get_Activation_Fee
+    if (B2 == 0) {
+        return ThisContract.ActivationAmount;
+    }
+    if (Blockchain.IsAT(B2)) {
+        return Blockchain.GetActivationAmountFromAT(B2);
+    }
+    return 0;
+}
+```
+</details>
 
 [Back](./README.md)

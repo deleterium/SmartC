@@ -49,7 +49,15 @@ As avaliable in C, the developer can make use of functions to make coding easier
 Functions can return also arrays and structs; the returning values can be used directly: example `if ( arrFn(a)[2] == 25 )` or `b = structFn(a)->value;`
 
 ### Built-in functions
-In 2022 it was introduced two new specific instructions. They are coded in SmartC from version 2.0 as built-in functions, so no declaration is needed to use them. Check chapter 1.5.
+From SmartC version 2.0 built-in functions were introduced.
+No declaration is needed to use them.
+They are coded to hide some internal components of Signum machine code and make the development easier.
+Read the chapter (1.5-Built-in functions.md)[./1.5-Built-in-functions.md] but just after reading this one.
+
+### API functions
+Low level functions to handle assembly level superregister.
+Only needed for very complex contracts or to hand-picked optimizations code.
+Read the chapter (2-API Pseudo Code.md)[./2-API-Pseudo-Code.md] only if you plan to program at low level.
 
 ### Global statements
 All global statements are grouped at the beginning of assembly code (even if after functions or end of file). When the contract is executed first time, it does not begin at main function, but will start at the beginning of file and run all global statements. If there is a main function, it will be then executed during this first run. If you stop execution in global statements (with `exit`), the main function will not be processed and the starting point for next transactions will be the start of code. In this case (not using main function) use `halt` keyword to wait next transaction.

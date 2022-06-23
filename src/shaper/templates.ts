@@ -1201,6 +1201,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         asmName: 'Get_Asset_Circulating',
         declaration: 'fixed',
         sentences: [],
+
         name: 'F_Get_Asset_Circulating'
     }
 ]
