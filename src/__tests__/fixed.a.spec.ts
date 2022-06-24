@@ -10,14 +10,14 @@ describe('Assignment', () => {
     })
     it('should compile: = fixed/long', () => {
         const code = '#pragma optimizationLevel 0\nfixed a; long b; a=b;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nSET @r0 $b\nMUL @r0 $f100000000\nSET @a $r0\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nSET @a $b\nMUL @a $f100000000\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: = long/fixed', () => {
         const code = '#pragma optimizationLevel 0\nfixed a; long b; b=a;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nSET @r0 $a\nDIV @r0 $f100000000\nSET @b $r0\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nSET @b $a\nDIV @b $f100000000\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -31,14 +31,14 @@ describe('Assignment', () => {
     })
     it('should compile: = fixed/constantlong', () => {
         const code = '#pragma optimizationLevel 0\nfixed a; long b; a=55;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nSET @r0 #0000000000000037\nMUL @r0 $f100000000\nSET @a $r0\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nSET @a #0000000000000037\nMUL @a $f100000000\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: = long/constantfixed', () => {
         const code = '#pragma optimizationLevel 0\nfixed a; long b; b=32.3;'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nSET @r0 #00000000c085e380\nDIV @r0 $f100000000\nSET @b $r0\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nSET @b #00000000c085e380\nDIV @b $f100000000\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

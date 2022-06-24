@@ -261,10 +261,10 @@ export default function binaryAsnProcessor (
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        AuxVars.registerInfo.shift()
         const registerFinalState = deepCopy(AuxVars.registerInfo)
         // if returning var is not the reused one, put it in that returning location and solve right side again
         if (RetGenObj.SolvedMem.address !== Left.address && AuxVars.isTemp(RetGenObj.SolvedMem.address)) {
+            AuxVars.registerInfo.shift()
             const index = RetGenObj.SolvedMem.address + 1
             AuxVars.registerInfo = registerInitialState
             AuxVars.registerInfo.splice(index, 0, { inUse: false, Template: NewRegister })
