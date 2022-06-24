@@ -73,7 +73,7 @@ export function toRegister (
 ) : GENCODE_SOLVED_OBJECT {
     const retObj = flattenMemory(AuxVars, InSolved.SolvedMem, line)
 
-    if (retObj.FlatMem.type !== 'register') {
+    if (!AuxVars.isTemp(retObj.FlatMem.address)) {
         const inType = utils.getDeclarationFromMemory(InSolved.SolvedMem)
         const TmpMemObj = AuxVars.getNewRegister(line)
         retObj.asmCode += `SET @${TmpMemObj.asmName} $${retObj.FlatMem.asmName}\n`
@@ -198,11 +198,11 @@ export function createBuiltInInstruction (
     case 'getNextTxFromBlockheight':
         newJump = '__GNT_' + AstAuxVars.getNewJumpID(BuiltInToken.line)
         assemblyCode = tempArgsMem[0].asmCode
-        if (tempArgsMem[0].FlatMem.type !== 'register') {
+        if (AstAuxVars.isTemp(tempArgsMem[0].FlatMem.address)) {
+            AuxRegister = tempArgsMem[0].FlatMem
+        } else {
             AuxRegister = AstAuxVars.getNewRegister()
             assemblyCode += `SET @${AuxRegister.asmName} $${tempArgsMem[0].FlatMem.asmName}\n`
-        } else {
-            AuxRegister = tempArgsMem[0].FlatMem
         }
         auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(32), BuiltInToken.line)
         assemblyCode += auxFlatMem.asmCode +
@@ -302,11 +302,11 @@ export function createBuiltInInstruction (
             break
         }
         assemblyCode += tempArgsMem[2].asmCode
-        if (tempArgsMem[2].FlatMem.type !== 'register') {
+        if (AstAuxVars.isTemp(tempArgsMem[2].FlatMem.address)) {
+            AuxRegister = tempArgsMem[2].FlatMem
+        } else {
             AuxRegister = AstAuxVars.getNewRegister()
             assemblyCode += `SET @${AuxRegister.asmName} $${tempArgsMem[2].FlatMem.asmName}\n`
-        } else {
-            AuxRegister = tempArgsMem[2].FlatMem
         }
         AuxRegisterA = AstAuxVars.getNewRegister()
         assemblyCode +=
@@ -360,11 +360,11 @@ export function createBuiltInInstruction (
                 'FUN send_A_to_Address_in_B\n'
             break
         }
-        if (tempArgsMem[messageArg].FlatMem.type !== 'register') {
+        if (AstAuxVars.isTemp(tempArgsMem[messageArg].FlatMem.address)) {
+            AuxRegister = tempArgsMem[messageArg].FlatMem
+        } else {
             AuxRegister = AstAuxVars.getNewRegister()
             assemblyCode += `SET @${AuxRegister.asmName} $${tempArgsMem[messageArg].FlatMem.asmName}\n`
-        } else {
-            AuxRegister = tempArgsMem[messageArg].FlatMem
         }
         AuxRegisterA = AstAuxVars.getNewRegister()
         AuxRegisterB = AstAuxVars.getNewRegister()
@@ -468,11 +468,11 @@ export function createBuiltInInstruction (
         }
         AstAuxVars.freeRegister(tempArgsMem[0].FlatMem.address)
         assemblyCode += tempArgsMem[1].asmCode
-        if (tempArgsMem[1].FlatMem.type !== 'register') {
+        if (AstAuxVars.isTemp(tempArgsMem[1].FlatMem.address)) {
+            AuxRegister = tempArgsMem[1].FlatMem
+        } else {
             AuxRegister = AstAuxVars.getNewRegister()
             assemblyCode += `SET @${AuxRegister.asmName} $${tempArgsMem[1].FlatMem.asmName}\n`
-        } else {
-            AuxRegister = tempArgsMem[1].FlatMem
         }
         AuxRegisterA = AstAuxVars.getNewRegister()
         assemblyCode +=
