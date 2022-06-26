@@ -9,14 +9,14 @@ describe('Special functions', () => {
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: main() with return at end', () => {
-        const code = '#pragma optimizationLevel 0\nlong a; void main(void) { a++; return; }'
+        const code = '#pragma optimizationLevel 0\nlong a; void main() { a++; return; }'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: main() with return at middle', () => {
-        const code = '#pragma optimizationLevel 0\nlong a; void main(void) { a++; return; a++; }'
+        const code = '#pragma optimizationLevel 0\nlong a; void main() { a++; return; a++; }'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nJMP :__fn_main\n\n__fn_main:\nPCS\nINC @a\nFIN\nINC @a\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
@@ -30,7 +30,7 @@ describe('Special functions', () => {
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: catch() and no main function', () => {
-        const code = '#pragma optimizationLevel 0\nlong b, a = 0; while (true) { a++; } void catch(void) { long a++; }'
+        const code = '#pragma optimizationLevel 0\nlong b, a = 0; while (true) { a++; } void catch() { long a++; }'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare b\n^declare a\n^declare catch_a\n\nERR :__fn_catch\nCLR @a\n__loop1_continue:\n__loop1_start:\nINC @a\nJMP :__loop1_continue\n__loop1_break:\nFIN\n\n__fn_catch:\nPCS\nINC @catch_a\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()

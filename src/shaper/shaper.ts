@@ -439,12 +439,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
      * into argsMemObj and sentences properties  */
     function processFunctionCodeAndArguments (CurrentFunction: SC_FUNCTION, fnNum: number) {
         CurrentFunction.sentences = sentencesProcessor(AuxVars, CurrentFunction.code)
-        let expectVoid = false
-        if (CurrentFunction.arguments?.length === 1 &&
-            CurrentFunction.arguments[0].type === 'Keyword' &&
-            CurrentFunction.arguments[0].value === 'void') {
-            expectVoid = true
-        }
         AuxVars.currentScopeName = CurrentFunction.name
         AuxVars.currentPrefix = AuxVars.currentScopeName + '_'
         AuxVars.isFunctionArgument = true
@@ -454,10 +448,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             `Wrong arguments for function '${CurrentFunction.name}'.`)
         }
         CurrentFunction.argsMemObj = memoryProcessor(Program.typesDefinitions, AuxVars, sentence[0].code)
-        if (CurrentFunction.argsMemObj.length === 0 && expectVoid === false) {
-            throw new Error(`At line: ${CurrentFunction.line}.` +
-            ` No variables in arguments for function '${CurrentFunction.name}'. Do you mean 'void'?`)
-        }
         Program.memory = Program.memory.concat(CurrentFunction.argsMemObj)
         AuxVars.isFunctionArgument = false
         delete Program.functions[fnNum].arguments
