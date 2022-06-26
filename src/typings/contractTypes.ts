@@ -95,9 +95,13 @@ export type CONTRACT = {
     typesDefinitions: TYPE_DEFINITIONS[],
     /** Compiler configurations */
     Config: SC_CONFIG,
+    /** Compilation warnings */
+    warnings: string[],
 }
 
 export type MACHINE_OBJECT = {
+    /** Warnings found */
+    Warnings: string
     /** Number of data pages (Memory size) */
     DataPages: number
     /** Number of code stack pages (code stack size) */

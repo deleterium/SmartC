@@ -10,6 +10,10 @@ export type GLOBAL_AUXVARS = {
     jumpId: number
     /** Assembly code being created */
     assemblyCode: string
+    /** Errors found */
+    errors: string
+    /** Warnings found */
+    warnings: string
     /** Current function being processed */
     currFunctionIndex: number
     /** Line counter for source code */
@@ -64,6 +68,8 @@ export type GENCODE_AUXVARS = {
     isConstSentence: boolean
     /** Flag to inform lower level AST that there are an void array assignment */
     hasVoidArray: boolean
+    /** Warnings found */
+    warnings: string[]
     /** Verifies if a variable at loc address is register or temporary reused var */
     isTemp(loc: number): boolean
     /** Get a new register variable */

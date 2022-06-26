@@ -536,6 +536,7 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         const codepages = Math.ceil(AsmObj.bytecode.length / (32 * 16))
         const minimumfee = (cspages + uspages + datapages + codepages) * 10000000
         return {
+            Warnings: '',
             DataPages: datapages,
             CodeStackPages: cspages,
             UserStackPages: uspages,

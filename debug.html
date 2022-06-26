@@ -16,7 +16,11 @@
                 const asmCode = compiler.getAssemblyCode();
                 const bcode = compiler.getMachineCode();
                 const t1 = new Date();
-                document.getElementById('status').innerHTML = `<span class='msg_success'>Compile sucessfull!!!</span> Done at ${t1.getHours()}:${t1.getMinutes()}:${t1.getSeconds()} in ${t1 - t0} ms.`;
+                let compileMessage = `<span class='msg_success'>Compile sucessfull!!!</span> Done at ${t1.getHours()}:${t1.getMinutes()}:${t1.getSeconds()} in ${t1 - t0} ms.`;
+                if (bcode.Warnings.length != 0) {
+                    compileMessage += `<br>${bcode.Warnings}`;
+                }
+                document.getElementById('status').innerHTML = compileMessage;
                 document.getElementById('assembly').innerText = asmCode;
                 document.getElementById('debug-info').innerHTML = JSON.stringify(bcode, null, '    ');
             } catch (e) {

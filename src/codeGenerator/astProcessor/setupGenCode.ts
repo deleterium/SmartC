@@ -18,6 +18,7 @@ export default function setupGenCode (
         isLeftSideOfAssignment: false,
         isConstSentence: false,
         hasVoidArray: false,
+        warnings: [],
         isTemp: auxvarsIsTemp,
         getNewRegister: auxvarsGetNewRegister,
         freeRegister: auxvarsFreeRegister,
@@ -47,6 +48,7 @@ export default function setupGenCode (
         validateReturnedVariable(CodeGenInfo.InitialAST, code.SolvedMem)
         code.asmCode += AuxVars.postOperations
         Globals.jumpId = AuxVars.jumpId
+        Globals.Program.warnings.push(...AuxVars.warnings)
         // Check throw conditions that were out-of-scope
         const analysyCode = code.asmCode.split('\n')
         code.asmCode = analysyCode.map(line => {

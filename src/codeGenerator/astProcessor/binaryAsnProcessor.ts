@@ -100,9 +100,11 @@ export default function binaryAsnProcessor (
         const castSide = implicitTypeCastingTest(CurrentNode.Operation.value, leftDeclaration, rightDeclaration)
         switch (castSide) {
         case 'left':
+            AuxVars.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on left side of operator '${CurrentNode.Operation.value}'.`)
             LGenObj = typeCasting(AuxVars, LGenObj, rightDeclaration, CurrentNode.Operation.line)
             break
         case 'right': {
+            AuxVars.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of operator '${CurrentNode.Operation.value}'.`)
             const oldAsm = RGenObj.asmCode
             RGenObj = typeCasting(AuxVars, RGenObj, leftDeclaration, CurrentNode.Operation.line)
             // append only the diff
@@ -178,6 +180,7 @@ export default function binaryAsnProcessor (
         case 'left':
             throw new Error('Internal error')
         case 'right':
+            AuxVars.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of assignment '='.`)
             RGenObj = typeCasting(AuxVars, RGenObj, lDecl, CurrentNode.Operation.line)
         }
         // Create instruction
@@ -565,9 +568,11 @@ export default function binaryAsnProcessor (
         const castSide = implicitTypeCastingTest(CurrentNode.Operation.value, leftDeclaration, rightDeclaration)
         switch (castSide) {
         case 'left':
+            AuxVars.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on left side of comparision '${CurrentNode.Operation.value}'.`)
             LGenObj = typeCasting(AuxVars, LGenObj, rightDeclaration, CurrentNode.Operation.line)
             break
         case 'right':
+            AuxVars.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of comparision '${CurrentNode.Operation.value}'.`)
             RGenObj = typeCasting(AuxVars, RGenObj, leftDeclaration, CurrentNode.Operation.line)
         }
         assemblyCode = LGenObj.asmCode + RGenObj.asmCode

@@ -17,6 +17,8 @@ export default function codeGenerator (Program: CONTRACT) {
         latestLoopId: [],
         jumpId: 0,
         assemblyCode: '',
+        errors: '',
+        warnings: '',
         currFunctionIndex: -1,
         currSourceLine: 0,
         getNewJumpID: function (line: number) {
@@ -70,6 +72,10 @@ export default function codeGenerator (Program: CONTRACT) {
             }
             functionTailGenerator()
         })
+        // Inspect if there were errros and throw now
+        if (GlobalCodeVars.errors.length !== 0) {
+            throw new Error(GlobalCodeVars.errors)
+        }
         return optimizer(
             Program.Config.optimizationLevel,
             GlobalCodeVars.assemblyCode,
@@ -98,6 +104,10 @@ export default function codeGenerator (Program: CONTRACT) {
             GlobalCodeVars.currSourceLine = sourceCodeLine
         }
         GlobalCodeVars.assemblyCode += lines
+    }
+
+    function addError (erroMessage: string) {
+        GlobalCodeVars.errors += erroMessage + '\n'
     }
 
     /** Add content of macro 'program' information to assembly code */
@@ -183,10 +193,19 @@ export default function codeGenerator (Program: CONTRACT) {
         let assemblyCode: string
         switch (Sentence.type) {
         case 'phrase':
-            writeAsmCode(
-                setupGenCode(GlobalCodeVars, { InitialAST: Sentence.CodeAST }, Sentence.line),
-                Sentence.line
-            )
+            try {
+                writeAsmCode(
+                    setupGenCode(GlobalCodeVars, { InitialAST: Sentence.CodeAST }, Sentence.line),
+                    Sentence.line
+                )
+            } catch (err) {
+                if (err instanceof Error) {
+                    addError(err.message)
+                    break
+                }
+                // Fatal error
+                throw err
+            }
             break
         case 'ifEndif':
             sentenceID = '__if' + GlobalCodeVars.getNewJumpID(Sentence.line)
