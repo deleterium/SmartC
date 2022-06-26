@@ -130,6 +130,8 @@ export function createBuiltInInstruction (
     case 'checkSignature':
     case 'distributeToHolders':
     case 'distributeToHoldersFx':
+    case 'sendQuantityAndAmount':
+    case 'sendQuantityAndAmountFx':
         return createBuiltIn4ArgsPlusInstruction(AstAuxVars, BuiltInToken, RetMem, argsMem)
     }
 
@@ -252,9 +254,12 @@ export function createBuiltInInstruction (
             `FUN @${RetMem.asmName} get_Type_for_Tx_in_A\n`
         break
     case 'getCreator':
-        assemblyCode = 'FUN clear_A\n' +
+        auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltInToken.line)
+        assemblyCode = auxFlatMem.asmCode +
+            `FUN set_B2 $${auxFlatMem.FlatMem.asmName}\n` +
             'FUN B_to_Address_of_Creator\n' +
             `FUN @${RetMem.asmName} get_B1\n`
+        AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
         break
     case 'getCreatorOf':
         assemblyCode = tempArgsMem[0].asmCode +
@@ -279,8 +284,11 @@ export function createBuiltInInstruction (
         break
     case 'getCurrentBalance':
     case 'getCurrentBalanceFx':
-        assemblyCode = 'FUN clear_A\n' +
+        auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltInToken.line)
+        assemblyCode = auxFlatMem.asmCode +
+            `FUN set_A2 $${auxFlatMem.FlatMem.asmName}\n` +
             `FUN @${RetMem.asmName} get_Current_Balance\n`
+        AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
         break
     case 'readMessage':
         assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
@@ -336,18 +344,17 @@ export function createBuiltInInstruction (
             recipientArg = 1
         }
         if (amountArg !== -1) {
-            assemblyCode = 'FUN clear_A\n' +
-                tempArgsMem[recipientArg].asmCode +
-                `FUN set_B1 $${tempArgsMem[recipientArg].FlatMem.asmName}\n` +
-                tempArgsMem[amountArg].asmCode +
+            auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltInToken.line)
+            assemblyCode = tempArgsMem[amountArg].asmCode + tempArgsMem[recipientArg].asmCode + auxFlatMem.asmCode +
+                `FUN set_B1_B2 $${tempArgsMem[recipientArg].FlatMem.asmName} $${auxFlatMem.FlatMem.asmName}\n` +
                 `FUN send_to_Address_in_B $${tempArgsMem[amountArg].FlatMem.asmName}\n`
             AstAuxVars.freeRegister(tempArgsMem[amountArg].FlatMem.address)
+            AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
         } else {
             assemblyCode = tempArgsMem[recipientArg].asmCode +
                 `FUN set_B1 $${tempArgsMem[recipientArg].FlatMem.asmName}\n`
         }
         AstAuxVars.freeRegister(tempArgsMem[recipientArg].FlatMem.address)
-        assemblyCode += tempArgsMem[messageArg].asmCode
         if (argsMem[messageArg].type === 'constant' || (argsMem[messageArg].type === 'array' && argsMem[messageArg].Offset === undefined)) {
             const theHexContent = assertNotUndefined(argsMem[messageArg].hexContent)
             const m1 = AstAuxVars.getMemoryObjectByLocation(theHexContent).asmName
@@ -360,6 +367,7 @@ export function createBuiltInInstruction (
                 'FUN send_A_to_Address_in_B\n'
             break
         }
+        assemblyCode += tempArgsMem[messageArg].asmCode
         if (AstAuxVars.isTemp(tempArgsMem[messageArg].FlatMem.address)) {
             AuxRegister = tempArgsMem[messageArg].FlatMem
         } else {
@@ -387,9 +395,8 @@ export function createBuiltInInstruction (
     case 'sendAmount':
     case 'sendAmountFx':
         auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltInToken.line)
-        assemblyCode = tempArgsMem[1].asmCode + auxFlatMem.asmCode +
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode + auxFlatMem.asmCode +
             `FUN set_B1_B2 $${tempArgsMem[1].FlatMem.asmName} $${auxFlatMem.FlatMem.asmName}\n` +
-            tempArgsMem[0].asmCode +
             `FUN send_to_Address_in_B $${tempArgsMem[0].FlatMem.asmName}\n`
         AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
         break
@@ -400,31 +407,30 @@ export function createBuiltInInstruction (
         break
     case 'getMapValue':
     case 'getMapValueFx':
-        assemblyCode = 'FUN clear_A\n' +
-            tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
+        auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltInToken.line)
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode + auxFlatMem.asmCode +
             `FUN set_A1_A2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
+            `FUN set_A3 $${auxFlatMem.FlatMem.asmName}\n` +
             `FUN @${RetMem.asmName} Get_Map_Value_Keys_In_A\n`
+        AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
         break
     case 'getExtMapValue':
     case 'getExtMapValueFx':
-        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode + tempArgsMem[2].asmCode +
             `FUN set_A1_A2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
-            tempArgsMem[2].asmCode +
             `FUN set_A3 $${tempArgsMem[2].FlatMem.asmName}\n` +
             `FUN @${RetMem.asmName} Get_Map_Value_Keys_In_A\n`
         break
     case 'setMapValue':
     case 'setMapValueFx':
-        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode + tempArgsMem[2].asmCode +
             `FUN set_A1_A2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
-            tempArgsMem[2].asmCode +
             `FUN set_A4 $${tempArgsMem[2].FlatMem.asmName}\n` +
             'FUN Set_Map_Value_Keys_In_A\n'
         break
     case 'issueAsset':
-        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode + tempArgsMem[2].asmCode +
             `FUN set_A1_A2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
-            tempArgsMem[2].asmCode +
             `FUN set_B1 $${tempArgsMem[2].FlatMem.asmName}\n` +
             `FUN @${RetMem.asmName} Issue_Asset\n`
         break
@@ -434,10 +440,9 @@ export function createBuiltInInstruction (
         'FUN Mint_Asset\n'
         break
     case 'sendQuantity':
-        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[2].asmCode +
-            `FUN set_B1_B2 $${tempArgsMem[2].FlatMem.asmName} $${tempArgsMem[0].FlatMem.asmName}\n` +
-            tempArgsMem[1].asmCode +
-            `FUN send_to_Address_in_B $${tempArgsMem[1].FlatMem.asmName}\n`
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode + tempArgsMem[2].asmCode +
+                `FUN set_B1_B2 $${tempArgsMem[2].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
+                `FUN send_to_Address_in_B $${tempArgsMem[0].FlatMem.asmName}\n`
         break
     case 'getAssetBalance':
         assemblyCode = tempArgsMem[0].asmCode +
@@ -529,9 +534,8 @@ export function createBuiltIn4ArgsPlusInstruction (
         AstAuxVars.freeRegister(auxFlatMemB.FlatMem.address)
         auxFlatMemA = flattenMemory(AstAuxVars, argsMem[5], BuiltInToken.line)
         auxFlatMemB = flattenMemory(AstAuxVars, argsMem[0], BuiltInToken.line)
-        assemblyCode += auxFlatMemA.asmCode +
+        assemblyCode += auxFlatMemA.asmCode + auxFlatMemB.asmCode +
             `FUN set_A3 $${auxFlatMemA.FlatMem.asmName}\n` +
-            auxFlatMemB.asmCode +
             `FUN set_B2 $${auxFlatMemB.FlatMem.asmName}\n`
         AstAuxVars.freeRegister(auxFlatMemA.FlatMem.address)
         AstAuxVars.freeRegister(auxFlatMemB.FlatMem.address)
@@ -563,6 +567,22 @@ export function createBuiltIn4ArgsPlusInstruction (
         assemblyCode += auxFlatMemA.asmCode + auxFlatMemB.asmCode +
             `FUN set_A3_A4 $${auxFlatMemA.FlatMem.asmName} $${auxFlatMemB.FlatMem.asmName}\n` +
             'FUN Distribute_To_Asset_Holders\n'
+        AstAuxVars.freeRegister(auxFlatMemA.FlatMem.address)
+        AstAuxVars.freeRegister(auxFlatMemB.FlatMem.address)
+        return assemblyCode
+    case 'sendQuantityAndAmount':
+    case 'sendQuantityAndAmountFx':
+        auxFlatMemA = flattenMemory(AstAuxVars, argsMem[3], BuiltInToken.line)
+        auxFlatMemB = flattenMemory(AstAuxVars, argsMem[1], BuiltInToken.line)
+        assemblyCode += auxFlatMemA.asmCode + auxFlatMemB.asmCode +
+            `FUN set_B1_B2 $${auxFlatMemA.FlatMem.asmName} $${auxFlatMemB.FlatMem.asmName}\n`
+        AstAuxVars.freeRegister(auxFlatMemA.FlatMem.address)
+        AstAuxVars.freeRegister(auxFlatMemB.FlatMem.address)
+        auxFlatMemA = flattenMemory(AstAuxVars, argsMem[2], BuiltInToken.line)
+        auxFlatMemB = flattenMemory(AstAuxVars, argsMem[0], BuiltInToken.line)
+        assemblyCode += auxFlatMemA.asmCode + auxFlatMemB.asmCode +
+            `FUN set_B3 $${auxFlatMemA.FlatMem.asmName}\n` +
+            `FUN send_to_Address_in_B $${auxFlatMemB.FlatMem.asmName}\n`
         AstAuxVars.freeRegister(auxFlatMemA.FlatMem.address)
         AstAuxVars.freeRegister(auxFlatMemB.FlatMem.address)
         return assemblyCode

@@ -338,6 +338,13 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         name: 'sendQuantity'
     },
     {
+        argsMemObj: [longArg, longArg, longArg, longArg],
+        asmName: 'sendQuantityAndAmount',
+        declaration: 'void',
+        sentences: [],
+        name: 'sendQuantityAndAmount'
+    },
+    {
         argsMemObj: [longArg],
         asmName: 'getAssetBalance',
         declaration: 'long',
@@ -443,6 +450,13 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         declaration: 'void',
         sentences: [],
         name: 'setMapValueFx'
+    },
+    {
+        argsMemObj: [longArg, longArg, fixedArg, longArg],
+        asmName: 'sendQuantityAndAmountFx',
+        declaration: 'void',
+        sentences: [],
+        name: 'sendQuantityAndAmountFx'
     },
     {
         argsMemObj: [longArg, longArg, fixedArg, longArg, longArg],

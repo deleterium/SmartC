@@ -147,4 +147,242 @@ describe('Built-in functions', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: getNextTx()', () => {
+        const code = '#pragma optimizationLevel 0\n long currTxId = getNextTx(); if (currTxId == 0) currTxId++;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare _counterTimestamp\n^declare currTxId\n\nFUN A_to_Tx_after_Timestamp $_counterTimestamp\nFUN @currTxId get_A1\nBZR $currTxId :__GNT_1\nFUN @_counterTimestamp get_Timestamp_for_Tx_in_A\n__GNT_1:\nBNZ $currTxId :__if2_endif\n__if2_start:\nINC @currTxId\n__if2_endif:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getNextTx() inside a function', () => {
+        const code = '#pragma optimizationLevel 0\n getNextTxDetails(); void getNextTxDetails(void) { long tx = getNextTx(); }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare _counterTimestamp\n^declare getNextTxDetails_tx\n\nJSR :__fn_getNextTxDetails\nFIN\n\n__fn_getNextTxDetails:\nFUN A_to_Tx_after_Timestamp $_counterTimestamp\nFUN @getNextTxDetails_tx get_A1\nBZR $getNextTxDetails_tx :__GNT_1\nFUN @_counterTimestamp get_Timestamp_for_Tx_in_A\n__GNT_1:\nRET\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getNextTx() inside a codecave', () => {
+        const code = '#pragma optimizationLevel 0\n long a, b, c; while ((a = getNextTx()) != 0) b++;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare _counterTimestamp\n^declare a\n^declare b\n^declare c\n\n__loop1_continue:\nFUN A_to_Tx_after_Timestamp $_counterTimestamp\nFUN @a get_A1\nBZR $a :__GNT_2\nFUN @_counterTimestamp get_Timestamp_for_Tx_in_A\n__GNT_2:\nBZR $a :__loop1_break\n__loop1_start:\nINC @b\nJMP :__loop1_continue\n__loop1_break:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getNextTxFromBlockheight()', () => {
+        const code = '#pragma optimizationLevel 0\n long block; long currTxId = getNextTxFromBlockheight(100900); if (currTxId == 0) currTxId++; currTxId = getNextTxFromBlockheight(block);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare _counterTimestamp\n^declare block\n^declare currTxId\n\nSET @r0 #0000000000018a24\nSET @r1 #0000000000000020\nSHL @r0 $r1\nFUN A_to_Tx_after_Timestamp $r0\nFUN @currTxId get_A1\nBZR $currTxId :__GNT_1\nFUN @_counterTimestamp get_Timestamp_for_Tx_in_A\n__GNT_1:\nBNZ $currTxId :__if2_endif\n__if2_start:\nINC @currTxId\n__if2_endif:\nSET @r0 $block\nSET @r1 #0000000000000020\nSHL @r0 $r1\nFUN A_to_Tx_after_Timestamp $r0\nFUN @currTxId get_A1\nBZR $currTxId :__GNT_3\nFUN @_counterTimestamp get_Timestamp_for_Tx_in_A\n__GNT_3:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getBlockheight()', () => {
+        const code = '#pragma optimizationLevel 0\n long block = getBlockheight(0xad);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare block\n\nSET @r0 #00000000000000ad\nFUN set_A1 $r0\nFUN @block get_Timestamp_for_Tx_in_A\nSET @r0 #0000000000000020\nSHR @block $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getCurrentBlockheight()', () => {
+        const code = '#pragma optimizationLevel 0\n long block = getCurrentBlockheight();'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare block\n\nFUN @block get_Block_Timestamp\nSET @r0 #0000000000000020\nSHR @block $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getAmount(); getAmountFx()', () => {
+        const code = '#pragma optimizationLevel 0\nlong la; fixed fa; la=getAmount(1234); fa=getAmountFx(0xfffe);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare la\n^declare fa\n\nSET @r0 #00000000000004d2\nCLR @r1\nFUN set_A1_A2 $r0 $r1\nFUN @la get_Amount_for_Tx_in_A\nSET @r0 #000000000000fffe\nCLR @r1\nFUN set_A1_A2 $r0 $r1\nFUN @fa get_Amount_for_Tx_in_A\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getSender()', () => {
+        const code = '#pragma optimizationLevel 0\n long a=getSender(1234);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #00000000000004d2\nFUN set_A1 $r0\nFUN B_to_Address_of_Tx_in_A\nFUN @a get_B1\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getType()', () => {
+        const code = '#pragma optimizationLevel 0\n long a=getType(1234);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #00000000000004d2\nFUN set_A1 $r0\nFUN @a get_Type_for_Tx_in_A\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getCreator()', () => {
+        const code = '#pragma optimizationLevel 0\n long a=getCreator();'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nCLR @r0\nFUN set_B2 $r0\nFUN B_to_Address_of_Creator\nFUN @a get_B1\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getCreatorOf()', () => {
+        const code = '#pragma optimizationLevel 0\n long a=getCreatorOf(1234);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #00000000000004d2\nFUN set_B2 $r0\nFUN B_to_Address_of_Creator\nFUN @a get_B1\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getCodeHashOf()', () => {
+        const code = '#pragma optimizationLevel 0\n long a=getCodeHashOf(1234);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #00000000000004d2\nFUN set_B2 $r0\nFUN @a Get_Code_Hash_Id\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getWeakRandomNumber()', () => {
+        const code = '#pragma optimizationLevel 0\n long a=getWeakRandomNumber();'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFUN Put_Last_Block_GSig_In_A\nFUN @a get_A2\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getActivationOf(); getActivationOfFx', () => {
+        const code = '#pragma optimizationLevel 0\n long a=getActivationOf(1234); fixed b=getActivationOfFx(1234);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nSET @r0 #00000000000004d2\nFUN set_B2 $r0\nFUN @a Get_Activation_Fee\nSET @r0 #00000000000004d2\nFUN set_B2 $r0\nFUN @b Get_Activation_Fee\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getCurrentBalance(); getCurrentBalanceFx() ', () => {
+        const code = '#pragma optimizationLevel 0\n long a=getCurrentBalance(); fixed b=getCurrentBalanceFx();'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nCLR @r0\nFUN set_A2 $r0\nFUN @a get_Current_Balance\nCLR @r0\nFUN set_A2 $r0\nFUN @b get_Current_Balance\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: readMessage()', () => {
+        const code = '#pragma optimizationLevel 0\n long buffer[4], *bufPtr; readMessage(0xdede,    1, buffer); readMessage(0xfafa,    0, bufPtr); readMessage(0xfefe,    0,  bufPtr+1);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare buffer\n^const SET @buffer #0000000000000004\n^declare buffer_0\n^declare buffer_1\n^declare buffer_2\n^declare buffer_3\n^declare bufPtr\n\nSET @r0 #000000000000dede\nSET @r1 #0000000000000001\nFUN set_A1_A2 $r0 $r1\nFUN message_from_Tx_in_A_to_B\nFUN @buffer_0 get_B1\nFUN @buffer_1 get_B2\nFUN @buffer_2 get_B3\nFUN @buffer_3 get_B4\nSET @r0 #000000000000fafa\nCLR @r1\nFUN set_A1_A2 $r0 $r1\nFUN message_from_Tx_in_A_to_B\nSET @r0 $bufPtr\nFUN @r1 get_B1\nSET @($r0) $r1\nFUN @r1 get_B2\nINC @r0\nSET @($r0) $r1\nFUN @r1 get_B3\nINC @r0\nSET @($r0) $r1\nFUN @r1 get_B4\nINC @r0\nSET @($r0) $r1\nSET @r0 $bufPtr\nINC @r0\nSET @r1 #000000000000fefe\nCLR @r2\nFUN set_A1_A2 $r1 $r2\nFUN message_from_Tx_in_A_to_B\nFUN @r1 get_B1\nSET @($r0) $r1\nFUN @r1 get_B2\nINC @r0\nSET @($r0) $r1\nFUN @r1 get_B3\nINC @r0\nSET @($r0) $r1\nFUN @r1 get_B4\nINC @r0\nSET @($r0) $r1\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: sendMessage()', () => {
+        const code = '#pragma optimizationLevel 0\n#pragma verboseAssembly\nlong a, b, msg[4], *msgPtr;\nsendMessage(msg, getCreator());\nsendMessage(&msg[0], getCreator());\nsendMessage(&msg[a], getCreator());\nsendMessage(msgPtr, getCreator());\nsendMessage(&a, getCreator());'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare msg\n^const SET @msg #0000000000000006\n^declare msg_0\n^declare msg_1\n^declare msg_2\n^declare msg_3\n^declare msgPtr\n\n^comment line 4 sendMessage(msg, getCreator());\nCLR @r1\nFUN set_B2 $r1\nFUN B_to_Address_of_Creator\nFUN @r0 get_B1\nFUN set_B1 $r0\nFUN set_A1_A2 $msg_0 $msg_1\nFUN set_A3_A4 $msg_2 $msg_3\nFUN send_A_to_Address_in_B\n^comment line 5 sendMessage(&msg[0], getCreator());\nCLR @r1\nFUN set_B2 $r1\nFUN B_to_Address_of_Creator\nFUN @r0 get_B1\nFUN set_B1 $r0\nFUN set_A1_A2 $msg_0 $msg_1\nFUN set_A3_A4 $msg_2 $msg_3\nFUN send_A_to_Address_in_B\n^comment line 6 sendMessage(&msg[a], getCreator());\nSET @r0 $msg\nADD @r0 $a\nCLR @r2\nFUN set_B2 $r2\nFUN B_to_Address_of_Creator\nFUN @r1 get_B1\nFUN set_B1 $r1\nSET @r1 $($r0)\nINC @r0\nSET @r2 $($r0)\nFUN set_A1_A2 $r1 $r2\nINC @r0\nSET @r1 $($r0)\nINC @r0\nSET @r2 $($r0)\nFUN set_A3_A4 $r1 $r2\nFUN send_A_to_Address_in_B\n^comment line 7 sendMessage(msgPtr, getCreator());\nCLR @r1\nFUN set_B2 $r1\nFUN B_to_Address_of_Creator\nFUN @r0 get_B1\nFUN set_B1 $r0\nSET @r0 $msgPtr\nSET @r1 $($r0)\nINC @r0\nSET @r2 $($r0)\nFUN set_A1_A2 $r1 $r2\nINC @r0\nSET @r1 $($r0)\nINC @r0\nSET @r2 $($r0)\nFUN set_A3_A4 $r1 $r2\nFUN send_A_to_Address_in_B\n^comment line 8 sendMessage(&a, getCreator());\nCLR @r1\nFUN set_B2 $r1\nFUN B_to_Address_of_Creator\nFUN @r0 get_B1\nFUN set_B1 $r0\nFUN set_A1_A2 $a $b\nFUN set_A3_A4 $msg $msg_0\nFUN send_A_to_Address_in_B\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: sendAmountAndMessage()', () => {
+        const code = '#pragma optimizationLevel 0\n #pragma verboseAssembly\n long a, b, msg[4], *msgPtr;\n sendAmountAndMessage(1200, msg, 0xdede);\n sendAmountAndMessage(1200, msgPtr, 0xdede);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare msg\n^const SET @msg #0000000000000006\n^declare msg_0\n^declare msg_1\n^declare msg_2\n^declare msg_3\n^declare msgPtr\n\n^comment line 4  sendAmountAndMessage(1200, msg, 0xdede);\nSET @r0 #00000000000004b0\nSET @r1 #000000000000dede\nCLR @r2\nFUN set_B1_B2 $r1 $r2\nFUN send_to_Address_in_B $r0\nFUN set_A1_A2 $msg_0 $msg_1\nFUN set_A3_A4 $msg_2 $msg_3\nFUN send_A_to_Address_in_B\n^comment line 5  sendAmountAndMessage(1200, msgPtr, 0xdede);\nSET @r0 #00000000000004b0\nSET @r1 #000000000000dede\nCLR @r2\nFUN set_B1_B2 $r1 $r2\nFUN send_to_Address_in_B $r0\nSET @r0 $msgPtr\nSET @r1 $($r0)\nINC @r0\nSET @r2 $($r0)\nFUN set_A1_A2 $r1 $r2\nINC @r0\nSET @r1 $($r0)\nINC @r0\nSET @r2 $($r0)\nFUN set_A3_A4 $r1 $r2\nFUN send_A_to_Address_in_B\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: sendAmount(); sendAmountFx()', () => {
+        const code = '#pragma optimizationLevel 0\n long a; fixed b; sendAmount(1_0000, 0xdede); sendAmountFx(0.2, 0xfafa);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nSET @r0 #0000000000002710\nSET @r1 #000000000000dede\nCLR @r2\nFUN set_B1_B2 $r1 $r2\nFUN send_to_Address_in_B $r0\nSET @r0 #0000000001312d00\nSET @r1 #000000000000fafa\nCLR @r2\nFUN set_B1_B2 $r1 $r2\nFUN send_to_Address_in_B $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: sendBalance()()', () => {
+        const code = '#pragma optimizationLevel 0\n sendBalance(0xdede);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n\nSET @r0 #000000000000dede\nFUN set_B1 $r0\nFUN send_All_to_Address_in_B\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getMapValue(); getMapValueFx()', () => {
+        const code = '#pragma optimizationLevel 0\n long a = getMapValue(0, 1); fixed b = getMapValueFx(2, 3);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nCLR @r0\nSET @r1 #0000000000000001\nCLR @r2\nFUN set_A1_A2 $r0 $r1\nFUN set_A3 $r2\nFUN @a Get_Map_Value_Keys_In_A\nSET @r0 #0000000000000002\nSET @r1 #0000000000000003\nCLR @r2\nFUN set_A1_A2 $r0 $r1\nFUN set_A3 $r2\nFUN @b Get_Map_Value_Keys_In_A\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getExtMapValue(); getExtMapValueFx()', () => {
+        const code = '#pragma optimizationLevel 0\n long a = getExtMapValue(0, 1, 0xdede); fixed b = getExtMapValueFx(2, 3, 0xfafa);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nCLR @r0\nSET @r1 #0000000000000001\nSET @r2 #000000000000dede\nFUN set_A1_A2 $r0 $r1\nFUN set_A3 $r2\nFUN @a Get_Map_Value_Keys_In_A\nSET @r0 #0000000000000002\nSET @r1 #0000000000000003\nSET @r2 #000000000000fafa\nFUN set_A1_A2 $r0 $r1\nFUN set_A3 $r2\nFUN @b Get_Map_Value_Keys_In_A\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: setMapValue(); setMapValueFx()', () => {
+        const code = '#pragma optimizationLevel 0\n setMapValue(0, 1, 1_0000); setMapValueFx(2, 3, 0.2222);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n\nCLR @r0\nSET @r1 #0000000000000001\nSET @r2 #0000000000002710\nFUN set_A1_A2 $r0 $r1\nFUN set_A4 $r2\nFUN Set_Map_Value_Keys_In_A\nSET @r0 #0000000000000002\nSET @r1 #0000000000000003\nSET @r2 #0000000001530ce0\nFUN set_A1_A2 $r0 $r1\nFUN set_A4 $r2\nFUN Set_Map_Value_Keys_In_A\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: issueAsset()', () => {
+        const code = '#pragma optimizationLevel 0\n long asset = issueAsset("ABCDEFGH", "IJ", 4);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare asset\n\nSET @r0 #4847464544434241\nSET @r1 #0000000000004a49\nSET @r2 #0000000000000004\nFUN set_A1_A2 $r0 $r1\nFUN set_B1 $r2\nFUN @asset Issue_Asset\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: mintAsset()', () => {
+        const code = '#pragma optimizationLevel 0\n mintAsset(1_0000, 0xa5531);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n\nSET @r0 #0000000000002710\nSET @r1 #00000000000a5531\nFUN set_B1_B2 $r1 $r0\nFUN Mint_Asset\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: sendQuantity()', () => {
+        const code = '#pragma optimizationLevel 0\n sendQuantity(1_000, 0xa5531, 0xdede);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n\nSET @r0 #00000000000003e8\nSET @r1 #00000000000a5531\nSET @r2 #000000000000dede\nFUN set_B1_B2 $r2 $r1\nFUN send_to_Address_in_B $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: sendQuantityAndAmount(); sendQuantityAndAmountFx()', () => {
+        const code = '#pragma optimizationLevel 0\n sendQuantityAndAmount(1_000, 0xa5531, 22, 0xdede); sendQuantityAndAmountFx(1_000, 0xa5531, .02, 0xdede); '
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n\nSET @r0 #000000000000dede\nSET @r1 #00000000000a5531\nFUN set_B1_B2 $r0 $r1\nSET @r0 #0000000000000016\nSET @r1 #00000000000003e8\nFUN set_B3 $r0\nFUN send_to_Address_in_B $r1\nSET @r0 #000000000000dede\nSET @r1 #00000000000a5531\nFUN set_B1_B2 $r0 $r1\nSET @r0 #00000000001e8480\nSET @r1 #00000000000003e8\nFUN set_B3 $r0\nFUN send_to_Address_in_B $r1\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getAssetBalance()', () => {
+        const code = '#pragma optimizationLevel 0\n long a = getAssetBalance(0xa5531);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #00000000000a5531\nFUN set_B2 $r0\nFUN @a get_Current_Balance\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: checkSignature()', () => {
+        const code = '#pragma optimizationLevel 0\n #pragma maxAuxVars 6\n long msg2, msg3, msg4, txId, page, creator; long result = checkSignature(msg2, msg3, msg4, txId, page, creator); asm { ^comment break } result = checkSignature("msg2", "msg3", "msg4", "txId", "page", "creator");'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare r5\n^declare msg2\n^declare msg3\n^declare msg4\n^declare txId\n^declare page\n^declare creator\n^declare result\n\nFUN set_A1_A2 $txId $page\nFUN set_A3 $creator\nFUN set_B2 $msg2\nFUN set_B3_B4 $msg3 $msg4\nFUN @result Check_Sig_B_With_A\n^comment break\nSET @r0 #0000000064497874\nSET @r1 #0000000065676170\nFUN set_A1_A2 $r0 $r1\nSET @r0 #00726f7461657263\nSET @r1 #000000003267736d\nFUN set_A3 $r0\nFUN set_B2 $r1\nSET @r0 #000000003367736d\nSET @r1 #000000003467736d\nFUN set_B3_B4 $r0 $r1\nFUN @result Check_Sig_B_With_A\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: distributeToHolders()', () => {
+        const code = '#pragma optimizationLevel 0\n #pragma maxAuxVars 5\n long holdersAssetMinQuantity, holdersAsset, amountToDistribute, assetToDistribute, quantityToDistribute; distributeToHolders(holdersAssetMinQuantity, holdersAsset, amountToDistribute, assetToDistribute, quantityToDistribute); asm { ^comment break } distributeToHoldersFx(1, 2, 3.3, 4, 5);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare holdersAssetMinQuantity\n^declare holdersAsset\n^declare amountToDistribute\n^declare assetToDistribute\n^declare quantityToDistribute\n\nFUN set_B1_B2 $holdersAssetMinQuantity $holdersAsset\nFUN set_A1 $amountToDistribute\nFUN set_A3_A4 $assetToDistribute $quantityToDistribute\nFUN Distribute_To_Asset_Holders\n^comment break\nSET @r0 #0000000000000001\nSET @r1 #0000000000000002\nFUN set_B1_B2 $r0 $r1\nSET @r0 #0000000013ab6680\nFUN set_A1 $r0\nSET @r0 #0000000000000004\nSET @r1 #0000000000000005\nFUN set_A3_A4 $r0 $r1\nFUN Distribute_To_Asset_Holders\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getAssetHoldersCount()', () => {
+        const code = '#pragma optimizationLevel 0\n long block = getAssetHoldersCount(1000, 0xa55e1);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare block\n\nSET @r0 #00000000000003e8\nSET @r1 #00000000000a55e1\nFUN set_B1_B2 $r0 $r1\nFUN @block Get_Asset_Holders_Count\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: readAssets()', () => {
+        const code = '#pragma optimizationLevel 0\n long txId, assets[4], *assetsPtr; readAssets(txId, assets); asm { ^comment b} readAssets(25, assets); asm { ^comment b} readAssets(25, assetsPtr); asm { ^comment c} readAssets(txId, assetsPtr + 1);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare txId\n^declare assets\n^const SET @assets #0000000000000005\n^declare assets_0\n^declare assets_1\n^declare assets_2\n^declare assets_3\n^declare assetsPtr\n\nFUN set_A1 $txId\nFUN B_To_Assets_Of_Tx_In_A\nFUN @assets_0 get_B1\nFUN @assets_1 get_B2\nFUN @assets_2 get_B3\nFUN @assets_3 get_B4\n^comment b\nSET @r0 #0000000000000019\nFUN set_A1 $r0\nFUN B_To_Assets_Of_Tx_In_A\nFUN @assets_0 get_B1\nFUN @assets_1 get_B2\nFUN @assets_2 get_B3\nFUN @assets_3 get_B4\n^comment b\nSET @r0 #0000000000000019\nFUN set_A1 $r0\nFUN B_To_Assets_Of_Tx_In_A\nSET @r0 $assetsPtr\nFUN @r1 get_B1\nSET @($r0) $r1\nFUN @r1 get_B2\nINC @r0\nSET @($r0) $r1\nFUN @r1 get_B3\nINC @r0\nSET @($r0) $r1\nFUN @r1 get_B4\nINC @r0\nSET @($r0) $r1\n^comment c\nSET @r0 $assetsPtr\nINC @r0\nFUN set_A1 $txId\nFUN B_To_Assets_Of_Tx_In_A\nFUN @r1 get_B1\nSET @($r0) $r1\nFUN @r1 get_B2\nINC @r0\nSET @($r0) $r1\nFUN @r1 get_B3\nINC @r0\nSET @($r0) $r1\nFUN @r1 get_B4\nINC @r0\nSET @($r0) $r1\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getQuantity()', () => {
+        const code = '#pragma optimizationLevel 0\n long txId, asset; long qty = getQuantity(txId, asset); asm { ^comment b} qty = getQuantity(1234, 0xA55E1);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare txId\n^declare asset\n^declare qty\n\nFUN set_A1_A2 $txId $asset\nFUN @qty get_Amount_for_Tx_in_A\n^comment b\nSET @r0 #00000000000004d2\nSET @r1 #00000000000a55e1\nFUN set_A1_A2 $r0 $r1\nFUN @qty get_Amount_for_Tx_in_A\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getAssetCirculating()', () => {
+        const code = '#pragma optimizationLevel 0\n long a = getAssetCirculating(0xa55e1);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #00000000000a55e1\nFUN set_A2 $r0\nFUN @a Get_Asset_Circulating\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })

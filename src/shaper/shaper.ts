@@ -346,7 +346,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             if (Tkn.type === 'Variable' && (Tkn.value === 'getNextTx' || Tkn.value === 'getNextTxFromBlockheight')) {
                 return true
             }
-            if (Tkn.type === 'CodeDomain') {
+            if (Tkn.type === 'CodeDomain' || Tkn.type === 'CodeCave') {
                 if (autoCounterDetected(Tkn.params) === true) {
                     return true
                 }
