@@ -86,7 +86,8 @@ export default function setupGenCode (
         const id = AuxVars.registerInfo.find(OBJ => OBJ.inUse === false)
         if (id === undefined) {
             throw new Error(`At line: ${line}. ` +
-                "No more registers available. Try to reduce nested operations or increase 'maxAuxVars'.")
+                'No more registers available. ' +
+                `Increase the number with '#pragma maxAuxVars ${Globals.Program.Config.maxAuxVars + 1}' or try to reduce nested operations.`)
         }
         id.inUse = true
         return deepCopy(id.Template)

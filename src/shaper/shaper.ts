@@ -183,7 +183,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         const num = parseInt(MacroToken.value)
         switch (MacroToken.property) {
         case 'maxAuxVars':
-            if (num >= 1 && num <= 10) {
+            if (num >= 0 && num <= 10) {
                 Program.Config.maxAuxVars = num
                 return false
             }
