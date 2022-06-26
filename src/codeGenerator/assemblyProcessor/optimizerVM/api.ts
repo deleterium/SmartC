@@ -593,6 +593,8 @@ export class API_MICROCODE {
                     return null
                 }
                 ContractState.unknownAndRevoke(RetVar)
+                RetVar.shadow = superReg.varName
+                superReg.shadow = RetVar.varName
                 return true
             }
         },
@@ -606,6 +608,8 @@ export class API_MICROCODE {
                     return null
                 }
                 ContractState.unknownAndRevoke(RetVar)
+                RetVar.shadow = superReg.varName
+                superReg.shadow = RetVar.varName
                 return true
             }
         },
@@ -619,6 +623,8 @@ export class API_MICROCODE {
                     return null
                 }
                 ContractState.unknownAndRevoke(RetVar)
+                RetVar.shadow = superReg.varName
+                superReg.shadow = RetVar.varName
                 return true
             }
         },
@@ -632,6 +638,8 @@ export class API_MICROCODE {
                     return null
                 }
                 ContractState.unknownAndRevoke(RetVar)
+                RetVar.shadow = superReg.varName
+                superReg.shadow = RetVar.varName
                 return true
             }
         },
@@ -645,6 +653,8 @@ export class API_MICROCODE {
                     return null
                 }
                 ContractState.unknownAndRevoke(RetVar)
+                RetVar.shadow = superReg.varName
+                superReg.shadow = RetVar.varName
                 return true
             }
         },
@@ -658,6 +668,8 @@ export class API_MICROCODE {
                     return null
                 }
                 ContractState.unknownAndRevoke(RetVar)
+                RetVar.shadow = superReg.varName
+                superReg.shadow = RetVar.varName
                 return true
             }
         },
@@ -671,6 +683,8 @@ export class API_MICROCODE {
                     return null
                 }
                 ContractState.unknownAndRevoke(RetVar)
+                RetVar.shadow = superReg.varName
+                superReg.shadow = RetVar.varName
                 return true
             }
         },
@@ -684,6 +698,8 @@ export class API_MICROCODE {
                     return null
                 }
                 ContractState.unknownAndRevoke(RetVar)
+                RetVar.shadow = superReg.varName
+                superReg.shadow = RetVar.varName
                 return true
             }
         },

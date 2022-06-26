@@ -32,6 +32,8 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
                 codeLines.forEach(jumpJumpOpt)
                 codeLines.forEach(swapBranches)
                 codeLines.forEach(notOpt)
+                codeLines.forEach(getSetSuper)
+                codeLines.forEach(pushPopRegister)
                 codeLines.forEach(popPushRegister)
                 codeLines.forEach(mdvOpt)
                 codeLines = codeLines.flatMap(branchOpt)
@@ -47,6 +49,7 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         } while (optimizedLines !== 0)
         const partialOptimized = codeLines.join('\n')
         if (O >= 3) {
+            // silent optimization
             const OptVM = new CONTRACT(codeLines)
             try {
                 return OptVM.optimize().join('\n')
@@ -279,6 +282,48 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         }
         array[index] = 'DELETE'
         optimizedLines++
+    }
+
+    /** Optimizes get and set Superregisters in sequence with registers
+     * ```
+     * FUN @r0 get_B1 -> DELETE
+     * FUN set_B1 $r0 -> DELETE
+     * ``` */
+    function getSetSuper (value: string, index: number, array: string[]) : void {
+        const getSuper = /^\s*FUN\s+@(r\d+)\s+(get_[AB][1-4])\s*$/.exec(value)
+        if (getSuper === null) {
+            return
+        }
+        const setSuper = /^\s*FUN\s+(set_[AB][1-4])\s+\$(r\d+)\s*$/.exec(array[index + 1])
+        if (setSuper === null) {
+            return
+        }
+        if (getSuper[1] === setSuper[2] && getSuper[2].slice(1) === setSuper[1].slice(1)) {
+            array[index] = 'DELETE'
+            array[index + 1] = 'DELETE'
+            optimizedLines++
+        }
+    }
+
+    /** Optimizes register poping and pushing in sequence
+     * ```
+     * PSH $r0 -> DELETE
+     * POP @r0 -> DELETE
+     * ``` */
+    function pushPopRegister (value: string, index: number, array: string[]) : void {
+        const pshdat = /^\s*PSH\s+\$(r\d+)\s*$/.exec(value)
+        if (pshdat === null) {
+            return
+        }
+        const popdat = /^\s*POP\s+@(r\d)\s*$/.exec(array[index + 1])
+        if (popdat === null) {
+            return
+        }
+        if (pshdat[1] === popdat[1]) {
+            array[index] = 'DELETE'
+            array[index + 1] = 'DELETE'
+            optimizedLines++
+        }
     }
 
     /** Optimizes register poping and pushing in sequence

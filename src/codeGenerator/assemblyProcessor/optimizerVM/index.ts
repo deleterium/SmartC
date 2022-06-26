@@ -150,6 +150,7 @@ export class CONTRACT {
         AssignedVar.value = Variable.value
         AssignedVar.shadow = Variable.varName
         this.revokeShadow(AssignedVar.varName)
+        Variable.shadow = AssignedVar.varName
     }
 
     zeroAndRevoke (Var: MemoryObj) {

@@ -23,6 +23,11 @@ export class CPU {
             stepFee: 0n,
             regex: /^\s*(\w+):\s*$/,
             execute (ContractState, regexParts) {
+                if (regexParts[1].startsWith('__opt_') || regexParts[1].startsWith('__GNT_')) {
+                    // Optimization with __opt just swap to RET or FIN, so no destruction inside this branch
+                    // Same with __GNT_ that is a simple loop of getNextTx().
+                    return false
+                }
                 ContractState.unknowAll()
                 return false
             }
@@ -41,7 +46,11 @@ export class CPU {
             regex: /^\s*\^declare\s+(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 if (ContractState.Memory.find(mem => mem.varName === regexParts[1]) === undefined) {
-                    ContractState.Memory.push({ varName: regexParts[1], value: unknownValue, shadow: '' })
+                    let value = unknownValue
+                    if (/^n\d+$/.test(regexParts[1])) {
+                        value = BigInt(regexParts[1].substring(1))
+                    }
+                    ContractState.Memory.push({ varName: regexParts[1], value, shadow: '' })
                 }
                 return false
             }
@@ -228,7 +237,7 @@ export class CPU {
             stepFee: 1n,
             regex: /^\s*(BOR|AND|XOR)\s+@(\w+)\s+\$(\w+)\s*$/,
             execute (ContractState, regexParts) {
-                const variable1 = ContractState.getMemoryByName(regexParts[1])
+                const variable1 = ContractState.getMemoryByName(regexParts[2])
                 ContractState.unknownAndRevoke(variable1)
                 return true
             }
@@ -369,7 +378,7 @@ export class CPU {
             stepFee: 1n,
             regex: /^\s*(SHL|SHR)\s+@(\w+)\s+\$(\w+)\s*$/,
             execute (ContractState, regexParts) {
-                const variable1 = ContractState.getMemoryByName(regexParts[1])
+                const variable1 = ContractState.getMemoryByName(regexParts[2])
                 ContractState.unknownAndRevoke(variable1)
                 return true
             }
