@@ -317,7 +317,7 @@ describe('Built-in functions', () => {
     })
     it('should compile: mintAsset()', () => {
         const code = '#pragma optimizationLevel 0\n mintAsset(1_0000, 0xa5531);'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n\nSET @r0 #0000000000002710\nSET @r1 #00000000000a5531\nFUN set_B1_B2 $r1 $r0\nFUN Mint_Asset\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n\nSET @r0 #0000000000002710\nSET @r1 #00000000000a5531\nFUN set_B1_B2 $r0 $r1\nFUN Mint_Asset\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

@@ -436,7 +436,7 @@ export function createBuiltInInstruction (
         break
     case 'mintAsset':
         assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
-        `FUN set_B1_B2 $${tempArgsMem[1].FlatMem.asmName} $${tempArgsMem[0].FlatMem.asmName}\n` +
+        `FUN set_B1_B2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
         'FUN Mint_Asset\n'
         break
     case 'sendQuantity':
