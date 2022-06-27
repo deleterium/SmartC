@@ -255,4 +255,11 @@ describe('Tests for bugfixes', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    it('should compile: bug 32 Registers always registers even if not in use', () => {
+        const code = '#pragma optimizationLevel 0\nlong auxJ = 1; long auxTemp = 0; long squad;\n for (long auxI = 0; auxI < 3; auxI++) { r1 = squad & 0xFF; r1 &= 0xF; auxTemp += r1 * auxJ; auxJ *= 5; squad >>= 8; }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare auxJ\n^declare auxTemp\n^declare squad\n^declare auxI\n\nSET @auxJ #0000000000000001\nCLR @auxTemp\nCLR @auxI\n__loop1_condition:\nSET @r0 #0000000000000003\nBGE $auxI $r0 :__loop1_break\n__loop1_start:\nSET @r0 #00000000000000ff\nAND @r0 $squad\nSET @r1 $r0\nSET @r0 #000000000000000f\nAND @r1 $r0\nMUL @r1 $auxJ\nADD @auxTemp $r1\nSET @r0 #0000000000000005\nMUL @auxJ $r0\nSET @r0 #0000000000000008\nSHR @squad $r0\n__loop1_continue:\nINC @auxI\nJMP :__loop1_condition\n__loop1_break:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })

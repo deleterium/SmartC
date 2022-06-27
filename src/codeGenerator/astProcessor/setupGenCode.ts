@@ -78,10 +78,10 @@ export default function setupGenCode (
     function auxvarsIsTemp (loc: number) : boolean {
         if (loc === -1) return false
         const id = AuxVars.registerInfo.find(OBJ => OBJ.Template.address === loc)
-        if (id?.inUse === true) {
-            return true
+        if (id === undefined) {
+            return false
         }
-        return false
+        return true
     }
 
     function auxvarsGetNewRegister (line: number = sentenceLine): MEMORY_SLOT {
