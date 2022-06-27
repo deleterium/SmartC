@@ -286,7 +286,7 @@ export function createBuiltInInstruction (
     case 'getCurrentBalanceFx':
         auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltInToken.line)
         assemblyCode = auxFlatMem.asmCode +
-            `FUN set_A2 $${auxFlatMem.FlatMem.asmName}\n` +
+            `FUN set_B2 $${auxFlatMem.FlatMem.asmName}\n` +
             `FUN @${RetMem.asmName} get_Current_Balance\n`
         AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
         break

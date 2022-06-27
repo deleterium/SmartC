@@ -247,7 +247,7 @@ describe('Built-in functions', () => {
     })
     it('should compile: getCurrentBalance(); getCurrentBalanceFx() ', () => {
         const code = '#pragma optimizationLevel 0\n long a=getCurrentBalance(); fixed b=getCurrentBalanceFx();'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nCLR @r0\nFUN set_A2 $r0\nFUN @a get_Current_Balance\nCLR @r0\nFUN set_A2 $r0\nFUN @b get_Current_Balance\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nCLR @r0\nFUN set_B2 $r0\nFUN @a get_Current_Balance\nCLR @r0\nFUN set_B2 $r0\nFUN @b get_Current_Balance\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
