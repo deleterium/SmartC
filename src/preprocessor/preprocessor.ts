@@ -40,7 +40,7 @@ export default function preprocessor (sourcecode: string) : string {
     let preprocessorReplacements: REPLACEMENTS[] = [
         { cname: 'true', regex: /\btrue\b/, value: '1' },
         { cname: 'false', regex: /\bfalse\b/, value: '0' },
-        { cname: 'NULL', regex: /\bNULL\b/, value: '0' },
+        { cname: 'NULL', regex: /\bNULL\b/, value: '(void *)(0)' },
         { cname: 'SMARTC', regex: /\bSMARTC\b/, value: '' }
     ]
     const ifActive: IF_INFO[] = [{ active: true, flipped: false }]
