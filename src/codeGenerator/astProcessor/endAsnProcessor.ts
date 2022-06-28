@@ -107,11 +107,20 @@ export default function endAsnProcessor (
             }
         }
         case 'struct': {
-            const StructTypeDefinition = Program.typesDefinitions.find(
+            let StructTypeDefinition = Program.typesDefinitions.find(
                 Obj => Obj.type === 'struct' && Obj.name === CurrentNode.Token.extValue
             ) as STRUCT_TYPE_DEFINITION | undefined
+            if (StructTypeDefinition === undefined && AuxVars.CurrentFunction !== undefined) {
+                StructTypeDefinition = Program.typesDefinitions.find(
+                    Obj => Obj.type === 'struct' && Obj.name === AuxVars.CurrentFunction?.name + '_' + CurrentNode.Token.extValue
+                ) as STRUCT_TYPE_DEFINITION | undefined
+            }
+            if (StructTypeDefinition === undefined) {
+                throw new Error(`At line: ${CurrentNode.Token.line}. ` +
+                    `Struct type definition for '${CurrentNode.Token.extValue}' not found.`)
+            }
             return {
-                SolvedMem: assertNotUndefined(StructTypeDefinition).MemoryTemplate,
+                SolvedMem: StructTypeDefinition.MemoryTemplate,
                 asmCode: ''
             }
         }
