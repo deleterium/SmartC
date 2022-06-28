@@ -295,7 +295,7 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
             line[AsmObj.PCodeHashIdLine] = `^program codeHashId ${AsmObj.codeHashId}`
         }
         if (AsmObj.PCodeHashId !== '' && AsmObj.PCodeHashId !== AsmObj.codeHashId) {
-            throw new Error(`assembler() error #8. This compilation did not produce expected machine code hash id. Expected: ${AsmObj.PCodeHashId} Generated: ${AsmObj.codeHashId}.`)
+            throw new Error(`assembler() error #8. This compilation did not produce expected machine code hash id. Maybe the source code was changed or the program need to be compiled in another version of SmartC compiler. Code hash id expected: ${AsmObj.PCodeHashId}, generated: ${AsmObj.codeHashId}.`)
         }
         AsmObj.assembledCode = line.join('\n')
         return buildRetObj()

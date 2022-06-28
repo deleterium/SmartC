@@ -31,7 +31,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     function shapeMain () : void {
         splitCode()
         Program.Global.macros.forEach(processMacroControl)
-        checkCompilerVersion()
         Program.typesDefinitions = [
             getTypeDefinitionTemplate('register'),
             getTypeDefinitionTemplate('long'),
@@ -204,7 +203,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             }
             throw new Error(`At line: ${MacroToken.line}. Value out of permitted range 0..3.`)
         case 'version':
-            Program.Config.sourcecodeVersion = MacroToken.value
+            // Nothing to do. 'version' is a reminder for programmers.
             return false
         case 'verboseAssembly':
             Program.Config.verboseAssembly = bool
@@ -263,40 +262,13 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             }
             throw new Error(`At line: ${MacroToken.line}.` +
             ' Program code hash id must be a decimal number. Use 0 to let compiler fill the value at assembly output.')
+        case 'compilerVersion':
+            // Nothing to do. compilerVersion is a reminder for programmers.
+            break
         default:
             throw new Error(`At line: ${MacroToken.line}.` +
             ` Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +
             ' Please check valid values on Help page')
-        }
-    }
-
-    /** Checks sourcecodeVersion and compiler current version.
-     * @throws {Error} if not pass rules checks.
-     */
-    function checkCompilerVersion () : void {
-        try {
-            if (process.env.JEST === 'true') {
-                return
-            }
-        } catch (err) {
-            // On browser, continue
-        }
-        // Running on browser OR Runing on node, but it is not jest
-        if (Program.Config.sourcecodeVersion === '') {
-            if (!Program.Config.compilerVersion.includes('dev')) {
-                throw new Error('Compiler version not set.' +
-                ' Pin current compiler version in your program' +
-                ` adding '#pragma version ${Program.Config.compilerVersion}' to code.`)
-            }
-            Program.Config.sourcecodeVersion = Program.Config.compilerVersion
-        }
-        if (Program.Config.sourcecodeVersion !== Program.Config.compilerVersion) {
-            if (Program.Config.sourcecodeVersion !== 'dev') {
-                throw new Error(`This compiler is version '${Program.Config.compilerVersion}'.` +
-                ` File needs a compiler version '${Program.Config.sourcecodeVersion}'.` +
-                " Update '#pragma version' macro or run another SmartC version.")
-            }
-            Program.Config.sourcecodeVersion = Program.Config.compilerVersion
         }
     }
 

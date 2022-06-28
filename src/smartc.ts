@@ -51,12 +51,11 @@ export class SmartC {
         typesDefinitions: [],
         // Default configuration for compiler
         Config: {
-            compilerVersion: '2.0-dev',
+            compilerVersion: '2.0.0-rc12',
             maxAuxVars: 3,
             maxConstVars: 0,
             optimizationLevel: 2,
             reuseAssignedVar: true,
-            sourcecodeVersion: '',
             APIFunctions: false,
             fixedAPIFunctions: false,
             PName: '',

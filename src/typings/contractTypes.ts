@@ -11,9 +11,6 @@ export type SC_CONFIG = {
     optimizationLevel: number,
     /** Try to reuse variable at left side of assigment: #pragma reuseAssignedVar */
     reuseAssignedVar: boolean,
-    /** Default version for user's programs. If not on a dev version, user must
-     * specify #pragma version to set source code version */
-    sourcecodeVersion: string,
     /** Support for API Functions: #include APIFunctions */
     APIFunctions: boolean,
     /** Support for API Functions with fixed numbers: #include fixedAPIFunctions */
