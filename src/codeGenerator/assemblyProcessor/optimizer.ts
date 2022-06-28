@@ -103,20 +103,14 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         if (jmpto === null) {
             return
         }
-        let i = index
-        while (++i < array.length - 1) {
-            const nextLabel = /^\s*(\w+):\s*$/.exec(array[i])
-            if (nextLabel === null) {
-                if (isUntouchable(array[i])) {
-                    continue
-                }
-                break
-            }
-            if (jmpto[1] === nextLabel[1]) {
-                array[index] = 'DELETE'
-                optimizedLines++
-                return
-            }
+        const ip = getNextInstruction(index)
+        const nextLabel = /^\s*(\w+):\s*$/.exec(array[ip])
+        if (nextLabel === null) {
+            return
+        }
+        if (jmpto[1] === nextLabel[1]) {
+            array[index] = 'DELETE'
+            optimizedLines++
         }
     }
 
@@ -174,18 +168,20 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         if (branchdat === null) {
             return
         }
-        const label = /^\s*(\w+):\s*$/.exec(array[index + 2])
-        if (label === null || branchdat[4] !== label[1]) {
+        const ip = getNextInstruction(index)
+        const jmpto = /^\s*JMP\s+:(\w+)\s*$/.exec(array[ip])
+        if (jmpto === null) {
             return
         }
-        const jmpto = /^\s*JMP\s+:(\w+)\s*$/.exec(array[index + 1])
-        if (jmpto === null) {
+        const ipp = getNextInstruction(ip)
+        const label = /^\s*(\w+):\s*$/.exec(array[ipp])
+        if (label === null || branchdat[4] !== label[1]) {
             return
         }
         array[index] = value
             .replace(branchdat[1], inverseBranch(branchdat[1]))
             .replace(branchdat[4], jmpto[1])
-        array[index + 1] = 'DELETE'
+        array[ip] = 'DELETE'
         optimizedLines++
     }
 
@@ -260,13 +256,14 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         if (muldat === null) {
             return
         }
-        const divdat = /^\s*DIV\s+@(\w+)\s+\$(\w+)\s*$/.exec(array[index + 1])
+        const ip = getNextInstruction(index)
+        const divdat = /^\s*DIV\s+@(\w+)\s+\$(\w+)\s*$/.exec(array[ip])
         if (divdat === null) {
             return
         }
         if (muldat[1] === divdat[1]) {
             array[index] = `MDV @${muldat[1]} $${muldat[2]} $${divdat[2]}`
-            array[index + 1] = 'DELETE'
+            array[ip] = 'DELETE'
             optimizedLines++
         }
     }
@@ -294,13 +291,14 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         if (getSuper === null) {
             return
         }
-        const setSuper = /^\s*FUN\s+(set_[AB][1-4])\s+\$(r\d+)\s*$/.exec(array[index + 1])
+        const ip = getNextInstruction(index)
+        const setSuper = /^\s*FUN\s+(set_[AB][1-4])\s+\$(r\d+)\s*$/.exec(array[ip])
         if (setSuper === null) {
             return
         }
         if (getSuper[1] === setSuper[2] && getSuper[2].slice(1) === setSuper[1].slice(1)) {
             array[index] = 'DELETE'
-            array[index + 1] = 'DELETE'
+            array[ip] = 'DELETE'
             optimizedLines++
         }
     }
@@ -315,13 +313,14 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         if (pshdat === null) {
             return
         }
-        const popdat = /^\s*POP\s+@(r\d)\s*$/.exec(array[index + 1])
+        const ip = getNextInstruction(index)
+        const popdat = /^\s*POP\s+@(r\d)\s*$/.exec(array[ip])
         if (popdat === null) {
             return
         }
         if (pshdat[1] === popdat[1]) {
             array[index] = 'DELETE'
-            array[index + 1] = 'DELETE'
+            array[ip] = 'DELETE'
             optimizedLines++
         }
     }
@@ -336,13 +335,14 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         if (popdat === null) {
             return
         }
-        const pshslpdat = /^\s*PSH\s+\$(r\d+)\s*$/.exec(array[index + 1])
+        const ip = getNextInstruction(index)
+        const pshslpdat = /^\s*PSH\s+\$(r\d+)\s*$/.exec(array[ip])
         if (pshslpdat === null) {
             return
         }
         if (pshslpdat[1] === popdat[1]) {
             array[index] = 'DELETE'
-            array[index + 1] = 'DELETE'
+            array[ip] = 'DELETE'
             optimizedLines++
         }
     }
@@ -384,6 +384,17 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
             return true
         }
         return false
+    }
+
+    /** Starting from line, returns the next line that is a valid instruction.
+     * Valid instructions are labels or codes.
+     */
+    function getNextInstruction (line: number) : number {
+        line++
+        while (isUntouchable(codeLines[line])) {
+            line++
+        }
+        return line
     }
 
     function inverseBranch (branchOperator: string) : string {

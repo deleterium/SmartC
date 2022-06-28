@@ -262,4 +262,11 @@ describe('Tests for bugfixes', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: bug 33 Adding verbose assembly breaks some optimizations', () => {
+        const code = '#pragma verboseAssembly\n #pragma optimizationLevel 2\n long txid, creator;\n while (txid != 0) {\n if (getSender(txid) != creator) {\n continue;\n }\n creator++;\n }\n creator++;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare txid\n^declare creator\n\n^comment line 4  while (txid != 0) {\n__loop1_continue:\nBZR $txid :__loop1_break\n^comment line 5  if (getSender(txid) != creator) {\nFUN set_A1 $txid\nFUN B_to_Address_of_Tx_in_A\nFUN @r0 get_B1\nBNE $r0 $creator :__loop1_continue\n^comment line 6  continue;\n^comment line 8  creator++;\nINC @creator\nJMP :__loop1_continue\n__loop1_break:\n^comment line 10  creator++;\nINC @creator\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })
