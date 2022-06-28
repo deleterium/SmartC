@@ -97,6 +97,9 @@ export default function binaryAsnProcessor (
         // Prepare return object
         LGenObj = toRegister(AuxVars, LGenObj, CurrentNode.Operation.line)
         // implicit type casting tests and operations
+        if (isPointerAddOrSub(CurrentNode.Operation.value, leftDeclaration, rightDeclaration)) {
+            utils.setMemoryDeclaration(LGenObj.SolvedMem, rightDeclaration)
+        }
         const castSide = implicitTypeCastingTest(CurrentNode.Operation.value, leftDeclaration, rightDeclaration)
         switch (castSide) {
         case 'left':
@@ -404,17 +407,17 @@ export default function binaryAsnProcessor (
             throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of assigment does not match. Types are '${lDecl}' and '${rDecl}'.`)
         case '+=':
         case '-=':
-            if (lDecl === rDecl + '_ptr') {
+            if (lDecl.endsWith('_ptr') && rDecl === 'long') {
                 return 'none'
             }
             throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
         case '+':
         case '-':
             if (lDecl.includes('_ptr') && rDecl === 'long') {
-                return 'right'
+                return 'none'
             }
             if (rDecl.includes('_ptr') && lDecl === 'long') {
-                return 'left'
+                return 'none'
             }
             throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
         case '==':
@@ -665,6 +668,15 @@ export default function binaryAsnProcessor (
                     ConstantMemObj.hexContent === '0000000000000001') {
                 return true
             }
+        }
+        return false
+    }
+
+    /** Checks if its a pointer addition or subtractions.
+     * @returns true if it is needed to change the LEFT SIDE declaration to avoid type error */
+    function isPointerAddOrSub (operator : string, lDecl : DECLARATION_TYPES, rDecl : DECLARATION_TYPES) : boolean {
+        if ((operator === '+' || operator === '-') && lDecl === 'long' && rDecl.endsWith('_ptr')) {
+            return true
         }
         return false
     }
