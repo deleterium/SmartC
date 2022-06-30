@@ -38,7 +38,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         ]
         Program.memory.push(...addRegistersInMemory(Program.Config.maxAuxVars))
         Program.memory.push(...addConstantsInMemory(Program.Config.maxConstVars))
-        if (Program.Config.fixedAPIFunctions || fixedDetected()) {
+        if (Program.Config.fixedAPIFunctions || fixedDetected(tokenAST)) {
             Program.memory.push(fixedBaseTemplate)
         }
         if (autoCounterDetected(tokenAST)) {
@@ -305,10 +305,18 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     }
 
     /** Detects if fixed point calculations will be needed */
-    function fixedDetected () : boolean {
-        return !!tokenAST.find((Tkn) => (
-            (Tkn.type === 'Keyword' && Tkn.value === 'fixed') ||
-            (Tkn.type === 'Constant' && Tkn.extValue === 'fixed')))
+    function fixedDetected (tokenTrain: TOKEN[] | undefined) : boolean {
+        if (tokenTrain === undefined) return false
+        return !!tokenTrain.find((Tkn) => {
+            if ((Tkn.type === 'Keyword' && Tkn.value === 'fixed') ||
+                (Tkn.type === 'Constant' && Tkn.extValue === 'fixed')) {
+                return true
+            }
+            if (Tkn.type === 'CodeDomain' || Tkn.type === 'CodeCave') {
+                return fixedDetected(Tkn.params)
+            }
+            return false
+        })
     }
 
     /** Detects if hidden variable for timestamp loop will be needed */
@@ -319,9 +327,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 return true
             }
             if (Tkn.type === 'CodeDomain' || Tkn.type === 'CodeCave') {
-                if (autoCounterDetected(Tkn.params) === true) {
-                    return true
-                }
+                return autoCounterDetected(Tkn.params)
             }
             return false
         })

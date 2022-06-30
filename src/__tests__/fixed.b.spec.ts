@@ -137,3 +137,18 @@ describe('Arrays', () => {
         })
     })
 })
+
+describe('Detection of fixed numbers', () => {
+    it('should detect: fixed inside CodeDomain', () => {
+        const code = 'struct TXINFO {    long txid;   long sender;   fixed amount;   long message[4]; } currentTX; currentTX.sender++;'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode().split('\n')).toContain('^declare f100000000')
+    })
+    it('should detect: fixed inside CodeCave', () => {
+        const code = 'long a, b; a=(b+2.3)/5; b++;'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode().split('\n')).toContain('^declare f100000000')
+    })
+})
