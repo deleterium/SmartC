@@ -15,7 +15,7 @@ This library can be obtained through npm:
 npm install smartc-signum-compiler
 ```
 
-The development version is released under tag `@next` and will be released as version 2.0.
+The stable version is released under tag `@latest` and the development under `@next`.
 
 # Usage
 ## Node
@@ -61,7 +61,7 @@ try {
 ```
 
 ## Web User Interface
-A web user interface is available at https://github.com/deleterium/smartc-web-ui It is possible to use the latest stable version at https://smartc-web-ui.vercel.app/
+A web user interface is available at https://github.com/deleterium/smartc-web-ui This is the main way to use SmartC and can be used at https://deleterium.info/SmartC/
 
 ## Documentation / FAQ / Lessons
 Docs files can be found in this repo, at `doc` folder.
