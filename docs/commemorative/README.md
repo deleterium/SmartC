@@ -9,3 +9,9 @@ Avoid eavesdroppers to track your transactions and add a layer of obfuscation in
 
 ## v1.0 - SmartC NFT with muscles
 Upgraded version of SmartC NFT, featuring dividends distribuiton for owners. Dividends will be provided by NFT sell/transfer fee and from future projects. This smart contract replaces the old one and owners have to migrate. [Details](./v1.0_SmartC_NFT.md)
+
+## v2.0 - The Mining Game
+Every hour one TMG token is mined by smart contracts deployed by players.
+Holders of TMG can even receive Signa from the game.
+A kind of "proof-of-donation", where more you donate to players, more chance to mine a block.
+[Details](./v2.0_The_Mining_Game.md)
