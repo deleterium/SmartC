@@ -2,13 +2,17 @@
 
 # Functions repository
 These functions and macros can be added to projects and speed up development time!
+<details>
+<summary>
 
 ## Macros
-Macro functions are elaborated substitutions done during compilation. Check some options:
+</summary>
+
+Macro functions are elaborated substitutions done during compilation. Use for very simple functions:
 
 ```c
 
-#define getCurrentBlock() (Get_Block_Timestamp() >> 32)
+#define add2(val) (val + 2)
 
 #define sendSigna(recipient, amount) (\
     Set_B1_B2(recipient, 0), \
@@ -20,16 +24,14 @@ Macro functions are elaborated substitutions done during compilation. Check some
     Set_A1(m1), \
     Send_A_To_Address_In_B())
 
-#define sendMessage4(recipient, m1, m2, m3, m4) (\
-    Set_B1_B2(recipient, 0), \
-    Set_A1_A2(m1, m2), \
-    Set_A3_A4(m3, m4), \
-    Send_A_To_Address_In_B())
-
 // You got it!
 ```
+</details>
+<details>
+<summary>
 
-## Text to number: atol()
+## Text to long: atol()
+</summary>
 
 ```c
 // ASCII to Long (base10 positive and less than 100.000.000)
@@ -52,7 +54,13 @@ long atol(long val)
     return ret;
 }
 ```
-## Number to text: ltoa()
+</details>
+<details>
+<summary>
+
+## Long to text: ltoa()
+</summary>
+
 ```c
 // Integer to ASCII (base10 positive and less than 100.000.000)
 // Iterative function to implement itoa() clone function in C
@@ -74,125 +82,133 @@ long ltoa(long val)
     return ret;
 }
 ```
+</details>
+<details>
+<summary>
 
-## Splitting a text array into fields: split()
+## Text to fixed: decodeAmount()
+</summary>
+
 ```c
-// Split string function in C
-// Expects:
-//  'separator' to be used (only LSB will be used).
-//  'source' is the array with text to be splitted.
-//  'source_length' is the size of source (or the numbers of longs that
-//     will be processed
-//  'ret' is return buffer array.
-//  'ret_length' is the size of return buffer, to avoid buffer overflow
-//  Returns: number of fields filled
-//  The function will keep adding chars until fill return buffer. If a
-//    string is bigger than 8 chars, only 8 last chars will be returned
-//    at that field.
-const long n8 = 8, n255 = 0xff;
-long split(long separator, long * source, long source_length, long * ret, long ret_length)
-{
-    long field, i_act_arg, i_ret, i_param, act_arg, chr ;
-
-    //clear destination buffer
-    for (i_ret = 0; i_ret < ret_length; i_ret++) {
-        ret[i_ret] = 0;
-    }
-
-    i_act_arg = 0; //cycle bytes in actual string beeing processed(param buffer) (0 to 8)
-    i_param = 0;   //current element in param buffer (0 to 4)
-    field = 0;     //current element in return buffer (ret)(0 to 10 in this example)
-    i_ret = 0;     //var to cycle bytes for each return buffer (from 0 to 8 )
-
-    while (i_param < source_length) {
-        act_arg = source[i_param];
-        chr = act_arg & 0xff;
-        while (chr != 0) { 
-            if (chr == separator){
-                field++;
-                i_ret = 0;
-            } else {
-                if (i_ret == 8) { // ret[i_ret] is full, shift and continue
-                    ret[field] >>= 8;
-                    i_ret--;
-                }
-                ret[field] += chr << (8 * i_ret);
-                i_ret++;
-            }
-            i_act_arg++;
-            if (field == ret_length) { // End of destination buffer, go to end
-                return ++field;
-            }
-            if (i_act_arg == 8) { //end of actual va_arg, go to next va_arg
-                break; //break second while loop
-            } else {  // prepare char for next merge
-                chr = act_arg & (0xff << (8 * i_act_arg));
-                chr >>= 8 * i_act_arg;
-            }
+// ASCII to fixed (base10 positive)
+// Expects a string in currentTX.message. If any byte is not a char numeric
+// representation or decimal point, then stop and return. Only positive
+// numbers, base10 are converted. Returns zero if no number was processed.
+fixed decodeAmountInMessage(long startingAt) {
+    long multiplier = 1_0000_0000;
+    long retVal = 0;
+    long ch;
+    long decimals = false;
+    for (long i = long startingAt; i < 32; i++) {
+        ch = currentTX.message[i / 8] >> ((i % 8) * 8);
+        ch &= 0xff;
+        if (ch == 0 || ch == ' ') break;
+        if (ch == '.') {
+            decimals = true;
+            continue;
         }
-        i_param++;
-        i_act_arg = 0;
+        if (ch < '0' || ch > '9' ) {
+            // invalid char
+            retVal = 0;
+            break;
+        }
+        if (decimals) {
+            multiplier /= 10;
+        } else {
+            retVal *= 10;
+        }
+        ch &= 0xF;
+        ch *= multiplier;
+        retVal += ch;
     }
-
-    return ++field;
+    return bcltof(retVal);
 }
 ```
+</details>
+<details>
+<summary>
 
-## Concatenate text into a text array: concat()
+## RS-Address to accounId: decodeRS()
+</summary>
+
 ```c
-// String concatenation function in C
-// Expects:
-// 'source' is an array with content
-// 'source_length' is size of source (in longs) or the numbers of longs to be processed
-// 'ret' is return buffer array.
-// 'ret_length' is the size of ret (in longs) to avoid buffer overflow.
-// Function returns the number of bytes processed. A number equal ret_length*8
-// can denote that buffer was too short for the content in 'source'.
-const long n8 = 8, n255 = 0xff;
-long concat(long * source, long source_length, long * ret, long ret_length)
-{
-    long i_param, act_arg, chr, i_ret, i_buffer, i_act_arg;
+// RS-Address to accountId
+// Expects a string containing an address in currentTX.message
+// starting at index zero.
+// Ex: S-AAAA-BBBB-CCCC-DDDDD.
+// On error returns -1.
+// Actually the first group can be any text, so matches 'S', 'TS'
+// or 'BURST'.
+// No error checks!!
 
-    //clear destination buffer
-    for (i_buffer = 0; i_buffer < ret_length; i_buffer++) {
-        ret[i_buffer] = 0;
-    }
-
-    i_ret    = 0; //var to cycle bytes for each return buffer (from 0 to 8 )
-    i_buffer = 0; //var to cycle for each buffer available (from 0 to ret_length)
-    i_param  = 0; //var to cycle for each source items provided (from 0 to source_length)
-    i_act_arg= 0; //var to cycle bytes in actual source(long) beeing processed (0 to 8)
-
-    while (i_param < source_length) { //loop thru source_length
-        act_arg = source[i_param]; // access source 
-        chr = act_arg & 0xff; //this always first char, no need to shift
-
-        while (chr != 0) { //loop bytes in va_arg beeing processed (act_arg)
-            ret[i_buffer] += chr << (8 * i_ret);
-            i_act_arg++;
-            i_ret++;
-
-            if (i_ret == 8) { // ret[i_buffer] is full, go to next ret value
-                i_buffer++;
-                i_ret = 0;
-                if (i_buffer == ret_length) { // End of destination buffer, go to end
-                    goto all_loops_end; //break 2 loops
-                }
-            }
-            if (i_act_arg == 8) { //end of actual va_arg, go to next va_arg
-                break; //break second while loop
-            } else {  // prepare char for next merge
-                chr = act_arg & ( 0xff << (8 * i_act_arg) );
-                chr >>= 8 * i_act_arg;
-            }
+/** Decode an RS address at currentTX.message
+ * returns -1 if there is an error on decoding.
+ * This function does not verify error correction bytes
+ * */
+long decodeRS(void) {
+    long position = 0, ch, group = 0;
+    long idPosition, value, result = 0;
+    for (i = 0; i < 32; i++) {
+        ch = currentTX.message[i / 8] >> ((i % 8) * 8);
+        ch &= 0xff;
+        if (ch == '-') {
+            group++;
+            continue;
         }
-    i_param++;
-    i_act_arg = 0;
+        if (group == 0 || group == 3) {
+            continue;
+        }
+        value = rscharToIndex(ch);
+        if (value == minus1) {
+            // ERROR
+            return minus1;
+        }
+        idPosition = (codeword_map >> (position * 4)) & 15;
+        result |= value << (idPosition * 5);
+        position++;
+        if (position == 13) {
+            return result;
+        }
     }
+    return minus1;
+}
 
-    all_loops_end:
-    return i_ret + (8 * i_buffer);
+const long codeword_map =
+     3 + 
+     2 *16 +
+     1 *16*16 +
+     0 *16*16*16 +
+     7 *16*16*16*16 +
+     6 *16*16*16*16*16 +
+     5 *16*16*16*16*16*16 +
+     4 *16*16*16*16*16*16*16 +
+    12 *16*16*16*16*16*16*16*16 +
+     8 *16*16*16*16*16*16*16*16*16 +
+     9 *16*16*16*16*16*16*16*16*16*16 +
+    10 *16*16*16*16*16*16*16*16*16*16*16 +
+    11 *16*16*16*16*16*16*16*16*16*16*16*16;
+
+long rscharToIndex(long in) {
+    switch (true) {
+    case (in < '2'):
+    case (in == 'O'):
+    case (in == 'I'):
+        return minus1;
+    case (in <= '9'):
+        return in - '2';
+    case (in < 'A'):
+        return minus1;
+    case (in < 'I'):
+        return in - '9';
+    case (in < 'O'):
+        return in - ':';
+    case (in <= 'Z'):
+        return in - ';';
+    default:
+        return minus1;
+    }
 }
 ```
+</details>
 
 [Back](./README.md)
