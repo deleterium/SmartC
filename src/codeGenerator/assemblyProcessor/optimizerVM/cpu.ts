@@ -563,11 +563,12 @@ export class CPU {
             execute (ContractState, regexParts) {
                 const Api = API_MICROCODE.EXT_FUN_RET_DAT_2.find(Obj => Obj.funName === regexParts[2])
                 if (Api === undefined) {
-                    throw new Error(`Unknow API Function ${regexParts[1]}`)
+                    throw new Error(`Unknow API Function ${regexParts[2]}`)
                 }
-                const variable1 = ContractState.getMemoryByName(regexParts[2])
-                const variable2 = ContractState.getMemoryByName(regexParts[3])
-                return Api.execute(ContractState, variable1, variable2)
+                const retVar = ContractState.getMemoryByName(regexParts[1])
+                const variable1 = ContractState.getMemoryByName(regexParts[3])
+                const variable2 = ContractState.getMemoryByName(regexParts[4])
+                return Api.execute(ContractState, retVar, variable1, variable2)
             }
         },
         {

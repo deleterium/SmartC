@@ -85,19 +85,6 @@ export class CONTRACT {
         })
     }
 
-    unknowSuperRegisters () : void {
-        this.Memory.forEach((Mem) => {
-            if (/^[AB][1234]$/.test(Mem.varName)) {
-                Mem.value = unknownValue
-                Mem.shadow = ''
-                return
-            }
-            if (/^[AB][1234]$/.test(Mem.shadow)) {
-                Mem.shadow = ''
-            }
-        })
-    }
-
     unknowSuperRegisterA () : void {
         this.Memory.forEach((Mem) => {
             if (/^[A][1234]$/.test(Mem.varName)) {
