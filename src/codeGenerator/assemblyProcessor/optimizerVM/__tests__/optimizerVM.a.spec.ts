@@ -1,6 +1,6 @@
 import { CONTRACT } from '../index'
 
-describe('Assembly compilation:', () => {
+describe('optimzeVM:', () => {
     it('should optimize: all api T_EXT_FUN', () => {
         /* this is source code for test:
             #include APIFunctions\n#pragma verboseAssembly\n// #pragma optimizationLevel 3\n\nlong testID, a, b;\n\nswitch (testID) {\ncase 1: // Clear_A\n    Clear_A();\n    Set_A2(0);\n    Clear_A();\n    break;\ncase 2: // Clear_B\n    Clear_B();\n    Set_B4(0);\n    Clear_B();\ncase 3: // Clear_A_And_B\n    Set_A1_A2(0, 0); Set_A3_A4(0, 0); Clear_B();\n    Clear_A_And_B();\n    Clear_B();\n    break;\ncase 4: // Swap_A_and_B\n    Clear_A_And_B();\n    a++;\n    Swap_A_and_B();\n    a++;\n    Set_B4(0);\n    Set_A3(0);\n    break;\ncase 5: // metaDoNothing\n    Clear_A_And_B();\n    Send_All_To_Address_In_B();\n    Clear_A_And_B();\n    break;\ncase 6: // metaUnknowSuperRegisterA\n    Set_A3(a); Set_B3(a);\n    Put_Last_Block_GSig_In_A();\n    Set_A3(a); Set_B3(a);\n    break;\ncase 7: // metaUnknowSuperRegisterB\n    Set_A3(a); Set_B3(a);\n    OR_B_with_A();\n    Set_A3(a); Set_B3(a);\n    break;\ncase 8: // metaUB1ZB2ZB3ZB4\n    Set_B1_B2(a, 0);\n    B_To_Address_Of_Tx_In_A();\n    Set_B1(a); Set_B2(0); Set_B3(0); Set_B4(0);\n    break;\n}\n

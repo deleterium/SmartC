@@ -1,6 +1,6 @@
 import { CONTRACT } from '../index'
 
-describe('Assembly compilation:', () => {
+describe('optimzeVM:', () => {
     it('should optimize: all api EXT_FUN_DAT_2', () => {
         /* this is source code for test:
             #include APIFunctions\n#pragma verboseAssembly\n// #pragma optimizationLevel 3\n\nlong testID, a, b;\n\nswitch (testID) {\ncase 0: // Same content\n    Set_A1_A2(25, 13);\n    a=25;\n    b=13;\n    Set_A1_A2(a, b);\n    break;\ncase 1: // Same var\n    Set_A3_A4(a, b);\n    Set_A3_A4(a, b);\n    break;\ncase 2: // content+var\n    Set_B1_B2(25, b);\n    a=25;\n    Set_B1_B2(a, b);\n    break;\ncase 3: // var+content\n    Set_B3_B4(a, 13);\n    b=13;\n    Set_B3_B4(a, b);\n    break;\n}\n

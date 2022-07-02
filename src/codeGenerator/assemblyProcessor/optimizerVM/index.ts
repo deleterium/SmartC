@@ -2,6 +2,8 @@ import { CPU } from './cpu'
 
 export const unknownValue = -1n
 
+// TODO: Add stack inspection. It will be needed to save the line of the PUSH,
+//   so optimizing POP also delete the respective PUSH.
 /**
  * Object for memory entries
  *
@@ -45,12 +47,10 @@ export const utils = {
 export class CONTRACT {
     Memory: MemoryObj[]
     asmCodeArr: string[]
-    // userStack: MemoryObj[]
 
     constructor (asmCode: string[]) {
         this.Memory = []
         this.asmCodeArr = asmCode
-        // this.userStack = []
         CPU.cpuDeploy(this)
         this.Memory.push(
             { varName: 'A1', value: unknownValue, shadow: '' },
@@ -63,11 +63,7 @@ export class CONTRACT {
             { varName: 'B4', value: unknownValue, shadow: '' })
     }
 
-    unknowAll () : void {
-        this.unknowMemory(false, false)
-    }
-
-    unknowMemory (keepRegisters: boolean, keepSuperRegisters: boolean) : void {
+    unknownMemory (keepRegisters: boolean, keepSuperRegisters: boolean) : void {
         this.Memory.forEach((Mem) => {
             if (keepRegisters && /^r\d$/.test(Mem.varName)) {
                 return
@@ -85,7 +81,7 @@ export class CONTRACT {
         })
     }
 
-    unknowSuperRegisterA () : void {
+    unknownSuperRegisterA () : void {
         this.Memory.forEach((Mem) => {
             if (/^[A][1234]$/.test(Mem.varName)) {
                 Mem.value = unknownValue
@@ -98,7 +94,7 @@ export class CONTRACT {
         })
     }
 
-    unknowSuperRegisterB () : void {
+    unknownSuperRegisterB () : void {
         this.Memory.forEach((Mem) => {
             if (/^[B][1234]$/.test(Mem.varName)) {
                 Mem.value = unknownValue
@@ -114,7 +110,7 @@ export class CONTRACT {
     getMemoryByName (name: string): MemoryObj {
         const RetObj = this.Memory.find(Mem => Mem.varName === name)
         if (RetObj === undefined) {
-            throw new Error('Internal error')
+            throw new Error(`optimizerVM: getMemoryByName: Variable '${name}' not declared.`)
         }
         return RetObj
     }
@@ -127,20 +123,20 @@ export class CONTRACT {
         })
     }
 
-    unknownAndRevoke (Var: MemoryObj) {
+    unknownAndRevoke (Var: MemoryObj) : void {
         Var.value = unknownValue
         Var.shadow = ''
         this.revokeShadow(Var.varName)
     }
 
-    setAndRevoke (AssignedVar: MemoryObj, Variable: MemoryObj) {
+    setAndRevoke (AssignedVar: MemoryObj, Variable: MemoryObj) : void {
         AssignedVar.value = Variable.value
         AssignedVar.shadow = Variable.varName
         this.revokeShadow(AssignedVar.varName)
         Variable.shadow = AssignedVar.varName
     }
 
-    zeroAndRevoke (Var: MemoryObj) {
+    zeroAndRevoke (Var: MemoryObj) : void {
         if (Var.value !== 0n) {
             Var.value = 0n
             Var.shadow = ''

@@ -19,15 +19,15 @@ interface T_EXT_FUN_RET_DAT_2 extends T_EXT{
     execute(ContractState: CONTRACT, RetVar: MemoryObj, value1: MemoryObj, value2: MemoryObj): boolean|null
 }
 
-function metaUnknowSuperRegisterA (ContractState: CONTRACT) : boolean {
-    ContractState.unknowSuperRegisterA()
+function metaUnknownSuperRegisterA (ContractState: CONTRACT) : boolean {
+    ContractState.unknownSuperRegisterA()
     return true
 }
-function metaUnknowSuperRegisterB (ContractState: CONTRACT) : boolean {
-    ContractState.unknowSuperRegisterB()
+function metaUnknownSuperRegisterB (ContractState: CONTRACT) : boolean {
+    ContractState.unknownSuperRegisterB()
     return true
 }
-function metaDoNothing () : boolean {
+export function metaDoNothing () : boolean {
     return true
 }
 function metaUB1ZB2ZB3ZB4 (ContractState: CONTRACT) : boolean {
@@ -149,95 +149,95 @@ export class API_MICROCODE {
         },
         {
             funName: 'copy_A_From_B',
-            execute: metaUnknowSuperRegisterA
+            execute: metaUnknownSuperRegisterA
         },
         {
             funName: 'copy_B_From_A',
-            execute: metaUnknowSuperRegisterB
+            execute: metaUnknownSuperRegisterB
         },
         {
             funName: 'swap_A_and_B',
             execute (ContractState) {
-                ContractState.unknowSuperRegisterA()
-                ContractState.unknowSuperRegisterB()
+                ContractState.unknownSuperRegisterA()
+                ContractState.unknownSuperRegisterB()
                 return true
             }
         },
         {
             funName: 'OR_A_with_B',
-            execute: metaUnknowSuperRegisterA
+            execute: metaUnknownSuperRegisterA
         },
         {
             funName: 'OR_B_with_A',
-            execute: metaUnknowSuperRegisterB
+            execute: metaUnknownSuperRegisterB
         },
         {
             funName: 'AND_A_with_B',
-            execute: metaUnknowSuperRegisterA
+            execute: metaUnknownSuperRegisterA
         },
         {
             funName: 'AND_B_with_A',
-            execute: metaUnknowSuperRegisterB
+            execute: metaUnknownSuperRegisterB
         },
         {
             funName: 'XOR_A_with_B',
-            execute: metaUnknowSuperRegisterA
+            execute: metaUnknownSuperRegisterA
         },
         {
             funName: 'XOR_B_with_A',
-            execute: metaUnknowSuperRegisterB
+            execute: metaUnknownSuperRegisterB
         },
         {
             funName: 'add_A_to_B',
-            execute: metaUnknowSuperRegisterB
+            execute: metaUnknownSuperRegisterB
         },
         {
             funName: 'add_B_to_A',
-            execute: metaUnknowSuperRegisterA
+            execute: metaUnknownSuperRegisterA
         },
         {
             funName: 'sub_A_from_B',
-            execute: metaUnknowSuperRegisterB
+            execute: metaUnknownSuperRegisterB
         },
         {
             funName: 'sub_B_from_A',
-            execute: metaUnknowSuperRegisterA
+            execute: metaUnknownSuperRegisterA
         },
         {
             funName: 'mul_A_by_B',
-            execute: metaUnknowSuperRegisterB
+            execute: metaUnknownSuperRegisterB
         },
         {
             funName: 'mul_B_by_A',
-            execute: metaUnknowSuperRegisterA
+            execute: metaUnknownSuperRegisterA
         },
         {
             funName: 'div_A_by_B',
-            execute: metaUnknowSuperRegisterB
+            execute: metaUnknownSuperRegisterB
         },
         {
             funName: 'div_B_by_A',
-            execute: metaUnknowSuperRegisterA
+            execute: metaUnknownSuperRegisterA
         },
         {
             funName: 'MD5_A_to_B',
-            execute: metaUnknowSuperRegisterB
+            execute: metaUnknownSuperRegisterB
         },
         {
             funName: 'HASH160_A_to_B',
-            execute: metaUnknowSuperRegisterB
+            execute: metaUnknownSuperRegisterB
         },
         {
             funName: 'SHA256_A_to_B',
-            execute: metaUnknowSuperRegisterB
+            execute: metaUnknownSuperRegisterB
         },
         {
             funName: 'put_Last_Block_Hash_In_A',
-            execute: metaUnknowSuperRegisterA
+            execute: metaUnknownSuperRegisterA
         },
         {
             funName: 'message_from_Tx_in_A_to_B',
-            execute: metaUnknowSuperRegisterB
+            execute: metaUnknownSuperRegisterB
         },
         {
             funName: 'B_to_Address_of_Tx_in_A',
@@ -249,7 +249,7 @@ export class API_MICROCODE {
         },
         {
             funName: 'B_To_Assets_Of_Tx_In_A',
-            execute: metaUnknowSuperRegisterB
+            execute: metaUnknownSuperRegisterB
         },
         {
             funName: 'send_All_to_Address_in_B',
@@ -277,7 +277,7 @@ export class API_MICROCODE {
         },
         {
             funName: 'Put_Last_Block_GSig_In_A',
-            execute: metaUnknowSuperRegisterA
+            execute: metaUnknownSuperRegisterA
         }
     ]
 

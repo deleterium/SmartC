@@ -1,26 +1,31 @@
 import { Constants, CONTRACT, unknownValue, utils } from './index'
-import { API_MICROCODE } from './api'
+import { API_MICROCODE, metaDoNothing } from './api'
 
 interface CPU_MICROCODE {
     name: string
-    stepFee: bigint
     regex: RegExp
-    execute (ContractState: CONTRACT, regexParts: RegExpExecArray): boolean|null
+    execute (ContractState: CONTRACT, regexParts: RegExpExecArray) : boolean|null
+}
+
+function metaUnknowAndRevokeVariableAtOne (ContractState: CONTRACT, regexParts: RegExpExecArray) {
+    const variable1 = ContractState.getMemoryByName(regexParts[1])
+    ContractState.unknownAndRevoke(variable1)
+    return true
+}
+function metaReset (ContractState: CONTRACT) : boolean|null {
+    ContractState.unknownMemory(false, false)
+    return true
 }
 
 export class CPU {
     static cpuMicrocode: CPU_MICROCODE[] = [
         {
             name: 'blank',
-            stepFee: 0n,
             regex: /^\s*$/,
-            execute (ContractState, regexParts) {
-                return false
-            }
+            execute: metaDoNothing
         },
         {
             name: 'label',
-            stepFee: 0n,
             regex: /^\s*(\w+):\s*$/,
             execute (ContractState, regexParts) {
                 if (regexParts[1].startsWith('__opt_') || regexParts[1].startsWith('__GNT_')) {
@@ -28,21 +33,16 @@ export class CPU {
                     // Same with __GNT_ that is a simple loop of getNextTx().
                     return false
                 }
-                ContractState.unknowAll()
-                return false
+                return metaReset(ContractState)
             }
         },
         {
             name: 'comment',
-            stepFee: 0n,
             regex: /^\s*\^comment\s+(.*)/,
-            execute (ContractState, regexParts) {
-                return false
-            }
+            execute: metaDoNothing
         },
         {
             name: 'declare',
-            stepFee: 0n,
             regex: /^\s*\^declare\s+(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 if (ContractState.Memory.find(mem => mem.varName === regexParts[1]) === undefined) {
@@ -57,23 +57,16 @@ export class CPU {
         },
         {
             name: 'const',
-            stepFee: 0n,
             regex: /^\s*\^const\s+SET\s+@(\w+)\s+#([\da-f]{16})\b\s*$/,
-            execute (ContractState, regexParts) {
-                return false
-            }
+            execute: metaDoNothing
         },
         {
             name: 'program',
-            stepFee: 0n,
             regex: /^\s*\^program\s+(\w+)\s+([\s\S]+)$/,
-            execute (ContractState, regexParts) {
-                return false
-            }
+            execute: metaDoNothing
         },
         {
             name: 'SET_VAL',
-            stepFee: 1n,
             regex: /^\s*SET\s+@(\w+)\s+#([\da-f]{16})\b\s*$/,
             execute (ContractState, regexParts) {
                 const variable = ContractState.getMemoryByName(regexParts[1])
@@ -90,7 +83,6 @@ export class CPU {
         },
         {
             name: 'SET_DAT',
-            stepFee: 1n,
             regex: /^\s*SET\s+@(\w+)\s+\$(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const variable1 = ContractState.getMemoryByName(regexParts[1])
@@ -100,7 +92,7 @@ export class CPU {
                     return null
                 }
                 if (variable1.shadow === variable2.varName) {
-                    // Optimize: already assigned before. Same content
+                    // Optimize: Same variable
                     return null
                 }
                 ContractState.setAndRevoke(variable1, variable2)
@@ -109,7 +101,6 @@ export class CPU {
         },
         {
             name: 'CLR',
-            stepFee: 1n,
             regex: /^\s*CLR\s+@(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const variable1 = ContractState.getMemoryByName(regexParts[1])
@@ -123,7 +114,6 @@ export class CPU {
         },
         {
             name: 'INC',
-            stepFee: 1n,
             regex: /^\s*INC\s+@(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const variable1 = ContractState.getMemoryByName(regexParts[1])
@@ -137,7 +127,6 @@ export class CPU {
         },
         {
             name: 'DEC',
-            stepFee: 1n,
             regex: /^\s*DEC\s+@(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const variable1 = ContractState.getMemoryByName(regexParts[1])
@@ -155,7 +144,6 @@ export class CPU {
         },
         {
             name: 'ADD',
-            stepFee: 1n,
             regex: /^\s*ADD\s+@(\w+)\s+\$(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const variable1 = ContractState.getMemoryByName(regexParts[1])
@@ -174,7 +162,6 @@ export class CPU {
         },
         {
             name: 'SUB',
-            stepFee: 1n,
             regex: /^\s*SUB\s+@(\w+)\s+\$(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const variable1 = ContractState.getMemoryByName(regexParts[1])
@@ -193,7 +180,6 @@ export class CPU {
         },
         {
             name: 'MUL',
-            stepFee: 1n,
             regex: /^\s*MUL\s+@(\w+)\s+\$(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const variable1 = ContractState.getMemoryByName(regexParts[1])
@@ -212,7 +198,6 @@ export class CPU {
         },
         {
             name: 'DIV',
-            stepFee: 1n,
             regex: /^\s*DIV\s+@(\w+)\s+\$(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const variable1 = ContractState.getMemoryByName(regexParts[1])
@@ -234,110 +219,46 @@ export class CPU {
         },
         {
             name: 'BOR / AND / XOR',
-            stepFee: 1n,
-            regex: /^\s*(BOR|AND|XOR)\s+@(\w+)\s+\$(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                const variable1 = ContractState.getMemoryByName(regexParts[2])
-                ContractState.unknownAndRevoke(variable1)
-                return true
-            }
+            regex: /^\s*(?:BOR|AND|XOR)\s+@(\w+)\s+\$(\w+)\s*$/,
+            execute: metaUnknowAndRevokeVariableAtOne
         },
         {
             name: 'NOT',
-            stepFee: 1n,
             regex: /^\s*NOT\s+@(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                const variable1 = ContractState.getMemoryByName(regexParts[1])
-                ContractState.unknownAndRevoke(variable1)
-                return true
-            }
+            execute: metaUnknowAndRevokeVariableAtOne
         },
         {
             name: 'SET_IND',
-            stepFee: 1n,
             regex: /^\s*SET\s+@(\w+)\s+\$\(\$(\w+)\)\s*$/,
-            execute (ContractState, regexParts) {
-                const variable1 = ContractState.getMemoryByName(regexParts[1])
-                ContractState.unknownAndRevoke(variable1)
-                return true
-            }
+            execute: metaUnknowAndRevokeVariableAtOne
         },
         {
             name: 'SET_IDX',
-            stepFee: 1n,
             regex: /^\s*SET\s+@(\w+)\s+\$\(\$(\w+)\s*\+\s*\$(\w+)\)\s*$/,
-            execute (ContractState, regexParts) {
-                const variable1 = ContractState.getMemoryByName(regexParts[1])
-                ContractState.unknownAndRevoke(variable1)
-                return true
-            }
+            execute: metaUnknowAndRevokeVariableAtOne
         },
         {
             name: 'PSH',
-            stepFee: 1n,
             regex: /^\s*PSH\s+\$(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                // TODO control also user stack
-                // const variable1 = ContractState.getMemoryByName(regexParts[1])
-                // ContractState.UserStack.push(val1)
-                // if (ContractState.UserStack.length > 16 * ContractState.UserStackPages) {
-                //     if (ContractState.ERR === null) {
-                //         ContractState.dead = true
-                //         ContractState.exception = 'User Stack buffer overflow'
-                //         return true
-                //     }
-                //     ContractState.instructionPointer = ContractState.ERR
-                //     return true
-                // }
-                return true
-            }
+            execute: metaDoNothing
         },
         {
             name: 'POP',
-            stepFee: 1n,
             regex: /^\s*POP\s+@(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                const variable1 = ContractState.getMemoryByName(regexParts[1])
-                // TODO control also user stack
-                // const val1 = ContractState.UserStack.pop()
-                // if (val1 === undefined) {
-                //     if (ContractState.ERR === null) {
-                //         ContractState.dead = true
-                //         ContractState.exception = 'User Stack buffer underflow'
-                //         return true
-                //     }
-                //     ContractState.instructionPointer = ContractState.ERR
-                //     return true
-                // }
-                // if (variable1 === undefined) {
-                //     ContractState.Memory.push({ varName: regexParts[1], value: val1 })
-                // } else {
-                //     variable1.value = val1
-                // }
-                ContractState.unknownAndRevoke(variable1)
-                return true
-            }
+            execute: metaUnknowAndRevokeVariableAtOne
         },
         {
             name: 'JMP_SUB',
-            stepFee: 1n,
             regex: /^\s*JSR\s+:(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                ContractState.unknowAll()
-                return true
-            }
+            execute: metaReset
         },
         {
             name: 'RET_SUB',
-            stepFee: 1n,
             regex: /^\s*RET\s*$/,
-            execute (ContractState, regexParts) {
-                return true
-            }
+            execute: metaDoNothing
         },
         {
             name: 'IND_DAT',
-            stepFee: 1n,
             regex: /^\s*SET\s+@\(\$(\w+)\)\s+\$(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const variable1 = ContractState.getMemoryByName(regexParts[1])
@@ -349,153 +270,96 @@ export class CPU {
                     return true
                 }
                 // It is not possible to know which variable was updated. Unknow to all memory variable.
-                ContractState.unknowMemory(true, true)
+                ContractState.unknownMemory(true, true)
                 return true
             }
         },
         {
             name: 'IDX_DAT',
-            stepFee: 1n,
             regex: /^\s*SET\s+@\(\$(\w+)\s*\+\s*\$(\w+)\)\s+\$(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 // It is not possible to know which variable was updated. Unknow to all memory variable.
-                ContractState.unknowMemory(true, true)
+                ContractState.unknownMemory(true, true)
                 return true
             }
         },
         {
             name: 'MOD_DAT',
-            stepFee: 1n,
             regex: /^\s*MOD\s+@(\w+)\s+\$(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                const variable1 = ContractState.getMemoryByName(regexParts[1])
-                ContractState.unknownAndRevoke(variable1)
-                return true
-            }
+            execute: metaUnknowAndRevokeVariableAtOne
         },
         {
             name: 'SHL / SHR',
-            stepFee: 1n,
-            regex: /^\s*(SHL|SHR)\s+@(\w+)\s+\$(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                const variable1 = ContractState.getMemoryByName(regexParts[2])
-                ContractState.unknownAndRevoke(variable1)
-                return true
-            }
+            regex: /^\s*(?:SHL|SHR)\s+@(\w+)\s+\$(\w+)\s*$/,
+            execute: metaUnknowAndRevokeVariableAtOne
         },
         {
             name: 'POW_DAT',
-            stepFee: 1n,
             regex: /^\s*POW\s+@(\w+)\s+\$(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                const variable1 = ContractState.getMemoryByName(regexParts[1])
-                ContractState.unknownAndRevoke(variable1)
-                return true
-            }
+            execute: metaUnknowAndRevokeVariableAtOne
         },
         {
             name: 'JMP_ADR',
-            stepFee: 1n,
             regex: /^\s*JMP\s+:(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                return true
-            }
+            execute: metaDoNothing
         },
         {
             name: 'BZR / BNZ',
-            stepFee: 1n,
             regex: /^\s*(BZR|BNZ)\s+\$(\w+)\s+:(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                return true
-            }
+            execute: metaDoNothing
         },
         {
             name: 'BGT / BLT / BGE / BLE / BEQ / BNE',
-            stepFee: 1n,
             regex: /^\s*(BGT|BLT|BGE|BLE|BEQ|BNE)\s+\$(\w+)\s+\$(\w+)\s+:(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                return true
-            }
+            execute: metaDoNothing
         },
         {
             name: 'SLP_DAT',
-            stepFee: 1n,
             regex: /^\s*SLP\s+\$(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                return true
-            }
+            execute: metaDoNothing
         },
         {
             name: 'SLP_IMD',
-            stepFee: 1n,
             regex: /^\s*SLP\s*$/,
-            execute (ContractState, regexParts) {
-                return true
-            }
+            execute: metaDoNothing
         },
         {
             name: 'FIZ_DAT',
-            stepFee: 1n,
             regex: /^\s*FIZ\s+\$(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                return true
-            }
+            execute: metaDoNothing
         },
         {
             name: 'STZ_DAT',
-            stepFee: 1n,
             regex: /^\s*STZ\s+\$(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                return true
-            }
+            execute: metaDoNothing
         },
         {
             name: 'FIN_IMD',
-            stepFee: 1n,
             regex: /^\s*FIN\s*$/,
-            execute (ContractState, regexParts) {
-                return true
-            }
+            execute: metaDoNothing
         },
         {
             name: 'STP_IMD',
-            stepFee: 1n,
             regex: /^\s*STP\s*$/,
-            execute (ContractState, regexParts) {
-                return true
-            }
+            execute: metaDoNothing
         },
         {
             name: 'ERR_ADR',
-            stepFee: 1n,
             regex: /^\s*ERR\s+:(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                return true
-            }
+            execute: metaDoNothing
         },
         {
             name: 'SET_PCS',
-            stepFee: 1n,
             regex: /^\s*PCS\s*$/,
-            execute (ContractState, regexParts) {
-                ContractState.unknowAll()
-                // Program can restart with any values in memory
-                return true
-            }
+            execute: metaReset
         },
         {
             name: 'MDV_DAT',
-            stepFee: 1n,
             regex: /^\s*MDV\s+@(\w+)\s+\$(\w+)\s+\$(\w+)\s*$/,
-            execute (ContractState, regexParts) {
-                const variable1 = ContractState.getMemoryByName(regexParts[1])
-                ContractState.unknownAndRevoke(variable1)
-                return true
-            }
+            execute: metaUnknowAndRevokeVariableAtOne
         },
         {
             name: 'EXT_FUN',
-            stepFee: 10n,
             regex: /^\s*FUN\s+(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const Api = API_MICROCODE.EXT_FUN.find(Obj => Obj.funName === regexParts[1])
@@ -507,7 +371,6 @@ export class CPU {
         },
         {
             name: 'EXT_FUN_DAT',
-            stepFee: 10n,
             regex: /^\s*FUN\s+(\w+)\s+\$(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const Api = API_MICROCODE.EXT_FUN_DAT.find(Obj => Obj.funName === regexParts[1])
@@ -515,15 +378,11 @@ export class CPU {
                     throw new Error(`Unknow API Function ${regexParts[1]}`)
                 }
                 const variable1 = ContractState.getMemoryByName(regexParts[2])
-                if (variable1 === undefined) {
-                    throw new Error(`Undeclared variable '${regexParts[2]}'`)
-                }
                 return Api.execute(ContractState, variable1)
             }
         },
         {
             name: 'EXT_FUN_DAT_2',
-            stepFee: 10n,
             regex: /^\s*FUN\s+(\w+)\s+\$(\w+)\s+\$(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const Api = API_MICROCODE.EXT_FUN_DAT_2.find(Obj => Obj.funName === regexParts[1])
@@ -537,7 +396,6 @@ export class CPU {
         },
         {
             name: 'EXT_FUN_RET',
-            stepFee: 10n,
             regex: /^\s*FUN\s+@(\w+)\s+(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const Api = API_MICROCODE.EXT_FUN_RET.find(Obj => Obj.funName === regexParts[2])
@@ -550,7 +408,6 @@ export class CPU {
         },
         {
             name: 'EXT_FUN_RET_DAT',
-            stepFee: 10n,
             regex: /^\s*FUN\s+@(\w+)\s+(\w+)\s+\$(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 throw new Error(`Unknow API Function ${regexParts[2]}`)
@@ -558,7 +415,6 @@ export class CPU {
         },
         {
             name: 'EXT_FUN_RET_DAT_2',
-            stepFee: 10n,
             regex: /^\s*FUN\s+@(\w+)\s+(\w+)\s+\$(\w+)\s+\$(\w+)\s*$/,
             execute (ContractState, regexParts) {
                 const Api = API_MICROCODE.EXT_FUN_RET_DAT_2.find(Obj => Obj.funName === regexParts[2])
@@ -573,18 +429,14 @@ export class CPU {
         },
         {
             name: 'NOP',
-            stepFee: 1n,
             regex: /^\s*NOP\s*$/,
-            execute (ContractState, regexParts) {
-                return true
-            }
+            execute: metaDoNothing
         }
     ]
 
     /** Process one line of assembly code.
-      * @returns true if something was executed
-      * false if line is valid but nothing executed
-      * null if line can be optimized  */
+      * @returns true or false for no optimization
+      * null if line can be optimized (deleted)  */
     static cpu (ContractState: CONTRACT, line: number) {
         const currLine = ContractState.asmCodeArr[line]
 
@@ -607,8 +459,7 @@ export class CPU {
     }
 
     /**
-     * Loop all lines colecting assembly directives and put
-     * instruction pointer at first instruction
+     * Loop all lines colecting assembly directives
      *
      * @param {CONTRACT} ContractState - Contract to execute function
      * */

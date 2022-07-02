@@ -1,9 +1,9 @@
 import { CONTRACT } from '../index'
 
-describe('Assembly compilation:', () => {
+describe('optimzeVM:', () => {
     it('should optimize: all api EXT_FUN_DAT', () => {
         /* this is source code for test:
-            #include APIFunctions\n#pragma verboseAssembly\n// #pragma optimizationLevel 3\n\nlong testID, a, b;\n\nswitch (testID) {\ncase 0: // Same content\n    Set_A1(25);\n    a=25;\n    Set_A1(a);\n    break;\ncase 1: // Same unknown var\n    Set_A2(a);\n    b++;\n    Set_A2(a);\n    break;\ncase 2: // Operation destroys same\n    Set_A3(a);\n    a++;\n    Set_A3(a);\n    break;\ncase 3: // Operation destroys same\n    Set_A4(a);\n    a^=b;\n    Set_A4(a);\n    break;\ncase 4: // Same content\n    Set_B1(25);\n    a=25;\n    Set_B1(a);\n    break;\ncase 5: // Same unknown var\n    Set_B2(a);\n    b++;\n    Set_B2(a);\n    break;\ncase 6: // Operation destroys same\n    Set_B3(a);\n    a++;\n    Set_B3(a);\n    break;\ncase 7: // Operation destroys same\n    Set_B4(a);\n    a|=b;\n    Set_B4(a);\n    break;\ncase 8: // A_to_Tx_after_Timestamp\n    Set_B1_B2(a, 0);\n    B_To_Address_Of_Tx_In_A();\n    Set_B1(a); Set_B2(0); Set_B3(0); Set_B4(0);\n    break;\n\n}\n
+            #include APIFunctions\n#pragma verboseAssembly\n// #pragma optimizationLevel 3\n\nlong testID, a, b;\n\nswitch (testID) {\ncase 0: // Same content\n    Set_A1(25);\n    a=25;\n    Set_A1(a);\n    break;\ncase 1: // Same unknown var\n    Set_A2(a);\n    b++;\n    Set_A2(a);\n    break;\ncase 2: // Operation destroys same\n    Set_A3(a);\n    a++;\n    Set_A3(a);\n    break;\ncase 3: // Operation destroys same\n    Set_A4(a);\n    a^=b;\n    Set_A4(a);\n    break;\ncase 4: // Same content\n    Set_B1(25);\n    a=25;\n    Set_B1(a);\n    break;\ncase 5: // Same unknown var\n    Set_B2(a);\n    b++;\n    Set_B2(a);\n    break;\ncase 6: // Operation destroys same\n    Set_B3(a);\n    a++;\n    Set_B3(a);\n    break;\ncase 7: // Operation destroys same\n    Set_B4(a);\n    a|=b;\n    Set_B4(a);\n    break;\ncase 8: // A_to_Tx_after_Timestamp\n    Set_A1_A2(a, 0);\n    A_To_Tx_After_Timestamp(b);\n    Set_A1(a); Set_A2(0); Set_A3(0); Set_A4(0);\n    break;\n\n}\n
         */
         const code = [
             '^declare r0',
@@ -116,19 +116,19 @@ describe('Assembly compilation:', () => {
             'FIN',
             '^comment line 48 case 8: // A_to_Tx_after_Timestamp',
             '__switch1_8:',
-            '^comment line 49     Set_B1_B2(a, 0);',
+            '^comment line 49     Set_A1_A2(a, 0);',
             'CLR @r0',
-            'FUN set_B1_B2 $a $r0',
-            '^comment line 50     B_To_Address_Of_Tx_In_A();',
-            'FUN B_to_Address_of_Tx_in_A',
-            '^comment line 51     Set_B1(a); Set_B2(0); Set_B3(0); Set_B4(0);',
-            'FUN set_B1 $a',
+            'FUN set_A1_A2 $a $r0',
+            '^comment line 50     A_to_Tx_after_Timestamp(b);',
+            'FUN A_to_Tx_after_Timestamp $b',
+            '^comment line 51     Set_A1(a); Set_A2(0); Set_A3(0); Set_A4(0);',
+            'FUN set_A1 $a',
             'CLR @r0',
-            'FUN set_B2 $r0',
+            'FUN set_A2 $r0',
             'CLR @r0',
-            'FUN set_B3 $r0',
+            'FUN set_A3 $r0',
             'CLR @r0',
-            'FUN set_B4 $r0',
+            'FUN set_A4 $r0',
             '^comment line 52     break;',
             'FIN'
         ]
@@ -239,13 +239,13 @@ describe('Assembly compilation:', () => {
             'FIN',
             '^comment line 48 case 8: // A_to_Tx_after_Timestamp',
             '__switch1_8:',
-            '^comment line 49     Set_B1_B2(a, 0);',
+            '^comment line 49     Set_A1_A2(a, 0);',
             'CLR @r0',
-            'FUN set_B1_B2 $a $r0',
-            '^comment line 50     B_To_Address_Of_Tx_In_A();',
-            'FUN B_to_Address_of_Tx_in_A',
-            '^comment line 51     Set_B1(a); Set_B2(0); Set_B3(0); Set_B4(0);',
-            'FUN set_B1 $a',
+            'FUN set_A1_A2 $a $r0',
+            '^comment line 50     A_to_Tx_after_Timestamp(b);',
+            'FUN A_to_Tx_after_Timestamp $b',
+            '^comment line 51     Set_A1(a); Set_A2(0); Set_A3(0); Set_A4(0);',
+            'FUN set_A1 $a',
             '^comment line 52     break;',
             'FIN'
         ]
