@@ -1,3 +1,7 @@
+**DEPRECATION NOTICE:**
+
+This contract may be or not be compatible with SmartC version greater or equal 2 because Signum Rainbow Hard Fork broke some compatibilities. Test before use or convert the API calls to new built-in functions.
+
 # Configurable timer
 The contract will act as a timer for any incoming transactions, dispatching all balance to target address on next block that is multiple of a configurable number. Creator must configure target address with a message.
 

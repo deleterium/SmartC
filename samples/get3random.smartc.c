@@ -1,3 +1,9 @@
+/* DEPRECATION NOTICE:
+ * This contract may be not compatible with SmartC version greater or equal 2
+ * because Signum Rainbow Hard Fork broke some compatibilities.  Test before
+ * use or convert the API calls to new built-in functions.
+ */
+
 #program name Get3Random
 #program description When a message arrives, the program tries to parse a number\
  from message. Number must be bigger or equal 5 and lower or equal 9999999. If\
