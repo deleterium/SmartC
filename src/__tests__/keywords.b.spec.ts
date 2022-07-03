@@ -50,13 +50,6 @@ describe('Keywords wrong usage', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
-    test('should throw: sleep without argument', () => {
-        expect(() => {
-            const code = 'long a; sleep; a++;'
-            const compiler = new SmartC({ language: 'C', sourceCode: code })
-            compiler.compile()
-        }).toThrowError(/^At line/)
-    })
     test('should throw: const without arguments', () => {
         expect(() => {
             const code = 'long a; const ;'

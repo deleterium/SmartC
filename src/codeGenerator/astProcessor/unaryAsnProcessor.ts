@@ -2,6 +2,7 @@ import { deepCopy } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
 import { MEMORY_SLOT, DECLARATION_TYPES, UNARY_ASN } from '../../typings/syntaxTypes'
 import { createSimpleInstruction, createInstruction } from '../assemblyProcessor/createInstruction'
+import { typeCasting } from '../assemblyProcessor/typeCastingToAsm'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
 import genCode from './genCode'
@@ -18,6 +19,8 @@ export default function unaryAsnProcessor (
             return UnaryOperatorProcessor()
         case 'Keyword':
             return unaryKeywordProcessor()
+        case 'CodeCave':
+            return CodeCaveProcessor()
         default:
             throw new Error(`Internal error at line: ${CurrentNode.Operation.line}.`)
         }
@@ -113,16 +116,13 @@ export default function unaryAsnProcessor (
         }
         const declar = utils.getDeclarationFromMemory(CGenObj.SolvedMem)
         if (declar.includes('_ptr') === false) {
-            if (Program.Config.warningToError) {
-                if (CurrentNode.Center.type === 'endASN' || CurrentNode.Center.type === 'lookupASN') {
-                    throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                    ` Warning: Trying to read/set content of variable ${CurrentNode.Center.Token.value}` +
-                    ' that is not declared as pointer.')
-                }
+            if (CurrentNode.Center.type === 'endASN' || CurrentNode.Center.type === 'lookupASN') {
                 throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                ' Warning: Trying to read/set content of a value that is not declared as pointer.')
+                ` Trying to read/set content of variable ${CurrentNode.Center.Token.value}` +
+                ' that is not declared as pointer.')
             }
-            utils.setMemoryDeclaration(CGenObj.SolvedMem, (declar + '_ptr') as DECLARATION_TYPES)
+            throw new Error(`At line: ${CurrentNode.Operation.line}.` +
+            ' Trying to read/set content of a value that is not declared as pointer.')
         }
         if (CGenObj.SolvedMem.Offset) {
             // Double deference: deference and continue
@@ -138,7 +138,7 @@ export default function unaryAsnProcessor (
         CGenObj.SolvedMem.Offset = {
             type: 'constant',
             value: 0,
-            declaration: 'long'
+            declaration: declar.slice(0, -4) as DECLARATION_TYPES
         }
         if (ScopeInfo.logicalOp === true) {
             CGenObj.asmCode += createInstruction(
@@ -160,7 +160,10 @@ export default function unaryAsnProcessor (
         let { SolvedMem: CGenObj, asmCode } = traverseNotLogical()
         if (CGenObj.type === 'constant') {
             return {
-                SolvedMem: utils.createConstantMemObj(utils.subHexContents(0, CGenObj.hexContent)),
+                SolvedMem: utils.createConstantMemObjWithDeclaration(utils.subConstants(
+                    { value: 0, declaration: 'long' },
+                    utils.memoryToConstantContent(CGenObj)
+                )),
                 asmCode: asmCode
             }
         }
@@ -230,11 +233,8 @@ export default function unaryAsnProcessor (
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
             'Trying to get address of void value.')
         case 'register':
-            if (Program.Config.warningToError) {
-                throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-                'Warning: Returning address of a register.')
-            }
             TmpMemObj = utils.createConstantMemObj(RetMem.address)
+            TmpMemObj.declaration = RetMem.declaration
             break
         case 'constant':
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
@@ -243,7 +243,7 @@ export default function unaryAsnProcessor (
             if (RetMem.Offset !== undefined) {
                 if (RetMem.Offset.type === 'constant') {
                     TmpMemObj = utils.createConstantMemObj(
-                        utils.addHexContents(RetMem.hexContent, RetMem.Offset.value)
+                        utils.addHexSimple(RetMem.hexContent, RetMem.Offset.value)
                     )
                     TmpMemObj.declaration = RetMem.declaration
                     break
@@ -276,8 +276,9 @@ export default function unaryAsnProcessor (
             TmpMemObj.declaration = 'struct_ptr'
             break
         case 'long':
+        case 'fixed':
             TmpMemObj = utils.createConstantMemObj(RetMem.address)
-            TmpMemObj.declaration = 'long'
+            TmpMemObj.declaration = RetMem.type
             break
         default:
             throw new Error(`Internal error at line ${CurrentNode.Operation.line}.`)
@@ -291,6 +292,7 @@ export default function unaryAsnProcessor (
     function unaryKeywordProcessor () : GENCODE_SOLVED_OBJECT {
         switch (CurrentNode.Operation.value) {
         case 'long':
+        case 'fixed':
         case 'void':
             AuxVars.isDeclaration = CurrentNode.Operation.value
             return traverseNotLogical()
@@ -331,14 +333,10 @@ export default function unaryAsnProcessor (
         const CGenObj = traverseNotLogical()
         CGenObj.asmCode += AuxVars.getPostOperations()
         if (utils.isNotValidDeclarationOp(AuxVars.CurrentFunction.declaration, CGenObj.SolvedMem)) {
-            if (Program.Config.warningToError) {
-                throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                ` Warning: Function ${AuxVars.CurrentFunction.name} must return` +
+            throw new Error(`At line: ${CurrentNode.Operation.line}.` +
+                ` Function ${AuxVars.CurrentFunction.name} must return` +
                 ` '${AuxVars.CurrentFunction.declaration}' value,` +
                 ` but it is returning '${CGenObj.SolvedMem.declaration}'.`)
-            }
-            // Override declaration protection rules
-            utils.setMemoryDeclaration(CGenObj.SolvedMem, AuxVars.CurrentFunction.declaration)
         }
         CGenObj.asmCode += createInstruction(AuxVars, CurrentNode.Operation, CGenObj.SolvedMem)
         AuxVars.freeRegister(CGenObj.SolvedMem.address)
@@ -374,6 +372,18 @@ export default function unaryAsnProcessor (
             size = CGenObj.SolvedMem.ArrayItem.totalSize
         }
         return { SolvedMem: utils.createConstantMemObj(size), asmCode: CGenObj.asmCode }
+    }
+
+    function CodeCaveProcessor () : GENCODE_SOLVED_OBJECT {
+        if (CurrentNode.Operation.declaration === '' || CurrentNode.Operation.declaration === undefined) {
+            throw new Error('Internal error.')
+        }
+        const CGenObj = traverseNotLogical()
+        const cDecl = utils.getDeclarationFromMemory(CGenObj.SolvedMem)
+        if (cDecl === CurrentNode.Operation.declaration) {
+            return CGenObj
+        }
+        return typeCasting(AuxVars, CGenObj, CurrentNode.Operation.declaration, CurrentNode.Operation.line)
     }
 
     return unaryAsnProcessorMain()

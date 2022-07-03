@@ -1,10 +1,13 @@
+import { CONTRACT } from './optimizerVM/index'
+
 /**
  * Optimize assembly code with peephole strategy.
  * @param O Optimization level:
  * - 0: No optimization
  * - 1: Very basic optimization, just remove silly/unused code
  * - 2: Safely changes and delete code for smarter outcome
- * - 3: Dangerous deep optimizations. Must be checked by developer
+ * - 3: Use final optimizations tracing variable contents (beta)
+ * - 4: Dangerous deep optimizations. Must be checked by developer
  * @param assemblyCode Input assembly
  * @param labels Array with labels (they will not be removed)
  * @returns Assembly code processed
@@ -29,10 +32,13 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
                 codeLines.forEach(jumpJumpOpt)
                 codeLines.forEach(swapBranches)
                 codeLines.forEach(notOpt)
+                codeLines.forEach(getSetSuper)
+                codeLines.forEach(pushPopRegister)
                 codeLines.forEach(popPushRegister)
+                codeLines.forEach(mdvOpt)
                 codeLines = codeLines.flatMap(branchOpt)
             }
-            if (O >= 3) {
+            if (O >= 4) {
                 codeLines.forEach(operatorSetSwap)
                 codeLines.forEach(pushOpt)
                 codeLines.forEach(setOperatorSwap)
@@ -41,7 +47,17 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
                 codeLines.forEach(pointerZeroOpt)
             }
         } while (optimizedLines !== 0)
-        return codeLines.join('\n')
+        const partialOptimized = codeLines.join('\n')
+        if (O >= 3) {
+            // silent optimization
+            const OptVM = new CONTRACT(codeLines)
+            try {
+                return OptVM.optimize().join('\n')
+            } catch (error) {
+                return partialOptimized
+            }
+        }
+        return partialOptimized
     }
 
     // Collect jumps information
@@ -87,20 +103,14 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         if (jmpto === null) {
             return
         }
-        let i = index
-        while (++i < array.length - 1) {
-            const nextLabel = /^\s*(\w+):\s*$/.exec(array[i])
-            if (nextLabel === null) {
-                if (isUntouchable(array[i])) {
-                    continue
-                }
-                break
-            }
-            if (jmpto[1] === nextLabel[1]) {
-                array[index] = 'DELETE'
-                optimizedLines++
-                return
-            }
+        const ip = getNextInstruction(index)
+        const nextLabel = /^\s*(\w+):\s*$/.exec(array[ip])
+        if (nextLabel === null) {
+            return
+        }
+        if (jmpto[1] === nextLabel[1]) {
+            array[index] = 'DELETE'
+            optimizedLines++
         }
     }
 
@@ -158,18 +168,20 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         if (branchdat === null) {
             return
         }
-        const label = /^\s*(\w+):\s*$/.exec(array[index + 2])
-        if (label === null || branchdat[4] !== label[1]) {
+        const ip = getNextInstruction(index)
+        const jmpto = /^\s*JMP\s+:(\w+)\s*$/.exec(array[ip])
+        if (jmpto === null) {
             return
         }
-        const jmpto = /^\s*JMP\s+:(\w+)\s*$/.exec(array[index + 1])
-        if (jmpto === null) {
+        const ipp = getNextInstruction(ip)
+        const label = /^\s*(\w+):\s*$/.exec(array[ipp])
+        if (label === null || branchdat[4] !== label[1]) {
             return
         }
         array[index] = value
             .replace(branchdat[1], inverseBranch(branchdat[1]))
             .replace(branchdat[4], jmpto[1])
-        array[index + 1] = 'DELETE'
+        array[ip] = 'DELETE'
         optimizedLines++
     }
 
@@ -234,6 +246,28 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         }
     }
 
+    /** Optimizes MUL + DIV to MDV
+     * ```
+     * MUL @a $c -> DELETE
+     * DIV @a $d -> MDV @a $c $d
+     * ``` */
+    function mdvOpt (value: string, index: number, array: string[]) : void {
+        const muldat = /^\s*MUL\s+@(\w+)\s+\$(\w+)\s*$/.exec(value)
+        if (muldat === null) {
+            return
+        }
+        const ip = getNextInstruction(index)
+        const divdat = /^\s*DIV\s+@(\w+)\s+\$(\w+)\s*$/.exec(array[ip])
+        if (divdat === null) {
+            return
+        }
+        if (muldat[1] === divdat[1]) {
+            array[index] = `MDV @${muldat[1]} $${muldat[2]} $${divdat[2]}`
+            array[ip] = 'DELETE'
+            optimizedLines++
+        }
+    }
+
     /** Optimizes the meaningless SET
      * ```
      * SET @var $var -> DELETE
@@ -247,6 +281,50 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         optimizedLines++
     }
 
+    /** Optimizes get and set Superregisters in sequence with registers
+     * ```
+     * FUN @r0 get_B1 -> DELETE
+     * FUN set_B1 $r0 -> DELETE
+     * ``` */
+    function getSetSuper (value: string, index: number, array: string[]) : void {
+        const getSuper = /^\s*FUN\s+@(r\d+)\s+(get_[AB][1-4])\s*$/.exec(value)
+        if (getSuper === null) {
+            return
+        }
+        const ip = getNextInstruction(index)
+        const setSuper = /^\s*FUN\s+(set_[AB][1-4])\s+\$(r\d+)\s*$/.exec(array[ip])
+        if (setSuper === null) {
+            return
+        }
+        if (getSuper[1] === setSuper[2] && getSuper[2].slice(1) === setSuper[1].slice(1)) {
+            array[index] = 'DELETE'
+            array[ip] = 'DELETE'
+            optimizedLines++
+        }
+    }
+
+    /** Optimizes register poping and pushing in sequence
+     * ```
+     * PSH $r0 -> DELETE
+     * POP @r0 -> DELETE
+     * ``` */
+    function pushPopRegister (value: string, index: number, array: string[]) : void {
+        const pshdat = /^\s*PSH\s+\$(r\d+)\s*$/.exec(value)
+        if (pshdat === null) {
+            return
+        }
+        const ip = getNextInstruction(index)
+        const popdat = /^\s*POP\s+@(r\d)\s*$/.exec(array[ip])
+        if (popdat === null) {
+            return
+        }
+        if (pshdat[1] === popdat[1]) {
+            array[index] = 'DELETE'
+            array[ip] = 'DELETE'
+            optimizedLines++
+        }
+    }
+
     /** Optimizes register poping and pushing in sequence
      * ```
      * POP @r0 -> DELETE
@@ -257,13 +335,14 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         if (popdat === null) {
             return
         }
-        const pshslpdat = /^\s*PSH\s+\$(r\d+)\s*$/.exec(array[index + 1])
+        const ip = getNextInstruction(index)
+        const pshslpdat = /^\s*PSH\s+\$(r\d+)\s*$/.exec(array[ip])
         if (pshslpdat === null) {
             return
         }
         if (pshslpdat[1] === popdat[1]) {
             array[index] = 'DELETE'
-            array[index + 1] = 'DELETE'
+            array[ip] = 'DELETE'
             optimizedLines++
         }
     }
@@ -305,6 +384,17 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
             return true
         }
         return false
+    }
+
+    /** Starting from line, returns the next line that is a valid instruction.
+     * Valid instructions are labels or codes.
+     */
+    function getNextInstruction (line: number) : number {
+        line++
+        while (isUntouchable(codeLines[line])) {
+            line++
+        }
+        return line
     }
 
     function inverseBranch (branchOperator: string) : string {

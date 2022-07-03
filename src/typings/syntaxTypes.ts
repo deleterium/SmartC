@@ -6,13 +6,20 @@ export type PRE_TOKEN = {
     extValue?: string
 }
 
+export type HEX_CONTENT = number | bigint | string
+
+export type CONSTANT_CONTENT = {
+    value: HEX_CONTENT
+    declaration: 'long' | 'fixed'
+}
+
 /** Allowed token types */
 export type TOKEN_TYPES = 'Variable' | 'Constant' | 'Operator' | 'UnaryOperator' |
 'SetUnaryOperator' | 'Assignment'| 'SetOperator'|'Comparision'|'CheckOperator'|
 'Arr'|'CodeCave'|'CodeDomain'|'Delimiter'|'Terminator'|'Macro'|'Member'|'Colon'|
-'Keyword'|'Function' | 'APICall' | 'Push'
+'Keyword'|'Function' | 'APICall' | 'BuiltInCall' | 'Push'
 
-export type DECLARATION_TYPES = 'void' | 'long' | 'struct' | 'void_ptr' | 'long_ptr' | 'struct_ptr' | ''
+export type DECLARATION_TYPES = 'void' | 'long' | 'fixed' | 'struct' | 'void_ptr' | 'long_ptr' | 'fixed_ptr' | 'struct_ptr' | ''
 
 export type TOKEN = {
     line: number
@@ -23,11 +30,11 @@ export type TOKEN = {
     value: string
     /** Only applicable to Arr, CodeCave, CodeDomain, Variable with modifier */
     params?: TOKEN[]
-    /** Only applicable to types: asm, break, continue, struct or label */
+    /** Only applicable to types: asm, break, continue, constant, struct or label */
     extValue?: string
 }
 
-export type MEMORY_BASE_TYPES = 'register' | 'long' | 'constant' | 'struct' | 'structRef' | 'array' | 'label' | 'void'
+export type MEMORY_BASE_TYPES = 'register' | 'long' | 'fixed' | 'constant' | 'struct' | 'structRef' | 'array' | 'label' | 'void'
 
 /** If constant, it is the number to shift. If variable, it is the address containing the value to shift.
  * Stores information about variable it is pointing to.
@@ -256,4 +263,9 @@ export type LONG_TYPE_DEFINITION = {
     name: '',
     MemoryTemplate: MEMORY_SLOT
 }
-export type TYPE_DEFINITIONS = STRUCT_TYPE_DEFINITION | ARRAY_TYPE_DEFINITION | REGISTER_TYPE_DEFINITION | LONG_TYPE_DEFINITION
+export type FIXED_TYPE_DEFINITION = {
+    type: 'fixed'
+    name: '',
+    MemoryTemplate: MEMORY_SLOT
+}
+export type TYPE_DEFINITIONS = STRUCT_TYPE_DEFINITION | ARRAY_TYPE_DEFINITION | REGISTER_TYPE_DEFINITION | LONG_TYPE_DEFINITION | FIXED_TYPE_DEFINITION

@@ -1,3 +1,16 @@
+## [v2.0](https://github.com/deleterium/SmartC/tree/v2.0) (2022-07-03)
+
+[Commits](https://github.com/deleterium/SmartC/commits/v2.0)
+
+- **Support all new features from Signum Rainbow Hard Fork**
+- New 42 built-in functions: **easy use of Signum API**
+- Documentation updated with refactored examples, devs must read it again
+- **Fixed point numbers** to handle balance, much easier in calculations
+- Checks for **type castings** are stronger and issuing warnings for implicit conversions
+- Optimization level 3 uses VM to trace variables values (beta version, not default)
+- Showing many errors after failed compilations (if possible)
+- Many changes in `#pragma` and `#program` to allow **integration with SC-Simulator**
+
 ## [v1.0](https://github.com/deleterium/SmartC/tree/v1.0) (2022-01-16)
 
 [Commits](https://github.com/deleterium/SmartC/commits/v1.0)

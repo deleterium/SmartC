@@ -41,6 +41,13 @@ describe('#program', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: forbidden char in name', () => {
+        expect(() => {
+            const code = '#program name test2 d\n long a;  a++;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
     test('should throw: description bigger than 1000 chars', () => {
         expect(() => {
             const code = '#program description Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam efficitur mollis mauris eu pretium. Vivamus ut nisl eget elit aliquam finibus eget a ex. Interdum et malesuada fames ac ante ipsum primis in faucibus. Vivamus vel neque risus. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse potenti. Sed eget lacinia lorem, et luctus orci. Praesent ut lorem pretium, iaculis dui eu, convallis sem. Ut lorem metus, eleifend eu velit in, volutpat ullamcorper sem. Donec hendrerit ornare posuere. Curabitur vitae lacus non dolor lacinia mollis. Sed ex felis, fringilla ac fringilla id, lobortis condimentum mi. Vestibulum nec orci vel lectus pulvinar imperdiet sit amet id nulla. Morbi quis orci tristique, pharetra libero pharetra, fermentum nunc. Nulla vestibulum felis risus, at cursus leo blandit ut. Praesent interdum commodo ex, sed vehicula sem luctus eu. Ut sed diam quis lectus lobortis maximus. Etiam hendrerit tincidunt ligula nec efficitur. Donec pulvinar mauris ac integer.\nlong a;  a++;'
@@ -55,12 +62,15 @@ describe('#program', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
-    test('should throw: forbiden activation amount in hex', () => {
+    it('should compile: activation amount in hex', () => {
         expect(() => {
             const code = '#program activationAmount 0xff\n long a;  a++;'
+            const assembly = '^program activationAmount 500000000\n^declare r0\n^declare r1\n^declare r2\n\nFIN\n'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
-        }).toThrowError(/^At line/)
+            expect(compiler.getAssemblyCode()).toBe(assembly)
+            expect(compiler.getMachineCode().PActivationAmount).toBe('255')
+        })
     })
     it('should compile: allow _ in activationAmount', () => {
         const code = '#program activationAmount 5_0000_0000'
@@ -73,6 +83,13 @@ describe('#program', () => {
     it('should compile: codeStackPages', () => {
         const code = '#pragma optimizationLevel 0\n#program codeStackPages    10   \nlong a; void test(void) { a++; return; a++; }'
         const assembly = '^program codeStackPages 10\n^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFIN\n\n__fn_test:\nINC @a\nRET\nINC @a\nRET\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: creator and contract', () => {
+        const code = '#pragma optimizationLevel 0\n#program creator    10   \n#program contract  9223372036854775808   \nlong a; void test(void) { a++; return; a++; }'
+        const assembly = '^program creator 10\n^program contract 9223372036854775808\n^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFIN\n\n__fn_test:\nINC @a\nRET\nINC @a\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -105,12 +122,47 @@ describe('#program', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    it('should compile: codeHashId', () => {
+        const code = '#pragma optimizationLevel 0\n#program codeHashId    0   \n long a; a++;'
+        const assembly = '^program codeHashId 16984156175653688123\n^declare r0\n^declare r1\n^declare r2\n^declare a\n\nINC @a\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: codeHashId right', () => {
+        const code = '#pragma optimizationLevel 0\n#program codeHashId    16984156175653688123   \n long a; a++;'
+        const assembly = '^program codeHashId 16984156175653688123\n^declare r0\n^declare r1\n^declare r2\n^declare a\n\nINC @a\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: codeHashId not on first line', () => {
+        const code = '#program name GetATCodeHashId\n#program codeHashId    0   \nlong a;\na++;'
+        const assembly = '^program name GetATCodeHashId\n^program codeHashId 16984156175653688123\n^declare r0\n^declare r1\n^declare r2\n^declare a\n\nINC @a\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    test('should throw: codeHashId wrong', () => {
+        expect(() => {
+            const code = '#pragma optimizationLevel 0\n#program codeHashId    1   \n long a; a++;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^assembler\(\)/)
+    })
+    test('should throw: codeHashId wrong', () => {
+        expect(() => {
+            const code = '#pragma optimizationLevel 0\n#program codeHashId    0x237a33   \n long a; a++;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
 })
 
 describe('#pragma', () => {
-    it('should compile: outputSourceLineNumber', () => {
-        const code = '#pragma outputSourceLineNumber\nlong a=5;\nif (a){\nwhile (a<5) {\n    a--;\n    }\n    a--;\n}\n#pragma optimizationLevel 0\n'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n^comment line 2\nSET @a #0000000000000005\n^comment line 3\nBZR $a :__if1_endif\n__if1_start:\n^comment line 4\n__loop2_continue:\nSET @r0 #0000000000000005\nBGE $a $r0 :__loop2_break\n__loop2_start:\n^comment line 5\nDEC @a\nJMP :__loop2_continue\n__loop2_break:\n^comment line 7\nDEC @a\n__if1_endif:\nFIN\n'
+    it('should compile: verboseAssembly', () => {
+        const code = '#pragma verboseAssembly\nlong a=5;\nif (a){\nwhile (a<5) {\n    a--;\n    }\n    a--;\n}\n#pragma optimizationLevel 0\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n^comment line 2 long a=5;\nSET @a #0000000000000005\n^comment line 3 if (a){\nBZR $a :__if1_endif\n__if1_start:\n^comment line 4 while (a<5) {\n__loop2_continue:\nSET @r0 #0000000000000005\nBGE $a $r0 :__loop2_break\n__loop2_start:\n^comment line 5     a--;\nDEC @a\nJMP :__loop2_continue\n__loop2_break:\n^comment line 7     a--;\nDEC @a\n__if1_endif:\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -136,37 +188,9 @@ describe('#pragma', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile: enableRandom', () => {
-        const code = '#pragma optimizationLevel 0\n#pragma maxAuxVars 1\n#pragma enableRandom true\nlong a; if (a) a++;'
-        const assembly = /^\^declare r0\n\^declare a\n\nBZR \$a :__if\w{5}_endif\n__if\w{5}_start:\nINC @a\n__if\w{5}_endif:\nFIN\n$/g
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toMatch(assembly)
-    })
-    it('should compile: enableRandom (with getJumpID in AuxVars)', () => {
-        const code = '#pragma optimizationLevel 0\n#pragma maxAuxVars 1\n#pragma enableRandom true\nlong a, b; b = !a;'
-        const assembly = /^\^declare r0\n\^declare a\n\^declare b\n\nBNZ \$a :__NOT_(\w{5})_sF\n__NOT_\1_sT:\nSET @b #0000000000000001\nJMP :__NOT_\1_end\n__NOT_\1_sF:\nCLR @b\n__NOT_\1_end:\nFIN\n$/g
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toMatch(assembly)
-    })
-    it('should compile: enableLineLabels', () => {
-        const code = '#pragma enableLineLabels true\nlong a;\nif (a) a++;\n#pragma optimizationLevel 0'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nBZR $a :__if3_1_endif\n__if3_1_start:\nINC @a\n__if3_1_endif:\nFIN\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
-    it('should compile: enableLineLabels (getJumpId in AuxVars)', () => {
-        const code = '#pragma enableLineLabels true\n long a, b;\n a = !b;\n#pragma optimizationLevel 0\n'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nBNZ $b :__NOT_3_1_sF\n__NOT_3_1_sT:\nSET @a #0000000000000001\nJMP :__NOT_3_1_end\n__NOT_3_1_sF:\nCLR @a\n__NOT_3_1_end:\nFIN\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
-    it('should compile: outputSourceLineNumber', () => {
-        const code = '#pragma outputSourceLineNumber true\n long a;\n if (a) a++;\n a++;\n#pragma optimizationLevel 0\n'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n^comment line 3\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\n^comment line 4\nINC @a\nFIN\n'
+    it('should compile: verboseAssembly', () => {
+        const code = '#pragma verboseAssembly true\n long a;\n if (a) a++;\n a++;\n#pragma optimizationLevel 0\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n^comment line 3  if (a) a++;\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\n^comment line 4  a++;\nINC @a\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -208,7 +232,7 @@ describe('#pragma', () => {
     })
     test('should throw: wrong boolean value', () => {
         expect(() => {
-            const code = '#pragma enableLineLabels 10\nlong a;\nif (a) a++;'
+            const code = '#pragma APIFunctions 10\nlong a;\nif (a) a++;'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
@@ -235,5 +259,14 @@ describe('#include and misc', () => {
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)
+    })
+})
+describe('#define macro() ()', () => {
+    it('should compile: macro returning value', () => {
+        const code = '#pragma optimizationLevel 0\n#include APIFunctions\n#define getCreator() (Clear_A(), B_To_Address_Of_Creator(), Get_B1())\n long a; if (getCreator() == 0) a++;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFUN clear_A\nFUN B_to_Address_of_Creator\nFUN @r0 get_B1\nBNZ $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
     })
 })

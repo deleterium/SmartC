@@ -2,6 +2,8 @@
 // Using them with regular error messages will lead to condition not beeing checked
 // in coverage report.
 
+import { CONSTANT_CONTENT, DECLARATION_TYPES } from '../typings/syntaxTypes'
+
 /**
  * Ensure the value is not undefined
  * @param argument Anything
@@ -185,4 +187,49 @@ export function ReedSalomonAddressDecode (RSString: string, currLine: number) : 
     }
 
     return run()
+}
+
+/** Parse a string supposed to be a decimal (no negative)
+ * @returns Object with value and type
+ * @throws Error if string is not valid
+ */
+export function parseDecimalNumber (strNum: string, line: number): CONSTANT_CONTENT {
+    strNum = strNum.replace(/_/g, '')
+    let value: bigint
+    let type : 'long'|'fixed'
+    if (strNum.includes('.')) {
+        const parts = strNum.split('.')
+        if (parts.length !== 2) {
+            throw new Error(`At line ${line}. ` +
+            ' Found more than one decimal point in number.')
+        }
+        if (parts[1].length > 8) {
+            throw new Error(`At line ${line}. ` +
+            'Fixed numbers cannot have more than 8 digits as decimal fraction.')
+        }
+        value = BigInt(parts[0]) * 100000000n + BigInt(parts[1].padEnd(8, '0'))
+        type = 'fixed'
+    } else {
+        value = BigInt(strNum)
+        type = 'long'
+    }
+    return {
+        value,
+        declaration: type
+    }
+}
+
+export function isDeclarationType (str: string) : str is DECLARATION_TYPES {
+    switch (str) {
+    case 'void':
+    case 'long':
+    case 'fixed':
+    case 'struct':
+    case 'void_ptr':
+    case 'long_ptr':
+    case 'fixed_ptr':
+    case 'struct_ptr':
+        return true
+    }
+    return false
 }

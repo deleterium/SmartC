@@ -15,7 +15,16 @@ This library can be obtained through npm:
 npm install smartc-signum-compiler
 ```
 
+The stable version is released under tag `@latest` and the development under `@next`.
+
 # Usage
+
+## Web User Interface
+A web user interface project is available at https://github.com/deleterium/smartc-web-ui If you want just to code with SmartC use https://deleterium.info/SmartC/
+
+## Documentation / FAQ / Lessons
+Docs files can be found in this repo, at `doc` folder.
+
 ## Node
 ```ts
 import { SmartC } from 'smartc-signum-compiler';
@@ -38,7 +47,7 @@ try {
 ## Browser
 Import the minified javascript file. SmartC will be imported as global.
 ```html
-<script src="https://cdn.jsdelivr.net/npm/smartc-assembly-highlight@1.0.3/dist/smartc.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/smartc-signum-compiler@latest/dist/smartc.min.js"></script>
 ```
 
 Then in your javascript file, just use it:
@@ -57,12 +66,6 @@ try {
     return "Compilation error: " + e.message
 }
 ```
-
-## Web User Interface
-To be done
-
-## Documentation / FAQ / Lessons
-Docs files can be found in this repo, at `doc` folder.
 
 ## Changelog
 Find [here](https://deleterium.github.io/SmartC/CHANGELOG) major upgrades between releases.

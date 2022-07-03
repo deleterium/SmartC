@@ -1,7 +1,8 @@
 import { deepCopy } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
 import { MEMORY_SLOT, DECLARATION_TYPES, BINARY_ASN } from '../../typings/syntaxTypes'
-import { createSimpleInstruction, createInstruction, setConstAsmCode } from '../assemblyProcessor/createInstruction'
+import { createSimpleInstruction, createInstruction, setConstAsmCode, toRegister } from '../assemblyProcessor/createInstruction'
+import { typeCasting } from '../assemblyProcessor/typeCastingToAsm'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
 import genCode from './genCode'
@@ -50,11 +51,9 @@ export default function binaryAsnProcessor (
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        LGenObj.asmCode += RGenObj.asmCode
-        LGenObj.asmCode += AuxVars.getPostOperations()
-        // Note: RGenObj always have MemObj, because jumpTarget is undefined.
-        AuxVars.freeRegister(RGenObj.SolvedMem.address)
-        return LGenObj
+        RGenObj.asmCode = LGenObj.asmCode + RGenObj.asmCode + AuxVars.getPostOperations()
+        AuxVars.freeRegister(LGenObj.SolvedMem.address)
+        return RGenObj
     }
 
     function operatorProc () : GENCODE_SOLVED_OBJECT {
@@ -65,7 +64,6 @@ export default function binaryAsnProcessor (
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        assemblyCode += LGenObj.asmCode
         let RGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Right,
             logicalOp: false,
@@ -73,7 +71,7 @@ export default function binaryAsnProcessor (
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        assemblyCode += RGenObj.asmCode
+        LGenObj.asmCode += RGenObj.asmCode
         // Error handling
         if (LGenObj.SolvedMem.type === 'void' || RGenObj.SolvedMem.type === 'void') {
             throw new Error(`At line: ${CurrentNode.Operation.line}. Can not make operations with void values.`)
@@ -85,57 +83,61 @@ export default function binaryAsnProcessor (
             CurrentNode.Operation.value
         )
         if (PossibleRetObj) {
-            return { SolvedMem: PossibleRetObj, asmCode: assemblyCode }
+            return { SolvedMem: PossibleRetObj, asmCode: LGenObj.asmCode }
         }
         // Optimizations 2
         if (OperatorOptBySwap(LGenObj.SolvedMem, RGenObj.SolvedMem, CurrentNode.Operation.value)) {
             const Temp = RGenObj
             RGenObj = LGenObj
             LGenObj = Temp
+            LGenObj.asmCode = RGenObj.asmCode
         }
+        const leftDeclaration = utils.getDeclarationFromMemory(LGenObj.SolvedMem)
+        const rightDeclaration = utils.getDeclarationFromMemory(RGenObj.SolvedMem)
         // Prepare return object
-        let TmpMemObj: MEMORY_SLOT
-        if (LGenObj.SolvedMem.type !== 'register') {
-            TmpMemObj = AuxVars.getNewRegister()
-            TmpMemObj.declaration = utils.getDeclarationFromMemory(LGenObj.SolvedMem)
-            assemblyCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, LGenObj.SolvedMem)
-            AuxVars.freeRegister(LGenObj.SolvedMem.address)
-        } else {
-            TmpMemObj = LGenObj.SolvedMem
+        LGenObj = toRegister(AuxVars, LGenObj, CurrentNode.Operation.line)
+        // implicit type casting tests and operations
+        if (isPointerAddOrSub(CurrentNode.Operation.value, leftDeclaration, rightDeclaration)) {
+            utils.setMemoryDeclaration(LGenObj.SolvedMem, rightDeclaration)
         }
-        // Pointer verifications 1
-        if (utils.getDeclarationFromMemory(RGenObj.SolvedMem).includes('_ptr') &&
-            !TmpMemObj.declaration.includes('_ptr')) {
-            // Operation with pointers
-            TmpMemObj.declaration += '_ptr'
-        }
-        // Pointer verifications 2
-        if (TmpMemObj.declaration.includes('_ptr')) {
-            if (CurrentNode.Operation.value !== '+' && CurrentNode.Operation.value !== '-') {
-                throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-                "Operation not allowed on pointers. Only '+', '-', '++' and '--' are.")
+        const castSide = implicitTypeCastingTest(CurrentNode.Operation.value, leftDeclaration, rightDeclaration)
+        switch (castSide) {
+        case 'left':
+            if (!(leftDeclaration.endsWith('_ptr') && rightDeclaration.endsWith('_ptr'))) {
+                AuxVars.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on left side of operator '${CurrentNode.Operation.value}'.`)
             }
+            LGenObj = typeCasting(AuxVars, LGenObj, rightDeclaration, CurrentNode.Operation.line)
+            break
+        case 'right': {
+            if (!(leftDeclaration.endsWith('_ptr') && rightDeclaration.endsWith('_ptr'))) {
+                AuxVars.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of operator '${CurrentNode.Operation.value}'.`)
+            }
+            const oldAsm = RGenObj.asmCode
+            RGenObj = typeCasting(AuxVars, RGenObj, leftDeclaration, CurrentNode.Operation.line)
+            // append only the diff
+            LGenObj.asmCode += RGenObj.asmCode.slice(oldAsm.length)
+        }
         }
         // Create instruction
-        assemblyCode += createInstruction(AuxVars, CurrentNode.Operation, TmpMemObj, RGenObj.SolvedMem)
+        LGenObj.asmCode += createInstruction(AuxVars, CurrentNode.Operation, LGenObj.SolvedMem, RGenObj.SolvedMem)
         // Handle logical operation
         if (ScopeInfo.logicalOp === true) {
-            assemblyCode += createInstruction(
+            LGenObj.asmCode += createInstruction(
                 AuxVars,
                 utils.genNotEqualToken(),
-                TmpMemObj,
+                LGenObj.SolvedMem,
                 utils.createConstantMemObj(0),
                 ScopeInfo.revLogic,
                 ScopeInfo.jumpFalse,
                 ScopeInfo.jumpTrue
             )
             AuxVars.freeRegister(RGenObj.SolvedMem.address)
-            AuxVars.freeRegister(TmpMemObj.address)
-            return { SolvedMem: utils.createVoidMemObj(), asmCode: assemblyCode }
+            AuxVars.freeRegister(LGenObj.SolvedMem.address)
+            return { SolvedMem: utils.createVoidMemObj(), asmCode: LGenObj.asmCode }
         }
         // Return arithmetic result
         AuxVars.freeRegister(RGenObj.SolvedMem.address)
-        return { SolvedMem: TmpMemObj, asmCode: assemblyCode }
+        return LGenObj
     }
 
     function assignmentProc () : GENCODE_SOLVED_OBJECT {
@@ -149,7 +151,6 @@ export default function binaryAsnProcessor (
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        assemblyCode += LGenObj.asmCode
         AuxVars.isLeftSideOfAssignment = false
         assignmentLeftSideErrorTests(LGenObj.SolvedMem)
         // Clear isDeclaration before right side evaluation.
@@ -161,13 +162,16 @@ export default function binaryAsnProcessor (
         // If it is an array item we know, change to the item
         if (LGenObj.SolvedMem.type === 'array' &&
             LGenObj.SolvedMem.Offset?.type === 'constant') {
+            if (LGenObj.SolvedMem.ArrayItem !== undefined && LGenObj.SolvedMem.ArrayItem.totalSize <= LGenObj.SolvedMem.Offset.value + 1) {
+                throw new Error(`At line ${CurrentNode.Operation.line}. ` +
+                    'Array index is outside array size.')
+            }
             LGenObj.SolvedMem = AuxVars.getMemoryObjectByLocation(
-                utils.addHexContents(LGenObj.SolvedMem.hexContent, LGenObj.SolvedMem.Offset.value)
+                utils.addHexSimple(LGenObj.SolvedMem.hexContent, LGenObj.SolvedMem.Offset.value)
             )
         }
         // Get right side gencode object
-        const RGenObj = assignmentRightSideSolver(LGenObj.SolvedMem)
-        assemblyCode += RGenObj.asmCode
+        let RGenObj = assignmentRightSideSolver(LGenObj.SolvedMem)
         // Restore isDeclaration value
         AuxVars.isDeclaration = savedDeclaration
         // Error check for Right side
@@ -175,26 +179,32 @@ export default function binaryAsnProcessor (
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
             `Invalid right value for '${CurrentNode.Operation.type}'. Possible void value.`)
         }
-        // Check declaration types
-        assignmentDeclarationTests(
-            LGenObj.SolvedMem,
-            RGenObj.SolvedMem,
-            CurrentNode.Operation.value,
-            CurrentNode.Operation.line
-        )
+        // Implicit type casting on assignment
+        const lDecl = utils.getDeclarationFromMemory(LGenObj.SolvedMem)
+        const rDecl = utils.getDeclarationFromMemory(RGenObj.SolvedMem)
+        const castSide = implicitTypeCastingTest(CurrentNode.Operation.value, lDecl, rDecl)
+        switch (castSide) {
+        case 'left':
+            throw new Error('Internal error')
+        case 'right':
+            if (!(lDecl.endsWith('_ptr') && rDecl.endsWith('_ptr'))) {
+                AuxVars.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of assignment '='.`)
+            }
+            RGenObj = typeCasting(AuxVars, RGenObj, lDecl, CurrentNode.Operation.line)
+        }
         // Create instruction
-        assemblyCode += createInstruction(AuxVars, CurrentNode.Operation, LGenObj.SolvedMem, RGenObj.SolvedMem)
+        LGenObj.asmCode += RGenObj.asmCode + createInstruction(AuxVars, CurrentNode.Operation, LGenObj.SolvedMem, RGenObj.SolvedMem)
         // Process use of 'const' keyword
         if (AuxVars.isConstSentence === true) {
             return assignmentConstSolver(
                 LGenObj.SolvedMem,
                 RGenObj.SolvedMem,
-                assemblyCode,
+                LGenObj.asmCode,
                 CurrentNode.Operation.line
             )
         }
         AuxVars.freeRegister(RGenObj.SolvedMem.address)
-        return { SolvedMem: LGenObj.SolvedMem, asmCode: assemblyCode }
+        return LGenObj
     }
 
     function assignmentStartErrorTests () : void {
@@ -232,10 +242,11 @@ export default function binaryAsnProcessor (
         }
     }
 
+    /** Checks if left side can be reused and solve right side of assigment */
     function assignmentRightSideSolver (Left: MEMORY_SLOT) : GENCODE_SOLVED_OBJECT {
         if (CurrentNode.Operation.type !== 'Assignment' ||
             Program.Config.reuseAssignedVar === false ||
-            Left.type !== 'long' ||
+            (Left.type !== 'long' && Left.type !== 'fixed') ||
             Left.Offset !== undefined ||
             !utils.findVarNameInAst(Left.name, CurrentNode.Right)) {
             // Can not reuse assigned var.
@@ -250,7 +261,7 @@ export default function binaryAsnProcessor (
         const registerInitialState = deepCopy(AuxVars.registerInfo)
         const NewRegister: MEMORY_SLOT = deepCopy(Left)
         NewRegister.type = 'register'
-        NewRegister.declaration = 'long'
+        NewRegister.declaration = Left.declaration
         AuxVars.registerInfo.unshift({
             inUse: false,
             Template: NewRegister
@@ -262,10 +273,10 @@ export default function binaryAsnProcessor (
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        AuxVars.registerInfo.shift()
         const registerFinalState = deepCopy(AuxVars.registerInfo)
         // if returning var is not the reused one, put it in that returning location and solve right side again
         if (RetGenObj.SolvedMem.address !== Left.address && AuxVars.isTemp(RetGenObj.SolvedMem.address)) {
+            AuxVars.registerInfo.shift()
             const index = RetGenObj.SolvedMem.address + 1
             AuxVars.registerInfo = registerInitialState
             AuxVars.registerInfo.splice(index, 0, { inUse: false, Template: NewRegister })
@@ -289,22 +300,145 @@ export default function binaryAsnProcessor (
         return RetGenObj
     }
 
-    function assignmentDeclarationTests (
-        Left: MEMORY_SLOT, Right: MEMORY_SLOT, operVal: string, line: number
-    ) : void {
-        if (utils.isNotValidDeclarationOp(utils.getDeclarationFromMemory(Left), Right)) {
-            const lDecl = utils.getDeclarationFromMemory(Left)
-            const rDecl = utils.getDeclarationFromMemory(Right)
-            // Allow SetOperator and pointer operation
-            if (!(lDecl === rDecl + '_ptr' && (operVal === '+=' || operVal === '-='))) {
-                if (Program.Config.warningToError) {
-                    throw new Error(`At line: ${line}.` +
-                    ' Warning: Left and right values does not match.' +
-                    ` Values are: '${Left.declaration}' and '${Right.declaration}'.`)
-                }
-                // Override declaration protection rules
-                Left.declaration = Right.declaration
+    /** Tests if implicit type casting is needed and also checks valid operations for binary operators.
+     * @returns the side needed to be changed
+     * @throws Error if operation is not allowed */
+    function implicitTypeCastingTest (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : 'left' | 'right' | 'none' {
+        if (lDecl === rDecl) {
+            if (lDecl === 'fixed') {
+                return fixedFixedImplicitTC(operVal)
             }
+            return 'none'
+        }
+        const fixedRet = fixedLongImplicitTC(operVal, lDecl, rDecl)
+        if (fixedRet !== 'notFixedLong') {
+            return fixedRet
+        }
+        const pointerRet = remainingImplicitTC(operVal, lDecl, rDecl)
+        return pointerRet
+    }
+
+    function fixedLongImplicitTC (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : 'left' | 'right' | 'none' | 'notFixedLong' {
+        let fixedSide: 'left' | 'right' | 'none' = 'none'
+        if (lDecl === 'long' && rDecl === 'fixed') {
+            fixedSide = 'right'
+        }
+        if (lDecl === 'fixed' && rDecl === 'long') {
+            fixedSide = 'left'
+        }
+        if (fixedSide === 'none') {
+            return 'notFixedLong'
+        }
+        // now there is only one fixed and one long
+        switch (operVal) {
+        case '=':
+        case '+=':
+        case '-=':
+            return 'right'
+        case '+':
+        case '-':
+            return fixedSide === 'left' ? 'right' : 'left'
+        case '/':
+        case '*':
+            return fixedSide === 'left' ? 'none' : 'left'
+        case '%':
+        case '&':
+        case '|':
+        case '^':
+        case '%=':
+        case '&=':
+        case '|=':
+        case '^=':
+            throw new Error(`At line ${CurrentNode.Operation.line}. Cannot use operator ${operVal} with fixed type numbers.`)
+        case '>>':
+        case '<<':
+        case '>>=':
+        case '<<=':
+            if (fixedSide === 'right') {
+                throw new Error(`At line ${CurrentNode.Operation.line}. Cannot use operator ${operVal} with fixed type numbers on right side.`)
+            }
+            return 'none'
+        case '/=':
+        case '*=':
+            return fixedSide === 'left' ? 'none' : 'right'
+        case '==':
+        case '!=':
+        case '<=':
+        case '>=':
+        case '<':
+        case '>':
+            return fixedSide === 'left' ? 'right' : 'left'
+        default:
+            throw new Error('Internal error')
+        }
+    }
+
+    function fixedFixedImplicitTC (operVal: string) : 'left' | 'right' | 'none' {
+        switch (operVal) {
+        case '%':
+        case '&':
+        case '|':
+        case '^':
+        case '%=':
+        case '&=':
+        case '|=':
+        case '^=':
+        case '>>':
+        case '<<':
+            throw new Error(`At line ${CurrentNode.Operation.line}. Cannot use operator ${operVal} with fixed type numbers.`)
+        case '>>=':
+        case '<<=':
+            throw new Error(`At line ${CurrentNode.Operation.line}. Cannot use operator ${operVal} with fixed type numbers on right side.`)
+        default:
+            return 'none'
+        }
+    }
+
+    function remainingImplicitTC (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : 'left' | 'right' | 'none' {
+        switch (operVal) {
+        case '=':
+            if ((lDecl === 'void_ptr' && rDecl.includes('_ptr')) ||
+                    (lDecl.includes('_ptr') && rDecl === 'void_ptr')) {
+                return 'right'
+            }
+            if (lDecl.includes('ptr') && rDecl === 'long' && AuxVars.hasVoidArray) {
+                return 'none'
+            }
+            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of assigment does not match. Types are '${lDecl}' and '${rDecl}'.`)
+        case '+=':
+        case '-=':
+            if (lDecl.endsWith('_ptr') && rDecl === 'long') {
+                return 'none'
+            }
+            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
+        case '+':
+        case '-':
+            if (lDecl.includes('_ptr') && rDecl === 'long') {
+                return 'none'
+            }
+            if (rDecl.includes('_ptr') && lDecl === 'long') {
+                return 'none'
+            }
+            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
+        case '==':
+        case '!=':
+        case '<=':
+        case '>=':
+        case '<':
+        case '>':
+            if (lDecl.includes('_ptr') && rDecl.includes('_ptr')) {
+                return 'right'
+            }
+            if (lDecl.includes('_ptr') && rDecl === 'long') {
+                return 'right'
+            }
+            if (lDecl === 'long' && rDecl.includes('_ptr')) {
+                return 'left'
+            }
+            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
+        default:
+            // / * % & | ^ %= &= |= ^= >> << >>= <<= /= *=
+            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
         }
     }
 
@@ -428,18 +562,33 @@ export default function binaryAsnProcessor (
     }
 
     function defaultLogicalOpProc () : GENCODE_SOLVED_OBJECT {
-        const LGenObj = genCode(Program, AuxVars, {
+        let LGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Left,
             logicalOp: false,
             revLogic: ScopeInfo.revLogic
         }) // ScopeInfo.jumpFalse and ScopeInfo.jumpTrue must be undefined to evaluate expressions
-        assemblyCode += LGenObj.asmCode
-        const RGenObj = genCode(Program, AuxVars, {
+        let RGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Right,
             logicalOp: false,
             revLogic: ScopeInfo.revLogic
         }) // ScopeInfo.jumpFalse and ScopeInfo.jumpTrue must be undefined to evaluate expressions
-        assemblyCode += RGenObj.asmCode
+        const leftDeclaration = utils.getDeclarationFromMemory(LGenObj.SolvedMem)
+        const rightDeclaration = utils.getDeclarationFromMemory(RGenObj.SolvedMem)
+        const castSide = implicitTypeCastingTest(CurrentNode.Operation.value, leftDeclaration, rightDeclaration)
+        switch (castSide) {
+        case 'left':
+            if (!(leftDeclaration.endsWith('_ptr') && rightDeclaration.endsWith('_ptr'))) {
+                AuxVars.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on left side of comparision '${CurrentNode.Operation.value}'.`)
+            }
+            LGenObj = typeCasting(AuxVars, LGenObj, rightDeclaration, CurrentNode.Operation.line)
+            break
+        case 'right':
+            if (!(leftDeclaration.endsWith('_ptr') && rightDeclaration.endsWith('_ptr'))) {
+                AuxVars.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of comparision '${CurrentNode.Operation.value}'.`)
+            }
+            RGenObj = typeCasting(AuxVars, RGenObj, leftDeclaration, CurrentNode.Operation.line)
+        }
+        assemblyCode = LGenObj.asmCode + RGenObj.asmCode
         assemblyCode += createInstruction(
             AuxVars,
             CurrentNode.Operation,
@@ -459,15 +608,17 @@ export default function binaryAsnProcessor (
     ) : MEMORY_SLOT | undefined {
         // If left and right side are constants, do the math now for basic operations
         if (Left.type === 'constant' && Right.type === 'constant') {
+            const LeftConstant = utils.memoryToConstantContent(Left)
+            const RightConstant = utils.memoryToConstantContent(Right)
             switch (operatorVal) {
             case '+':
-                return utils.createConstantMemObj(utils.addHexContents(Left.hexContent, Right.hexContent))
+                return utils.createConstantMemObjWithDeclaration(utils.addConstants(LeftConstant, RightConstant))
             case '*':
-                return utils.createConstantMemObj(utils.mulHexContents(Left.hexContent, Right.hexContent))
+                return utils.createConstantMemObjWithDeclaration(utils.mulConstants(LeftConstant, RightConstant))
             case '/':
-                return utils.createConstantMemObj(utils.divHexContents(Left.hexContent, Right.hexContent))
+                return utils.createConstantMemObjWithDeclaration(utils.divConstants(LeftConstant, RightConstant))
             case '-':
-                return utils.createConstantMemObj(utils.subHexContents(Left.hexContent, Right.hexContent))
+                return utils.createConstantMemObjWithDeclaration(utils.subConstants(LeftConstant, RightConstant))
             }
         }
     }
@@ -485,6 +636,9 @@ export default function binaryAsnProcessor (
         default:
             return false
         }
+        if (Left.declaration === 'fixed' && Right.declaration === 'long') {
+            return operatorVal === '+'
+        }
         // Try optimization if left side is constant (only commutativa operations!)
         if (checkOperatorOptimization(operatorVal, Left)) {
             return true
@@ -494,7 +648,7 @@ export default function binaryAsnProcessor (
             return true
         }
         // Try optimization if right side is constant, but do not mess if already optimized
-        if (Right.type === 'constant' && !checkOperatorOptimization(operatorVal, Right)) {
+        if (Right.type === 'constant' && Right.Offset === undefined && !checkOperatorOptimization(operatorVal, Right)) {
             return true
         }
         return false
@@ -514,6 +668,15 @@ export default function binaryAsnProcessor (
                     ConstantMemObj.hexContent === '0000000000000001') {
                 return true
             }
+        }
+        return false
+    }
+
+    /** Checks if its a pointer addition or subtractions.
+     * @returns true if it is needed to change the LEFT SIDE declaration to avoid type error */
+    function isPointerAddOrSub (operator : string, lDecl : DECLARATION_TYPES, rDecl : DECLARATION_TYPES) : boolean {
+        if ((operator === '+' || operator === '-') && lDecl === 'long' && rDecl.endsWith('_ptr')) {
+            return true
         }
         return false
     }

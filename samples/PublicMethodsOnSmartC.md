@@ -33,9 +33,6 @@ To automate the process you can use CyberChef with the recipe https://gchq.githu
 ## SmartC program skeleton
 
 ```c
-#include APIFunctions
-#pragma version 1.0
-
 // global variables, will be available in all functions
 long myVar;
 
@@ -57,7 +54,11 @@ constructor();
 
 void main(void) {
     blockStarted();
-    while (getNewTxDetails()) {
+    while ((currentTX.txId = getNextTx()) != 0) {
+        currentTX.sender = getSender(currentTX.txId);
+        currentTX.amount = getAmount(currentTX.txId);
+        readMessage(currentTX.txId, 0, currentTX.message);
+
         switch (currentTX.message[0]) {
         case GET_SNACKS:
             GetSnacks(currentTX.message[1]);
@@ -71,32 +72,20 @@ void main(void) {
     }
     blockFinished();
 }
-
-long getNewTxDetails(void) {
-    A_To_Tx_After_Timestamp(currentTX.timestamp);
-    currentTX.txId = Get_A1();
-    if (currentTX.txId == 0) {
-        return false;
-    }
-    currentTX.amount = Get_Amount_For_Tx_In_A();
-    currentTX.timestamp = Get_Timestamp_For_Tx_In_A();
-    Message_From_Tx_In_A_To_B();
-    currentTX.message[0] = Get_B1();
-    currentTX.message[1] = Get_B2();
-    currentTX.message[2] = Get_B3();
-    currentTX.message[3] = Get_B4();
-    B_To_Address_Of_Tx_In_A();
-    currentTX.sender = Get_B1();
-    return true;
-}
 // ****** end of hidden part ****** 
 
 // ****** These are public methods in SmartJ ****** 
 void GetSnacks(long bites) {
     // Do your stuff
+    myPrivateMethod();
 }
 
 void GetDrinks(long type, long quantity) {
+    // Do your stuff
+}
+
+// ****** These are private methods in SmartJ ****** 
+void myPrivateMethod() {
     // Do your stuff
 }
 
@@ -167,7 +156,12 @@ public class Skeleton extends Contract {
 	 */
 	public void GetDrinks(long type, long quantity) {
 		// Do your stuff
+        myPrivateMethod();
 	}
+
+    private void myPrivateMethod() {
+        // Do your stuff
+    }
 
 	/**
 	 * Iterates over every transaction received

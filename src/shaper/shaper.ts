@@ -4,8 +4,10 @@ import {
     MEMORY_SLOT,
     REGISTER_TYPE_DEFINITION
 } from '../typings/syntaxTypes'
-import { assertNotUndefined, deepCopy } from '../repository/repository'
-import { APITableTemplate, getMemoryTemplate, getTypeDefinitionTemplate } from './templates'
+import { assertNotUndefined, deepCopy, parseDecimalNumber } from '../repository/repository'
+import {
+    APITableTemplate, getMemoryTemplate, getTypeDefinitionTemplate, BuiltInTemplate, fixedBaseTemplate, fixedAPITableTemplate, autoCounterTemplate
+} from './templates'
 import sentencesProcessor from './sentencesProcessor'
 import memoryProcessor from './memoryProcessor'
 import { SHAPER_AUXVARS } from './shaperTypes'
@@ -29,15 +31,28 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     function shapeMain () : void {
         splitCode()
         Program.Global.macros.forEach(processMacroControl)
-        checkCompilerVersion()
-        Program.typesDefinitions = [getTypeDefinitionTemplate('register'), getTypeDefinitionTemplate('long')]
+        Program.typesDefinitions = [
+            getTypeDefinitionTemplate('register'),
+            getTypeDefinitionTemplate('long'),
+            getTypeDefinitionTemplate('fixed')
+        ]
         Program.memory.push(...addRegistersInMemory(Program.Config.maxAuxVars))
         Program.memory.push(...addConstantsInMemory(Program.Config.maxConstVars))
+        if (Program.Config.fixedAPIFunctions || fixedDetected(tokenAST)) {
+            Program.memory.push(fixedBaseTemplate)
+        }
+        if (autoCounterDetected(tokenAST)) {
+            Program.memory.push(autoCounterTemplate)
+        }
         processGlobalCode()
         Program.functions.forEach(processFunctionCodeAndArguments)
         if (Program.Config.APIFunctions) {
             Program.Global.APIFunctions = APITableTemplate.slice()
         }
+        if (Program.Config.fixedAPIFunctions) {
+            Program.Global.APIFunctions.push(...fixedAPITableTemplate)
+        }
+        Program.Global.BuiltInFunctions = BuiltInTemplate.slice()
         validateFunctions()
         validateMemory()
         consolidateMemory()
@@ -140,6 +155,11 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 usedBoolVal = true
                 break
             }
+            if (Token.property === 'fixedAPIFunctions') {
+                Program.Config.fixedAPIFunctions = boolVal
+                usedBoolVal = true
+                break
+            }
             throw new Error(`At line: ${Token.line}.` +
             ` Unknow macro property '#${Token.type} ${Token.property}'.` +
             " Do you mean 'APIFunctions'? Check valid values on Help page")
@@ -162,7 +182,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         const num = parseInt(MacroToken.value)
         switch (MacroToken.property) {
         case 'maxAuxVars':
-            if (num >= 1 && num <= 10) {
+            if (num >= 0 && num <= 10) {
                 Program.Config.maxAuxVars = num
                 return false
             }
@@ -176,26 +196,17 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         case 'reuseAssignedVar':
             Program.Config.reuseAssignedVar = bool
             return true
-        case 'enableRandom':
-            Program.Config.enableRandom = bool
-            return true
-        case 'enableLineLabels':
-            Program.Config.enableLineLabels = bool
-            return true
         case 'optimizationLevel':
-            if (num >= 0 && num <= 3) {
+            if (num >= 0 && num <= 4) {
                 Program.Config.optimizationLevel = num
                 return false
             }
             throw new Error(`At line: ${MacroToken.line}. Value out of permitted range 0..3.`)
         case 'version':
-            Program.Config.sourcecodeVersion = MacroToken.value
+            // Nothing to do. 'version' is a reminder for programmers.
             return false
-        case 'warningToError':
-            Program.Config.warningToError = bool
-            return true
-        case 'outputSourceLineNumber':
-            Program.Config.outputSourceLineNumber = bool
+        case 'verboseAssembly':
+            Program.Config.verboseAssembly = bool
             return true
         default:
             throw new Error(`At line: ${MacroToken.line}.` +
@@ -222,11 +233,14 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             Program.Config.PDescription = MacroToken.value
             return
         case 'activationAmount':
-            if (/^[0-9_]{1,20}$/.test(MacroToken.value)) {
-                Program.Config.PActivationAmount = MacroToken.value.replace(/_/g, '')
-                return
-            }
-            throw new Error(`At line: ${MacroToken.line}. Program activation must be only numbers or '_'.`)
+            Program.Config.PActivationAmount = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
+            return
+        case 'creator':
+            Program.Config.PCreator = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
+            return
+        case 'contract':
+            Program.Config.PContract = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
+            return
         case 'userStackPages':
             if (/^\d\s*$|^10\s*$/.test(MacroToken.value)) {
                 Program.Config.PUserStackPages = Number(MacroToken.value)
@@ -241,40 +255,20 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             }
             throw new Error(`At line: ${MacroToken.line}.` +
             ' Program code stack pages must be a number between 0 and 10, included.')
+        case 'codeHashId':
+            if (/^\d+\s*$/.test(MacroToken.value)) {
+                Program.Config.PCodeHashId = MacroToken.value.trim()
+                return
+            }
+            throw new Error(`At line: ${MacroToken.line}.` +
+            ' Program code hash id must be a decimal number. Use 0 to let compiler fill the value at assembly output.')
+        case 'compilerVersion':
+            // Nothing to do. compilerVersion is a reminder for programmers.
+            break
         default:
             throw new Error(`At line: ${MacroToken.line}.` +
             ` Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +
             ' Please check valid values on Help page')
-        }
-    }
-
-    /** Checks sourcecodeVersion and compiler current version.
-     * @throws {Error} if not pass rules checks.
-     */
-    function checkCompilerVersion () : void {
-        try {
-            if (process.env.JEST === 'true') {
-                return
-            }
-        } catch (err) {
-            // On browser, continue
-        }
-        // Running on browser OR Runing on node, but it is not jest
-        if (Program.Config.sourcecodeVersion === '') {
-            if (!Program.Config.compilerVersion.includes('dev')) {
-                throw new Error('Compiler version not set.' +
-                ' Pin current compiler version in your program' +
-                ` adding '#pragma version ${Program.Config.compilerVersion}' to code.`)
-            }
-            Program.Config.sourcecodeVersion = Program.Config.compilerVersion
-        }
-        if (Program.Config.sourcecodeVersion !== Program.Config.compilerVersion) {
-            if (Program.Config.sourcecodeVersion !== 'dev') {
-                throw new Error(`This compiler is version '${Program.Config.compilerVersion}'.` +
-                ` File needs a compiler version '${Program.Config.sourcecodeVersion}'.` +
-                " Update '#pragma version' macro or run another SmartC version.")
-            }
-            Program.Config.sourcecodeVersion = Program.Config.compilerVersion
         }
     }
 
@@ -308,6 +302,35 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             retObj.push(MemTemplate)
         }
         return retObj
+    }
+
+    /** Detects if fixed point calculations will be needed */
+    function fixedDetected (tokenTrain: TOKEN[] | undefined) : boolean {
+        if (tokenTrain === undefined) return false
+        return !!tokenTrain.find((Tkn) => {
+            if ((Tkn.type === 'Keyword' && Tkn.value === 'fixed') ||
+                (Tkn.type === 'Constant' && Tkn.extValue === 'fixed')) {
+                return true
+            }
+            if (Tkn.type === 'CodeDomain' || Tkn.type === 'CodeCave') {
+                return fixedDetected(Tkn.params)
+            }
+            return false
+        })
+    }
+
+    /** Detects if hidden variable for timestamp loop will be needed */
+    function autoCounterDetected (tokenTrain: TOKEN[] | undefined) : boolean {
+        if (tokenTrain === undefined) return false
+        return !!tokenTrain.find((Tkn) => {
+            if (Tkn.type === 'Variable' && (Tkn.value === 'getNextTx' || Tkn.value === 'getNextTxFromBlockheight')) {
+                return true
+            }
+            if (Tkn.type === 'CodeDomain' || Tkn.type === 'CodeCave') {
+                return autoCounterDetected(Tkn.params)
+            }
+            return false
+        })
     }
 
     /** Process global code, transforming them into global sentences properties  */
@@ -394,12 +417,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
      * into argsMemObj and sentences properties  */
     function processFunctionCodeAndArguments (CurrentFunction: SC_FUNCTION, fnNum: number) {
         CurrentFunction.sentences = sentencesProcessor(AuxVars, CurrentFunction.code)
-        let expectVoid = false
-        if (CurrentFunction.arguments?.length === 1 &&
-            CurrentFunction.arguments[0].type === 'Keyword' &&
-            CurrentFunction.arguments[0].value === 'void') {
-            expectVoid = true
-        }
         AuxVars.currentScopeName = CurrentFunction.name
         AuxVars.currentPrefix = AuxVars.currentScopeName + '_'
         AuxVars.isFunctionArgument = true
@@ -409,10 +426,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             `Wrong arguments for function '${CurrentFunction.name}'.`)
         }
         CurrentFunction.argsMemObj = memoryProcessor(Program.typesDefinitions, AuxVars, sentence[0].code)
-        if (CurrentFunction.argsMemObj.length === 0 && expectVoid === false) {
-            throw new Error(`At line: ${CurrentFunction.line}.` +
-            ` No variables in arguments for function '${CurrentFunction.name}'. Do you mean 'void'?`)
-        }
         Program.memory = Program.memory.concat(CurrentFunction.argsMemObj)
         AuxVars.isFunctionArgument = false
         delete Program.functions[fnNum].arguments
@@ -452,6 +465,12 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 if (Program.functions[i].name === Program.functions[j].name) {
                     throw new Error(`At line: ${Program.functions[j].line}.` +
                     ` Found second definition for function '${Program.functions[j].name}'.`)
+                }
+            }
+            for (j = 0; j < Program.Global.BuiltInFunctions.length; j++) {
+                if (Program.functions[i].name === Program.Global.BuiltInFunctions[j].name) {
+                    throw new Error(`At line: ${Program.functions[i].line}.` +
+                    ` Function '${Program.functions[i].name}' has same name of one built-in Functions.`)
                 }
             }
             if (Program.Config.APIFunctions === true) {

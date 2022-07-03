@@ -1,4 +1,4 @@
-[Back](./)
+[Back](./README.md)
 
 # Non-Technical frequently asked questions
 
@@ -32,4 +32,4 @@ Just set a higher minimum activation amount, to ensure the contract will have ba
 ### What happens if I send a value higher than activation amount to the contract?
 The contract will be activated in next block and do what it is programed to do. The value above the activation amount will be the value that the contract reads as transaction amount received.
 
-[Back](./)
+[Back](./README.md)

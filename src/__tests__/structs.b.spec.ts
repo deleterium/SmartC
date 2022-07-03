@@ -17,7 +17,7 @@ a=pcar->collector;
 *c=pcar->collector;
 d[1]=pcar->collector;
 d[a]=pcar->collector;`
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #000000000000000b\n^declare d_0\n^declare d_1\n\nSET @pcar #0000000000000003\nSET @r0 #000000000000655a\nSET @r1 #0000000000000002\nSET @($pcar + $r1) $r0\nSET @($pcar) $a\nSET @r0 $($c)\nSET @($pcar) $r0\nSET @($pcar) $d_1\nSET @r0 $($d + $a)\nSET @($pcar) $r0\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nSET @($pcar) $r0\nSET @r0 #0000000000000001\nSET @a $($pcar + $r0)\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nSET @($c) $r0\nSET @r0 #0000000000000001\nSET @d_1 $($pcar + $r0)\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nSET @($d + $a) $r0\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #000000000000000b\n^declare d_0\n^declare d_1\n\nSET @pcar #0000000000000003\nSET @r0 #000000000000655a\nSET @r1 #0000000000000002\nSET @($pcar + $r1) $r0\nSET @($pcar) $a\nSET @r0 $($c)\nSET @($pcar) $r0\nSET @($pcar) $d_1\nSET @r0 $($d + $a)\nSET @($pcar) $r0\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nSET @($pcar) $r0\nSET @a #0000000000000001\nSET @a $($pcar + $a)\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nSET @($c) $r0\nSET @d_1 #0000000000000001\nSET @d_1 $($pcar + $d_1)\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nSET @($d + $a) $r0\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -39,7 +39,7 @@ a=pcar->passenger[2];
 *c=pcar->passenger[2];
 d[1]=pcar->passenger[2];
 d[a]=pcar->passenger[2];`
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^const SET @car_passenger #0000000000000006\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #000000000000000f\n^declare d_0\n^declare d_1\n\nSET @pcar #0000000000000003\nSET @r0 #000000000000655a\nSET @r1 #0000000000000005\nSET @($pcar + $r1) $r0\nSET @r0 #0000000000000005\nSET @($pcar + $r0) $a\nSET @r0 $($c)\nSET @r1 #0000000000000005\nSET @($pcar + $r1) $r0\nSET @r0 #0000000000000005\nSET @($pcar + $r0) $d_1\nSET @r0 $($d + $a)\nSET @r1 #0000000000000005\nSET @($pcar + $r1) $r0\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nSET @r1 #0000000000000005\nSET @($pcar + $r1) $r0\nSET @r1 #0000000000000004\nSET @r0 $($pcar + $r1)\nSET @r1 #0000000000000005\nSET @($pcar + $r1) $r0\nSET @r0 #0000000000000005\nSET @a $($pcar + $r0)\nSET @r1 #0000000000000005\nSET @r0 $($pcar + $r1)\nSET @($c) $r0\nSET @r0 #0000000000000005\nSET @d_1 $($pcar + $r0)\nSET @r1 #0000000000000005\nSET @r0 $($pcar + $r1)\nSET @($d + $a) $r0\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car_driver\n^declare car_collector\n^declare car_passenger\n^const SET @car_passenger #0000000000000006\n^declare car_passenger_0\n^declare car_passenger_1\n^declare car_passenger_2\n^declare car_passenger_3\n^declare pcar\n^declare a\n^declare b\n^declare c\n^declare d\n^const SET @d #000000000000000f\n^declare d_0\n^declare d_1\n\nSET @pcar #0000000000000003\nSET @r0 #000000000000655a\nSET @r1 #0000000000000005\nSET @($pcar + $r1) $r0\nSET @r0 #0000000000000005\nSET @($pcar + $r0) $a\nSET @r0 $($c)\nSET @r1 #0000000000000005\nSET @($pcar + $r1) $r0\nSET @r0 #0000000000000005\nSET @($pcar + $r0) $d_1\nSET @r0 $($d + $a)\nSET @r1 #0000000000000005\nSET @($pcar + $r1) $r0\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nSET @r1 #0000000000000005\nSET @($pcar + $r1) $r0\nSET @r1 #0000000000000004\nSET @r0 $($pcar + $r1)\nSET @r1 #0000000000000005\nSET @($pcar + $r1) $r0\nSET @a #0000000000000005\nSET @a $($pcar + $a)\nSET @r1 #0000000000000005\nSET @r0 $($pcar + $r1)\nSET @($c) $r0\nSET @d_1 #0000000000000005\nSET @d_1 $($pcar + $d_1)\nSET @r1 #0000000000000005\nSET @r0 $($pcar + $r1)\nSET @($d + $a) $r0\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -180,6 +180,22 @@ pcar=&car[1];
 if (pcar->driver=='Ze') { b++; }
 if (a<=pcar->collector) { b--; }`
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare car\n^const SET @car #0000000000000004\n^declare car_0_driver\n^declare car_0_collector\n^declare car_0_passenger\n^declare car_1_driver\n^declare car_1_collector\n^declare car_1_passenger\n^declare pcar\n^declare a\n^declare b\n\nSET @pcar #0000000000000007\nSET @r0 $($pcar)\nSET @r1 #000000000000655a\nBNE $r0 $r1 :__if1_endif\n__if1_start:\nINC @b\n__if1_endif:\nSET @r1 #0000000000000001\nSET @r0 $($pcar + $r1)\nBGT $a $r0 :__if2_endif\n__if2_start:\nDEC @b\n__if2_endif:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: struct declaration inside function', () => {
+        const code = `search(2);
+struct PLAYER * search(long playerAddress) {
+    struct PLAYER {
+        long address, balance, VDLS;
+    } *playerPtr, players[2];
+    long nPlayers;
+    struct PLAYER * foundPlayer;
+    nPlayers = sizeof(struct PLAYER);
+    return NULL;
+}`
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare search_playerAddress\n^declare search_playerPtr\n^declare search_players\n^const SET @search_players #0000000000000006\n^declare search_players_0_address\n^declare search_players_0_balance\n^declare search_players_0_VDLS\n^declare search_players_1_address\n^declare search_players_1_balance\n^declare search_players_1_VDLS\n^declare search_nPlayers\n^declare search_foundPlayer\n\nSET @r0 #0000000000000002\nPSH $r0\nJSR :__fn_search\nPOP @r0\nFIN\n\n__fn_search:\nPOP @search_playerAddress\nSET @search_nPlayers #0000000000000003\nCLR @r0\nPSH $r0\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

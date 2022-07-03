@@ -16,6 +16,7 @@ export default function assignmentToAsm (
         switch (Left.type) {
         case 'register':
         case 'long':
+        case 'fixed':
         case 'structRef':
             return leftRegularToAsm()
         case 'array':
@@ -37,6 +38,7 @@ export default function assignmentToAsm (
                 return leftRegularOffsetUndefinedAndRightConstantToAsm()
             case 'register':
             case 'long':
+            case 'fixed':
             case 'structRef':
                 return leftRegularOffsetUndefinedAndRightRegularToAsm()
             case 'array':
@@ -58,6 +60,20 @@ export default function assignmentToAsm (
     /** Left type is 'register', 'long' or ''structRef', with offset undefined. Right type is 'constant'.
      * Create assembly instruction. */
     function leftRegularOffsetUndefinedAndRightConstantToAsm () : string {
+        let newVarName: string
+        switch (Right.Offset?.type) {
+        case undefined:
+            return leftRegularOffsetUndefinedAndRightConstantOffsetUndefinedToAsm()
+        case 'constant':
+            Right.hexContent = assertNotUndefined(Right.hexContent)
+            newVarName = auxVars.getMemoryObjectByLocation(utils.addHexSimple(Right.Offset.value, Right.hexContent), operationLine).asmName
+            return `SET @${Left.asmName} $${newVarName}\n`
+        case 'variable':
+            throw new Error('Not implemented.')
+        }
+    }
+
+    function leftRegularOffsetUndefinedAndRightConstantOffsetUndefinedToAsm () : string {
         Right.hexContent = assertNotUndefined(Right.hexContent)
         if (Right.hexContent.length > 17) {
             throw new Error(`At line: ${operationLine}.` +
@@ -66,9 +82,12 @@ export default function assignmentToAsm (
         if (Right.hexContent === '0000000000000000') {
             return `CLR @${Left.asmName}\n`
         }
-        const findOpt = auxVars.memory.find(MEM => {
-            return MEM.asmName === `n${Number('0x' + Right.hexContent)}` && MEM.hexContent === Right.hexContent
-        })
+        let optVarName = 'n'
+        if (Right.declaration === 'fixed') {
+            optVarName = 'f'
+        }
+        optVarName += Number('0x' + Right.hexContent).toString(10)
+        const findOpt = auxVars.memory.find(MEM => MEM.asmName === optVarName && MEM.hexContent === Right.hexContent)
         if (findOpt) {
             return `SET @${Left.asmName} $${findOpt.asmName}\n`
         }
@@ -93,15 +112,13 @@ export default function assignmentToAsm (
     /** Left type is 'register', 'long' or 'structRef', with offset undefined. Right type is 'register', 'long', or
      * 'structRef' with offset undefined. Create assembly instruction. */
     function leftRegularOffsetUndefinedAndRightRegularOffsetUndefinedToAsm (): string {
-        if ((Left.declaration === Right.declaration) ||
-            (Left.declaration === 'void_ptr' && Right.declaration.includes('ptr')) ||
-            (Left.declaration.includes('ptr') && Right.declaration === 'void_ptr')) {
-            if (Left.address === Right.address) {
-                return ''
-            }
-            return `SET @${Left.asmName} $${Right.asmName}\n`
+        if (Left.declaration !== Right.declaration) {
+            throw new Error(`Internal error at line: ${operationLine}.`)
         }
-        throw new Error(`Internal error at line: ${operationLine}.`)
+        if (Left.address === Right.address) {
+            return ''
+        }
+        return `SET @${Left.asmName} $${Right.asmName}\n`
     }
 
     /** Left type is 'register', 'long' or 'structRef', with offset undefined. Right type is 'register', 'long' or
@@ -125,7 +142,7 @@ export default function assignmentToAsm (
             return `SET @${Left.asmName} $${Right.asmName}\n`
         }
         if (Right.Offset.type === 'constant') {
-            const memLoc = utils.addHexContents(Right.hexContent, Right.Offset.value)
+            const memLoc = utils.addHexSimple(Right.hexContent, Right.Offset.value)
             const RightMem = auxVars.getMemoryObjectByLocation(memLoc, operationLine)
             return `SET @${Left.asmName} $${RightMem.asmName}\n`
         }
@@ -185,7 +202,7 @@ export default function assignmentToAsm (
         const paddedLong = assertNotUndefined(Right.hexContent).padStart(arraySize * 16, '0')
         let assemblyCode = ''
         for (let i = 0; i < arraySize; i++) {
-            const newLeft = auxVars.getMemoryObjectByLocation(utils.addHexContents(Left.hexContent, i), operationLine)
+            const newLeft = auxVars.getMemoryObjectByLocation(utils.addHexSimple(Left.hexContent, i), operationLine)
             const newRight = utils.createConstantMemObj(
                 paddedLong.slice(16 * (arraySize - i - 1), 16 * (arraySize - i))
             )

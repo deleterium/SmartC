@@ -32,6 +32,27 @@ describe('preprocessor right tests', () => {
         expect(preprocessor(code)).toBe(result)
     })
 
+    it('#define macro (simple)', () => {
+        const code = '#define DEF(top, bottom) (((top) << 8) | (bottom))\nlong a,b,c;\na = DEF(b, c);\n'
+        const result = '\nlong a,b,c;\na = (((b) << 8) | (c));\n'
+        expect(preprocessor(code)).toBe(result)
+    })
+    it('#define macro (empty argument)', () => {
+        const code = '#define DEF() (Get_Current_Timestamp(  ) >> 32)\nlong a;\na = DEF() ;\n'
+        const result = '\nlong a;\na = (Get_Current_Timestamp(  ) >> 32) ;\n'
+        expect(preprocessor(code)).toBe(result)
+    })
+    it('#define macro (complex)', () => {
+        const code = '#define DEF(top, bottom) (((top) << 8) | (bottom))\nlong a,b,c;\na = DEF(mdv(a,b, c), c) + DEF(22, 25);\n'
+        const result = '\nlong a,b,c;\na = (((mdv(a,b, c)) << 8) | (c)) + (((22) << 8) | (25));\n'
+        expect(preprocessor(code)).toBe(result)
+    })
+    it('#define macro (with define constant)', () => {
+        const code = '#define ONE n1\n#define DEF(top, bottom) (((top) << 8) | (bottom + ONE))\n#undef ONE\nlong a,b,c;\na = DEF(mdv(a,b, c), c);\n'
+        const result = '\n\n\nlong a,b,c;\na = (((mdv(a,b, c)) << 8) | (c + n1));\n'
+        expect(preprocessor(code)).toBe(result)
+    })
+
     it('#ifdef test', () => {
         const code = '#define debug\n#ifdef debug\n#pragma maxAuxVars 1\n#endif\nlong a; a++;'
         const result = '\n\n#pragma maxAuxVars 1\n\nlong a; a++;'
@@ -136,6 +157,42 @@ describe('preprocessor wrong code', () => {
     test('many #else', () => {
         expect(() => {
             const code = '#ifdef debug\n#pragma maxAuxVars 1\n#else\n#pragma maxAuxVars 5\n#else\n#pragma maxAuxVars 7\n#endif\nlong a; a++;'
+            preprocessor(code)
+        }).toThrowError(/^At line/)
+    })
+    test('wrong number of macro arguments', () => {
+        expect(() => {
+            const code = '#define DEF(top) ((top) << 8))\nlong a,b,c,n1;\na = DEF(b, c);'
+            preprocessor(code)
+        }).toThrowError(/^At line/)
+    })
+    test('error parsing macro arguments', () => {
+        expect(() => {
+            const code = '#define DEF(top) ((top) << 8)\nlong a,b,c,n1;\na = DEF(b();'
+            preprocessor(code)
+        }).toThrowError(/^At line/)
+    })
+    test('macro redefinition', () => {
+        expect(() => {
+            const code = '#define DEF(top) ((top) << 8)\n#define DEF(top, bottom) ((top) << 8) | (bottom))\nlong a,b,c,n1;\na = DEF(b);'
+            preprocessor(code)
+        }).toThrowError(/^At line/)
+    })
+    test('macro wrong numbers of arguments (empty)', () => {
+        expect(() => {
+            const code = '#define getCurrentBlock(  )  (Get_Block_Timestamp() >> 32)\n long a; a = getCurrentBlock(  s  );'
+            preprocessor(code)
+        }).toThrowError(/^At line/)
+    })
+    test('macro wrong numbers of arguments (empty, something)', () => {
+        expect(() => {
+            const code = '#define getCurrentBlock( , a )  (Get_Block_Timestamp(a) >> 32)\n long ll; ll = getCurrentBlock( ll , ll  );'
+            preprocessor(code)
+        }).toThrowError(/^At line/)
+    })
+    test('macro wrong numbers of arguments (something, empty)', () => {
+        expect(() => {
+            const code = '#define getCurrentBlock( a)  (Get_Block_Timestamp(a) >> 32)\n long ll; ll = getCurrentBlock( ll , );'
             preprocessor(code)
         }).toThrowError(/^At line/)
     })

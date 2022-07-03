@@ -14,6 +14,8 @@ To empower developers, allowing them to create complex and highly optimized smar
 
 ### Technical documentation:
 * [Basis](./1-Basis.md)
+* [Preprocessor directives](./1.2-Preprocessor-directives.md)
+* [Built-in functions](./1.5-Built-in-functions.md)
 * [API Functions](./2-API-Pseudo-Code.md)
 * [Learning with examples](./3-Learning-with-examples.md)
 * [Functions repository](./4-Functions-repository.md)

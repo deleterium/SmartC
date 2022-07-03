@@ -3,10 +3,6 @@ import { DECLARATION_TYPES, MEMORY_SLOT, SENTENCES, TOKEN, TYPE_DEFINITIONS } fr
 export type SC_CONFIG = {
     /** Hardcoded compiler version!!! */
     compilerVersion: string,
-    /** Add random string to labels: #pragma enableRandom  */
-    enableRandom: boolean,
-    /** Add line number to labels: #pragma enableLineLabels */
-    enableLineLabels: boolean,
     /** Number of auxiliary vars to be declared by compiler: #pragma maxAuxVars */
     maxAuxVars: number,
     /** Number of auxiliary Constants to be declared by compiler: #pragma maxConstVars */
@@ -15,25 +11,28 @@ export type SC_CONFIG = {
     optimizationLevel: number,
     /** Try to reuse variable at left side of assigment: #pragma reuseAssignedVar */
     reuseAssignedVar: boolean,
-    /** Default version for user's programs. If not on a dev version, user must
-     * specify #pragma version to set source code version */
-    sourcecodeVersion: string,
-    /** Warning to error: #pragma warningToError */
-    warningToError: boolean,
     /** Support for API Functions: #include APIFunctions */
     APIFunctions: boolean,
+    /** Support for API Functions with fixed numbers: #include fixedAPIFunctions */
+    fixedAPIFunctions: boolean,
     /** Program Name: #program name */
     PName: string,
     /** Program description: #program description */
     PDescription: string,
     /** Program activationAmount: #program activationAmount */
     PActivationAmount: string,
+    /** Program creator: Used only in SC-Simulator. Ignored in machine code output. */
+    PCreator: string,
+    /** Program contract ID: Used only in SC-Simulator. Ignored in machine code output. */
+    PContract: string,
     /** User stack pages to be available: #program userStackPages */
     PUserStackPages: number,
     /** Code stack pages to be available:: #program codeStackPages */
     PCodeStackPages: number,
-    /** Adds a comment in generated assembly code with the respective C source code line number  */
-    outputSourceLineNumber: boolean,
+    /** Machine code hash id to be matched during compilation: #program codeHashId */
+    PCodeHashId: string,
+    /** Adds a comment in generated assembly code with source code line number and content */
+    verboseAssembly: boolean,
 }
 
 export type SC_MACRO = {
@@ -68,6 +67,8 @@ export type SC_FUNCTION = {
 }
 
 export type SC_GLOBAL = {
+    /** Definitions for Built-In functions */
+    BuiltInFunctions: SC_FUNCTION[]
     /** Definitions for API functions */
     APIFunctions: SC_FUNCTION[]
     /** macros values */
@@ -79,6 +80,8 @@ export type SC_GLOBAL = {
 }
 
 export type CONTRACT = {
+    /** Source code splitted by lines */
+    sourceLines: string[],
     /** Global statements and information */
     Global: SC_GLOBAL,
     /** Declared functions */
@@ -89,9 +92,13 @@ export type CONTRACT = {
     typesDefinitions: TYPE_DEFINITIONS[],
     /** Compiler configurations */
     Config: SC_CONFIG,
+    /** Compilation warnings */
+    warnings: string[],
 }
 
 export type MACHINE_OBJECT = {
+    /** Warnings found */
+    Warnings: string
     /** Number of data pages (Memory size) */
     DataPages: number
     /** Number of code stack pages (code stack size) */
@@ -115,6 +122,8 @@ export type MACHINE_OBJECT = {
         label: string
         address: number
     }[]
+    /** Program assembly source code */
+    AssemblyCode: string
     /** Program name */
     PName: string
     /** Program description */

@@ -18,6 +18,7 @@ export default function setupGenCode (
         isLeftSideOfAssignment: false,
         isConstSentence: false,
         hasVoidArray: false,
+        warnings: [],
         isTemp: auxvarsIsTemp,
         getNewRegister: auxvarsGetNewRegister,
         freeRegister: auxvarsFreeRegister,
@@ -47,6 +48,7 @@ export default function setupGenCode (
         validateReturnedVariable(CodeGenInfo.InitialAST, code.SolvedMem)
         code.asmCode += AuxVars.postOperations
         Globals.jumpId = AuxVars.jumpId
+        Globals.Program.warnings.push(...AuxVars.warnings)
         // Check throw conditions that were out-of-scope
         const analysyCode = code.asmCode.split('\n')
         code.asmCode = analysyCode.map(line => {
@@ -62,14 +64,13 @@ export default function setupGenCode (
     }
 
     function validateReturnedVariable (InitAST: AST, RetObj: MEMORY_SLOT) {
-        if (Globals.Program.Config.warningToError &&
-                CodeGenInfo.initialJumpTarget === undefined &&
+        if (CodeGenInfo.initialJumpTarget === undefined &&
                 RetObj.type === 'register') {
             if ((InitAST.type === 'unaryASN' && InitAST.Operation.value !== '*') ||
                     (InitAST.type === 'binaryASN' &&
                         (InitAST.Operation.type === 'Comparision' || InitAST.Operation.type === 'Operator'))) {
                 throw new Error(`At line: ${InitAST.Operation.line}. ` +
-                    'Warning: Operation returning a value that is not being used.')
+                    'Operation returning a value that is not being used. Use casting to (void) to avoid this error.')
             }
         }
     }
@@ -77,17 +78,18 @@ export default function setupGenCode (
     function auxvarsIsTemp (loc: number) : boolean {
         if (loc === -1) return false
         const id = AuxVars.registerInfo.find(OBJ => OBJ.Template.address === loc)
-        if (id?.inUse === true) {
-            return true
+        if (id === undefined) {
+            return false
         }
-        return false
+        return true
     }
 
     function auxvarsGetNewRegister (line: number = sentenceLine): MEMORY_SLOT {
         const id = AuxVars.registerInfo.find(OBJ => OBJ.inUse === false)
         if (id === undefined) {
             throw new Error(`At line: ${line}. ` +
-                "No more registers available. Try to reduce nested operations or increase 'maxAuxVars'.")
+                'No more registers available. ' +
+                `Increase the number with '#pragma maxAuxVars ${Globals.Program.Config.maxAuxVars + 1}' or try to reduce nested operations.`)
         }
         id.inUse = true
         return deepCopy(id.Template)
@@ -131,12 +133,12 @@ export default function setupGenCode (
         return deepCopy(MemFound)
     }
 
-    function auxvarsGetMemoryObjectByLocation (loc: number|string, line: number = sentenceLine): MEMORY_SLOT {
+    function auxvarsGetMemoryObjectByLocation (loc: number|bigint|string, line: number = sentenceLine): MEMORY_SLOT {
         let addr:number
-        if (typeof loc === 'number') {
-            addr = loc
-        } else {
-            addr = parseInt(loc, 16)
+        switch (typeof loc) {
+        case 'number': addr = loc; break
+        case 'string': addr = parseInt(loc, 16); break
+        default: addr = Number(loc)
         }
         const FoundMemory = AuxVars.memory.find(obj => obj.address === addr)
         if (FoundMemory === undefined) {
@@ -147,15 +149,8 @@ export default function setupGenCode (
 
     function auxvarsGetNewJumpID (line: number) : string {
         // This code shall be equal GlobalCodeVars.getNewJumpID()
-        let id = ''
-        if (Globals.Program.Config.enableLineLabels) {
-            id += line + '_'
-        }
-        if (Globals.Program.Config.enableRandom === true) {
-            return id + Math.random().toString(36).substr(2, 5)
-        }
         AuxVars.jumpId++
-        return id + AuxVars.jumpId.toString(36)
+        return AuxVars.jumpId.toString(36)
     }
 
     return setupGenCodeMain()

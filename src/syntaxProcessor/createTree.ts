@@ -1,4 +1,4 @@
-import { assertNotUndefined } from '../repository/repository'
+import { assertNotUndefined, isDeclarationType } from '../repository/repository'
 import { AST, LOOKUP_ASN, TOKEN } from '../typings/syntaxTypes'
 
 /**
@@ -137,12 +137,37 @@ function VariableToAST (tokens: TOKEN[]) : AST {
 }
 
 function CodeCaveToAST (tokens: TOKEN[]) : AST {
-    if (tokens.length !== 1) {
-        throw new Error(`At line: ${tokens[0].line}. Modifiers not implemented on '${tokens[0].type}'.`)
+    if (tokens.length === 1) {
+        const newAST = createTree(tokens[0].params)
+        delete tokens[0].params
+        return newAST
     }
-    const newAST = createTree(tokens[0].params)
-    delete tokens[0].params
-    return newAST
+    if (tokens[0].params === undefined) {
+        return createTree(tokens.slice(1))
+    }
+    if (tokens.length === 2) {
+        const remainingAST = createTree(tokens.slice(1))
+        const askedType = tokens[0].params.reduce((previous, Tkn) => {
+            // Get declaration for type casting from params!
+            if (Tkn.type === 'Keyword') return previous + Tkn.value
+            if (Tkn.value === '*') return previous + '_ptr'
+            throw new Error(`At line: ${tokens[0].line}. Unexpected '${Tkn.type}' with value '${Tkn.value}' during type casting.`)
+        }, '')
+        if (!isDeclarationType(askedType)) {
+            throw new Error(`At line: ${tokens[0].line}. Unexpected declaration '${askedType}' during type casting.`)
+        }
+        if (askedType === 'struct') {
+            throw new Error(`At line: ${tokens[0].line}. 'struct' is not allowed for type casting.`)
+        }
+        tokens[0].declaration = askedType
+        delete tokens[0].params
+        return {
+            type: 'unaryASN',
+            Operation: tokens[0],
+            Center: remainingAST
+        }
+    }
+    throw new Error(`At line: ${tokens[0].line}. Modifiers not implemented on '${tokens[0].type}'.`)
 }
 
 function BinariesToAST (tokens: TOKEN[], operatorLoc: number) : AST {
@@ -168,7 +193,6 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
         ` Probable missing ';' before keyword ${tokens[keywordLoc].value}.`)
     }
     switch (tokens[0].value) {
-    case 'sleep':
     case 'goto':
     case 'const':
     case 'sizeof':
@@ -191,6 +215,7 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
         }
         return { type: 'endASN', Token: tokens[0] }
     case 'long':
+    case 'fixed':
     case 'void':
     case 'struct':
         if (tokens.length === 1) {
@@ -208,6 +233,7 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
             Center: createTree(tokens.slice(1))
         }
     case 'return':
+    case 'sleep':
         if (tokens.length === 1) {
             return { type: 'endASN', Token: tokens[0] }
         }

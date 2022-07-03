@@ -1,21 +1,27 @@
-[Back](./)
+[Back](./README.md)
 
 # API Functions pseudo code operations
+Ok, you are unleashing the full potencial of machine code. To use this functions, you must include them by `#include APIFunctions` for regular functions or `#include fixedAPIFunctions` if using the fixed version of them (prepended by 'F_').
 
 # Keep in mind!
-### A and B registers
+### A and B superregisters
 They are 256-bit registers and can be used as one big number (called A or B) or in 64-bit pieces (called A1..A4 or B1..B4). A1 is the least significative long. They have the same "mixed" mode as long vars: unsigned for bit operations and signed for aritmetics.
 
 ### Timestamps
 They are actually two integer 32-bit values joined in a 64-bit value. The most significant part (MSP) is the blockheight and the LSP is the transaction order when the block was forged.
+Do not be confused by transactions timestamps, that are the number of seconds since the genesis block (11-oct-2014 02:00:00 UTC)
 
 ### Messages
 An encrypted message to contract is the same as not sending a message.
+Messages are read and sent in batches of 32 bytes, they are called pages. The superregisters are used to store these values.
 
-# Pseudo code
-The code below is not valid for SmartC, but can give an idea what is happening when an API function is called.
+# Pseudo code for regular functions
+The code below is not valid for SmartC, but can give an idea what is happening when an API function is called. Good luck!
+<details>
+<summary>
 
-## Get/Set functions for "pseudo registers"
+## Get/Set functions for "superregisters" 
+</summary>
 
 ``` c
 long Get_A1(void){
@@ -127,7 +133,6 @@ void Clear_A(void) {
     A1 = A2 = A3 = A4 = 0;
 }
 
-
 void Clear_B(void) {
     // Assembly name: clear_B
     B1 = B2 = B3 = B4 = 0;
@@ -157,20 +162,16 @@ void Copy_B_From_A(void) {
 
 long Check_A_Is_Zero(void) {
     // Assembly name: check_A_Is_Zero
-    /* Note that boolean logic is inverted.
-     * Try not use this function */
     if (A1 == 0 && A2 == 0 && A3 == 0 && A4 == 0)
-        return 0;
-    return 1;
+        return 1;
+    return 0;
 }
 
 long Check_B_Is_Zero(void) {
     // Assembly name: check_B_Is_Zero
-    /* Note that boolean logic is inverted.
-     * Try not use this function */
     if (B1 == 0 && B2 == 0 && B3 == 0 && B4 == 0)
-        return 0;
-    return 1;
+        return 1;
+    return 0;
 }
 
 long Check_A_Equals_B(void) {
@@ -286,8 +287,12 @@ void Div_B_By_A(void) {
     A = B / A;
 }
 ```
+</details>
+<details>
+<summary>
 
 ## Functions that perform hash operations
+</summary>
 
 ``` c
 void MD5_A_To_B(void) {
@@ -337,9 +342,18 @@ long Check_SHA256_A_With_B(void) {
         return 1;
     return 0;
 }
+
+long Check_Sig_B_With_A(void) {
+    // Assembly name: Check_Sig_B_With_A
+    // Checks if the signature of [AT ID, B2, B3, B4] can be verified with the message attached on tx id in A1 (page in A2) for account id in A3
+}
 ```
+</details>
+<details>
+<summary>
 
 ## Generic functions that get block and tx info
+</summary>
 
 ``` c
 long Get_Block_Timestamp(void) {
@@ -359,6 +373,8 @@ long Get_Last_Block_Timestamp(void) {
 
 void Put_Last_Block_Hash_In_A(void) {
     // Assembly name: put_Last_Block_Hash_In_A
+    // For randomness source use the function Put_Last_Block_GSig_In_A.
+    // It is less prone to manipulations.
     A = Blockchain.LastBlock.Hash;
 }
 
@@ -372,25 +388,29 @@ void A_To_Tx_After_Timestamp(long value) {
 
 long Get_Type_For_Tx_In_A(void) {
     // Assembly name: get_Type_for_Tx_in_A
+    // Transaction types can be found via http api request: 'getConstants'
     if (Blockchain.IsThisTxValid(A1) == false)
         return -1;
-    if (Blockchain.IsThereMessageinTx(A1) == false)
-        return 0;
-    return 1;
+    return Blockchain.GetTransaction(A1).type;
 }
 
 long Get_Amount_For_Tx_In_A(void) {
     // Assembly name: get_Amount_for_Tx_in_A
-    if (Blockchain.IsThisTxValid(A1) == false)
+    asset = B2;
+    tx = Blockchain.GetTransactionWithId(A1);
+    if (!tx)
         return -1;
-    return Blockchain.GetAmountFromTx(A1) - ContractActivationAmount;
+    if (asset == 0 )
+        return tx.amount - ContractActivationAmount;
+    return tx.GetQuantityFromAsset(asset);
 }
 
 long Get_Timestamp_For_Tx_In_A(void) {
     // Assembly name: get_Timestamp_for_Tx_in_A
     if (Blockchain.IsThisTxValid(A1) == false)
         return -1;
-    return Blockchain.GetTimestampFromTx(A1) - ContractActivationAmount;}
+    return Blockchain.GetTimestampFromTx(A1);
+}
 
 long Get_Random_Id_For_Tx_In_A(void) {
     // Assembly name: get_Ticket_Id_for_Tx_in_A
@@ -403,12 +423,11 @@ long Get_Random_Id_For_Tx_In_A(void) {
 
 void Message_From_Tx_In_A_To_B(void) {
     // Assembly name: message_from_Tx_in_A_to_B
-    if (Blockchain.IsThisTxValid(A1) == false)
-        return -1;
     B = 0;
- 
+    if (Blockchain.IsThisTxValid(A1) == false)
+        return;
     if (Blockchain.IsThereMessageinTx(A1))
-        B = Blockchain.GetMessageFromTx(A1)
+        B = Blockchain.GetMessageFromTx(A1).AtPage(A2)
 }
 
 void B_To_Address_Of_Tx_In_A(void) {
@@ -421,16 +440,62 @@ void B_To_Address_Of_Tx_In_A(void) {
 void B_To_Address_Of_Creator(void) {
     // Assembly name: B_to_Address_of_Creator
     B = 0;
-    B1 = ContractCreator;
+    if (B2 == 0) {
+        B1 = ContractCreator;
+        return;
+    }
+    if (Blockchain.IsAT(B2)) {
+        B1 = Blockchain.GetCreatorFromAT(B2);
+    }
+}
+
+long Get_Code_Hash_Id(void) {
+    // Assembly name: Get_Code_Hash_Id
+    if (B2 == 0) {
+        return ThisContract.CodeHashId;
+    }
+    if (Blockchain.IsAT(B2)) {
+        return Blockchain.GetCodeHashIdFromAT(B2);
+    }
+    return 0;
+}
+
+void B_To_Assets_Of_Tx_In_A(void) {
+    // Assembly name: B_To_Assets_Of_Tx_In_A
+    B = 0;
+    tx = Blockchain.GetTransactionWithId(A1);
+    if (!tx) {
+        return;
+    }
+    if (!HasAssets(tx)) {
+        return;
+    }
+    B1 = tx.asset[0].id;
+    if (tx.asset[1]) {
+        B2 = tx.asset[1].id;
+    }
+    if (tx.asset[2]) {
+        B3 = tx.asset[2].id;
+    }
+    if (tx.asset[3]) {
+        B4 = tx.asset[3].id;
+    }
 }
 ```
+</details>
+<details>
+<summary>
 
 ## Generic functions that check balances and perform ops
+</summary>
 
 ``` c
 long Get_Current_Balance(void) {
     // Assembly name: get_Current_Balance
-    return Blockchain.GetMyBalanceNow();
+    if (B2 == 0) {
+        return Blockchain.GetMyBalanceNow();
+    }
+    return Blockchain.GetMyBalanceFromAsset(B2);
 }
 
 long Get_Previous_Balance(void) {
@@ -438,13 +503,25 @@ long Get_Previous_Balance(void) {
     return Blockchain.GetMyBalanceLastTimeIWasFrozen();
 }
 
-void Send_To_Address_In_B(long value) {
+void Send_To_Address_In_B(long amountOrQuantity) {
     // Assembly name: send_to_Address_in_B
-    long ContractBalance = Blockchain.GetMyBalanceNow();
-    if (value > ContractBalance)
-        Blockchain.SendAllMyBalanceTo(B1);
+    recipient = B1;
+    asset = B2;
+    if (asset == 0) {
+        // Send Signa
+        long ContractBalance = Blockchain.GetMyBalanceNow();
+        if (amountOrQuantity > ContractBalance)
+            Blockchain.SendAllMyBalanceTo(recipient);
+        else
+            Blockchain.SendBalanceTo(amountOrQuantity, recipient);
+        return;
+    }
+    // Send asset
+    long ContractQuantity = Blockchain.GetMyBalanceFromAsset(asset);
+    if (amountOrQuantity > ContractQuantity)
+        Blockchain.SendAllMyBalanceFromAssetTo(asset, recipient);
     else
-        Blockchain.SendBalanceTo(value, B1);
+        Blockchain.SendBalanceFromAssetTo(asset, recipient, amountOrQuantity);
 }
 
 void Send_All_To_Address_In_B(void) {
@@ -464,13 +541,287 @@ void Send_Old_To_Address_In_B(void) {
 
 void Send_A_To_Address_In_B(void) {
     // Assembly name: send_A_to_Address_in_B
-     Blockchain.SendMessageInATo(B1);
+    pendingMessage = ThisContract.GetPendingMessageTo(B1);
+    if (pendingMessage) {
+        pendingMessage += [A1..A4];
+        return;
+    }
+    thisContract.AddMessageTo(B1, [A1..A4])
 }
 
 long Add_Minutes_To_Timestamp(long timestamp,long minutes) {
     // Assembly name: add_Minutes_to_Timestamp
     return ((minutes/4) << 32) + timestamp
 }
-```
 
-[Back](./)
+long Get_Map_Value_Keys_In_A(void) {
+    // Assembly name: Get_Map_Value_Keys_In_A
+    if (A3 == 0) {
+        if (isSet(ThisContract.map[A1][A2])) {
+            return ThisContract.map[A1][A2];
+        }
+        return 0;
+    }
+    if (IsAT(A3)) {
+        otherContract = Blockchain.GetContractFromId(A3);
+        if (isSet(otherContract.map[A1][A2])) {
+            return otherContract.map[A1][A2];
+        }
+    }
+    return 0;
+}
+
+void Set_Map_Value_Keys_In_A(void) {
+    // Assembly name: Set_Map_Value_Keys_In_A
+    ThisContract.map[A1][A2] = A4;
+}
+
+long Issue_Asset(void) {
+    // Assembly name: Issue_Asset
+    // This API costs 150 signa to be executed! Returns the assetId from created asset.
+    assetName = [A1, A2] // Limited to 10 chars
+    return Blockchain.IssueNewAssetWithName(assetName);
+}
+
+void Mint_Asset(void) {
+    // Assembly name: Mint_Asset
+    quantity = B1;
+    asset = B2;
+    if (!WasIssuedByMe(asset))
+        return;
+    ThisContract.BalanceFromAsset(B2) += quantity;
+}
+
+void Distribute_To_Asset_Holders(void) {
+    // Assembly name: Distribute_To_Asset_Holders
+    // amount refers to Signa values, quantity refers to asset values
+    // holders refers to asset to used in distribution calculation
+    // toDistribute refers to asset that will be distributed.
+    holdersAssetMinimumQuantity = B1
+    holdersAsset = B2
+    amountToDistribute = A1
+    assetToDistribute = A3
+    quantityToDistribute = A4
+
+    /*
+    1) Distribute 'amountToDistribute' Signa to holders of asset 'holdersAsset'
+       that have at least 'holdersAssetMinimumQuantity' in account.
+    2) Distribute 'quantityToDistribute' from 'assetToDistribute' to holders of
+       asset 'holdersAsset' that have at least 'holdersAssetMinimumQuantity'
+       in account.
+    Notes:
+    * Treasury accounts will not be included in this distribuition.
+    * This distribution is done thru indirect transaction.
+    * The 'assetToDistribute' and 'holdersAsset' can be the same
+    * Only the free quantity will be taken in account for distribution. Quantity
+      frozen in sell orders will be disregarded.
+    * All values will be rounded down (QNT or NQT). This remaining value will be added in
+      the transaction to the holder that has the greatest quantity.
+    */
+}
+
+long Get_Asset_Holders_Count(void) {
+    // Assembly name: Get_Asset_Holders_Count
+    mininumQuantity = B1;
+    asset = B2;
+
+    /*
+    1) Return the number of accounts that have at least 'mininumQuantity' of
+       'asset'. Does not consider treasury account.
+    */
+}
+
+long Get_Activation_Fee(void) {
+    // Assembly name: Get_Activation_Fee
+    if (B2 == 0) {
+        return ThisContract.ActivationAmount;
+    }
+    if (Blockchain.IsAT(B2)) {
+        return Blockchain.GetActivationAmountFromAT(B2);
+    }
+    return 0;
+}
+
+void Put_Last_Block_GSig_In_A(void) {
+    // Assembly name: Put_Last_Block_GSig_In_A
+    // Generation Signature is a better random source to be used.
+    A = Blockchain.LastBlock.GenerationSignature;
+}
+
+long Get_Asset_Circulating(void) {
+    // Assembly name: Get_Asset_Circulating
+    asset = B2;
+
+    /*
+    1) Return the circulating quantity of 'asset', excluding the quantity in
+       treasury account.
+    */
+}
+```
+</details>
+<details>
+<summary>
+
+# Pseudo code for fixed version functions
+</summary>
+
+``` c
+// Get/Set functions for "superregisters" 
+
+fixed F_Get_A1(void){
+    // Assembly name: get_A1
+    return A1;
+}
+
+fixed F_Get_A2(void) {
+    // Assembly name: get_A2
+    return A2;
+}
+
+fixed F_Get_A3(void) {
+    // Assembly name: get_A3
+    return A3;
+}
+
+fixed F_Get_A4(void) {
+    // Assembly name: get_A4
+    return A4;
+}
+
+fixed F_Get_B1(void) {
+    // Assembly name: get_B1
+    return B1;
+}
+
+fixed F_Get_B2(void) {
+    // Assembly name: get_B2
+    return B2;
+}
+
+fixed F_Get_B3(void) {
+    // Assembly name: get_B3
+    return B3;
+}
+
+fixed F_Get_B4(void) {
+    // Assembly name: get_B4
+    return B4;
+}
+
+void F_Set_A1(fixed value) {
+    // Assembly name: set_A1
+    A1 = value;
+}
+
+void F_Set_A2(fixed value) {
+    // Assembly name: set_A2
+    A2 = value;
+}
+
+void F_Set_A3(fixed value) {
+    // Assembly name: set_A3
+    A3 = value;
+}
+
+void F_Set_A4(fixed value) {
+    // Assembly name: set_A4
+    A4 = value;
+}
+
+void F_Set_B1(fixed value) {
+    // Assembly name: set_B1
+    B1 = value;
+}
+
+void F_Set_B2(fixed value) {
+    // Assembly name: set_B2
+    B2 = value;
+}
+
+void F_Set_B3(fixed value) {
+    // Assembly name: set_B3
+    B3 = value;
+}
+
+void F_Set_B4(fixed value) {
+    // Assembly name: set_B4
+    B4 = value;
+}
+
+
+// Generic functions that get block and tx info
+
+fixed F_Get_Amount_For_Tx_In_A(void) {
+    // Assembly name: get_Amount_for_Tx_in_A
+    asset = B2;
+    tx = Blockchain.GetTransactionWithId(A1);
+    if (!tx)
+        return -1;
+    if (asset == 0 )
+        return tx.amount - ContractActivationAmount;
+    return tx.GetQuantityFromAsset(asset);
+}
+
+
+// Generic functions that check balances and perform ops
+
+fixed F_Get_Current_Balance(void) {
+    // Assembly name: get_Current_Balance
+    if (B2 == 0) {
+        return Blockchain.GetMyBalanceNow();
+    }
+    return Blockchain.GetMyBalanceFromAsset(B2);
+}
+
+void F_Send_To_Address_In_B(fixed amountOrQuantity) {
+    // Assembly name: send_to_Address_in_B
+    recipient = B1;
+    asset = B2;
+    if (asset == 0) {
+        // Send Signa
+        long ContractBalance = Blockchain.GetMyBalanceNow();
+        if (amountOrQuantity > ContractBalance)
+            Blockchain.SendAllMyBalanceTo(recipient);
+        else
+            Blockchain.SendBalanceTo(amountOrQuantity, recipient);
+        return;
+    }
+    // Send asset
+    long ContractQuantity = Blockchain.GetMyBalanceFromAsset(asset);
+    if (amountOrQuantity > ContractQuantity)
+        Blockchain.SendAllMyBalanceFromAssetTo(asset, recipient);
+    else
+        Blockchain.SendBalanceFromAssetTo(asset, recipient, amountOrQuantity);
+}
+
+fixed F_Get_Map_Value_Keys_In_A(void) {
+    // Assembly name: Get_Map_Value_Keys_In_A
+    if (A3 == 0) {
+        if (isSet(ThisContract.map[A1][A2])) {
+            return ThisContract.map[A1][A2];
+        }
+        return 0;
+    }
+    if (IsAT(A3)) {
+        otherContract = Blockchain.GetContractFromId(A3);
+        if (isSet(otherContract.map[A1][A2])) {
+            return otherContract.map[A1][A2];
+        }
+    }
+    return 0;
+}
+
+fixed F_Get_Activation_Fee(void) {
+    // Assembly name: Get_Activation_Fee
+    if (B2 == 0) {
+        return ThisContract.ActivationAmount;
+    }
+    if (Blockchain.IsAT(B2)) {
+        return Blockchain.GetActivationAmountFromAT(B2);
+    }
+    return 0;
+}
+```
+</details>
+
+[Back](./README.md)

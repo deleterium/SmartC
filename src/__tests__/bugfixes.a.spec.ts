@@ -227,4 +227,46 @@ describe('Tests for bugfixes', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    it('should compile: bug 29 Must not reuse assigned var if it is array and present at both sides', () => {
+        const code = '#pragma optimizationLevel 0\nlong message[3];\nmessage[1] = (message[1] & 0x0707070000) >> 16;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare message\n^const SET @message #0000000000000004\n^declare message_0\n^declare message_1\n^declare message_2\n\nSET @r0 #0000000707070000\nAND @r0 $message_1\nSET @r1 #0000000000000010\nSHR @r0 $r1\nSET @message_1 $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: bug 29 Must reuse assigned var if it is struct and present at both sides', () => {
+        const code = '#pragma optimizationLevel 0\nstruct TXINFO { long txId, timestamp, deadline, sender; } currentTX; currentTX.deadline = currentTX.txId >> 1;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare currentTX_txId\n^declare currentTX_timestamp\n^declare currentTX_deadline\n^declare currentTX_sender\n\nSET @currentTX_deadline $currentTX_txId\nSET @r0 #0000000000000001\nSHR @currentTX_deadline $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    test('should throw: bug 30 Internal functions not setting right return type', () => {
+        expect(() => {
+            const code = '#include APIFunctions\nlong a, *b; b = Get_A1();'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: bug 31 It was allowed to set array item outside range', () => {
+        expect(() => {
+            const code = 'long a[4], b; a[4] = 25;'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    it('should compile: bug 32 Registers always registers even if not in use', () => {
+        const code = '#pragma optimizationLevel 0\nlong auxJ = 1; long auxTemp = 0; long squad;\n for (long auxI = 0; auxI < 3; auxI++) { r1 = squad & 0xFF; r1 &= 0xF; auxTemp += r1 * auxJ; auxJ *= 5; squad >>= 8; }'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare auxJ\n^declare auxTemp\n^declare squad\n^declare auxI\n\nSET @auxJ #0000000000000001\nCLR @auxTemp\nCLR @auxI\n__loop1_condition:\nSET @r0 #0000000000000003\nBGE $auxI $r0 :__loop1_break\n__loop1_start:\nSET @r0 #00000000000000ff\nAND @r0 $squad\nSET @r1 $r0\nSET @r0 #000000000000000f\nAND @r1 $r0\nMUL @r1 $auxJ\nADD @auxTemp $r1\nSET @r0 #0000000000000005\nMUL @auxJ $r0\nSET @r0 #0000000000000008\nSHR @squad $r0\n__loop1_continue:\nINC @auxI\nJMP :__loop1_condition\n__loop1_break:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: bug 33 Adding verbose assembly breaks some optimizations', () => {
+        const code = '#pragma verboseAssembly\n #pragma optimizationLevel 2\n long txid, creator;\n while (txid != 0) {\n if (getSender(txid) != creator) {\n continue;\n }\n creator++;\n }\n creator++;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare txid\n^declare creator\n\n^comment line 4  while (txid != 0) {\n__loop1_continue:\nBZR $txid :__loop1_break\n^comment line 5  if (getSender(txid) != creator) {\nFUN set_A1 $txid\nFUN B_to_Address_of_Tx_in_A\nFUN @r0 get_B1\nBNE $r0 $creator :__loop1_continue\n^comment line 6  continue;\n^comment line 8  creator++;\nINC @creator\nJMP :__loop1_continue\n__loop1_break:\n^comment line 10  creator++;\nINC @creator\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })

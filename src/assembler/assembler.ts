@@ -57,6 +57,14 @@ type ASM_OBJECT = {
     PUserStackPages: number
     /** Selected size for code stack */
     PCodeStackPages: number
+    /** Previous calculates codeHashId. If zero, it is ignored */
+    PCodeHashId: string
+    /** Line of codeHashId preprocessor instruction */
+    PCodeHashIdLine: number
+    /** Modified assembly source code */
+    assembledCode: string
+    /** Calculated codeHashId for this run */
+    codeHashId: string
     /** hexstring of compiled program */
     bytecode: string
     /** hexstring for memory starting values */
@@ -122,6 +130,7 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         { opCode: 0x16, name: 'MOD_DAT', size: 9, argsType: ['I', 'I'], regex: /^\s*MOD\s+@(\w+)\s+\$(\w+)\s*$/ },
         { opCode: 0x17, name: 'SHL_DAT', size: 9, argsType: ['I', 'I'], regex: /^\s*SHL\s+@(\w+)\s+\$(\w+)\s*$/ },
         { opCode: 0x18, name: 'SHR_DAT', size: 9, argsType: ['I', 'I'], regex: /^\s*SHR\s+@(\w+)\s+\$(\w+)\s*$/ },
+        { opCode: 0x19, name: 'POW_DAT', size: 9, argsType: ['I', 'I'], regex: /^\s*POW\s+@(\w+)\s+\$(\w+)\s*$/ }, // POW @var $var
         { opCode: 0x1a, name: 'JMP_ADR', size: 5, argsType: ['J'], regex: /^\s*JMP\s+:(\w+)\s*$/ },
         { opCode: 0x1b, name: 'BZR_DAT', size: 6, argsType: ['I', 'B'], regex: /^\s*BZR\s+\$(\w+)\s+:(\w+)\s*$/ },
         { opCode: 0x1e, name: 'BNZ_DAT', size: 6, argsType: ['I', 'B'], regex: /^\s*BNZ\s+\$(\w+)\s+:(\w+)\s*$/ },
@@ -136,7 +145,9 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         { opCode: 0x27, name: 'STZ_DAT', size: 5, argsType: ['I'], regex: /^\s*STZ\s+\$(\w+)\s*$/ },
         { opCode: 0x28, name: 'FIN_IMD', size: 1, argsType: [], regex: /^\s*FIN\s*$/ },
         { opCode: 0x29, name: 'STP_IMD', size: 1, argsType: [], regex: /^\s*STP\s*$/ },
+        { opCode: 0x2a, name: 'SLP_IMD', size: 1, argsType: [], regex: /^\s*SLP\s*$/ },
         { opCode: 0x2b, name: 'ERR_ADR', size: 5, argsType: ['J'], regex: /^\s*ERR\s+:(\w+)\s*$/ },
+        { opCode: 0x2c, name: 'MDV_DAT', size: 13, argsType: ['I', 'I', 'I'], regex: /^\s*MDV\s+@(\w+)\s+\$(\w+)\s+\$(\w+)\s*$/ }, // MDV @var $var $var
         { opCode: 0x30, name: 'SET_PCS', size: 1, argsType: [], regex: /^\s*PCS\s*$/ },
         { opCode: 0x32, name: 'EXT_FUN', size: 3, argsType: ['F'], regex: /^\s*FUN\s+(\w+)\s*$/ },
         { opCode: 0x33, name: 'EXT_FUN_DAT', size: 7, argsType: ['F', 'I'], regex: /^\s*FUN\s+(\w+)\s+\$(\w+)\s*$/ },
@@ -196,6 +207,7 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         { name: 'check_HASH160_A_with_B', apiCode: 0x0203, opCode: 0x35 },
         { name: 'SHA256_A_to_B', apiCode: 0x0204, opCode: 0x32 },
         { name: 'check_SHA256_A_with_B', apiCode: 0x0205, opCode: 0x35 },
+        { name: 'Check_Sig_B_With_A', apiCode: 0x0206, opCode: 0x35 },
         { name: 'get_Block_Timestamp', apiCode: 0x0300, opCode: 0x35 },
         { name: 'get_Creation_Timestamp', apiCode: 0x0301, opCode: 0x35 },
         { name: 'get_Last_Block_Timestamp', apiCode: 0x0302, opCode: 0x35 },
@@ -208,13 +220,24 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         { name: 'message_from_Tx_in_A_to_B', apiCode: 0x0309, opCode: 0x32 },
         { name: 'B_to_Address_of_Tx_in_A', apiCode: 0x030a, opCode: 0x32 },
         { name: 'B_to_Address_of_Creator', apiCode: 0x030b, opCode: 0x32 },
+        { name: 'Get_Code_Hash_Id', apiCode: 0x030c, opCode: 0x35 },
+        { name: 'B_To_Assets_Of_Tx_In_A', apiCode: 0x030d, opCode: 0x32 },
         { name: 'get_Current_Balance', apiCode: 0x0400, opCode: 0x35 },
         { name: 'get_Previous_Balance', apiCode: 0x0401, opCode: 0x35 },
         { name: 'send_to_Address_in_B', apiCode: 0x0402, opCode: 0x33 },
         { name: 'send_All_to_Address_in_B', apiCode: 0x0403, opCode: 0x32 },
         { name: 'send_Old_to_Address_in_B', apiCode: 0x0404, opCode: 0x32 },
         { name: 'send_A_to_Address_in_B', apiCode: 0x0405, opCode: 0x32 },
-        { name: 'add_Minutes_to_Timestamp', apiCode: 0x0406, opCode: 0x37 }
+        { name: 'add_Minutes_to_Timestamp', apiCode: 0x0406, opCode: 0x37 },
+        { name: 'Get_Map_Value_Keys_In_A', apiCode: 0x0407, opCode: 0x35 },
+        { name: 'Set_Map_Value_Keys_In_A', apiCode: 0x0408, opCode: 0x32 },
+        { name: 'Issue_Asset', apiCode: 0x0409, opCode: 0x35 },
+        { name: 'Mint_Asset', apiCode: 0x040a, opCode: 0x32 },
+        { name: 'Distribute_To_Asset_Holders', apiCode: 0x040b, opCode: 0x32 },
+        { name: 'Get_Asset_Holders_Count', apiCode: 0x040c, opCode: 0x35 },
+        { name: 'Get_Activation_Fee', apiCode: 0x040d, opCode: 0x35 },
+        { name: 'Put_Last_Block_GSig_In_A', apiCode: 0x040e, opCode: 0x32 },
+        { name: 'Get_Asset_Circulating', apiCode: 0x040f, opCode: 0x35 }
     ]
     const AsmObj: ASM_OBJECT = {
         memory: [],
@@ -225,6 +248,10 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         PActivationAmount: '',
         PUserStackPages: 0,
         PCodeStackPages: 0,
+        PCodeHashId: '',
+        PCodeHashIdLine: -1,
+        assembledCode: '',
+        codeHashId: '',
         bytecode: '',
         bytedata: ''
     }
@@ -234,12 +261,11 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         // process line by line
         const line = assemblyCode.split('\n')
         // first pass, fill address, opcodes, apicodes, constants
-        line.forEach((codeLine, idx) => {
+        AsmObj.code = line.map((codeLine, idx) => {
             for (const CurrRule of opCodeTable) {
                 const parts = CurrRule.regex.exec(codeLine)
                 if (parts !== null) {
-                    process(parts, CurrRule)
-                    return
+                    return process(parts, CurrRule, idx)
                 }
             }
             throw new Error(`assembler() error #1. No rule found to process line ${idx}: "${codeLine}".`)
@@ -262,6 +288,16 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         // last pass, join all contents in little endian notation (code and data)
         AsmObj.code.forEach(finishHim)
         AsmObj.bytedata = fatality(AsmObj.memory)
+        // codeHashId calculation and checks
+        AsmObj.codeHashId = hashMachineCode(AsmObj.bytecode)
+        if (AsmObj.PCodeHashId === '0') {
+            AsmObj.PCodeHashId = AsmObj.codeHashId
+            line[AsmObj.PCodeHashIdLine] = `^program codeHashId ${AsmObj.codeHashId}`
+        }
+        if (AsmObj.PCodeHashId !== '' && AsmObj.PCodeHashId !== AsmObj.codeHashId) {
+            throw new Error(`assembler() error #8. This compilation did not produce expected machine code hash id. Maybe the source code was changed or the program need to be compiled in another version of SmartC compiler. Code hash id expected: ${AsmObj.PCodeHashId}, generated: ${AsmObj.codeHashId}.`)
+        }
+        AsmObj.assembledCode = line.join('\n')
         return buildRetObj()
     }
 
@@ -275,30 +311,29 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
     }
 
     /** Process one matched instruction */
-    function process (parts: RegExpExecArray, Instruction: OPCODE_RULE) {
+    function process (parts: RegExpExecArray, Instruction: OPCODE_RULE, line: number): CODE_INSTRUCTION {
         // Create a new object
         const CodeObj = genCodeInstr()
         CodeObj.source = parts[0]
         switch (Instruction.opCode) {
         case 0xF0:
             // blank line
-            return
+            return CodeObj
         case 0xF1:
             // label:
             CodeObj.station = parts[1]
-            AsmObj.code.push(CodeObj)
-            return
+            return CodeObj
         case 0xF2:
             // '^comment user_comment'
-            return
+            return CodeObj
         case 0xF3:
             // '^declare varName'
             getMemoryAddress(parts[1])
-            return
+            return CodeObj
         case 0xF4:
             // '^const SET @(varName) #(hex_content)'
             AsmObj.memory[getMemoryAddress(parts[1])].value = BigInt('0x' + parts[2])
-            return
+            return CodeObj
         case 0xF5:
             // '^program type information'
             switch (parts[1]) {
@@ -317,10 +352,18 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
             case 'codeStackPages':
                 AsmObj.PCodeStackPages = Number(parts[2].trim())
                 break
+            case 'codeHashId':
+                AsmObj.PCodeHashId = parts[2].trim()
+                AsmObj.PCodeHashIdLine = line
+                break
+            case 'creator':
+            case 'contract':
+                // Reserved for use in SC-Simulator. Do nothing here
+                break
             default:
                 throw new Error(`assembler() error #7. Unknow '^program' directive: '${parts[1]}'`)
             }
-            return
+            return CodeObj
         }
         CodeObj.size = Instruction.size
         CodeObj.instructionValues.push({ type: 'O', value: BigInt(Instruction.opCode) })
@@ -367,7 +410,7 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
                 throw new Error('Internal error.')
             }
         }
-        AsmObj.code.push(CodeObj)
+        return CodeObj
     }
 
     /** Returns a skeleton code instruction object */
@@ -491,18 +534,20 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         }
         const datapages = Math.ceil(AsmObj.memory.length / 32)
         const codepages = Math.ceil(AsmObj.bytecode.length / (32 * 16))
-        const minimumfee = (cspages + uspages + datapages + codepages) * 7350000
+        const minimumfee = (cspages + uspages + datapages + codepages) * 10000000
         return {
+            Warnings: '',
             DataPages: datapages,
             CodeStackPages: cspages,
             UserStackPages: uspages,
             CodePages: codepages,
             MinimumFeeNQT: minimumfee.toString(10),
             ByteCode: AsmObj.bytecode,
-            MachineCodeHashId: hashMachineCode(AsmObj.bytecode),
+            MachineCodeHashId: AsmObj.codeHashId,
             ByteData: AsmObj.bytedata,
             Memory: AsmObj.memory.map(Obj => Obj.name),
             Labels: AsmObj.labels,
+            AssemblyCode: AsmObj.assembledCode,
             PName: AsmObj.PName,
             PDescription: AsmObj.PDescription,
             PActivationAmount: AsmObj.PActivationAmount

@@ -1,4 +1,4 @@
-[Back](./)
+[Back](./README.md)
 
 ### Operators precedence
 Following table presents operators precedence order that are [based on C](https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence) but with some simplifications.  When two or more symbols with same precedence are in an expression, the operations will be evaluated from left to right, with exception for unary operators, assignment and keyword. Example: `a=16/4/4` will be evaluated as `a=(16/4)/4`, just like in C. If in doubt, use parenthesis!
@@ -15,7 +15,7 @@ Following table presents operators precedence order that are [based on C](https:
 | 7 | `&`   `^`   `|` | Bitwise AND XOR OR | Left-to-right |
 | 8 | `&&`   | Logical AND | Left-to-right |
 | 9 | `||`   | Logical OR | Left-to-right |
-| 10 | `=`   `+=`   `-=`   `*=`   `/=`   `%=`   `&=`   `\=`   `;=`   `^=`   `<<=`   `>>=` | Assignment operators| Right-to-left |
+| 10 | `=`   `+=`   `-=`   `/=`   `*=`   `%=`   `&=`   `^=`   `|=`   `<<=`   `>>=` | Assignment operators| Right-to-left |
 | 11 | `,`  | Delimiter, comma | Left-to-right |
 | 12 | `;` `keywords`  | Terminator, semi, keywords other than sizeof | Right-to-left |
 
@@ -34,7 +34,7 @@ Tokens are divided in groups and later on checked if their combinations are synt
 | UnaryOperator | `!`   `~` | Tokens that are undoubtly unary operators and have no other interpretation. |
 | SetUnaryOperator | `++`   `--` | Special unary operations with same meaning in C - pre/post increment/decrement |
 | Assignment | `=` | Common assignment operation |
-| SetOperator | `+=`   `-=`   `/=`   `*=`   `%=`   `<<=`   `>>=`   `&=`   `|=` | Special assignment operations |
+| SetOperator | `+=`   `-=`   `/=`   `*=`   `%=`   `&=`   `^=`   `|=`   `<<=`   `>>=` | Special assignment operations |
 | Comparision | `==`   `<=`   `<`   `>`   `>=`   `!=`   `&&`   `||` | Logical comparisions operations |
 | CheckOperator | `+`   `-`   `*`   `&` | Tokens that have two meanings and need to be checked agains previous tokens to know their behaviour. After parsed they are treated as UnaryOperator or Operator |
 | Arr | `[expr]` | Representation of an array index. Must have a variable before it. |
@@ -48,4 +48,4 @@ Tokens are divided in groups and later on checked if their combinations are synt
 ### Internal object structure
 Please refer to typescript source code for details.
 
-[Back](./)
+[Back](./README.md)

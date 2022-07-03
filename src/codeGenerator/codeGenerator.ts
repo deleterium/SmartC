@@ -17,20 +17,14 @@ export default function codeGenerator (Program: CONTRACT) {
         latestLoopId: [],
         jumpId: 0,
         assemblyCode: '',
+        errors: '',
+        warnings: '',
         currFunctionIndex: -1,
         currSourceLine: 0,
         getNewJumpID: function (line: number) {
             // Any changes here, also change function auxvarsGetNewJumpID
-            let id = ''
-            if (this.Program.Config.enableLineLabels) {
-                id += line + '_'
-            }
-            if (this.Program.Config.enableRandom === true) {
-                return id + Math.random().toString(36).substr(2, 5)
-            }
-
             this.jumpId++
-            return id + this.jumpId.toString(36)
+            return this.jumpId.toString(36)
         },
         getLatestLoopID: function () {
             // error check must be in code!
@@ -78,6 +72,10 @@ export default function codeGenerator (Program: CONTRACT) {
             }
             functionTailGenerator()
         })
+        // Inspect if there were errros and throw now
+        if (GlobalCodeVars.errors.length !== 0) {
+            throw new Error(GlobalCodeVars.errors)
+        }
         return optimizer(
             Program.Config.optimizationLevel,
             GlobalCodeVars.assemblyCode,
@@ -86,10 +84,10 @@ export default function codeGenerator (Program: CONTRACT) {
     }
 
     function writeAsmLine (lineContent: string, sourceCodeLine: number = 0) {
-        if (Program.Config.outputSourceLineNumber === true &&
+        if (Program.Config.verboseAssembly === true &&
             sourceCodeLine !== 0 &&
             sourceCodeLine !== GlobalCodeVars.currSourceLine) {
-            GlobalCodeVars.assemblyCode += `^comment line ${sourceCodeLine}\n`
+            GlobalCodeVars.assemblyCode += `^comment line ${sourceCodeLine} ${Program.sourceLines[sourceCodeLine - 1]}\n`
             GlobalCodeVars.currSourceLine = sourceCodeLine
         }
         GlobalCodeVars.assemblyCode += lineContent + '\n'
@@ -99,13 +97,17 @@ export default function codeGenerator (Program: CONTRACT) {
         if (lines.length === 0) {
             return
         }
-        if (Program.Config.outputSourceLineNumber === true &&
+        if (Program.Config.verboseAssembly === true &&
             sourceCodeLine !== 0 &&
             sourceCodeLine !== GlobalCodeVars.currSourceLine) {
-            GlobalCodeVars.assemblyCode += `^comment line ${sourceCodeLine}\n`
+            GlobalCodeVars.assemblyCode += `^comment line ${sourceCodeLine} ${Program.sourceLines[sourceCodeLine - 1]}\n`
             GlobalCodeVars.currSourceLine = sourceCodeLine
         }
         GlobalCodeVars.assemblyCode += lines
+    }
+
+    function addError (erroMessage: string) {
+        GlobalCodeVars.errors += erroMessage + '\n'
     }
 
     /** Add content of macro 'program' information to assembly code */
@@ -119,11 +121,20 @@ export default function codeGenerator (Program: CONTRACT) {
         if (Program.Config.PActivationAmount !== '') {
             writeAsmLine('^program activationAmount ' + Program.Config.PActivationAmount)
         }
+        if (Program.Config.PCreator !== '') {
+            writeAsmLine(`^program creator ${Program.Config.PCreator}`)
+        }
+        if (Program.Config.PContract !== '') {
+            writeAsmLine(`^program contract ${Program.Config.PContract}`)
+        }
         if (Program.Config.PUserStackPages !== 0) {
             writeAsmLine(`^program userStackPages ${Program.Config.PUserStackPages}`)
         }
         if (Program.Config.PCodeStackPages !== 0) {
             writeAsmLine(`^program codeStackPages ${Program.Config.PCodeStackPages}`)
+        }
+        if (Program.Config.PCodeHashId !== '') {
+            writeAsmLine(`^program codeHashId ${Program.Config.PCodeHashId}`)
         }
     }
 
@@ -182,10 +193,19 @@ export default function codeGenerator (Program: CONTRACT) {
         let assemblyCode: string
         switch (Sentence.type) {
         case 'phrase':
-            writeAsmCode(
-                setupGenCode(GlobalCodeVars, { InitialAST: Sentence.CodeAST }, Sentence.line),
-                Sentence.line
-            )
+            try {
+                writeAsmCode(
+                    setupGenCode(GlobalCodeVars, { InitialAST: Sentence.CodeAST }, Sentence.line),
+                    Sentence.line
+                )
+            } catch (err) {
+                if (err instanceof Error) {
+                    addError(err.message)
+                    break
+                }
+                // Fatal error
+                throw err
+            }
             break
         case 'ifEndif':
             sentenceID = '__if' + GlobalCodeVars.getNewJumpID(Sentence.line)

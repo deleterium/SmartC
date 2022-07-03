@@ -44,9 +44,10 @@ export default function endAsnProcessor (
             }
             return { SolvedMem: utils.createVoidMemObj(), asmCode: '' }
         }
-        const RetMemObj = utils.createConstantMemObj()
-        RetMemObj.size = CurrentNode.Token.value.length / 16
-        RetMemObj.hexContent = CurrentNode.Token.value
+        const RetMemObj = utils.createConstantMemObj(CurrentNode.Token.value)
+        if (CurrentNode.Token.extValue === 'fixed') {
+            RetMemObj.declaration = 'fixed'
+        }
         return { SolvedMem: RetMemObj, asmCode: '' }
     }
 
@@ -88,6 +89,7 @@ export default function endAsnProcessor (
         case 'asm':
         case 'exit':
         case 'halt':
+        case 'sleep':
             return {
                 SolvedMem: utils.createVoidMemObj(),
                 asmCode: createInstruction(AuxVars, CurrentNode.Token)
@@ -105,11 +107,20 @@ export default function endAsnProcessor (
             }
         }
         case 'struct': {
-            const StructTypeDefinition = Program.typesDefinitions.find(
+            let StructTypeDefinition = Program.typesDefinitions.find(
                 Obj => Obj.type === 'struct' && Obj.name === CurrentNode.Token.extValue
             ) as STRUCT_TYPE_DEFINITION | undefined
+            if (StructTypeDefinition === undefined && AuxVars.CurrentFunction !== undefined) {
+                StructTypeDefinition = Program.typesDefinitions.find(
+                    Obj => Obj.type === 'struct' && Obj.name === AuxVars.CurrentFunction?.name + '_' + CurrentNode.Token.extValue
+                ) as STRUCT_TYPE_DEFINITION | undefined
+            }
+            if (StructTypeDefinition === undefined) {
+                throw new Error(`At line: ${CurrentNode.Token.line}. ` +
+                    `Struct type definition for '${CurrentNode.Token.extValue}' not found.`)
+            }
             return {
-                SolvedMem: assertNotUndefined(StructTypeDefinition).MemoryTemplate,
+                SolvedMem: StructTypeDefinition.MemoryTemplate,
                 asmCode: ''
             }
         }

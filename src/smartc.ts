@@ -36,10 +36,12 @@ import { CONTRACT, MACHINE_OBJECT } from './typings/contractTypes'
 export class SmartC {
     private readonly language
     private readonly sourceCode
-    private assemblyCode?: string
+    private preAssemblyCode?: string
     private MachineCode?: MACHINE_OBJECT
     private Program: CONTRACT = {
+        sourceLines: [],
         Global: {
+            BuiltInFunctions: [],
             APIFunctions: [],
             macros: [],
             sentences: []
@@ -49,26 +51,28 @@ export class SmartC {
         typesDefinitions: [],
         // Default configuration for compiler
         Config: {
-            compilerVersion: '1.0',
-            enableRandom: false,
-            enableLineLabels: false,
+            compilerVersion: '2.0.0',
             maxAuxVars: 3,
             maxConstVars: 0,
             optimizationLevel: 2,
             reuseAssignedVar: true,
-            sourcecodeVersion: '',
-            warningToError: true,
             APIFunctions: false,
+            fixedAPIFunctions: false,
             PName: '',
             PDescription: '',
             PActivationAmount: '',
+            PCreator: '',
+            PContract: '',
             PUserStackPages: 0,
             PCodeStackPages: 0,
-            outputSourceLineNumber: false
-        }
+            PCodeHashId: '',
+            verboseAssembly: false
+        },
+        warnings: []
     }
 
     constructor (Options: { language: 'C' | 'Assembly', sourceCode: string }) {
+        this.Program.sourceLines = Options.sourceCode.split('\n')
         this.language = Options.language
         this.sourceCode = Options.sourceCode
     }
@@ -90,15 +94,16 @@ export class SmartC {
             parsed = parser(tokenized)
             shaper(this.Program, parsed)
             syntaxProcessor(this.Program)
-            this.assemblyCode = codeGenerator(this.Program)
+            this.preAssemblyCode = codeGenerator(this.Program)
             break
         case 'Assembly':
-            this.assemblyCode = this.sourceCode
+            this.preAssemblyCode = this.sourceCode
             break
         default:
             throw new Error('Invalid usage. Language must be "C" or "Assembly".')
         }
-        this.MachineCode = assembler(this.assemblyCode)
+        this.MachineCode = assembler(this.preAssemblyCode)
+        this.MachineCode.Warnings = this.Program.warnings.join('\n')
         return this
     }
 
@@ -110,7 +115,7 @@ export class SmartC {
         if (!this.MachineCode) {
             throw new Error('Source code was not compiled.')
         }
-        return this.assemblyCode ?? ''
+        return this.MachineCode.AssemblyCode
     }
 
     /**

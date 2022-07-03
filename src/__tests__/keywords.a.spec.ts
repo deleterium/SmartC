@@ -148,6 +148,13 @@ describe('Keywords right usage', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: sleep (no arguments)', () => {
+        const code = '#pragma optimizationLevel 0\nlong a, b; a++; sleep;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nINC @a\nSLP\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
     it('should compile: sleep', () => {
         const code = '#pragma optimizationLevel 0\nlong a, b; a++; sleep 1;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nINC @a\nSET @r0 #0000000000000001\nSLP $r0\nFIN\n'

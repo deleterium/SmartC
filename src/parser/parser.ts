@@ -1,5 +1,5 @@
 import { PRE_TOKEN, TOKEN, TOKEN_TYPES } from '../typings/syntaxTypes'
-import { stringToHexstring, ReedSalomonAddressDecode } from '../repository/repository'
+import { stringToHexstring, ReedSalomonAddressDecode, parseDecimalNumber } from '../repository/repository'
 
 type TOKEN_SPEC = {
     sequence: string[]
@@ -79,9 +79,10 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
             sequence: ['numberDec'],
             action (tokenID): TOKEN {
                 const PreTkn = preTokens[tokenID]
-                let val = BigInt(PreTkn.value.replace(/_/g, '')).toString(16)
-                val = val.padStart((Math.floor((val.length - 1) / 16) + 1) * 16, '0')
-                return { type: 'Constant', precedence: 0, value: val, line: PreTkn.line }
+                const Parsed = parseDecimalNumber(PreTkn.value, PreTkn.line)
+                const valString = Parsed.value.toString(16)
+                const paddedValString = valString.padStart((Math.floor((valString.length - 1) / 16) + 1) * 16, '0')
+                return { type: 'Constant', precedence: 0, value: paddedValString, line: PreTkn.line, extValue: Parsed.declaration }
             }
         },
         {
@@ -90,7 +91,7 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
                 const PreTkn = preTokens[tokenID]
                 let val = PreTkn.value.replace(/_/g, '').toLowerCase()
                 val = val.padStart((Math.floor((val.length - 1) / 16) + 1) * 16, '0')
-                return { type: 'Constant', precedence: 0, value: val, line: PreTkn.line }
+                return { type: 'Constant', precedence: 0, value: val, line: PreTkn.line, extValue: 'long' }
             }
         },
         {

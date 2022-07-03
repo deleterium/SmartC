@@ -2,7 +2,7 @@ import { assertExpression, assertNotUndefined } from '../../repository/repositor
 import { CONTRACT, SC_FUNCTION } from '../../typings/contractTypes'
 import { LOOKUP_ASN, AST, MEMORY_SLOT } from '../../typings/syntaxTypes'
 import {
-    createSimpleInstruction, createInstruction, createAPICallInstruction
+    createSimpleInstruction, createInstruction, createAPICallInstruction, createBuiltInInstruction
 } from '../assemblyProcessor/createInstruction'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
@@ -19,12 +19,16 @@ export default function functionSolver (
         const fnName = assertNotUndefined(CurrentNode.Token.extValue)
         const FnToCall = Program.functions.find(val => val.name === fnName)
         const ApiToCall = Program.Global.APIFunctions.find(val => val.name === fnName)
+        const BuiltInToCall = Program.Global.BuiltInFunctions.find(val => val.name === fnName)
         const subSentences = utils.splitASTOnDelimiters(assertNotUndefined(CurrentNode.FunctionArgs))
         if (FnToCall) {
             return userFunctionSolver(FnToCall, subSentences)
         }
+        if (BuiltInToCall) {
+            return internalFunctionSolver('builtin', BuiltInToCall, subSentences)
+        }
         if (ApiToCall) {
-            return apiFunctionSolver(ApiToCall, subSentences)
+            return internalFunctionSolver('api', ApiToCall, subSentences)
         }
         throw new Error(`At line: ${CurrentNode.Token.line}. Function '${fnName}' not declared.`)
     }
@@ -64,13 +68,9 @@ export default function functionSolver (
             })
             const fnArg = FunctionToCall.argsMemObj[i]
             if (utils.isNotValidDeclarationOp(fnArg.declaration, ArgGenObj.SolvedMem)) {
-                if (Program.Config.warningToError) {
-                    throw new Error(`At line: ${CurrentNode.Token.line}.` +
-                    ` Warning: Function parameter type is different from variable: '${fnArg.declaration}'` +
-                    ` and '${ArgGenObj.SolvedMem.declaration}'.`)
-                }
-                // Override declaration protection rules
-                utils.setMemoryDeclaration(ArgGenObj.SolvedMem, fnArg.declaration)
+                throw new Error(`At line: ${CurrentNode.Token.line}.` +
+                    ` Type of function argument #${i + 1} is different from variable: ` +
+                    ` Expecting '${fnArg.declaration}', got '${ArgGenObj.SolvedMem.declaration}'.`)
             }
             if (ArgGenObj.SolvedMem.size !== 1 && ArgGenObj.SolvedMem.Offset === undefined) {
                 throw new Error(`At line: ${CurrentNode.Token.line}.` +
@@ -109,38 +109,35 @@ export default function functionSolver (
         return { SolvedMem: FnRetObj, asmCode: returnAssemblyCode }
     }
 
-    function apiFunctionSolver (ApiToCall: SC_FUNCTION, rawArgs: AST[]) : GENCODE_SOLVED_OBJECT {
+    function internalFunctionSolver (type: 'builtin' | 'api', ifnToCall: SC_FUNCTION, rawArgs: AST[]) : GENCODE_SOLVED_OBJECT {
         let FnRetObj: MEMORY_SLOT
         const processedArgs: MEMORY_SLOT [] = []
         let returnAssemblyCode = ''
-        if (ApiToCall.declaration === 'void') {
+        if (ifnToCall.declaration === 'void' || ifnToCall.name === 'bcftol' || ifnToCall.name === 'bcltof') {
             FnRetObj = utils.createVoidMemObj()
         } else {
             FnRetObj = AuxVars.getNewRegister() // reserve tempvar for return type
+            FnRetObj.declaration = ifnToCall.declaration
         }
         if (rawArgs[0].type === 'nullASN') {
             rawArgs.pop()
         }
-        if (rawArgs.length !== ApiToCall.argsMemObj.length) {
+        if (rawArgs.length !== ifnToCall.argsMemObj.length) {
             throw new Error(`At line: ${CurrentNode.Token.line}.` +
-            ` Wrong number of arguments for function '${ApiToCall.name}'.` +
-            ` It must have '${ApiToCall.argsMemObj.length}' args.`)
+            ` Wrong number of arguments for function '${ifnToCall.name}'.` +
+            ` It must have '${ifnToCall.argsMemObj.length}' args.`)
         }
-        rawArgs.forEach(RawSentence => {
+        rawArgs.forEach((RawSentence, idx) => {
             const ArgGenObj = genCode(Program, AuxVars, {
                 RemAST: RawSentence,
                 logicalOp: false,
                 revLogic: false
             })
             returnAssemblyCode += ArgGenObj.asmCode
-            if (utils.getDeclarationFromMemory(ArgGenObj.SolvedMem) !== 'long') {
-                if (Program.Config.warningToError) {
-                    throw new Error(`At line: ${CurrentNode.Token.line}.` +
-                    ' Warning: API Function parameter type is different from variable: ' +
-                    ` 'long' and '${ArgGenObj.SolvedMem.declaration}'.`)
-                }
-                // Override declaration protection rules
-                utils.setMemoryDeclaration(ArgGenObj.SolvedMem, 'long')
+            if (utils.isNotValidDeclarationOp(ifnToCall.argsMemObj[idx].declaration, ArgGenObj.SolvedMem)) {
+                throw new Error(`At line: ${CurrentNode.Token.line}.` +
+                    ` Type of API Function argument #${idx + 1} is different from variable. ` +
+                    ` Expecting '${ifnToCall.argsMemObj[idx].declaration}', got '${ArgGenObj.SolvedMem.declaration}'.`)
             }
             if (ArgGenObj.SolvedMem.size !== 1 && ArgGenObj.SolvedMem.Offset === undefined) {
                 throw new Error(`At line: ${CurrentNode.Token.line}.` +
@@ -148,12 +145,25 @@ export default function functionSolver (
             }
             processedArgs.push(ArgGenObj.SolvedMem)
         })
-        returnAssemblyCode += createAPICallInstruction(
-            AuxVars,
-            utils.genAPICallToken(CurrentNode.Token.line, ApiToCall.asmName),
-            FnRetObj,
-            processedArgs
-        )
+        if (type === 'api') {
+            returnAssemblyCode += createAPICallInstruction(
+                AuxVars,
+                utils.genAPICallToken(CurrentNode.Token.line, ifnToCall.asmName),
+                FnRetObj,
+                processedArgs
+            )
+        } else {
+            if (ifnToCall.name === 'bcftol' || ifnToCall.name === 'bcltof') {
+                utils.setMemoryDeclaration(processedArgs[0], ifnToCall.declaration)
+                return { SolvedMem: processedArgs[0], asmCode: returnAssemblyCode }
+            }
+            returnAssemblyCode += createBuiltInInstruction(
+                AuxVars,
+                utils.genBuiltInToken(CurrentNode.Token.line, ifnToCall.asmName),
+                FnRetObj,
+                processedArgs
+            )
+        }
         processedArgs.forEach(varnm => AuxVars.freeRegister(varnm.address))
         return { SolvedMem: FnRetObj, asmCode: returnAssemblyCode }
     }
