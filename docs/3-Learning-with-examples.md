@@ -46,7 +46,7 @@ void main(void) {
 * The `main` function is the entry point when contract gets an activation. Contract can be finished in this function via `return`, `exit` or at the end of function.
 * If two transactions are received by this contract, the first one will be processed and the contract will enter finished state. In the next block it will be activated again with the second transaction that was not processed in previous block height. This means, if this contract receives 10 messages at some block, it will take 10 blocks to finish counting them.
 * When the contract is created, all memory is set to zero. So variable counter will start from zero and keep increasing every block it has received TXs.
-* Activation amount 0.1 means that the contract will only count the transactions that send at least this amount. If a transaction with .99999999 is received, the balance will the added to the contract but it will not be counted.
+* Activation amount 0.1 means that the contract will only count the transactions that send at least this amount. If a transaction with .09999999 Signa is received, the balance will the added to the contract but it will not be counted.
 </details>
 <details>
 <summary>
