@@ -51,7 +51,7 @@ export class SmartC {
         typesDefinitions: [],
         // Default configuration for compiler
         Config: {
-            compilerVersion: '2.0.0',
+            compilerVersion: '2.0.1',
             maxAuxVars: 3,
             maxConstVars: 0,
             optimizationLevel: 2,
