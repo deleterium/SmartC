@@ -36,6 +36,8 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
                 codeLines.forEach(pushPopRegister)
                 codeLines.forEach(popPushRegister)
                 codeLines.forEach(mdvOpt)
+                codeLines.forEach(mulMdvOpt)
+                codeLines.forEach(mdvDivOpt)
                 codeLines = codeLines.flatMap(branchOpt)
             }
             if (O >= 4) {
@@ -263,6 +265,50 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
         }
         if (muldat[1] === divdat[1]) {
             array[index] = `MDV @${muldat[1]} $${muldat[2]} $${divdat[2]}`
+            array[ip] = 'DELETE'
+            optimizedLines++
+        }
+    }
+
+    /** Optimizes MUL + MDV to MUL
+     * ```
+     * MUL @a $b    -> MUL @a $d
+     * MDV @a $d $b -> DELETE
+     * ``` */
+    function mulMdvOpt (value: string, index: number, array: string[]) : void {
+        const muldat = /^\s*MUL\s+@(\w+)\s+\$(\w+)\s*$/.exec(value)
+        if (muldat === null) {
+            return
+        }
+        const ip = getNextInstruction(index)
+        const mdvdat = /^\s*MDV\s+@(\w+)\s+\$(\w+)\s+\$(\w+)\s*$/.exec(array[ip])
+        if (mdvdat === null) {
+            return
+        }
+        if (muldat[1] === mdvdat[1] && muldat[2] === mdvdat[3]) {
+            array[index] = `MUL @${muldat[1]} $${mdvdat[2]}`
+            array[ip] = 'DELETE'
+            optimizedLines++
+        }
+    }
+
+    /** Optimizes MDV + DIV to DIV
+     * ```
+     * MDV @a $b $c -> DIV @a $c
+     * DIV @a $b    -> DELETE
+     * ``` */
+    function mdvDivOpt (value: string, index: number, array: string[]) : void {
+        const mdvdat = /^\s*MDV\s+@(\w+)\s+\$(\w+)\s+\$(\w+)\s*$/.exec(value)
+        if (mdvdat === null) {
+            return
+        }
+        const ip = getNextInstruction(index)
+        const divdat = /^\s*DIV\s+@(\w+)\s+\$(\w+)\s*$/.exec(array[ip])
+        if (divdat === null) {
+            return
+        }
+        if (mdvdat[1] === divdat[1] && mdvdat[2] === divdat[2]) {
+            array[index] = `DIV @${mdvdat[1]} $${mdvdat[3]}`
             array[ip] = 'DELETE'
             optimizedLines++
         }
