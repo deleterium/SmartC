@@ -154,6 +154,8 @@ export class CPU {
                 }
                 if (variable1.value !== unknownValue && variable2.value !== unknownValue) {
                     variable1.value = (variable1.value + variable2.value) % Constants.pow2to64
+                } else {
+                    variable1.value = unknownValue
                 }
                 variable1.shadow = ''
                 ContractState.revokeShadow(variable1.varName)
@@ -172,6 +174,8 @@ export class CPU {
                 }
                 if (variable1.value !== unknownValue && variable2.value !== unknownValue) {
                     variable1.value = (Constants.pow2to64 + variable1.value - variable2.value) % Constants.pow2to64
+                } else {
+                    variable1.value = unknownValue
                 }
                 variable1.shadow = ''
                 ContractState.revokeShadow(variable1.varName)
@@ -190,6 +194,8 @@ export class CPU {
                 }
                 if (variable1.value !== unknownValue && variable2.value !== unknownValue) {
                     variable1.value = (variable1.value * variable2.value) % Constants.pow2to64
+                } else {
+                    variable1.value = unknownValue
                 }
                 variable1.shadow = ''
                 ContractState.revokeShadow(variable1.varName)
@@ -211,6 +217,8 @@ export class CPU {
                     const val2 = utils.unsigned2signed(variable2.value)
 
                     variable1.value = utils.signed2unsigned(val1 / val2)
+                } else {
+                    variable1.value = unknownValue
                 }
                 variable1.shadow = ''
                 ContractState.revokeShadow(variable1.varName)

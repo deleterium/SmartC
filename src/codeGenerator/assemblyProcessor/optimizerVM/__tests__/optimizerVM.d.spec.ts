@@ -201,4 +201,42 @@ describe('optimzeVM:', () => {
         const result = new CONTRACT(code).optimize()
         expect(result).toEqual(optCode)
     })
+    it('should not optimize: Fix bug MUL not updating unknow value', () => {
+        const code = [
+            '^declare r0',
+            '^declare r1',
+            '^declare r2',
+            '^declare f100000000',
+            '^const SET @f100000000 #0000000005f5e100',
+            '^declare operation',
+            '^const SET @operation #0000000000000005',
+            '^declare operation_0_signa',
+            '^declare operation_0_quantity',
+            '^declare operation_0_sender',
+            '^declare operation_1_signa',
+            '^declare operation_1_quantity',
+            '^declare operation_1_sender',
+            '^declare enqueuedTransactions',
+            '^declare amount',
+            '^declare previousRatio',
+            '',
+            'SET @r0 #0000000000000003',
+            'MUL @r0 $enqueuedTransactions',
+            'CLR @r1',
+            'SUB @r1 $amount',
+            'MUL @r1 $f100000000',
+            'SET @($operation + $r0) $r1',
+            'SET @r0 #0000000000000003',
+            'MUL @r0 $enqueuedTransactions',
+            'INC @r0',
+            'SET @r1 $amount',
+            'MUL @r1 $f100000000',
+            'MDV @r1 $f100000000 $previousRatio',
+            'DIV @r1 $f100000000',
+            'SET @($operation + $r0) $r1',
+            'FIN'
+        ]
+        const result = new CONTRACT(code).optimize()
+        expect(result).toEqual(code)
+    })
 })
