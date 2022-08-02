@@ -38,10 +38,10 @@ export default function preprocessor (sourcecode: string) : string {
         { regex: /^[\s\S]*$/, type: 'MATCHES_REMAINING' }
     ]
     let preprocessorReplacements: REPLACEMENTS[] = [
-        { cname: 'true', regex: /\btrue\b/, value: '1' },
-        { cname: 'false', regex: /\bfalse\b/, value: '0' },
-        { cname: 'NULL', regex: /\bNULL\b/, value: '(void *)(0)' },
-        { cname: 'SMARTC', regex: /\bSMARTC\b/, value: '' }
+        { cname: 'true', regex: /\btrue\b/g, value: '1' },
+        { cname: 'false', regex: /\bfalse\b/g, value: '0' },
+        { cname: 'NULL', regex: /\bNULL\b/g, value: '(void *)(0)' },
+        { cname: 'SMARTC', regex: /\bSMARTC\b/g, value: '' }
     ]
     const ifActive: IF_INFO[] = [{ active: true, flipped: false }]
     let currentIfLevel = 0

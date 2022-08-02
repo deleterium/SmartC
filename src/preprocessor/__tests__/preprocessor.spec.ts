@@ -52,6 +52,11 @@ describe('preprocessor right tests', () => {
         const result = '\n\n\nlong a,b,c;\na = (((mdv(a,b, c)) << 8) | (c + n1));\n'
         expect(preprocessor(code)).toBe(result)
     })
+    it('#define replace multiple times same line', () => {
+        const code = 'long a, b, c; if (a == NULL && b == NULL) c++;'
+        const result = 'long a, b, c; if (a == (void *)(0) && b == (void *)(0)) c++;'
+        expect(preprocessor(code)).toBe(result)
+    })
 
     it('#ifdef test', () => {
         const code = '#define debug\n#ifdef debug\n#pragma maxAuxVars 1\n#endif\nlong a; a++;'
