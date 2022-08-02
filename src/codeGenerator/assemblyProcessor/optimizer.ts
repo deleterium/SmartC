@@ -131,7 +131,7 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
             return
         }
         const lbl = /^\s*(\w+):\s*$/.exec(labelDest)
-        if (lbl !== null) {
+        if (lbl !== null && lbl[1] !== jmpto[1]) {
             array[index] = 'JMP :' + lbl[1]
             optimizedLines++
         }
@@ -217,7 +217,7 @@ export default function optimizer (O: number, assemblyCode: string, labels: stri
             ]
         }
         const lbl = /^\s*(\w+):\s*$/.exec(labelDest)
-        if (lbl !== null) {
+        if (lbl !== null && branchTo[4] !== lbl[1]) {
             optimizedLines++
             return [value.replace(branchTo[4], lbl[1])]
         }
