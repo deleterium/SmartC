@@ -440,8 +440,10 @@ export function createBuiltInInstruction (
         'FUN Mint_Asset\n'
         break
     case 'sendQuantity':
-        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode + tempArgsMem[2].asmCode +
+        auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltInToken.line)
+        assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode + tempArgsMem[2].asmCode + auxFlatMem.asmCode +
                 `FUN set_B1_B2 $${tempArgsMem[2].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
+                `FUN set_B3 $${auxFlatMem.FlatMem.asmName}\n` +
                 `FUN send_to_Address_in_B $${tempArgsMem[0].FlatMem.asmName}\n`
         break
     case 'getAssetBalance':
