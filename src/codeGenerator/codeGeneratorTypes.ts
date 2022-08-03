@@ -12,8 +12,6 @@ export type GLOBAL_AUXVARS = {
     assemblyCode: string
     /** Errors found */
     errors: string
-    /** Warnings found */
-    warnings: string
     /** Current function being processed */
     currFunctionIndex: number
     /** Line counter for source code */

@@ -18,7 +18,6 @@ export default function codeGenerator (Program: CONTRACT) {
         jumpId: 0,
         assemblyCode: '',
         errors: '',
-        warnings: '',
         currFunctionIndex: -1,
         currSourceLine: 0,
         getNewJumpID: function (line: number) {
@@ -74,7 +73,7 @@ export default function codeGenerator (Program: CONTRACT) {
         })
         // Inspect if there were errros and throw now
         if (GlobalCodeVars.errors.length !== 0) {
-            throw new Error(GlobalCodeVars.errors)
+            throw new Error(GlobalCodeVars.errors + Program.warnings)
         }
         return optimizer(
             Program.Config.optimizationLevel,
