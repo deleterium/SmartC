@@ -323,12 +323,19 @@ export default {
                 return false
             }
             const CanReuse = InspAst.modifiers.find(CurrentModifier => {
-                if (CurrentModifier.type === 'Array') {
+                switch (CurrentModifier.type) {
+                case 'Array':
                     if (recursiveFind(CurrentModifier.Center) === false) {
                         return true
                     }
+                    return false
+                case 'MemberByRef':
+                case 'MemberByVal':
+                    if (CurrentModifier.Center.value === parts[1]) return true
+                    return false
+                default:
+                    throw new Error('Internal error')
                 }
-                return false
             })
             if (CanReuse === undefined) {
                 if (InspAst.Token.type === 'Function' && InspAst.FunctionArgs !== undefined) {

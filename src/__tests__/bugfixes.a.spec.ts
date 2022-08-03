@@ -269,4 +269,11 @@ describe('Tests for bugfixes', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: bug 34 Reuse assigned var not working for structs', () => {
+        const code = 'struct STATS { long payoutId; } stats; stats.payoutId = (stats.payoutId + 3) % 5;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare stats_payoutId\n\nSET @r0 #0000000000000003\nADD @r0 $stats_payoutId\nSET @r1 #0000000000000005\nMOD @r0 $r1\nSET @stats_payoutId $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })
