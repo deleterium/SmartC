@@ -468,6 +468,126 @@ export function createBuiltInInstruction (
         AstAuxVars.freeRegister(AuxRegisterB.address)
         break
     }
+    case 'sendShortMessage': {
+        if (argsMem[1].type !== 'constant') {
+            throw new Error(`At line: ${BuiltInToken.line}. Only constants supported for length in 'sendShortMessage'.`)
+        }
+        const len = Number('0x' + argsMem[1].hexContent)
+        if (!(len <= 4)) {
+            throw new Error(`At line: ${BuiltInToken.line}. Argument 'length' outside range (0 <= length <= 4) in 'sendShortMessage'.`)
+        }
+        if (len === 0) {
+            break
+        }
+        AstAuxVars.freeRegister(tempArgsMem[1].FlatMem.address)
+        assemblyCode = tempArgsMem[2].asmCode +
+            `FUN set_B1 $${tempArgsMem[2].FlatMem.asmName}\n`
+        AstAuxVars.freeRegister(tempArgsMem[2].FlatMem.address)
+        if (argsMem[0].type === 'constant' || (argsMem[0].type === 'array' && argsMem[0].Offset === undefined)) {
+            let m1, m2, m3, m4
+            const theHexContent = assertNotUndefined(argsMem[0].hexContent)
+            AstAuxVars.freeRegister(tempArgsMem[0].FlatMem.address)
+            switch (len) {
+            case 1:
+                m1 = AstAuxVars.getMemoryObjectByLocation(theHexContent).asmName
+                assemblyCode +=
+                    'FUN clear_A\n' +
+                    `FUN set_A1 $${m1}\n` +
+                    'FUN send_A_to_Address_in_B\n'
+                break
+            case 2:
+                m1 = AstAuxVars.getMemoryObjectByLocation(theHexContent).asmName
+                m2 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 1)).asmName
+                assemblyCode +=
+                    'FUN clear_A\n' +
+                    `FUN set_A1_A2 $${m1} $${m2}\n` +
+                    'FUN send_A_to_Address_in_B\n'
+                break
+            case 3:
+                m1 = AstAuxVars.getMemoryObjectByLocation(theHexContent).asmName
+                m2 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 1)).asmName
+                m3 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 2)).asmName
+                auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltInToken.line)
+                assemblyCode += auxFlatMem.asmCode +
+                    `FUN set_A1_A2 $${m1} $${m2}\n` +
+                    `FUN set_A3_A4 $${m3} $${auxFlatMem.FlatMem.asmName}\n` +
+                    'FUN send_A_to_Address_in_B\n'
+                AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
+                break
+            case 4:
+                m1 = AstAuxVars.getMemoryObjectByLocation(theHexContent).asmName
+                m2 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 1)).asmName
+                m3 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 2)).asmName
+                m4 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 3)).asmName
+                assemblyCode +=
+                    `FUN set_A1_A2 $${m1} $${m2}\n` +
+                    `FUN set_A3_A4 $${m3} $${m4}\n` +
+                    'FUN send_A_to_Address_in_B\n'
+                break
+            }
+            break
+        }
+        assemblyCode += tempArgsMem[0].asmCode
+        if (len === 1) {
+            // simple case
+            AuxRegister = AstAuxVars.getNewRegister()
+            assemblyCode +=
+                'FUN clear_A\n' +
+                `SET @${AuxRegister.asmName} $($${tempArgsMem[0].FlatMem.asmName})\n` +
+                `FUN set_A1 $${AuxRegister.asmName}\n` +
+                'FUN send_A_to_Address_in_B\n'
+            AstAuxVars.freeRegister(AuxRegister.address)
+            break
+        }
+        if (AstAuxVars.isTemp(tempArgsMem[0].FlatMem.address)) {
+            AuxRegister = tempArgsMem[0].FlatMem
+        } else {
+            AuxRegister = AstAuxVars.getNewRegister()
+            assemblyCode += `SET @${AuxRegister.asmName} $${tempArgsMem[0].FlatMem.asmName}\n`
+        }
+        AuxRegisterA = AstAuxVars.getNewRegister()
+        AuxRegisterB = AstAuxVars.getNewRegister()
+        switch (len) {
+        case 2:
+            assemblyCode +=
+                'FUN clear_A\n' +
+                `SET @${AuxRegisterA.asmName} $($${AuxRegister.asmName})\n` +
+                `INC @${AuxRegister.asmName}\n` +
+                `SET @${AuxRegisterB.asmName} $($${AuxRegister.asmName})\n` +
+                `FUN set_A1_A2 $${AuxRegisterA.asmName} $${AuxRegisterB.asmName}\n` +
+                'FUN send_A_to_Address_in_B\n'
+            break
+        case 3:
+            assemblyCode +=
+                `SET @${AuxRegisterA.asmName} $($${AuxRegister.asmName})\n` +
+                `INC @${AuxRegister.asmName}\n` +
+                `SET @${AuxRegisterB.asmName} $($${AuxRegister.asmName})\n` +
+                `FUN set_A1_A2 $${AuxRegisterA.asmName} $${AuxRegisterB.asmName}\n` +
+                `INC @${AuxRegister.asmName}\n` +
+                `SET @${AuxRegisterA.asmName} $($${AuxRegister.asmName})\n` +
+                `CLR @${AuxRegisterB.asmName}\n` +
+                `FUN set_A3_A4 $${AuxRegisterA.asmName} $${AuxRegisterB.asmName}\n` +
+                'FUN send_A_to_Address_in_B\n'
+            break
+        case 4:
+            assemblyCode +=
+                `SET @${AuxRegisterA.asmName} $($${AuxRegister.asmName})\n` +
+                `INC @${AuxRegister.asmName}\n` +
+                `SET @${AuxRegisterB.asmName} $($${AuxRegister.asmName})\n` +
+                `FUN set_A1_A2 $${AuxRegisterA.asmName} $${AuxRegisterB.asmName}\n` +
+                `INC @${AuxRegister.asmName}\n` +
+                `SET @${AuxRegisterA.asmName} $($${AuxRegister.asmName})\n` +
+                `INC @${AuxRegister.asmName}\n` +
+                `SET @${AuxRegisterB.asmName} $($${AuxRegister.asmName})\n` +
+                `FUN set_A3_A4 $${AuxRegisterA.asmName} $${AuxRegisterB.asmName}\n` +
+                'FUN send_A_to_Address_in_B\n'
+            break
+        }
+        AstAuxVars.freeRegister(AuxRegister.address)
+        AstAuxVars.freeRegister(AuxRegisterA.address)
+        AstAuxVars.freeRegister(AuxRegisterB.address)
+        break
+    }
     case 'sendAmount':
     case 'sendAmountFx':
         auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltInToken.line)
