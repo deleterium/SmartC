@@ -332,6 +332,82 @@ export function createBuiltInInstruction (
         AstAuxVars.freeRegister(AuxRegister.address)
         AstAuxVars.freeRegister(AuxRegisterA.address)
         break
+    case 'readShortMessage': {
+        AstAuxVars.freeRegister(tempArgsMem[2].FlatMem.address)
+        auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltInToken.line)
+        assemblyCode = tempArgsMem[0].asmCode + auxFlatMem.asmCode +
+            `FUN set_A1_A2 $${tempArgsMem[0].FlatMem.asmName} $${auxFlatMem.FlatMem.asmName}\n` +
+            'FUN message_from_Tx_in_A_to_B\n'
+        AstAuxVars.freeRegister(tempArgsMem[0].FlatMem.address)
+        AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
+        const len = Number('0x' + argsMem[2].hexContent)
+        if (!(len <= 4)) {
+            throw new Error(`At line: ${BuiltInToken.line}. Argument 'length' outside range (0 <= length <= 4) in 'readShortMessage'.`)
+        }
+        if (len === 0) {
+            assemblyCode = ''
+            break
+        }
+        if (argsMem[1].type === 'constant' || (argsMem[1].type === 'array' && argsMem[1].Offset === undefined)) {
+            argsMem[1].hexContent = assertNotUndefined(argsMem[1].hexContent)
+            const m1 = AstAuxVars.getMemoryObjectByLocation(argsMem[1].hexContent).asmName
+            assemblyCode += `FUN @${m1} get_B1\n`
+            if (len === 1) break
+            const m2 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(argsMem[1].hexContent, 1)).asmName
+            assemblyCode += `FUN @${m2} get_B2\n`
+            if (len === 2) break
+            const m3 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(argsMem[1].hexContent, 2)).asmName
+            assemblyCode += `FUN @${m3} get_B3\n`
+            if (len === 3) break
+            const m4 = AstAuxVars.getMemoryObjectByLocation(utils.addHexSimple(argsMem[1].hexContent, 3)).asmName
+            assemblyCode += `FUN @${m4} get_B4\n`
+            break
+        }
+        assemblyCode += tempArgsMem[1].asmCode
+        if (len === 1) {
+            // simple case
+            AuxRegister = AstAuxVars.getNewRegister()
+            assemblyCode +=
+                `FUN @${AuxRegister.asmName} get_B1\n` +
+                `SET @($${tempArgsMem[1].FlatMem.asmName}) $${AuxRegister.asmName}\n`
+            AstAuxVars.freeRegister(AuxRegister.address)
+            break
+        }
+        if (AstAuxVars.isTemp(tempArgsMem[1].FlatMem.address)) {
+            AuxRegister = tempArgsMem[1].FlatMem
+        } else {
+            AuxRegister = AstAuxVars.getNewRegister()
+            assemblyCode += `SET @${AuxRegister.asmName} $${tempArgsMem[1].FlatMem.asmName}\n`
+        }
+        AuxRegisterA = AstAuxVars.getNewRegister()
+        assemblyCode +=
+            `FUN @${AuxRegisterA.asmName} get_B1\n` +
+            `SET @($${AuxRegister.asmName}) $${AuxRegisterA.asmName}\n` +
+            `FUN @${AuxRegisterA.asmName} get_B2\n` +
+            `INC @${AuxRegister.asmName}\n` +
+            `SET @($${AuxRegister.asmName}) $${AuxRegisterA.asmName}\n`
+        if (len === 2) {
+            AstAuxVars.freeRegister(AuxRegister.address)
+            AstAuxVars.freeRegister(AuxRegisterA.address)
+            break
+        }
+        assemblyCode +=
+            `FUN @${AuxRegisterA.asmName} get_B3\n` +
+            `INC @${AuxRegister.asmName}\n` +
+            `SET @($${AuxRegister.asmName}) $${AuxRegisterA.asmName}\n`
+        if (len === 3) {
+            AstAuxVars.freeRegister(AuxRegister.address)
+            AstAuxVars.freeRegister(AuxRegisterA.address)
+            break
+        }
+        assemblyCode +=
+            `FUN @${AuxRegisterA.asmName} get_B4\n` +
+            `INC @${AuxRegister.asmName}\n` +
+            `SET @($${AuxRegister.asmName}) $${AuxRegisterA.asmName}\n`
+        AstAuxVars.freeRegister(AuxRegister.address)
+        AstAuxVars.freeRegister(AuxRegisterA.address)
+        break
+    }
     case 'sendMessage':
     case 'sendAmountAndMessage':
     case 'sendAmountAndMessageFx': {

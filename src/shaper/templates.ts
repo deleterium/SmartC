@@ -268,6 +268,13 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         name: 'readMessage'
     },
     {
+        argsMemObj: [longArg, longPtrArg, longArg],
+        asmName: 'readShortMessage',
+        declaration: 'void',
+        sentences: [],
+        name: 'readShortMessage'
+    },
+    {
         argsMemObj: [longPtrArg, longArg],
         asmName: 'sendMessage',
         declaration: 'void',
