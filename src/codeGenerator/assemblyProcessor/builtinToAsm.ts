@@ -322,6 +322,9 @@ export function createBuiltinInstruction (
             AstAuxVars.freeRegister(AuxRegisterA.address)
             break
         case 'readShortMessage': {
+            if (argsMem[2].type !== 'constant') {
+                throw new Error(`At line: ${BuiltinToken.line}. Only constants supported for length in 'sendShortMessage'.`)
+            }
             AstAuxVars.freeRegister(tempArgsMem[2].FlatMem.address)
             auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltinToken.line)
             assemblyCode = tempArgsMem[0].asmCode + auxFlatMem.asmCode +
@@ -330,7 +333,7 @@ export function createBuiltinInstruction (
             AstAuxVars.freeRegister(tempArgsMem[0].FlatMem.address)
             AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
             const len = Number('0x' + argsMem[2].hexContent)
-            if (!(len <= 4)) {
+            if (Number.isNaN(len) || len > 4) {
                 throw new Error(`At line: ${BuiltinToken.line}. Argument 'length' outside range (0 <= length <= 4) in 'readShortMessage'.`)
             }
             if (len === 0) {
@@ -539,14 +542,14 @@ export function createBuiltinInstruction (
             if (argsMem[1].type !== 'constant') {
                 throw new Error(`At line: ${BuiltinToken.line}. Only constants supported for length in 'sendShortMessage'.`)
             }
+            AstAuxVars.freeRegister(tempArgsMem[1].FlatMem.address)
             const len = Number('0x' + argsMem[1].hexContent)
-            if (!(len <= 4)) {
+            if (Number.isNaN(len) || len > 4) {
                 throw new Error(`At line: ${BuiltinToken.line}. Argument 'length' outside range (0 <= length <= 4) in 'sendShortMessage'.`)
             }
             if (len === 0) {
                 break
             }
-            AstAuxVars.freeRegister(tempArgsMem[1].FlatMem.address)
             assemblyCode = tempArgsMem[2].asmCode +
                 `FUN set_B1 $${tempArgsMem[2].FlatMem.asmName}\n`
             AstAuxVars.freeRegister(tempArgsMem[2].FlatMem.address)
