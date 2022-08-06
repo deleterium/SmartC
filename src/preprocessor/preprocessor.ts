@@ -65,7 +65,7 @@ export default function preprocessor (sourcecode: string) : string {
     function treatEscapedNewLines (src: string[]) : string[] {
         const retArr : string [] = []
         let escapedLines = 0
-        src.forEach((line, index) => {
+        src.forEach((line) => {
             if (line.endsWith('\\')) {
                 if (escapedLines === 0) {
                     escapedLines = 1

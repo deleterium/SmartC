@@ -20,6 +20,8 @@ export default function memoryProcessor (
 ): MEMORY_SLOT[] {
     let tokenCounter = 0
 
+    type LFV = 'long'|'fixed'|'void'
+
     /* * * Main function * * */
     function memoryProcessorMain () : MEMORY_SLOT[] {
         const retMem: MEMORY_SLOT[] = []
@@ -32,7 +34,7 @@ export default function memoryProcessor (
             case 'long':
             case 'fixed':
             case 'void':
-                retMem.push(...lfvProcessControl(phraseCode[tokenCounter].value as 'long'|'fixed'|'void'))
+                retMem.push(...lfvProcessControl(phraseCode[tokenCounter].value as LFV))
                 break
             case 'struct':
                 retMem.push(...structProcessControl())
@@ -46,7 +48,7 @@ export default function memoryProcessor (
 
     /** From Code containing long/fixed/void declaration, return an array of memory objects.
      * Handle regular variables, arrays and pointers. This is control flow */
-    function lfvProcessControl (definition: 'long'|'fixed'|'void') : MEMORY_SLOT[] {
+    function lfvProcessControl (definition: LFV) : MEMORY_SLOT[] {
         const retMemory : MEMORY_SLOT[] = []
         const keywordIndex = tokenCounter
         let valid = true
@@ -81,7 +83,7 @@ export default function memoryProcessor (
 
     /** Return an array of memory objects. Handle regular variables, arrays and pointers.
      * This is the actual processing code. */
-    function lfvToMemoryObject (definition: 'long'|'fixed'|'void') : MEMORY_SLOT[] {
+    function lfvToMemoryObject (definition: LFV) : MEMORY_SLOT[] {
         const definitionTD = getTypeDefinitionTemplate(definition)
         const isPointer = isItPointer()
         const startingTokenCounter = tokenCounter

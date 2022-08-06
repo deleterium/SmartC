@@ -20,7 +20,7 @@ export default function codeGenerator (Program: CONTRACT) {
         errors: '',
         currFunctionIndex: -1,
         currSourceLine: 0,
-        getNewJumpID: function (line: number) {
+        getNewJumpID: function () {
             // Any changes here, also change function auxvarsGetNewJumpID
             this.jumpId++
             return this.jumpId.toString(36)
@@ -207,7 +207,7 @@ export default function codeGenerator (Program: CONTRACT) {
             }
             break
         case 'ifEndif':
-            sentenceID = '__if' + GlobalCodeVars.getNewJumpID(Sentence.line)
+            sentenceID = '__if' + GlobalCodeVars.getNewJumpID()
             assemblyCode = setupGenCode(GlobalCodeVars, {
                 InitialAST: Sentence.ConditionAST,
                 initialJumpTarget: sentenceID + '_endif',
@@ -219,7 +219,7 @@ export default function codeGenerator (Program: CONTRACT) {
             writeAsmLine(sentenceID + '_endif:')
             break
         case 'ifElse':
-            sentenceID = '__if' + GlobalCodeVars.getNewJumpID(Sentence.line)
+            sentenceID = '__if' + GlobalCodeVars.getNewJumpID()
             assemblyCode = setupGenCode(GlobalCodeVars, {
                 InitialAST: Sentence.ConditionAST,
                 initialJumpTarget: sentenceID + '_else',
@@ -234,7 +234,7 @@ export default function codeGenerator (Program: CONTRACT) {
             writeAsmLine(sentenceID + '_endif:')
             break
         case 'while':
-            sentenceID = '__loop' + GlobalCodeVars.getNewJumpID(Sentence.line)
+            sentenceID = '__loop' + GlobalCodeVars.getNewJumpID()
             writeAsmLine(sentenceID + '_continue:', Sentence.line)
             assemblyCode = setupGenCode(GlobalCodeVars, {
                 InitialAST: Sentence.ConditionAST,
@@ -250,7 +250,7 @@ export default function codeGenerator (Program: CONTRACT) {
             writeAsmLine(sentenceID + '_break:')
             break
         case 'do':
-            sentenceID = '__loop' + GlobalCodeVars.getNewJumpID(Sentence.line)
+            sentenceID = '__loop' + GlobalCodeVars.getNewJumpID()
             writeAsmLine(sentenceID + '_continue:', Sentence.line)
             GlobalCodeVars.latestLoopId.push(sentenceID)
             Sentence.trueBlock.forEach(compileSentence)
@@ -265,7 +265,7 @@ export default function codeGenerator (Program: CONTRACT) {
             writeAsmLine(sentenceID + '_break:')
             break
         case 'for':
-            sentenceID = '__loop' + GlobalCodeVars.getNewJumpID(Sentence.line)
+            sentenceID = '__loop' + GlobalCodeVars.getNewJumpID()
             assemblyCode = setupGenCode(GlobalCodeVars, {
                 InitialAST: Sentence.threeSentences[0].CodeAST
             }, Sentence.line)
@@ -290,7 +290,7 @@ export default function codeGenerator (Program: CONTRACT) {
             writeAsmLine(sentenceID + '_break:')
             break
         case 'switch': {
-            sentenceID = '__switch' + GlobalCodeVars.getNewJumpID(Sentence.line)
+            sentenceID = '__switch' + GlobalCodeVars.getNewJumpID()
             let jumpTgt = sentenceID
             jumpTgt += Sentence.hasDefault ? '_default' : '_break'
             assemblyCode = setupGenCode(GlobalCodeVars, {

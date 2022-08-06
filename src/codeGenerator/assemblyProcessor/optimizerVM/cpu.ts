@@ -275,17 +275,17 @@ export class CPU {
                 if (variable1.value !== unknownValue) {
                     ContractState.Memory[addr].value = variable2.value
                     ContractState.Memory[addr].shadow = variable2.varName
-                    return true
+                } else {
+                    // It is not possible to know which variable was updated. Unknow to all memory variable.
+                    ContractState.unknownMemory(true, true)
                 }
-                // It is not possible to know which variable was updated. Unknow to all memory variable.
-                ContractState.unknownMemory(true, true)
                 return true
             }
         },
         {
             name: 'IDX_DAT',
             regex: /^\s*SET\s+@\(\$(\w+)\s*\+\s*\$(\w+)\)\s+\$(\w+)\s*$/,
-            execute (ContractState, regexParts) {
+            execute (ContractState, _regexParts) {
                 // It is not possible to know which variable was updated. Unknow to all memory variable.
                 ContractState.unknownMemory(true, true)
                 return true
@@ -417,7 +417,7 @@ export class CPU {
         {
             name: 'EXT_FUN_RET_DAT',
             regex: /^\s*FUN\s+@(\w+)\s+(\w+)\s+\$(\w+)\s*$/,
-            execute (ContractState, regexParts) {
+            execute (_ContractState, regexParts) {
                 throw new Error(`Unknow API Function ${regexParts[2]}`)
             }
         },

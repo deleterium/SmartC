@@ -55,7 +55,7 @@ export default function unaryAsnProcessor (
                 jumpTrue: ScopeInfo.jumpFalse // Yes, this is swapped!
             })
         }
-        const rnd = AuxVars.getNewJumpID(CurrentNode.Operation.line)
+        const rnd = AuxVars.getNewJumpID()
         const idNotSF = '__NOT_' + rnd + '_sF' // set false
         const idNotST = '__NOT_' + rnd + '_sT' // set true
         const idEnd = '__NOT_' + rnd + '_end'
