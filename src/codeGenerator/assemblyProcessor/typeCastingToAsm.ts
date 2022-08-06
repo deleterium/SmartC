@@ -91,10 +91,6 @@ export function typeCasting (
             InSolved.SolvedMem = utils.createConstantMemObj(0)
             utils.setMemoryDeclaration(InSolved.SolvedMem, toType)
             return InSolved
-        case 'long':
-            // From long to any pointer
-            utils.setMemoryDeclaration(InSolved.SolvedMem, toType)
-            return InSolved
         case 'fixed':
             // From fixed to any pointer
             throw new Error(`At line: ${line}. It is not possible to cast ${fromType} to a pointer type.`)
@@ -103,10 +99,12 @@ export function typeCasting (
             InSolved.SolvedMem = utils.createConstantMemObj(InSolved.SolvedMem.hexContent)
             utils.setMemoryDeclaration(InSolved.SolvedMem, toType)
             return InSolved
+        case 'long':
         case 'void_ptr':
         case 'long_ptr':
         case 'fixed_ptr':
         case 'struct_ptr':
+            // From long to any pointer
             // From any pointer to any pointer
             utils.setMemoryDeclaration(InSolved.SolvedMem, toType)
             return InSolved

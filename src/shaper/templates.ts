@@ -111,6 +111,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'pow',
         declaration: 'long',
         sentences: [],
+        builtin: 'special',
         name: 'pow'
     },
     {
@@ -118,6 +119,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'mdv',
         declaration: 'long',
         sentences: [],
+        builtin: 'special',
         name: 'mdv'
     },
     {
@@ -125,6 +127,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'powf',
         declaration: 'long',
         sentences: [],
+        builtin: 'special',
         name: 'powf'
     },
     {
@@ -153,6 +156,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'memcopy',
         declaration: 'void',
         sentences: [],
+        builtin: 'internal',
         name: 'memcopy'
     },
     {
@@ -160,6 +164,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'bcftol',
         declaration: 'long',
         sentences: [],
+        builtin: 'internal',
         name: 'bcftol'
     },
     {
@@ -167,6 +172,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'bcltof',
         declaration: 'fixed',
         sentences: [],
+        builtin: 'internal',
         name: 'bcltof'
     },
     {
@@ -174,6 +180,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getNextTx',
         declaration: 'long',
         sentences: [],
+        builtin: 'loop',
         name: 'getNextTx'
     },
     {
@@ -181,6 +188,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getNextTxFromBlockheight',
         declaration: 'long',
         sentences: [],
+        builtin: 'loop',
         name: 'getNextTxFromBlockheight'
     },
     {
@@ -188,6 +196,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getBlockheight',
         declaration: 'long',
         sentences: [],
+        builtin: 'receive',
         name: 'getBlockheight'
     },
     {
@@ -195,6 +204,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getCurrentBlockheight',
         declaration: 'long',
         sentences: [],
+        builtin: 'blockchain',
         name: 'getCurrentBlockheight'
     },
     {
@@ -202,6 +212,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getAmount',
         declaration: 'long',
         sentences: [],
+        builtin: 'receive',
         name: 'getAmount'
     },
     {
@@ -209,6 +220,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getSender',
         declaration: 'long',
         sentences: [],
+        builtin: 'receive',
         name: 'getSender'
     },
     {
@@ -216,6 +228,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getType',
         declaration: 'long',
         sentences: [],
+        builtin: 'receive',
         name: 'getType'
     },
     {
@@ -223,6 +236,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getCreator',
         declaration: 'long',
         sentences: [],
+        builtin: 'contract',
         name: 'getCreator'
     },
     {
@@ -230,6 +244,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getCreatorOf',
         declaration: 'long',
         sentences: [],
+        builtin: 'contract',
         name: 'getCreatorOf'
     },
     {
@@ -237,6 +252,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getCodeHashOf',
         declaration: 'long',
         sentences: [],
+        builtin: 'contract',
         name: 'getCodeHashOf'
     },
     {
@@ -244,6 +260,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getWeakRandomNumber',
         declaration: 'long',
         sentences: [],
+        builtin: 'blockchain',
         name: 'getWeakRandomNumber'
     },
     {
@@ -251,6 +268,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getActivationOf',
         declaration: 'long',
         sentences: [],
+        builtin: 'contract',
         name: 'getActivationOf'
     },
     {
@@ -258,6 +276,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getCurrentBalance',
         declaration: 'long',
         sentences: [],
+        builtin: 'contract',
         name: 'getCurrentBalance'
     },
     {
@@ -265,20 +284,39 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'readMessage',
         declaration: 'void',
         sentences: [],
+        builtin: 'receive',
         name: 'readMessage'
+    },
+    {
+        argsMemObj: [longArg, longPtrArg, longArg],
+        asmName: 'readShortMessage',
+        declaration: 'void',
+        sentences: [],
+        builtin: 'receive',
+        name: 'readShortMessage'
     },
     {
         argsMemObj: [longPtrArg, longArg],
         asmName: 'sendMessage',
         declaration: 'void',
         sentences: [],
+        builtin: 'send',
         name: 'sendMessage'
+    },
+    {
+        argsMemObj: [longPtrArg, longArg, longArg],
+        asmName: 'sendShortMessage',
+        declaration: 'void',
+        sentences: [],
+        builtin: 'send',
+        name: 'sendShortMessage'
     },
     {
         argsMemObj: [longArg, longPtrArg, longArg],
         asmName: 'sendAmountAndMessage',
         declaration: 'void',
         sentences: [],
+        builtin: 'send',
         name: 'sendAmountAndMessage'
     },
     {
@@ -286,6 +324,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'sendAmount',
         declaration: 'void',
         sentences: [],
+        builtin: 'send',
         name: 'sendAmount'
     },
     {
@@ -293,6 +332,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'sendBalance',
         declaration: 'void',
         sentences: [],
+        builtin: 'send',
         name: 'sendBalance'
     },
     {
@@ -300,6 +340,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getMapValue',
         declaration: 'long',
         sentences: [],
+        builtin: 'maps',
         name: 'getMapValue'
     },
     {
@@ -307,6 +348,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getExtMapValue',
         declaration: 'long',
         sentences: [],
+        builtin: 'maps',
         name: 'getExtMapValue'
     },
     {
@@ -314,6 +356,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'setMapValue',
         declaration: 'void',
         sentences: [],
+        builtin: 'maps',
         name: 'setMapValue'
     },
     {
@@ -321,6 +364,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'issueAsset',
         declaration: 'long',
         sentences: [],
+        builtin: 'assets',
         name: 'issueAsset'
     },
     {
@@ -328,6 +372,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'mintAsset',
         declaration: 'void',
         sentences: [],
+        builtin: 'assets',
         name: 'mintAsset'
     },
     {
@@ -335,6 +380,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'sendQuantity',
         declaration: 'void',
         sentences: [],
+        builtin: 'send',
         name: 'sendQuantity'
     },
     {
@@ -342,6 +388,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'sendQuantityAndAmount',
         declaration: 'void',
         sentences: [],
+        builtin: 'fourArgsPlus',
         name: 'sendQuantityAndAmount'
     },
     {
@@ -349,6 +396,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getAssetBalance',
         declaration: 'long',
         sentences: [],
+        builtin: 'contract',
         name: 'getAssetBalance'
     },
     {
@@ -356,6 +404,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'checkSignature',
         declaration: 'long',
         sentences: [],
+        builtin: 'fourArgsPlus',
         name: 'checkSignature'
     },
     {
@@ -363,6 +412,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'distributeToHolders',
         declaration: 'void',
         sentences: [],
+        builtin: 'fourArgsPlus',
         name: 'distributeToHolders'
     },
     {
@@ -370,6 +420,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getAssetHoldersCount',
         declaration: 'long',
         sentences: [],
+        builtin: 'assets',
         name: 'getAssetHoldersCount'
     },
     {
@@ -377,6 +428,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'readAssets',
         declaration: 'void',
         sentences: [],
+        builtin: 'receive',
         name: 'readAssets'
     },
     {
@@ -384,6 +436,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getQuantity',
         declaration: 'long',
         sentences: [],
+        builtin: 'receive',
         name: 'getQuantity'
     },
     {
@@ -391,6 +444,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getAssetCirculating',
         declaration: 'long',
         sentences: [],
+        builtin: 'assets',
         name: 'getAssetCirculating'
     },
 
@@ -400,6 +454,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getAmountFx',
         declaration: 'fixed',
         sentences: [],
+        builtin: 'receive',
         name: 'getAmountFx'
     },
     {
@@ -407,6 +462,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getActivationOfFx',
         declaration: 'fixed',
         sentences: [],
+        builtin: 'contract',
         name: 'getActivationOfFx'
     },
     {
@@ -414,6 +470,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getCurrentBalanceFx',
         declaration: 'fixed',
         sentences: [],
+        builtin: 'contract',
         name: 'getCurrentBalanceFx'
     },
     {
@@ -421,6 +478,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'sendAmountAndMessageFx',
         declaration: 'void',
         sentences: [],
+        builtin: 'send',
         name: 'sendAmountAndMessageFx'
     },
     {
@@ -428,6 +486,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'sendAmountFx',
         declaration: 'void',
         sentences: [],
+        builtin: 'send',
         name: 'sendAmountFx'
     },
     {
@@ -435,6 +494,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getMapValueFx',
         declaration: 'fixed',
         sentences: [],
+        builtin: 'maps',
         name: 'getMapValueFx'
     },
     {
@@ -442,6 +502,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'getExtMapValueFx',
         declaration: 'fixed',
         sentences: [],
+        builtin: 'maps',
         name: 'getExtMapValueFx'
     },
     {
@@ -449,6 +510,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'setMapValueFx',
         declaration: 'void',
         sentences: [],
+        builtin: 'maps',
         name: 'setMapValueFx'
     },
     {
@@ -456,6 +518,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'sendQuantityAndAmountFx',
         declaration: 'void',
         sentences: [],
+        builtin: 'fourArgsPlus',
         name: 'sendQuantityAndAmountFx'
     },
     {
@@ -463,6 +526,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         asmName: 'distributeToHoldersFx',
         declaration: 'void',
         sentences: [],
+        builtin: 'fourArgsPlus',
         name: 'distributeToHoldersFx'
     }
 ]

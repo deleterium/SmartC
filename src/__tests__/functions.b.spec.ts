@@ -323,8 +323,8 @@ describe('Built-in functions', () => {
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: sendQuantity()', () => {
-        const code = '#pragma optimizationLevel 0\n sendQuantity(1_000, 0xa5531, 0xdede);'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n\nSET @r0 #00000000000003e8\nSET @r1 #00000000000a5531\nSET @r2 #000000000000dede\nFUN set_B1_B2 $r2 $r1\nFUN send_to_Address_in_B $r0\nFIN\n'
+        const code = '#pragma optimizationLevel 0\n long a; sendQuantity(a, 0xa5531, 0xdede);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #00000000000a5531\nSET @r1 #000000000000dede\nCLR @r2\nFUN set_B1_B2 $r1 $r0\nFUN set_B3 $r2\nFUN send_to_Address_in_B $a\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

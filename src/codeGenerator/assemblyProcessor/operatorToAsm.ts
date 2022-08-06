@@ -17,24 +17,20 @@ export default function operatorToAsm (
     function operatorToAsmMain () : string {
         assertExpression(LeftMem.type !== 'constant')
 
-        switch (FlatLeft.FlatMem.declaration) {
-        case 'fixed':
+        if (FlatLeft.FlatMem.declaration === 'fixed') {
             return leftFixedToAsm()
-        default:
-            if (FlatRight.FlatMem.declaration === 'fixed') {
-                throw new Error('Internal error')
-            }
-            return leftRegularRightRegularToAsm()
         }
+        if (FlatRight.FlatMem.declaration === 'fixed') {
+            throw new Error('Internal error')
+        }
+        return leftRegularRightRegularToAsm()
     }
 
     function leftFixedToAsm () : string {
-        switch (FlatRight.FlatMem.declaration) {
-        case 'fixed':
+        if (FlatRight.FlatMem.declaration === 'fixed') {
             return leftFixedRightFixedToAsm()
-        default:
-            return leftFixedRightRegularToAsm()
         }
+        return leftFixedRightRegularToAsm()
     }
 
     function leftFixedRightFixedToAsm () : string {

@@ -12,14 +12,12 @@ export type GLOBAL_AUXVARS = {
     assemblyCode: string
     /** Errors found */
     errors: string
-    /** Warnings found */
-    warnings: string
     /** Current function being processed */
     currFunctionIndex: number
     /** Line counter for source code */
     currSourceLine: number
     /** Get a new jump id according to current Configs (global scope) */
-    getNewJumpID(currLine: number): string
+    getNewJumpID(): string
     /** Query the value of last loop id */
     getLatestLoopID(): string
     /** Query the value of last loop id that is a pure loop (excluding 'switch' ids) */
@@ -92,7 +90,7 @@ export type GENCODE_AUXVARS = {
      */
     getMemoryObjectByLocation (loc: number|bigint|string, line?: number): MEMORY_SLOT
     /** Get a new jump id according to current Configs (genCode scope) */
-    getNewJumpID(currLine: number): string
+    getNewJumpID(): string
 }
 
 export type GENCODE_SOLVED_OBJECT = {

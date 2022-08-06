@@ -7,6 +7,8 @@ import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGen
 import utils from '../utils'
 import genCode from './genCode'
 
+type SIDES = 'left' | 'right' | 'none' | 'notApplicable'
+
 /** Process one binary abstract syntax node */
 export default function binaryAsnProcessor (
     Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
@@ -303,7 +305,7 @@ export default function binaryAsnProcessor (
     /** Tests if implicit type casting is needed and also checks valid operations for binary operators.
      * @returns the side needed to be changed
      * @throws Error if operation is not allowed */
-    function implicitTypeCastingTest (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : 'left' | 'right' | 'none' {
+    function implicitTypeCastingTest (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : SIDES {
         if (lDecl === rDecl) {
             if (lDecl === 'fixed') {
                 return fixedFixedImplicitTC(operVal)
@@ -311,23 +313,22 @@ export default function binaryAsnProcessor (
             return 'none'
         }
         const fixedRet = fixedLongImplicitTC(operVal, lDecl, rDecl)
-        if (fixedRet !== 'notFixedLong') {
+        if (fixedRet !== 'notApplicable') {
             return fixedRet
         }
-        const pointerRet = remainingImplicitTC(operVal, lDecl, rDecl)
-        return pointerRet
+        return remainingImplicitTC(operVal, lDecl, rDecl)
     }
 
-    function fixedLongImplicitTC (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : 'left' | 'right' | 'none' | 'notFixedLong' {
-        let fixedSide: 'left' | 'right' | 'none' = 'none'
+    function fixedLongImplicitTC (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : SIDES {
+        let fixedSide: SIDES = 'notApplicable'
         if (lDecl === 'long' && rDecl === 'fixed') {
             fixedSide = 'right'
         }
         if (lDecl === 'fixed' && rDecl === 'long') {
             fixedSide = 'left'
         }
-        if (fixedSide === 'none') {
-            return 'notFixedLong'
+        if (fixedSide === 'notApplicable') {
+            return fixedSide
         }
         // now there is only one fixed and one long
         switch (operVal) {
@@ -373,7 +374,7 @@ export default function binaryAsnProcessor (
         }
     }
 
-    function fixedFixedImplicitTC (operVal: string) : 'left' | 'right' | 'none' {
+    function fixedFixedImplicitTC (operVal: string) : SIDES {
         switch (operVal) {
         case '%':
         case '&':
@@ -394,7 +395,7 @@ export default function binaryAsnProcessor (
         }
     }
 
-    function remainingImplicitTC (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : 'left' | 'right' | 'none' {
+    function remainingImplicitTC (operVal: string, lDecl: DECLARATION_TYPES, rDecl: DECLARATION_TYPES) : SIDES {
         switch (operVal) {
         case '=':
             if ((lDecl === 'void_ptr' && rDecl.includes('_ptr')) ||
@@ -476,7 +477,7 @@ export default function binaryAsnProcessor (
     }
 
     function logicalToArithmeticOpProc () : GENCODE_SOLVED_OBJECT {
-        const rnd = AuxVars.getNewJumpID(CurrentNode.Operation.line)
+        const rnd = AuxVars.getNewJumpID()
         const idCompSF = '__CMP_' + rnd + '_sF' // set false
         const idCompST = '__CMP_' + rnd + '_sT' // set true
         const idEnd = '__CMP_' + rnd + '_end'
@@ -514,7 +515,7 @@ export default function binaryAsnProcessor (
     }
 
     function orLogicalOpProc () : GENCODE_SOLVED_OBJECT {
-        const rnd = AuxVars.getNewJumpID(CurrentNode.Operation.line)
+        const rnd = AuxVars.getNewJumpID()
         const idNextStmt = '__OR_' + rnd + '_next'
         const LGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Left,
@@ -538,7 +539,7 @@ export default function binaryAsnProcessor (
     }
 
     function andLogicalOpProc () : GENCODE_SOLVED_OBJECT {
-        const rnd = AuxVars.getNewJumpID(CurrentNode.Operation.line)
+        const rnd = AuxVars.getNewJumpID()
         const idNextStmt = '__AND_' + rnd + '_next'
         const LGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Left,

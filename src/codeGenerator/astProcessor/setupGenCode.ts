@@ -147,7 +147,7 @@ export default function setupGenCode (
         return deepCopy(FoundMemory)
     }
 
-    function auxvarsGetNewJumpID (line: number) : string {
+    function auxvarsGetNewJumpID () : string {
         // This code shall be equal GlobalCodeVars.getNewJumpID()
         AuxVars.jumpId++
         return AuxVars.jumpId.toString(36)
