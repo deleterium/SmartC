@@ -52,7 +52,7 @@ describe('Built-in functions', () => {
     })
     test('should throw: readShortMessage wrong usage', () => {
         expect(() => {
-            const code = 'long recipient, b, *c;readShortMessage(2233, 5, recipient);'
+            const code = 'long recipient, b, *c;sendShortMessage(2233, 5, recipient);'
             const compiler = new SmartC({ language: 'C', sourceCode: code })
             compiler.compile()
         }).toThrowError(/^At line/)

@@ -226,7 +226,6 @@ export function createBuiltinInstruction (
     }
 
     function blockchainToAsm () : string {
-        const tempArgsMem = argsMem.map((VarObj) => flattenMemory(AstAuxVars, VarObj, BuiltinToken.line))
         switch (BuiltinToken.value) {
         case 'getCurrentBlockheight':
             assemblyCode = `FUN @${RetMem.asmName} get_Block_Timestamp\n`
@@ -242,7 +241,6 @@ export function createBuiltinInstruction (
         default:
             throw new Error('Internal error')
         }
-        tempArgsMem.forEach(freeAll)
         return assemblyCode
     }
 
