@@ -1,3 +1,12 @@
+## [v2.1](https://github.com/deleterium/SmartC/tree/v2.1) (2022-08-06)
+
+[Commits](https://github.com/deleterium/SmartC/commits/v2.1)
+- Fix on **severe issue in sendQuantity** built-in function (issue #24)
+- Fix implementation for optimization level 3 (should be stable now)
+- New contract **samples LiquidityPool** and **WheelOfSigna**
+- New built-in functions `readShortMessage` and `sendShortMessage` to optimize code for short messages
+- Other minor bug fixes and code de-smelling
+
 ## [v2.0](https://github.com/deleterium/SmartC/tree/v2.0) (2022-07-03)
 
 [Commits](https://github.com/deleterium/SmartC/commits/v2.0)
