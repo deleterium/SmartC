@@ -1,8 +1,9 @@
 import { assertExpression, assertNotUndefined } from '../../repository/repository'
 import { CONTRACT, SC_FUNCTION } from '../../typings/contractTypes'
 import { LOOKUP_ASN, AST, MEMORY_SLOT } from '../../typings/syntaxTypes'
+import { createBuiltinInstruction } from '../assemblyProcessor/builtinToAsm'
 import {
-    createSimpleInstruction, createInstruction, createAPICallInstruction, createBuiltInInstruction
+    createSimpleInstruction, createInstruction, createAPICallInstruction
 } from '../assemblyProcessor/createInstruction'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
@@ -157,9 +158,10 @@ export default function functionSolver (
                 utils.setMemoryDeclaration(processedArgs[0], ifnToCall.declaration)
                 return { SolvedMem: processedArgs[0], asmCode: returnAssemblyCode }
             }
-            returnAssemblyCode += createBuiltInInstruction(
+            returnAssemblyCode += createBuiltinInstruction(
                 AuxVars,
                 utils.genBuiltInToken(CurrentNode.Token.line, ifnToCall.asmName),
+                ifnToCall.builtin,
                 FnRetObj,
                 processedArgs
             )

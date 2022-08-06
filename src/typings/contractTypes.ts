@@ -1,4 +1,4 @@
-import { DECLARATION_TYPES, MEMORY_SLOT, SENTENCES, TOKEN, TYPE_DEFINITIONS } from './syntaxTypes'
+import { BUILTIN_TYPES, DECLARATION_TYPES, MEMORY_SLOT, SENTENCES, TOKEN, TYPE_DEFINITIONS } from './syntaxTypes'
 
 export type SC_CONFIG = {
     /** Hardcoded compiler version!!! */
@@ -64,6 +64,8 @@ export type SC_FUNCTION = {
     line?: number
     /** Assembly name for API Functions only */
     asmName?: string
+    /** Built-in type */
+    builtin?: BUILTIN_TYPES
 }
 
 export type SC_GLOBAL = {

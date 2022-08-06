@@ -269,3 +269,5 @@ export type FIXED_TYPE_DEFINITION = {
     MemoryTemplate: MEMORY_SLOT
 }
 export type TYPE_DEFINITIONS = STRUCT_TYPE_DEFINITION | ARRAY_TYPE_DEFINITION | REGISTER_TYPE_DEFINITION | LONG_TYPE_DEFINITION | FIXED_TYPE_DEFINITION
+
+export type BUILTIN_TYPES = 'loop'|'receive'|'send'|'blockchain'|'contract'|'maps'|'fourArgsPlus'|'assets'|'special'|'internal'
