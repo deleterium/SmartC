@@ -476,7 +476,7 @@ export function createBuiltinInstruction (
             break
         case 'getAssetCirculating':
             assemblyCode = tempArgsMem[0].asmCode +
-                `FUN set_A2 $${tempArgsMem[0].FlatMem.asmName}\n` +
+                `FUN set_B2 $${tempArgsMem[0].FlatMem.asmName}\n` +
                 `FUN @${RetMem.asmName} Get_Asset_Circulating\n`
             break
         default:

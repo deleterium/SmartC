@@ -380,7 +380,7 @@ describe('Built-in functions', () => {
     })
     it('should compile: getAssetCirculating()', () => {
         const code = '#pragma optimizationLevel 0\n long a = getAssetCirculating(0xa55e1);'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #00000000000a55e1\nFUN set_A2 $r0\nFUN @a Get_Asset_Circulating\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #00000000000a55e1\nFUN set_B2 $r0\nFUN @a Get_Asset_Circulating\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
