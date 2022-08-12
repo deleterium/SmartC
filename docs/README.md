@@ -12,6 +12,11 @@ To empower developers, allowing them to create complex and highly optimized smar
 ### Videos
 * [SmartC playlist on Youtube](https://www.youtube.com/playlist?list=PLyu0NNtb1eg3Gcg2JCrOle8MjtuFPb-Gi), with videos for starting, simulating and deploying a smart contract.
 
+### Issues in this version
+* Built-in `sendQuantity` wrong implementation (issue #24).
+* Wrong code for `#pragma optimizationLevel 3` (issue #25).
+* Built-in `getAssetCirculating` wrong implementation (issue #29).
+
 ### Technical documentation:
 * [Basis](./1-Basis.md)
 * [Preprocessor directives](./1.2-Preprocessor-directives.md)
