@@ -10,6 +10,7 @@
 * lpToken name.
 * Fees are collected in Signa and asset. Choose if de distribution to holders of lpTokens are done in signa and asset, or if the asset fee is traded inside pool, so the payment will be only Signa.
 * Minimum interval to try distribution (default is 1 day)
+* Platform fee (percent) is deducted during fees distribution to lpTokens holders (only for Signa values).
 
 ## Special features
 * Contract owner can collect lost tokens stuck in the contract (but not get the main asset or balance)
@@ -32,41 +33,42 @@ All liquidity removals. Protects traders from a sudden removal that will make th
 
 ## Source code
 ```c
-#program name SignaAssetLiquidityPool
+#program name TMGSignaLiquidityPool
 #program description 1) Implements a liquidity pool (constant product formula).\
  2) Includes measures to protect traders from sandwich attack: bots that\
  monitor transactions to manipulate prices by changing transactions order.\
- 3) Liquity providers receive liquitidy tokens (lpToken) to redeem the balance\
- later. 4) Holders of lpTokens receive payments from trades fees. 
+ 3) Liquity providers receive liquitidy tokens (lcToken) to redeem the balance\
+ later. 4) Holders of lcTokens receive payments from trades fees.
 #define ACTIVATION_AMOUNT 4200_0000
 #program activationAmount ACTIVATION_AMOUNT
 
-#include APIFunctions
-
-#pragma maxAuxVars 5
 // #pragma verboseAssembly
 #pragma optimizationLevel 3
 
-#pragma version 2.0.1
+#pragma version 2.1.1
 
 #define SIMULATOR
 // Name for liquidity token (max 8, only letters and number)
-#define LP_TICKER "lpTMG"
+#define LP_TICKER "lcTMG"
 // Pool fee in parts per thousand for each trade
 #define POOL_FEE 20
+// Platform fee in percent for each distribution (only signa part)
+#define PLATFORM_FEE 5
 // If true, fees collected in asset will be traded inside the pool before
 // distribution, so liquidity providers receive only Signa. If false, the
 // distribution will have Signa and assets
-#define DISTRIBUTE_ONLY_SIGNA true
+#define DISTRIBUTE_ONLY_SIGNA false
 
 #ifdef SIMULATOR
-  #define ASSET_ID 222333
   // Try distribution every block
   #define DISTRIBUTION_INTERVAL 1
+  #define ASSET_ID 222333
+  #program codeHashId 12551049878178174318
 #else
-  #define ASSET_ID 18446744073709551615
   // Try distribution every day
   #define DISTRIBUTION_INTERVAL 360
+  #define ASSET_ID 11955007191311588286
+  #program codeHashId 5997699537277718563
 #endif
 
 /* End of configurations */
@@ -88,13 +90,17 @@ struct TXINFO {
     long sender;
     long amount;
     long quantity;
-    long message[4];
+    long message[2];
 } currentTX;
 
 struct TOTAL {
     long signaTotal;
     long assetTotal;
 } pool, block;
+
+struct STATS {
+    long trades, volume;
+} stats;
 
 long currentLiquidity;
 long enqueuedTrades, enqueuedRemovals;
@@ -118,7 +124,7 @@ void main () {
         // get details
         currentTX.sender = getSender(currentTX.txid);
         currentTX.amount = getAmount(currentTX.txid);
-        readMessage(currentTX.txid, 0, currentTX.message);
+        readShortMessage(currentTX.txid, currentTX.message, currentTX.message.length);
         currentTX.quantity = getQuantity(currentTX.txid, assetId);
         if (shutdown != 0) {
             refundTransaction();
@@ -157,63 +163,39 @@ void main () {
     // After all transactions processed
     processEnqueuedTrades();
     processEnqueuedRemovals();
-    switch (shutdown) {
-    case 0:
-        // regular distribution
-        distributeDividends();
-        break;
-    case 1:
-        // Return values to liquidity providers
-        distributeToHolders(
-            0,
-            liquidityToken,
-            getCurrentBalance() - ACTIVATION_AMOUNT,
-            assetId,
-            getAssetBalance(assetId)
-        );
-        pool.signaTotal = 0;
-        pool.assetTotal = 0;
-        currentLiquidity = 0;
-        shutdown = 2;
-        break;
-    default:
-        // burn excess
-        sendAmount(getCurrentBalance() - ACTIVATION_AMOUNT, 0);
-        shutdown++;
-    }
+    shutdownHandler();
 }
 
 void refundTransaction() {
-    sendQuantityAndAmount(
-        currentTX.quantity,
-        assetId,
-        currentTX.amount,
-        currentTX.sender
-    );
+    if (currentTX.quantity > 0) {
+        sendQuantityAndAmount(currentTX.quantity, assetId, currentTX.amount, currentTX.sender);
+    } else if (currentTX.amount > 0) {
+        sendAmount(currentTX.amount, currentTX.sender);
+    }
 }
 
 void addLiquidity() {
     long operationAsset,  operationSigna;
-    long operationLiquidity;
+    long operationLiquidity, excessSigna;
     if (currentTX.amount == 0 || currentTX.quantity == 0) {
         refundTransaction();
         return;
     }
     if (currentLiquidity == 0) {
+        excessSigna = 0;
         operationSigna = currentTX.amount;
         operationAsset = currentTX.quantity;
         operationLiquidity = sqrt(operationAsset) * sqrt(operationSigna);
     } else {
-        long excessSigna = currentTX.amount - mdv(currentTX.quantity, pool.signaTotal, pool.assetTotal);
+        excessSigna = currentTX.amount - mdv(currentTX.quantity, pool.signaTotal, pool.assetTotal);
         long excessAsset = currentTX.quantity - mdv(currentTX.amount, pool.assetTotal, pool.signaTotal);
         if (excessSigna < 0) {
             // Refund the excess of asset
-            sendQuantityAndAmount(excessAsset, assetId, 0, currentTX.sender);
+            sendQuantity(excessAsset, assetId, currentTX.sender);
             operationAsset = currentTX.quantity - excessAsset;
             operationSigna = currentTX.amount;
         } else {
             // Refund the excess of signa
-            sendAmount(excessSigna, currentTX.sender);
             operationAsset = currentTX.quantity;
             operationSigna = currentTX.amount - excessSigna;
         }
@@ -221,7 +203,7 @@ void addLiquidity() {
     }
     // Issue/send liquidity token
     mintAsset(operationLiquidity, liquidityToken);
-    sendQuantityAndAmount(operationLiquidity, liquidityToken, 0, currentTX.sender);
+    sendQuantityAndAmount(operationLiquidity, liquidityToken, excessSigna, currentTX.sender);
     // Update totals
     pool.signaTotal += operationSigna;
     pool.assetTotal += operationAsset;
@@ -245,7 +227,7 @@ void processEnqueuedRemovals() {
         long calculatedSigna = pool.signaTotal * qty / currentLiquidity;
         long calculatedAsset = pool.assetTotal * qty / currentLiquidity;
         // Burn liquidity token
-        sendQuantityAndAmount(qty, liquidityToken, 0, 0);
+        sendQuantity(qty, liquidityToken, 0);
         // Send withdraw
         sendQuantityAndAmount(calculatedAsset, assetId, calculatedSigna, sender);
         // Update totals
@@ -330,27 +312,63 @@ void processEnqueuedTrades() {
             // User sending Signa to get asset
             opSigna = mdv(currTrade.signa, 1000 - POOL_FEE, 1000);
             opAsset = mdv(opSigna, pool.assetTotal, newTotal.signaTotal);
-            sendQuantityAndAmount(opAsset, assetId, 0, currTrade.sender);
+            sendQuantity(opAsset, assetId, currTrade.sender);
         } else {
             // User sending asset to get Signa
             opAsset = mdv(currTrade.quantity, 1000 - POOL_FEE, 1000);
             opSigna = mdv(opAsset, pool.signaTotal, newTotal.assetTotal);
             sendAmount(opSigna, currTrade.sender);
         }
+        stats.volume += opSigna;
     }
+    stats.trades += enqueuedTrades;
     pool.signaTotal = newTotal.signaTotal;
     pool.assetTotal = newTotal.assetTotal;
 }
 
+void shutdownHandler() {
+    switch (shutdown) {
+    case 0:
+        // regular distribution
+        distributeDividends();
+        break;
+    case 1:
+        // Return values to liquidity providers
+        do {
+            // Retry every block until distribution is done!
+            distributeToHolders(
+                0,
+                liquidityToken,
+                getCurrentBalance() - ACTIVATION_AMOUNT,
+                assetId,
+                getAssetBalance(assetId)
+            );
+            if (getCurrentBalance() > ACTIVATION_AMOUNT) {
+                sleep;
+                continue;
+            }
+        } while (false);
+        pool.signaTotal = 0;
+        pool.assetTotal = 0;
+        currentLiquidity = 0;
+        shutdown = 2;
+        break;
+    default:
+        // burn excess
+        sendAmount(getCurrentBalance() - ACTIVATION_AMOUNT, 0);
+        shutdown++;
+    }
+}
+
 void distributeDividends() {
-    if (getCurrentBlockheight() - lastDistribution > DISTRIBUTION_INTERVAL) {
+    long thisBlock = getCurrentBlockheight();
+    if (thisBlock - lastDistribution >= DISTRIBUTION_INTERVAL) {
         long feesBalance = getCurrentBalance() - pool.signaTotal - ACTIVATION_AMOUNT;
         if (feesBalance < ACTIVATION_AMOUNT) {
             // do not distribute dust
             return;
         }
         long assetFeesBalance = getAssetBalance(assetId) - pool.assetTotal;
-        //sendQuantityAndAmount(asssetFeesBalance, assetId, feesBalance, 0);
         if (distributeOnlySigna) {
             // Trade the asset fees to send only signa to liquidity providers
             long tradeAmount = mdv(pool.signaTotal, assetFeesBalance, pool.assetTotal + assetFeesBalance);
@@ -359,7 +377,11 @@ void distributeDividends() {
             feesBalance += tradeAmount;
             assetFeesBalance = 0;
         }
+        long platformFee = mdv(feesBalance, PLATFORM_FEE, 100);
+        feesBalance -= platformFee;
+        sendAmount(platformFee, owner);
         distributeToHolders(0, liquidityToken, feesBalance, assetId, assetFeesBalance);
+        lastDistribution = thisBlock;
     }
 }
 
@@ -369,10 +391,10 @@ void processCreatorCommand() {
         if (currentTX.message[1] == 0 || currentTX.message[1] == assetId) {
             // owner can get stuck tokens in the contract, but not signa or
             // the pool asset.
-            // message = { 'extract', stuckAssetId, quantity }
+            // message = { 'extract', stuckAssetId }
             return;
         }
-        sendQuantityAndAmount(currentTX.message[2], currentTX.message[1], 0, owner);
+        sendQuantity(0x7fffffffffffffff, currentTX.message[1], owner);
         return;
     case 'shutdown':
         shutdown = 1;
@@ -462,11 +484,11 @@ Testcase 4: Owner commands (distribute only signa = false)
     // add some token
   { "blockheight": 6, "sender": "10000n", "recipient": "999n", "amount": "0n", "tokens": [{ "asset": "0xaabbccdd", "quantity": "0x11aa22bb33" }] },
     // extract token 0 (signa). Expect deny
-  { "blockheight": 8, "sender": "555n", "recipient": "999n", "amount": "4200_0000n",  "messageHex": "65787472616374000000000000000000ffffffffffffff7f"},
+  { "blockheight": 8, "sender": "555n", "recipient": "999n", "amount": "4200_0000n",  "messageHex": "65787472616374000000000000000000"},
     // extract token 222333 (assetId). Expect deny
-  { "blockheight": 10, "sender": "555n", "recipient": "999n", "amount": "4200_0000n",  "messageHex": "65787472616374007d64030000000000ffffffffffffff7f"},
+  { "blockheight": 10, "sender": "555n", "recipient": "999n", "amount": "4200_0000n",  "messageHex": "65787472616374007d64030000000000"},
     // extract token 0xaabbccdd (another asset). Expect remove all
-  { "blockheight": 12, "sender": "555n", "recipient": "999n", "amount": "4200_0000n",  "messageHex": "6578747261637400ddccbbaa00000000ffffffffffffff7f"},
+  { "blockheight": 12, "sender": "555n", "recipient": "999n", "amount": "4200_0000n",  "messageHex": "6578747261637400ddccbbaa00000000"},
     // change owner to 0xfffff3
   { "blockheight": 14, "sender": "555n", "recipient": "999n", "amount": "4200_0000n",  "messageHex": "6e65776f776e6572f3ffff0000000000"},
     // new owner accepts. Expect change of ownership
@@ -490,13 +512,13 @@ Testcase 5: Missing cases (distribute only signa = false)
     // No command (values distributed to liquidity providers)
   { "blockheight": 8, "sender": "10001n", "recipient": "999n", "amount": "1_4200_0000n", "tokens": [{ "asset": 222333, "quantity": 10000 }] },
     // Wrong add (missing signa) (expect refund)
-  { "blockheight": 10, "sender": "10001n", "recipient": "999n", "amount": "4200_0000n", "tokens": [{ "asset": 222333, "quantity": 10000 }] },
+  { "blockheight": 10, "sender": "10001n", "recipient": "999n", "amount": "4200_0000n", "messageText": "add", "tokens": [{ "asset": 222333, "quantity": 10000 }] },
     // Wrong add (missing asset) (expect refund)
-  { "blockheight": 10, "sender": "10001n", "recipient": "999n", "amount": "1_4200_0000n"},
+  { "blockheight": 10, "sender": "10001n", "recipient": "999n", "amount": "1_4200_0000n", "messageText": "add"},
     // Verify refund Signa (expect add and refund)
-  { "blockheight": 12, "sender": "10002n", "recipient": "999n", "amount": "100000_4200_0000n", "tokens": [{ "asset": 222333, "quantity": 100 }] },
+  { "blockheight": 12, "sender": "10002n", "recipient": "999n", "amount": "100000_4200_0000n", "messageText": "add", "tokens": [{ "asset": 222333, "quantity": 100 }] },
     // Verify refund Signa (expect add and refund)
-  { "blockheight": 14, "sender": "10002n", "recipient": "999n", "amount": "1_4200_0000n", "tokens": [{ "asset": 222333, "quantity": 10000000000 }] },
+  { "blockheight": 14, "sender": "10002n", "recipient": "999n", "amount": "1_4200_0000n", "messageText": "add", "tokens": [{ "asset": 222333, "quantity": 10000000000 }] },
     // Wrong remove (keep signa)
   { "blockheight": 16, "sender": "100n", "recipient": "999", "amount": "1_4200_0000", "messageText": "remove" },
     // Wrong trade (zero signa and tokens)
