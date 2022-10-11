@@ -58,6 +58,7 @@ void processTX(void) {
     do {
         // send message loop
         sendMessage(currentTX.message + currentLong, currentTX.sender);
+        currentLong += 4;
     } while (((currentTX.message[currentLong - 1]) >>  56) != 0 && currentLong < currentTX.message.length);
 }
 ```
