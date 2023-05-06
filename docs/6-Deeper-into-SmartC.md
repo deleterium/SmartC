@@ -35,10 +35,10 @@ Following table presents operators precedence order that are [based on C](https:
 | 4 | `+`   `-` | Addition and subtraction | Left-to-right |
 | 5 | `<<`   `>>` | Bitwise shift left and right  | Left-to-right |
 | 6 | `<`   `<=`   `>`   `>=`   `==`   `!=` | Comparisons |Left-to-right |
-| 7 | `&`   `^`   `|` | Bitwise AND XOR OR | Left-to-right |
+| 7 | `&`   `^`   `\|` | Bitwise AND XOR OR | Left-to-right |
 | 8 | `&&`   | Logical AND | Left-to-right |
-| 9 | `||`   | Logical OR | Left-to-right |
-| 10 | `=`   `+=`   `-=`   `/=`   `*=`   `%=`   `&=`   `^=`   `|=`   `<<=`   `>>=` | Assignment operators| Right-to-left |
+| 9 | `\|\|`   | Logical OR | Left-to-right |
+| 10 | `=`   `+=`   `-=`   `/=`   `*=`   `%=`   `&=`   `^=`   `\|=`   `<<=`   `>>=` | Assignment operators| Right-to-left |
 | 11 | `,`  | Delimiter, comma | Left-to-right |
 | 12 | `;` `keywords`  | Terminator, semi, keywords other than sizeof | Right-to-left |
 
@@ -53,12 +53,12 @@ Tokens are divided in groups and later on checked if their combinations are synt
 | Variable | `var1` | Variables names. In special cases could be a pointer representation. |
 | Function | `func1(args)` | Function names. Represents a value returned by functions execution. |
 | Constant | `23`   `0xffa`   `'Hi!'` | Number to be stored inside a long value (64 bit). Strings are converted to number. |
-| Operator | `/`   `%`   `<<`   `>>`   `|`   `^` | Tokens that are undoubtly binary operators and have no other interpretation. |
+| Operator | `/`   `%`   `<<`   `>>`   `\|`   `^` | Tokens that are undoubtly binary operators and have no other interpretation. |
 | UnaryOperator | `!`   `~` | Tokens that are undoubtly unary operators and have no other interpretation. |
 | SetUnaryOperator | `++`   `--` | Special unary operations with same meaning in C - pre/post increment/decrement |
 | Assignment | `=` | Common assignment operation |
-| SetOperator | `+=`   `-=`   `/=`   `*=`   `%=`   `&=`   `^=`   `|=`   `<<=`   `>>=` | Special assignment operations |
-| Comparision | `==`   `<=`   `<`   `>`   `>=`   `!=`   `&&`   `||` | Logical comparisions operations |
+| SetOperator | `+=`   `-=`   `/=`   `*=`   `%=`   `&=`   `^=`   `\|=`   `<<=`   `>>=` | Special assignment operations |
+| Comparision | `==`   `<=`   `<`   `>`   `>=`   `!=`   `&&`   `\|\|` | Logical comparisions operations |
 | CheckOperator | `+`   `-`   `*`   `&` | Tokens that have two meanings and need to be checked agains previous tokens to know their behaviour. After parsed they are treated as UnaryOperator or Operator |
 | Arr | `[expr]` | Representation of an array index. Must have a variable before it. |
 | CodeCave | `(expr...)` | Surrounding expressions to indicate that they shall be evaluated before others operations. In special case could be a pointer representation, or part of other keywords as `if`, `for`, ... |
