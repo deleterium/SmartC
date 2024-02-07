@@ -479,6 +479,11 @@ export function createBuiltinInstruction (
                 `FUN set_B2 $${tempArgsMem[0].FlatMem.asmName}\n` +
                 `FUN @${RetMem.asmName} Get_Asset_Circulating\n`
             break
+        case 'getAccountBalance':
+            assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
+                        `FUN set_B1_B2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
+                        `FUN @${RetMem.asmName} Get_Account_Balance\n`
+            break
         default:
             throw new Error('Internal error')
         }
