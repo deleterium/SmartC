@@ -448,6 +448,14 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         name: 'getAssetCirculating'
     },
     {
+        argsMemObj: [longArg],
+        asmName: 'getAccountBalance',
+        declaration: 'long',
+        sentences: [],
+        builtin: 'assets',
+        name: 'getAccountBalance'
+    },
+    {
         argsMemObj: [longArg, longArg],
         asmName: 'getAccountAssetQuantity',
         declaration: 'long',
