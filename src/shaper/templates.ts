@@ -449,11 +449,11 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
     },
     {
         argsMemObj: [longArg, longArg],
-        asmName: 'getAccountBalance',
+        asmName: 'getAccountAssetQuantity',
         declaration: 'long',
         sentences: [],
         builtin: 'assets',
-        name: 'getAccountBalance'
+        name: 'getAccountAssetQuantity'
     },
 
     /* fixed number versions */
