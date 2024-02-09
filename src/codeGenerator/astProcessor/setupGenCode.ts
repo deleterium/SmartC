@@ -126,6 +126,9 @@ export default function setupGenCode (
         if (MemFound === undefined) {
             throw new Error(`At line: ${line}. Using variable '${varName}' before declaration.`)
         }
+        if (!MemFound.isSet) {
+            detectAndSetNotInitialized(MemFound, line, varDeclaration !== '')
+        }
         if (varDeclaration !== '') { // we are in declarations sentence
             MemFound.isDeclared = true
             return deepCopy(MemFound)
@@ -144,7 +147,22 @@ export default function setupGenCode (
         if (FoundMemory === undefined) {
             throw new Error(`At line: ${line}. No variable found at address '${addr}'.`)
         }
+        if (!FoundMemory.isSet) {
+            detectAndSetNotInitialized(FoundMemory, line, false)
+        }
         return deepCopy(FoundMemory)
+    }
+
+    function detectAndSetNotInitialized (Memory: MEMORY_SLOT, line: number, isInitialization: boolean) {
+        if (AuxVars.isLeftSideOfAssignment || Memory.hexContent) {
+            Memory.isSet = true
+            return
+        }
+        if (isInitialization) {
+            return
+        }
+        AuxVars.warnings.push(`Warning: at line ${line}. Variable '${Memory.name}' is used but not initialized.`)
+        Memory.isSet = true // No more warning for same variable
     }
 
     function auxvarsGetNewJumpID () : string {
