@@ -513,6 +513,10 @@ export class API_MICROCODE {
         {
             funName: 'Get_Asset_Circulating',
             execute: metaUnknowAndRevokeVariable
+        },
+        {
+            funName: 'Get_Account_Balance',
+            execute: metaUnknowAndRevokeVariable
         }
     ]
 

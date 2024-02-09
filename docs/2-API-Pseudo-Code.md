@@ -657,6 +657,21 @@ long Get_Asset_Circulating(void) {
        treasury account.
     */
 }
+
+long Get_Account_Balance(void) {
+    // Assembly name: Get_Account_Balance
+    accountId = B1;
+    assetId = B2;
+
+    if(assetId == 0L){
+        balance = Blockchain.getAccountBalance(accountId);
+        // if there is no account, then return zero
+        return balance
+    }
+    quantity = Blockchain.getAccountQuatity(accountId, assetId);
+    // If there is no account, or if account does not have the given asset, returns 0
+    return quantity
+}
 ```
 </details>
 <details>
@@ -820,6 +835,21 @@ fixed F_Get_Activation_Fee(void) {
         return Blockchain.GetActivationAmountFromAT(B2);
     }
     return 0;
+}
+
+fixed F_Get_Account_Balance(void) {
+    // Assembly name: Get_Account_Balance
+    accountId = B1;
+    assetId = B2;
+
+    if(assetId == 0L){
+        balance = Blockchain.getAccountBalance(accountId);
+        // if there is no account, then return zero
+        return balance
+    }
+    quantity = Blockchain.getAccountQuatity(accountId, assetId);
+    // If there is no account, or if account does not have the given asset, returns 0
+    return quantity
 }
 ```
 </details>

@@ -237,7 +237,8 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         { name: 'Get_Asset_Holders_Count', apiCode: 0x040c, opCode: 0x35 },
         { name: 'Get_Activation_Fee', apiCode: 0x040d, opCode: 0x35 },
         { name: 'Put_Last_Block_GSig_In_A', apiCode: 0x040e, opCode: 0x32 },
-        { name: 'Get_Asset_Circulating', apiCode: 0x040f, opCode: 0x35 }
+        { name: 'Get_Asset_Circulating', apiCode: 0x040f, opCode: 0x35 },
+        { name: 'Get_Account_Balance', apiCode: 0x0410, opCode: 0x35 }
     ]
     const AsmObj: ASM_OBJECT = {
         memory: [],
@@ -426,7 +427,7 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
     }
 
     /** Finds and return an API Code for a given name, or throws if not found */
-    function getApiCode (nameToSearch: string, currOpCode: number, currentCodeLine:string) : number {
+    function getApiCode (nameToSearch: string, currOpCode: number, currentCodeLine: string): number {
         const query = apiCodeTable.find(Obj => Obj.name === nameToSearch && Obj.opCode === currOpCode)
         if (query) {
             return query.apiCode
@@ -448,7 +449,7 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
             const FoundLabel = AsmObj.labels.find(obj => obj.label === CurrItem.branchLabel)
             if (FoundLabel === undefined) {
                 throw new Error('assembler() error #4.' +
-                ` Unknow label ${CurrItem.branchLabel}. Instruction: '${CurrItem.source}'`)
+                    ` Unknow label ${CurrItem.branchLabel}. Instruction: '${CurrItem.source}'`)
             }
             const offset = FoundLabel.address - CurrItem.address
             if (offset < -128 || offset > 127) {
