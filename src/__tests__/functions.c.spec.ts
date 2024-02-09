@@ -57,4 +57,32 @@ describe('Built-in functions', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    it('should compile: getAccountQuantity()', () => {
+        const code = '#pragma optimizationLevel 0\n long a = getAccountQuantity(0xa5531, 0x2222222222222222);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #00000000000a5531\nSET @r1 #2222222222222222\nFUN set_B1_B2 $r0 $r1\nFUN @a Get_Account_Balance\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getAccountBalance()', () => {
+        const code = '#pragma optimizationLevel 0\n long a = getAccountBalance(0xa5531);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nSET @r0 #00000000000a5531\nCLR @r1\nFUN set_B1_B2 $r0 $r1\nFUN @a Get_Account_Balance\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: getAccountBalanceFx()', () => {
+        const code = '#pragma optimizationLevel 0\n fixed a = getAccountBalanceFx(0xa5531);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n\nSET @r0 #00000000000a5531\nCLR @r1\nFUN set_B1_B2 $r0 $r1\nFUN @a Get_Account_Balance\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: APIFunctions Get_Account_Balance() and F_Get_Account_Balance()', () => {
+        const code = '#pragma optimizationLevel 0\n#include APIFunctions\n#include fixedAPIFunctions\n\nlong a = Get_Account_Balance();\nfixed b = F_Get_Account_Balance();\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare a\n^declare b\n\nFUN @a Get_Account_Balance\nFUN @b Get_Account_Balance\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })
