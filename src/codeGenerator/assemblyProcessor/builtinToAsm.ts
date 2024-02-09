@@ -480,13 +480,14 @@ export function createBuiltinInstruction (
                 `FUN @${RetMem.asmName} Get_Asset_Circulating\n`
             break
         case 'getAccountBalance':
+        case 'getAccountBalanceFx':
             auxFlatMem = flattenMemory(AstAuxVars, utils.createConstantMemObj(0n), BuiltinToken.line)
             assemblyCode = tempArgsMem[0].asmCode + auxFlatMem.asmCode +
                         `FUN set_B1_B2 $${tempArgsMem[0].FlatMem.asmName} $${auxFlatMem.FlatMem.asmName}\n` +
                 `FUN @${RetMem.asmName} Get_Account_Balance\n`
             AstAuxVars.freeRegister(auxFlatMem.FlatMem.address)
             break
-        case 'getAccountAssetQuantity':
+        case 'getAccountQuantity':
             assemblyCode = tempArgsMem[0].asmCode + tempArgsMem[1].asmCode +
                         `FUN set_B1_B2 $${tempArgsMem[0].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
                         `FUN @${RetMem.asmName} Get_Account_Balance\n`

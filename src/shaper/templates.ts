@@ -457,11 +457,11 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
     },
     {
         argsMemObj: [longArg, longArg],
-        asmName: 'getAccountAssetQuantity',
+        asmName: 'getAccountQuantity',
         declaration: 'long',
         sentences: [],
         builtin: 'assets',
-        name: 'getAccountAssetQuantity'
+        name: 'getAccountQuantity'
     },
 
     /* fixed number versions */
@@ -544,6 +544,14 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         sentences: [],
         builtin: 'fourArgsPlus',
         name: 'distributeToHoldersFx'
+    },
+    {
+        argsMemObj: [longArg],
+        asmName: 'getAccountBalanceFx',
+        declaration: 'fixed',
+        sentences: [],
+        builtin: 'assets',
+        name: 'getAccountBalanceFx'
     }
 ]
 
@@ -1296,5 +1304,12 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         declaration: 'fixed',
         sentences: [],
         name: 'F_Get_Activation_Fee'
+    },
+    {
+        argsMemObj: [],
+        asmName: 'Get_Account_Balance',
+        declaration: 'fixed',
+        sentences: [],
+        name: 'F_Get_Account_Balance'
     }
 ]
