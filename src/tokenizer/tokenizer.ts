@@ -171,7 +171,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             throw new Error(`At line: ${AuxVars.currentLine}. ${RuleDouble.errorMsg}`)
         }
         if (RuleDouble.pretokenType === 'NONE') {
-            AuxVars.currentLine += (endParts[1].match(/\n/g) || '').length
+            AuxVars.currentLine += (endParts[1].match(/\n/g) ?? '').length
             AuxVars.current += endParts[1].length
             return true// breaks find function
         }
@@ -180,7 +180,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             value: endParts[1].slice(0, -RuleDouble.removeTrailing),
             line: AuxVars.currentLine
         })
-        AuxVars.currentLine += (endParts[1].match(/\n/g) || '').length
+        AuxVars.currentLine += (endParts[1].match(/\n/g) ?? '').length
         AuxVars.current += endParts[1].length
         return true// breaks find function
     }
@@ -192,7 +192,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         }
         switch (RuleSingle.pretokenType) {
         case 'NONE':
-            AuxVars.currentLine += (startParts[1].match(/\n/g) || '').length
+            AuxVars.currentLine += (startParts[1].match(/\n/g) ?? '').length
             AuxVars.current += startParts[1].length + RuleSingle.addLength
             return true
         case 'ASM': {
@@ -208,7 +208,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             const asmText = asmParts[2].slice(0, endLocation)
             const asmCode = asmParts[1] + asmText + '}'
             AuxVars.preTokens.push({ type: 'keyword', value: 'asm', line: AuxVars.currentLine, extValue: asmText })
-            AuxVars.currentLine += (asmCode.match(/\n/g) || '').length
+            AuxVars.currentLine += (asmCode.match(/\n/g) ?? '').length
             AuxVars.current += asmCode.length
             return true
         }
@@ -224,13 +224,13 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
                 line: AuxVars.currentLine,
                 extValue: structParts[2]
             })
-            AuxVars.currentLine += (structParts[1].match(/\n/g) || '').length
+            AuxVars.currentLine += (structParts[1].match(/\n/g) ?? '').length
             AuxVars.current += structParts[1].length
             return true
         }
         default:
             AuxVars.preTokens.push({ type: RuleSingle.pretokenType, value: startParts[1], line: AuxVars.currentLine })
-            AuxVars.currentLine += (startParts[1].match(/\n/g) || '').length
+            AuxVars.currentLine += (startParts[1].match(/\n/g) ?? '').length
             AuxVars.current += startParts[1].length + RuleSingle.addLength
             return true
         }

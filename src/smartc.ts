@@ -80,7 +80,7 @@ export class SmartC {
     /**
      * Triggers compilation process
      * @throws {Error} if compilation is not sucessfull */
-    compile () : SmartC {
+    compile () : this {
         let preprocessed : string
         let tokenized: PRE_TOKEN[]
         let parsed: TOKEN[]

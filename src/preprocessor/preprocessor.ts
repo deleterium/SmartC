@@ -74,14 +74,14 @@ export default function preprocessor (sourcecode: string) : string {
                     retArr[retArr.length - 1] += line.slice(0, -1)
                     escapedLines++
                 }
+                return
+            }
+            if (escapedLines !== 0) {
+                retArr[retArr.length - 1] += line
+                retArr.push(...Array(escapedLines).fill(''))
+                escapedLines = 0
             } else {
-                if (escapedLines !== 0) {
-                    retArr[retArr.length - 1] += line
-                    retArr.push(...Array(escapedLines).fill(''))
-                    escapedLines = 0
-                } else {
-                    retArr.push(line)
-                }
+                retArr.push(line)
             }
         })
         if (escapedLines > 1) {

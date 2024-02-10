@@ -18,7 +18,7 @@ function metaReset (ContractState: CONTRACT) : boolean|null {
 }
 
 export class CPU {
-    static cpuMicrocode: CPU_MICROCODE[] = [
+    static readonly cpuMicrocode: CPU_MICROCODE[] = [
         {
             name: 'blank',
             regex: /^\s*$/,
@@ -62,7 +62,7 @@ export class CPU {
         },
         {
             name: 'program',
-            regex: /^\s*\^program\s+(\w+)\s+([\s\S]+)$/,
+            regex: /^\s*\^program\s(.+)$/,
             execute: metaDoNothing
         },
         {

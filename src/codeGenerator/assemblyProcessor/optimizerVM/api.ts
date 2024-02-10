@@ -83,7 +83,7 @@ function metaGetSuperregister (ContractState: CONTRACT, RetVar: MemoryObj, reg: 
 }
 
 export class API_MICROCODE {
-    static EXT_FUN: T_EXT_FUN[] = [
+    static readonly EXT_FUN: T_EXT_FUN[] = [
         {
             funName: 'clear_A',
             execute (ContractState) {
@@ -281,7 +281,7 @@ export class API_MICROCODE {
         }
     ]
 
-    static EXT_FUN_DAT: T_EXT_FUN_DAT[] = [
+    static readonly EXT_FUN_DAT: T_EXT_FUN_DAT[] = [
         {
             funName: 'set_A1',
             execute (ContractState, ContentVar) {
@@ -350,7 +350,7 @@ export class API_MICROCODE {
         }
     ]
 
-    static EXT_FUN_DAT_2: T_EXT_FUN_DAT_2[] = [
+    static readonly EXT_FUN_DAT_2: T_EXT_FUN_DAT_2[] = [
         {
             funName: 'set_A1_A2',
             execute (ContractState, ContentVar1, ContentVar2) {
@@ -377,7 +377,7 @@ export class API_MICROCODE {
         }
     ]
 
-    static EXT_FUN_RET: T_EXT_FUN_RET[] = [
+    static readonly EXT_FUN_RET: T_EXT_FUN_RET[] = [
         {
             funName: 'get_A1',
             execute (ContractState, RetVar) {
@@ -520,7 +520,7 @@ export class API_MICROCODE {
         }
     ]
 
-    static EXT_FUN_RET_DAT_2: T_EXT_FUN_RET_DAT_2[] = [
+    static readonly EXT_FUN_RET_DAT_2: T_EXT_FUN_RET_DAT_2[] = [
         {
             funName: 'add_Minutes_to_Timestamp',
             execute: metaUnknowAndRevokeVariable

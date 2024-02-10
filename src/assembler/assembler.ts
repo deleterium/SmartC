@@ -521,17 +521,15 @@ export default function assembler (assemblyCode: string): MACHINE_OBJECT {
         let cspages = 0; let uspages = 0
         if (AsmObj.PCodeStackPages > 0) {
             cspages = AsmObj.PCodeStackPages
-        } else {
-            if (assemblyCode.indexOf('JSR ') !== -1 || assemblyCode.indexOf('RET') !== -1) {
-                cspages = 1
-            }
+        }
+        if (cspages === 0 && (assemblyCode.indexOf('JSR ') !== -1 || assemblyCode.indexOf('RET') !== -1)) {
+            cspages = 1
         }
         if (AsmObj.PUserStackPages > 0) {
             uspages = AsmObj.PUserStackPages
-        } else {
-            if (assemblyCode.indexOf('POP ') !== -1 || assemblyCode.indexOf('PSH ') !== -1) {
-                uspages = 1
-            }
+        }
+        if (uspages === 0 && (assemblyCode.indexOf('POP ') !== -1 || assemblyCode.indexOf('PSH ') !== -1)) {
+            uspages = 1
         }
         const datapages = Math.ceil(AsmObj.memory.length / 32)
         const codepages = Math.ceil(AsmObj.bytecode.length / (32 * 16))

@@ -83,12 +83,12 @@ export class CONTRACT {
 
     unknownSuperRegisterA () : void {
         this.Memory.forEach((Mem) => {
-            if (/^[A][1234]$/.test(Mem.varName)) {
+            if (/^A[1234]$/.test(Mem.varName)) {
                 Mem.value = unknownValue
                 Mem.shadow = ''
                 return
             }
-            if (/^[A][1234]$/.test(Mem.shadow)) {
+            if (/^A[1234]$/.test(Mem.shadow)) {
                 Mem.shadow = ''
             }
         })
@@ -96,12 +96,12 @@ export class CONTRACT {
 
     unknownSuperRegisterB () : void {
         this.Memory.forEach((Mem) => {
-            if (/^[B][1234]$/.test(Mem.varName)) {
+            if (/^B[1234]$/.test(Mem.varName)) {
                 Mem.value = unknownValue
                 Mem.shadow = ''
                 return
             }
-            if (/^[B][1234]$/.test(Mem.shadow)) {
+            if (/^B[1234]$/.test(Mem.shadow)) {
                 Mem.shadow = ''
             }
         })
