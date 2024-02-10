@@ -106,6 +106,7 @@ export default function memoryProcessor (
             }
         }
         header.isDeclared = AuxVars.isFunctionArgument
+        header.isSet = AuxVars.isFunctionArgument
         // If is not an array, just send the header
         if (dimensions.length === 0) {
             return [header]
@@ -133,6 +134,7 @@ export default function memoryProcessor (
             Mem2.asmName = `${header.asmName}_${i - 1}`
             Mem2.scope = AuxVars.currentScopeName
             Mem2.declaration = header.ArrayItem.declaration
+            Mem2.isSet = true // No way to track array items for using before initialized
             retArrMem.push(Mem2)
         }
         // create array type definition
@@ -277,6 +279,7 @@ export default function memoryProcessor (
             StructMemHeader.asmName = AuxVars.currentPrefix + phraseCode[startingTokenCounter].value
             StructMemHeader.scope = AuxVars.currentScopeName
             StructMemHeader.isDeclared = AuxVars.isFunctionArgument
+            StructMemHeader.isSet = AuxVars.isFunctionArgument
             return [StructMemHeader]
         }
         // It IS array of structs
@@ -293,6 +296,7 @@ export default function memoryProcessor (
         StructMemHeader.asmName = AuxVars.currentPrefix + phraseCode[startingTokenCounter].value
         StructMemHeader.scope = AuxVars.currentScopeName
         StructMemHeader.isDeclared = AuxVars.isFunctionArgument
+        StructMemHeader.isSet = AuxVars.isFunctionArgument
         StructMemHeader.type = 'array'
         StructMemHeader.typeDefinition = StructMemHeader.asmName
         StructMemHeader.ArrayItem = {

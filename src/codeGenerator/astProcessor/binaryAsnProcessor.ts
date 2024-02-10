@@ -144,7 +144,9 @@ export default function binaryAsnProcessor (
 
     function assignmentProc () : GENCODE_SOLVED_OBJECT {
         assignmentStartErrorTests()
-        AuxVars.isLeftSideOfAssignment = true
+        if (CurrentNode.Operation.type === 'Assignment') {
+            AuxVars.isLeftSideOfAssignment = true
+        }
         AuxVars.hasVoidArray = false
         const LGenObj = genCode(Program, AuxVars, {
             RemAST: CurrentNode.Left,

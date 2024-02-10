@@ -23,6 +23,7 @@ export function getTypeDefinitionTemplate<T extends 'register'|'long'|'fixed'|'s
         RetObj.MemoryTemplate.declaration = 'long'
         RetObj.MemoryTemplate.size = 1
         RetObj.MemoryTemplate.isDeclared = true
+        RetObj.MemoryTemplate.isSet = true
         break
     case 'long':
     case 'void':
@@ -67,6 +68,7 @@ const longArg : MEMORY_SLOT = {
     type: 'long',
     scope: 'dummy',
     declaration: 'long',
+    isSet: false,
     size: 1,
     isDeclared: true
 }
@@ -78,6 +80,7 @@ const longPtrArg : MEMORY_SLOT = {
     type: 'long',
     scope: 'dummy',
     declaration: 'long_ptr',
+    isSet: false,
     size: 1,
     isDeclared: true
 }
@@ -89,6 +92,7 @@ const fixedArg : MEMORY_SLOT = {
     type: 'fixed',
     scope: 'dummy',
     declaration: 'fixed',
+    isSet: false,
     size: 1,
     isDeclared: true
 }
@@ -98,6 +102,7 @@ export const autoCounterTemplate : MEMORY_SLOT = {
     asmName: '_counterTimestamp',
     declaration: 'long',
     isDeclared: true,
+    isSet: false,
     name: '_counterTimestamp',
     scope: '',
     size: 1,
@@ -139,6 +144,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
                 type: 'long',
                 scope: 'memcopy',
                 declaration: 'void_ptr',
+                isSet: false,
                 size: 1,
                 isDeclared: true
             },
@@ -149,6 +155,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
                 type: 'long',
                 scope: 'memcopy',
                 declaration: 'void_ptr',
+                isSet: false,
                 size: 1,
                 isDeclared: true
             }
@@ -561,6 +568,7 @@ export function getMemoryTemplate (memType: MEMORY_BASE_TYPES) : MEMORY_SLOT {
         asmName: '',
         isDeclared: false,
         declaration: '',
+        isSet: false,
         address: -1,
         name: '',
         scope: '',
@@ -573,6 +581,7 @@ export const fixedBaseTemplate : MEMORY_SLOT = {
     asmName: 'f100000000',
     declaration: 'fixed',
     isDeclared: false,
+    isSet: true,
     name: 'f100000000',
     hexContent: '0000000005f5e100',
     scope: '',
