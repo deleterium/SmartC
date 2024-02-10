@@ -221,6 +221,16 @@ export function flattenMemory (
     return flattenMemoryMain()
 }
 
+/** Used in function calls. Mem shall be a memory not stuffed */
+export function forceSetMemFromR0 (AuxVars: GENCODE_AUXVARS, Mem: MEMORY_SLOT, line: number) {
+    const Temp = flattenMemory(AuxVars, Mem, line)
+    if (Temp.isNew) {
+        // Debug this, force set should be simple instruction
+        throw new Error('Internal error')
+    }
+    return Temp.asmCode + `SET @${Temp.FlatMem.asmName} $r0\n`
+}
+
 /** Translate one single instruction from ast to assembly code */
 export function createInstruction (
     AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, MemParam1?: MEMORY_SLOT, MemParam2?: MEMORY_SLOT,

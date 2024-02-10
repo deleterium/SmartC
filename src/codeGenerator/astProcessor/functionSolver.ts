@@ -3,7 +3,7 @@ import { CONTRACT, SC_FUNCTION } from '../../typings/contractTypes'
 import { LOOKUP_ASN, AST, MEMORY_SLOT } from '../../typings/syntaxTypes'
 import { createBuiltinInstruction } from '../assemblyProcessor/builtinToAsm'
 import {
-    createSimpleInstruction, createInstruction, createAPICallInstruction
+    createSimpleInstruction, createInstruction, createAPICallInstruction, forceSetMemFromR0
 } from '../assemblyProcessor/createInstruction'
 import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
@@ -80,7 +80,8 @@ export default function functionSolver (
             returnAssemblyCode += ArgGenObj.asmCode
             returnAssemblyCode += createInstruction(
                 AuxVars,
-                utils.genPushToken(CurrentNode.Token.line),
+                utils.genAssignmentToken(CurrentNode.Token.line),
+                fnArg,
                 ArgGenObj.SolvedMem
             )
             AuxVars.freeRegister(ArgGenObj.SolvedMem.address)
@@ -94,7 +95,7 @@ export default function functionSolver (
             FnRetObj = AuxVars.getNewRegister()
             FnRetObj.declaration = FunctionToCall.declaration
             FnRetObj.typeDefinition = FunctionToCall.typeDefinition
-            returnAssemblyCode += createSimpleInstruction('Pop', FnRetObj.asmName)
+            returnAssemblyCode += forceSetMemFromR0(AuxVars, FnRetObj, CurrentNode.Token.line)
         }
         // Load registers again
         registerStack.reverse()

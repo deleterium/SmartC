@@ -158,9 +158,6 @@ export default function codeGenerator (Program: CONTRACT) {
             return
         }
         writeAsmLine(`__fn_${fname}:`, Program.functions[GlobalCodeVars.currFunctionIndex].line)
-        Program.functions[GlobalCodeVars.currFunctionIndex].argsMemObj.forEach(Obj => {
-            writeAsmLine(`POP @${Obj.asmName}`)
-        })
     }
 
     /**
@@ -175,13 +172,6 @@ export default function codeGenerator (Program: CONTRACT) {
             return
         }
         if (GlobalCodeVars.assemblyCode.lastIndexOf('RET') + 4 !== GlobalCodeVars.assemblyCode.length) {
-            if (Program.functions[GlobalCodeVars.currFunctionIndex].declaration === 'void') {
-                writeAsmLine('RET')
-                return
-            }
-            // return zero to prevent stack overflow
-            writeAsmLine('CLR @r0')
-            writeAsmLine('PSH $r0')
             writeAsmLine('RET')
         }
     }

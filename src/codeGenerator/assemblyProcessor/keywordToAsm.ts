@@ -26,7 +26,7 @@ export default function keywordToAsm (
             return 'RET\n'
         }
         TmpMemObj = flattenMemory(AuxVars, FlatMem, OperatorToken.line)
-        TmpMemObj.asmCode += `PSH $${TmpMemObj.FlatMem.asmName}\n`
+        TmpMemObj.asmCode += `SET @r0 $${TmpMemObj.FlatMem.asmName}\n`
         TmpMemObj.asmCode += 'RET\n'
         AuxVars.freeRegister(FlatMem.address)
         if (TmpMemObj.isNew === true) {
