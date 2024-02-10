@@ -3,28 +3,28 @@ import { SmartC } from '../smartc'
 describe('Tests for bugfixes', () => {
     it('should compile: bug 1, goto failed with undeclared variable', () => {
         const code = '#pragma optimizationLevel 0\nvoid  teste(long ret) { long temp = 2; goto newlabel; ret = temp; newlabel: temp++; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @teste_ret $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @teste_ret $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: bug 2, failed when declaring pointer on function declaration', () => {
         const code = '#pragma optimizationLevel 0\nvoid  teste(long * ret) { long temp = 2; goto newlabel; ret[temp] = temp; newlabel: temp++; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @($teste_ret + $teste_temp) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @($teste_ret + $teste_temp) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: bug 2', () => {
         const code = '#pragma optimizationLevel 0\nvoid  teste(long * ret) { long temp = 2; goto newlabel; *(ret+temp) = temp; newlabel: temp++; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nPOP @teste_ret\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @r0 $teste_ret\nADD @r0 $teste_temp\nSET @($r0) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare teste_ret\n^declare teste_temp\n\nFIN\n\n__fn_teste:\nSET @teste_temp #0000000000000002\nJMP :newlabel\nSET @r0 $teste_ret\nADD @r0 $teste_temp\nSET @($r0) $teste_temp\nnewlabel:\nINC @teste_temp\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: bug 3, ReuseAssignedVar not working inside a function.', () => {
         const code = "#pragma optimizationLevel 0\n#pragma maxAuxVars 2\nlong itoa(long val) {\n    long ret, temp;\n    if (val >= 0 && val <= 99999999) { ret = (ret << 8) + temp; return ret; }\n    return '#error';\n}"
-        const assembly = '^declare r0\n^declare r1\n^declare itoa_val\n^declare itoa_ret\n^declare itoa_temp\n\nFIN\n\n__fn_itoa:\nPOP @itoa_val\nCLR @r0\nBLT $itoa_val $r0 :__if1_endif\n__AND_2_next:\nSET @r0 #0000000005f5e0ff\nBGT $itoa_val $r0 :__if1_endif\nJMP :__if1_start\n__if1_start:\nSET @r0 $itoa_ret\nSET @r1 #0000000000000008\nSHL @r0 $r1\nADD @r0 $itoa_temp\nSET @itoa_ret $r0\nPSH $itoa_ret\nRET\n__if1_endif:\nSET @r0 #0000726f72726523\nPSH $r0\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare itoa_val\n^declare itoa_ret\n^declare itoa_temp\n\nFIN\n\n__fn_itoa:\nCLR @r0\nBLT $itoa_val $r0 :__if1_endif\n__AND_2_next:\nSET @r0 #0000000005f5e0ff\nBGT $itoa_val $r0 :__if1_endif\nJMP :__if1_start\n__if1_start:\nSET @r0 $itoa_ret\nSET @r1 #0000000000000008\nSHL @r0 $r1\nADD @r0 $itoa_temp\nSET @itoa_ret $r0\nSET @r0 $itoa_ret\nRET\n__if1_endif:\nSET @r0 #0000726f72726523\nSET @r0 $r0\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -53,7 +53,7 @@ describe('Tests for bugfixes', () => {
     })
     it('should compile: bug 8, wrong order of stack for function call', () => {
         const code = '#pragma optimizationLevel 0\nlong ga, gb, gc; test(ga, gb, gc); void test(long a, long b, long c) { a+=b+c; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare ga\n^declare gb\n^declare gc\n^declare test_a\n^declare test_b\n^declare test_c\n\nPSH $gc\nPSH $gb\nPSH $ga\nJSR :__fn_test\nFIN\n\n__fn_test:\nPOP @test_a\nPOP @test_b\nPOP @test_c\nSET @r0 $test_b\nADD @r0 $test_c\nADD @test_a $r0\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare ga\n^declare gb\n^declare gc\n^declare test_a\n^declare test_b\n^declare test_c\n\nSET @test_c $gc\nSET @test_b $gb\nSET @test_a $ga\nJSR :__fn_test\nFIN\n\n__fn_test:\nSET @r0 $test_b\nADD @r0 $test_c\nADD @test_a $r0\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -67,21 +67,21 @@ describe('Tests for bugfixes', () => {
     })
     it('should compile: bug 9, but right', () => {
         const code = '#pragma optimizationLevel 0\nlong a, b; test2(); if (a) a++; long test2(void) { b++; return b; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test2\nPOP @r0\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n\n__fn_test2:\nINC @b\nPSH $b\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n\nJSR :__fn_test2\nSET @r0 $r0\nBZR $a :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n\n__fn_test2:\nINC @b\nSET @r0 $b\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: bug 10, functions calls destroying content of registers. Implemented saving them in user stack', () => {
         const code = "#pragma optimizationLevel 0\nlong a[5], b, c; b=atoi(c); a[b+1]=atoi('2'); a[b+1]=(b*2)/atoi('2'); long atoi(long val){return val+1;}"
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare b\n^declare c\n^declare atoi_val\n\nPSH $c\nJSR :__fn_atoi\nPOP @b\nSET @r0 $b\nINC @r0\nPSH $r0\nSET @r1 #0000000000000032\nPSH $r1\nJSR :__fn_atoi\nPOP @r1\nPOP @r0\nSET @($a + $r0) $r1\nSET @r0 $b\nINC @r0\nSET @r1 #0000000000000002\nMUL @r1 $b\nPSH $r1\nPSH $r0\nSET @r2 #0000000000000032\nPSH $r2\nJSR :__fn_atoi\nPOP @r2\nPOP @r0\nPOP @r1\nDIV @r1 $r2\nSET @($a + $r0) $r1\nFIN\n\n__fn_atoi:\nPOP @atoi_val\nSET @r0 $atoi_val\nINC @r0\nPSH $r0\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare b\n^declare c\n^declare atoi_val\n\nSET @atoi_val $c\nJSR :__fn_atoi\nSET @b $r0\nSET @r0 $b\nINC @r0\nPSH $r0\nSET @atoi_val #0000000000000032\nJSR :__fn_atoi\nSET @r1 $r0\nPOP @r0\nSET @($a + $r0) $r1\nSET @r0 $b\nINC @r0\nSET @r1 #0000000000000002\nMUL @r1 $b\nPSH $r1\nPSH $r0\nSET @atoi_val #0000000000000032\nJSR :__fn_atoi\nSET @r2 $r0\nPOP @r0\nPOP @r1\nDIV @r1 $r2\nSET @($a + $r0) $r1\nFIN\n\n__fn_atoi:\nSET @r0 $atoi_val\nINC @r0\nSET @r0 $r0\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: bug 11, function calls inside array brackets lead to error.', () => {
         const code = '#pragma optimizationLevel 0\nlong a[5], b, c; b=a[atoi("2")+1]; long atoi(long val){ return val+1;}'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare b\n^declare c\n^declare atoi_val\n\nSET @b #0000000000000032\nPSH $b\nJSR :__fn_atoi\nPOP @b\nINC @b\nSET @b $($a + $b)\nFIN\n\n__fn_atoi:\nPOP @atoi_val\nSET @r0 $atoi_val\nINC @r0\nPSH $r0\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^const SET @a #0000000000000004\n^declare a_0\n^declare a_1\n^declare a_2\n^declare a_3\n^declare a_4\n^declare b\n^declare c\n^declare atoi_val\n\nSET @atoi_val #0000000000000032\nJSR :__fn_atoi\nSET @b $r0\nINC @b\nSET @b $($a + $b)\nFIN\n\n__fn_atoi:\nSET @r0 $atoi_val\nINC @r0\nSET @r0 $r0\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -108,13 +108,7 @@ describe('Tests for bugfixes', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile: bug 15, Need to be more restrictive on optimizationLevel 3 for PSH and POP', () => {
-        const code = '#pragma optimizationLevel 3\n long a, b; a=b;insertPlayer(a); void insertPlayer(long address) { long id; id=(address >> 27); }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare insertPlayer_address\n^declare insertPlayer_id\n\nSET @a $b\nPSH $a\nJSR :__fn_insertPlayer\nFIN\n\n__fn_insertPlayer:\nPOP @insertPlayer_address\nSET @insertPlayer_id $insertPlayer_address\nSET @r0 #000000000000001b\nSHR @insertPlayer_id $r0\nRET\n'
-        const compiler = new SmartC({ language: 'C', sourceCode: code })
-        compiler.compile()
-        expect(compiler.getAssemblyCode()).toBe(assembly)
-    })
+    // REMOVED. bug 15, Need to be more restrictive on optimizationLevel 3 for PSH and POP (deprecated)
     it('should compile: bug 16, Could not return or sleep with array and variable index', () => {
         const code = 'long a, slot[4]; sleep slot[a];'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare slot\n^const SET @slot #0000000000000005\n^declare slot_0\n^declare slot_1\n^declare slot_2\n^declare slot_3\n\nSET @r0 $($slot + $a)\nSLP $r0\nFIN\n'
@@ -159,7 +153,7 @@ describe('Tests for bugfixes', () => {
     })
     it('should compile: bug 22 Function/API Functions on conditional not being evaluated', () => {
         const code = '#pragma optimizationLevel 0\nlong a=0; if (test2(a)){ a++; } long test2(long b) { b++; return b; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nCLR @a\nPSH $a\nJSR :__fn_test2\nPOP @r0\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n\n__fn_test2:\nPOP @test2_b\nINC @test2_b\nPSH $test2_b\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test2_b\n\nCLR @a\nSET @test2_b $a\nJSR :__fn_test2\nSET @r0 $r0\nBZR $r0 :__if1_endif\n__if1_start:\nINC @a\n__if1_endif:\nFIN\n\n__fn_test2:\nINC @test2_b\nSET @r0 $test2_b\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

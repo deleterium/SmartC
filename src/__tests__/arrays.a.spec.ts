@@ -87,7 +87,7 @@ describe('Array assignment (left side)', () => {
     })
     it('should compile: Support for array notation on pointer variable.', () => {
         const code = '#pragma optimizationLevel 0\nlong b; void teste(long * poper) { poper[3]=0; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare b\n^declare teste_poper\n\nFIN\n\n__fn_teste:\nPOP @teste_poper\nCLR @r0\nSET @r1 #0000000000000003\nSET @($teste_poper + $r1) $r0\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare b\n^declare teste_poper\n\nFIN\n\n__fn_teste:\nCLR @r0\nSET @r1 #0000000000000003\nSET @($teste_poper + $r1) $r0\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
