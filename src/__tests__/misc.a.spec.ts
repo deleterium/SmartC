@@ -4,7 +4,7 @@ describe('Miscelaneous', () => {
     it('should compile: Modifier on Function -> arr on pointer return value', () => {
         const code = 'long valLong = teste()[1]; long *teste(void) { long message[4]; return message; }'
         const assembly =
-            '^declare r0\n^declare r1\n^declare r2\n^declare valLong\n^declare teste_message\n^const SET @teste_message #0000000000000005\n^declare teste_message_0\n^declare teste_message_1\n^declare teste_message_2\n^declare teste_message_3\n\nJSR :__fn_teste\nPOP @valLong\nSET @r0 #0000000000000001\nSET @valLong $($valLong + $r0)\nFIN\n\n__fn_teste:\nPSH $teste_message\nRET\n'
+            '^declare r0\n^declare r1\n^declare r2\n^declare valLong\n^declare teste_message\n^const SET @teste_message #0000000000000005\n^declare teste_message_0\n^declare teste_message_1\n^declare teste_message_2\n^declare teste_message_3\n\nJSR :__fn_teste\nSET @valLong $r0\nSET @r0 #0000000000000001\nSET @valLong $($valLong + $r0)\nFIN\n\n__fn_teste:\nSET @r0 $teste_message\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

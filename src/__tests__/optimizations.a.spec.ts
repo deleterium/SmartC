@@ -148,9 +148,9 @@ describe('Optimizations level 2', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
-    it('should compile: Pop+Push', () => {
+    it('should compile: handling function return value as argument for another one', () => {
         const code = '#pragma optimizationLevel 2\n long a, b; tt(teste(b)); long teste(long c){ return ++c; } void tt(long d){ d++; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare teste_c\n^declare tt_d\n\nPSH $b\nJSR :__fn_teste\nJSR :__fn_tt\nFIN\n\n__fn_teste:\nPOP @teste_c\nINC @teste_c\nPSH $teste_c\nRET\n\n__fn_tt:\nPOP @tt_d\nINC @tt_d\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare teste_c\n^declare tt_d\n\nSET @teste_c $b\nJSR :__fn_teste\nSET @tt_d $r0\nJSR :__fn_tt\nFIN\n\n__fn_teste:\nINC @teste_c\nSET @r0 $teste_c\nRET\n\n__fn_tt:\nINC @tt_d\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

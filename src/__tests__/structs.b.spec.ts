@@ -195,7 +195,7 @@ struct PLAYER * search(long playerAddress) {
     nPlayers = sizeof(struct PLAYER);
     return NULL;
 }`
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare search_playerAddress\n^declare search_playerPtr\n^declare search_players\n^const SET @search_players #0000000000000006\n^declare search_players_0_address\n^declare search_players_0_balance\n^declare search_players_0_VDLS\n^declare search_players_1_address\n^declare search_players_1_balance\n^declare search_players_1_VDLS\n^declare search_nPlayers\n^declare search_foundPlayer\n\nSET @r0 #0000000000000002\nPSH $r0\nJSR :__fn_search\nPOP @r0\nFIN\n\n__fn_search:\nPOP @search_playerAddress\nSET @search_nPlayers #0000000000000003\nCLR @r0\nPSH $r0\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare search_playerAddress\n^declare search_playerPtr\n^declare search_players\n^const SET @search_players #0000000000000006\n^declare search_players_0_address\n^declare search_players_0_balance\n^declare search_players_0_VDLS\n^declare search_players_1_address\n^declare search_players_1_balance\n^declare search_players_1_VDLS\n^declare search_nPlayers\n^declare search_foundPlayer\n\nSET @search_playerAddress #0000000000000002\nJSR :__fn_search\nFIN\n\n__fn_search:\nSET @search_nPlayers #0000000000000003\nCLR @r0\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

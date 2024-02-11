@@ -96,7 +96,7 @@ describe('#program', () => {
     })
     it('should compile: codeStackPages  userStackPages ', () => {
         const code = '#pragma optimizationLevel 0\n#program codeStackPages    0   \n#program userStackPages 5\n long a; void test(long aa) { a++; return; a++; }'
-        const assembly = '^program userStackPages 5\n^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test_aa\n\nFIN\n\n__fn_test:\nPOP @test_aa\nINC @a\nRET\nINC @a\nRET\n'
+        const assembly = '^program userStackPages 5\n^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare test_aa\n\nFIN\n\n__fn_test:\nINC @a\nRET\nINC @a\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
