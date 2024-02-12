@@ -87,7 +87,11 @@ export default function functionSolver (
             AuxVars.freeRegister(ArgGenObj.SolvedMem.address)
         }
         // Create instruction
-        returnAssemblyCode += createSimpleInstruction('Function', FunctionToCall.name)
+        if (FunctionToCall.isInline) {
+            returnAssemblyCode += `%inline.${FunctionToCall.name}%\n`
+        } else {
+            returnAssemblyCode += createSimpleInstruction('Function', FunctionToCall.name)
+        }
         // Pop return value from stack
         if (FunctionToCall.declaration === 'void') {
             FnRetObj = utils.createVoidMemObj()

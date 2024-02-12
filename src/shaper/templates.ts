@@ -115,6 +115,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg],
         asmName: 'pow',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'special',
         name: 'pow'
@@ -123,6 +124,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg, longArg],
         asmName: 'mdv',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'special',
         name: 'mdv'
@@ -131,6 +133,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, fixedArg],
         asmName: 'powf',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'special',
         name: 'powf'
@@ -162,6 +165,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         ],
         asmName: 'memcopy',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'internal',
         name: 'memcopy'
@@ -170,6 +174,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [fixedArg],
         asmName: 'bcftol',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'internal',
         name: 'bcftol'
@@ -178,6 +183,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'bcltof',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         builtin: 'internal',
         name: 'bcltof'
@@ -186,6 +192,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'getNextTx',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'loop',
         name: 'getNextTx'
@@ -194,6 +201,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getNextTxFromBlockheight',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'loop',
         name: 'getNextTxFromBlockheight'
@@ -202,6 +210,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getBlockheight',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'receive',
         name: 'getBlockheight'
@@ -210,6 +219,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'getCurrentBlockheight',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'blockchain',
         name: 'getCurrentBlockheight'
@@ -218,6 +228,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getAmount',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'receive',
         name: 'getAmount'
@@ -226,6 +237,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getSender',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'receive',
         name: 'getSender'
@@ -234,6 +246,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getType',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'receive',
         name: 'getType'
@@ -242,6 +255,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'getCreator',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'contract',
         name: 'getCreator'
@@ -250,6 +264,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getCreatorOf',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'contract',
         name: 'getCreatorOf'
@@ -258,6 +273,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getCodeHashOf',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'contract',
         name: 'getCodeHashOf'
@@ -266,6 +282,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'getWeakRandomNumber',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'blockchain',
         name: 'getWeakRandomNumber'
@@ -274,6 +291,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getActivationOf',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'contract',
         name: 'getActivationOf'
@@ -282,6 +300,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'getCurrentBalance',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'contract',
         name: 'getCurrentBalance'
@@ -290,6 +309,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg, longPtrArg],
         asmName: 'readMessage',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'receive',
         name: 'readMessage'
@@ -298,6 +318,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longPtrArg, longArg],
         asmName: 'readShortMessage',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'receive',
         name: 'readShortMessage'
@@ -306,6 +327,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longPtrArg, longArg],
         asmName: 'sendMessage',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'send',
         name: 'sendMessage'
@@ -314,6 +336,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longPtrArg, longArg, longArg],
         asmName: 'sendShortMessage',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'send',
         name: 'sendShortMessage'
@@ -322,6 +345,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longPtrArg, longArg],
         asmName: 'sendAmountAndMessage',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'send',
         name: 'sendAmountAndMessage'
@@ -330,6 +354,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg],
         asmName: 'sendAmount',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'send',
         name: 'sendAmount'
@@ -338,6 +363,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'sendBalance',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'send',
         name: 'sendBalance'
@@ -346,6 +372,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg],
         asmName: 'getMapValue',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'maps',
         name: 'getMapValue'
@@ -354,6 +381,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg, longArg],
         asmName: 'getExtMapValue',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'maps',
         name: 'getExtMapValue'
@@ -362,6 +390,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg, longArg],
         asmName: 'setMapValue',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'maps',
         name: 'setMapValue'
@@ -370,6 +399,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg, longArg],
         asmName: 'issueAsset',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'assets',
         name: 'issueAsset'
@@ -378,6 +408,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg],
         asmName: 'mintAsset',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'assets',
         name: 'mintAsset'
@@ -386,6 +417,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg, longArg],
         asmName: 'sendQuantity',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'send',
         name: 'sendQuantity'
@@ -394,6 +426,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg, longArg, longArg],
         asmName: 'sendQuantityAndAmount',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'fourArgsPlus',
         name: 'sendQuantityAndAmount'
@@ -402,6 +435,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getAssetBalance',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'contract',
         name: 'getAssetBalance'
@@ -410,6 +444,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg, longArg, longArg, longArg, longArg],
         asmName: 'checkSignature',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'fourArgsPlus',
         name: 'checkSignature'
@@ -418,6 +453,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg, longArg, longArg, longArg],
         asmName: 'distributeToHolders',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'fourArgsPlus',
         name: 'distributeToHolders'
@@ -426,6 +462,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg],
         asmName: 'getAssetHoldersCount',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'assets',
         name: 'getAssetHoldersCount'
@@ -434,6 +471,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longPtrArg],
         asmName: 'readAssets',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'receive',
         name: 'readAssets'
@@ -442,6 +480,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg],
         asmName: 'getQuantity',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'receive',
         name: 'getQuantity'
@@ -450,6 +489,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getAssetCirculating',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'assets',
         name: 'getAssetCirculating'
@@ -458,6 +498,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getAccountBalance',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'assets',
         name: 'getAccountBalance'
@@ -466,6 +507,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg],
         asmName: 'getAccountQuantity',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         builtin: 'assets',
         name: 'getAccountQuantity'
@@ -476,6 +518,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getAmountFx',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         builtin: 'receive',
         name: 'getAmountFx'
@@ -484,6 +527,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getActivationOfFx',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         builtin: 'contract',
         name: 'getActivationOfFx'
@@ -492,6 +536,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'getCurrentBalanceFx',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         builtin: 'contract',
         name: 'getCurrentBalanceFx'
@@ -500,6 +545,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [fixedArg, longPtrArg, longArg],
         asmName: 'sendAmountAndMessageFx',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'send',
         name: 'sendAmountAndMessageFx'
@@ -508,6 +554,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [fixedArg, longArg],
         asmName: 'sendAmountFx',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'send',
         name: 'sendAmountFx'
@@ -516,6 +563,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg],
         asmName: 'getMapValueFx',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         builtin: 'maps',
         name: 'getMapValueFx'
@@ -524,6 +572,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg, longArg],
         asmName: 'getExtMapValueFx',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         builtin: 'maps',
         name: 'getExtMapValueFx'
@@ -532,6 +581,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg, fixedArg],
         asmName: 'setMapValueFx',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'maps',
         name: 'setMapValueFx'
@@ -540,6 +590,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg, fixedArg, longArg],
         asmName: 'sendQuantityAndAmountFx',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'fourArgsPlus',
         name: 'sendQuantityAndAmountFx'
@@ -548,6 +599,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg, fixedArg, longArg, longArg],
         asmName: 'distributeToHoldersFx',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         builtin: 'fourArgsPlus',
         name: 'distributeToHoldersFx'
@@ -556,6 +608,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'getAccountBalanceFx',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         builtin: 'assets',
         name: 'getAccountBalanceFx'
@@ -594,6 +647,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_A1',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_A1'
     },
@@ -601,6 +655,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_A2',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_A2'
     },
@@ -608,6 +663,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_A3',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_A3'
     },
@@ -615,6 +671,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_A4',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_A4'
     },
@@ -622,6 +679,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_B1',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_B1'
     },
@@ -629,6 +687,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_B2',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_B2'
     },
@@ -636,6 +695,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_B3',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_B3'
     },
@@ -643,6 +703,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_B4',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_B4'
     },
@@ -650,6 +711,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'set_A1',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Set_A1'
     },
@@ -657,6 +719,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'set_A2',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Set_A2'
     },
@@ -664,6 +727,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'set_A3',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Set_A3'
     },
@@ -671,6 +735,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'set_A4',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Set_A4'
     },
@@ -678,6 +743,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg],
         asmName: 'set_A1_A2',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Set_A1_A2'
     },
@@ -685,6 +751,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg],
         asmName: 'set_A3_A4',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Set_A3_A4'
     },
@@ -692,6 +759,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'set_B1',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Set_B1'
     },
@@ -699,6 +767,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'set_B2',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Set_B2'
     },
@@ -706,6 +775,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'set_B3',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Set_B3'
     },
@@ -713,6 +783,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'set_B4',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Set_B4'
     },
@@ -720,6 +791,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg],
         asmName: 'set_B1_B2',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Set_B1_B2'
     },
@@ -727,6 +799,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg],
         asmName: 'set_B3_B4',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Set_B3_B4'
     },
@@ -734,6 +807,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'clear_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Clear_A'
     },
@@ -741,6 +815,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'clear_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Clear_B'
     },
@@ -748,6 +823,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'clear_A_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Clear_A_And_B'
     },
@@ -755,6 +831,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'copy_A_From_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Copy_A_From_B'
     },
@@ -762,6 +839,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'copy_B_From_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Copy_B_From_A'
     },
@@ -769,6 +847,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'check_A_Is_Zero',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Check_A_Is_Zero'
     },
@@ -776,6 +855,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'check_B_Is_Zero',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Check_B_Is_Zero'
     },
@@ -783,6 +863,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'check_A_equals_B',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Check_A_Equals_B'
     },
@@ -790,6 +871,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'swap_A_and_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Swap_A_and_B'
     },
@@ -797,6 +879,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'OR_A_with_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'OR_A_with_B'
     },
@@ -804,6 +887,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'OR_B_with_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'OR_B_with_A'
     },
@@ -811,6 +895,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'AND_A_with_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'AND_A_with_B'
     },
@@ -818,6 +903,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'AND_B_with_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'AND_B_with_A'
     },
@@ -825,6 +911,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'XOR_A_with_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'XOR_A_with_B'
     },
@@ -832,6 +919,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'XOR_B_with_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'XOR_B_with_A'
     },
@@ -839,6 +927,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'add_A_to_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Add_A_To_B'
     },
@@ -846,6 +935,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'add_B_to_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Add_B_To_A'
     },
@@ -853,6 +943,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'sub_A_from_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Sub_A_From_B'
     },
@@ -860,6 +951,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'sub_B_from_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Sub_B_From_A'
     },
@@ -867,6 +959,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'mul_A_by_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Mul_A_By_B'
     },
@@ -874,6 +967,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'mul_B_by_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Mul_B_By_A'
     },
@@ -881,6 +975,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'div_A_by_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Div_A_By_B'
     },
@@ -888,6 +983,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'div_B_by_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Div_B_By_A'
     },
@@ -895,6 +991,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'MD5_A_to_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'MD5_A_To_B'
     },
@@ -902,6 +999,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'check_MD5_A_with_B',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Check_MD5_A_With_B'
     },
@@ -909,6 +1007,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'HASH160_A_to_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'HASH160_A_To_B'
     },
@@ -916,6 +1015,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'check_HASH160_A_with_B',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Check_HASH160_A_With_B'
     },
@@ -923,6 +1023,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'SHA256_A_to_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'SHA256_A_To_B'
     },
@@ -930,6 +1031,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'check_SHA256_A_with_B',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Check_SHA256_A_With_B'
     },
@@ -937,6 +1039,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_Block_Timestamp',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Block_Timestamp'
     },
@@ -944,6 +1047,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_Creation_Timestamp',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Creation_Timestamp'
     },
@@ -951,6 +1055,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_Last_Block_Timestamp',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Last_Block_Timestamp'
     },
@@ -958,6 +1063,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'put_Last_Block_Hash_In_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Put_Last_Block_Hash_In_A'
     },
@@ -965,6 +1071,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'A_to_Tx_after_Timestamp',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'A_To_Tx_After_Timestamp'
     },
@@ -972,6 +1079,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_Type_for_Tx_in_A',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Type_For_Tx_In_A'
     },
@@ -979,6 +1087,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_Amount_for_Tx_in_A',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Amount_For_Tx_In_A'
     },
@@ -986,6 +1095,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_Timestamp_for_Tx_in_A',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Timestamp_For_Tx_In_A'
     },
@@ -993,6 +1103,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_Ticket_Id_for_Tx_in_A',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Random_Id_For_Tx_In_A'
     },
@@ -1000,6 +1111,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'message_from_Tx_in_A_to_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Message_From_Tx_In_A_To_B'
     },
@@ -1007,6 +1119,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'B_to_Address_of_Tx_in_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'B_To_Address_Of_Tx_In_A'
     },
@@ -1014,6 +1127,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'B_to_Address_of_Creator',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'B_To_Address_Of_Creator'
     },
@@ -1021,6 +1135,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_Current_Balance',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Current_Balance'
     },
@@ -1028,6 +1143,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_Previous_Balance',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Previous_Balance'
     },
@@ -1035,6 +1151,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg],
         asmName: 'send_to_Address_in_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Send_To_Address_In_B'
     },
@@ -1042,6 +1159,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'send_All_to_Address_in_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Send_All_To_Address_In_B'
     },
@@ -1049,6 +1167,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'send_Old_to_Address_in_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Send_Old_To_Address_In_B'
     },
@@ -1056,6 +1175,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'send_A_to_Address_in_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Send_A_To_Address_In_B'
     },
@@ -1063,6 +1183,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [longArg, longArg],
         asmName: 'add_Minutes_to_Timestamp',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Add_Minutes_To_Timestamp'
     },
@@ -1070,6 +1191,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Check_Sig_B_With_A',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Check_Sig_B_With_A'
     },
@@ -1077,6 +1199,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Get_Code_Hash_Id',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Code_Hash_Id'
     },
@@ -1084,6 +1207,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'B_To_Assets_Of_Tx_In_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'B_To_Assets_Of_Tx_In_A'
     },
@@ -1091,6 +1215,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Get_Map_Value_Keys_In_A',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Map_Value_Keys_In_A'
     },
@@ -1098,6 +1223,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Set_Map_Value_Keys_In_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Set_Map_Value_Keys_In_A'
     },
@@ -1105,6 +1231,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Issue_Asset',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Issue_Asset'
     },
@@ -1112,6 +1239,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Mint_Asset',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Mint_Asset'
     },
@@ -1119,6 +1247,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Distribute_To_Asset_Holders',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Distribute_To_Asset_Holders'
     },
@@ -1126,6 +1255,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Get_Asset_Holders_Count',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Asset_Holders_Count'
     },
@@ -1133,6 +1263,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Get_Activation_Fee',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Activation_Fee'
     },
@@ -1140,6 +1271,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Put_Last_Block_GSig_In_A',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'Put_Last_Block_GSig_In_A'
     },
@@ -1147,6 +1279,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Get_Asset_Circulating',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Asset_Circulating'
     },
@@ -1154,6 +1287,7 @@ export const APITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Get_Account_Balance',
         declaration: 'long',
+        isInline: false,
         sentences: [],
         name: 'Get_Account_Balance'
     }
@@ -1164,6 +1298,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_A1',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_A1'
     },
@@ -1171,6 +1306,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_A2',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_A2'
     },
@@ -1178,6 +1314,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_A3',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_A3'
     },
@@ -1185,6 +1322,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_A4',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_A4'
     },
@@ -1192,6 +1330,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_B1',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_B1'
     },
@@ -1199,6 +1338,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_B2',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_B2'
     },
@@ -1206,6 +1346,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_B3',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_B3'
     },
@@ -1213,6 +1354,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_B4',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_B4'
     },
@@ -1220,6 +1362,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [fixedArg],
         asmName: 'set_A1',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'F_Set_A1'
     },
@@ -1227,6 +1370,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [fixedArg],
         asmName: 'set_A2',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'F_Set_A2'
     },
@@ -1234,6 +1378,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [fixedArg],
         asmName: 'set_A3',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'F_Set_A3'
     },
@@ -1241,6 +1386,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [fixedArg],
         asmName: 'set_A4',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'F_Set_A4'
     },
@@ -1248,6 +1394,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [fixedArg],
         asmName: 'set_B1',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'F_Set_B1'
     },
@@ -1255,6 +1402,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [fixedArg],
         asmName: 'set_B2',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'F_Set_B2'
     },
@@ -1262,6 +1410,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [fixedArg],
         asmName: 'set_B3',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'F_Set_B3'
     },
@@ -1269,6 +1418,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [fixedArg],
         asmName: 'set_B4',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'F_Set_B4'
     },
@@ -1276,6 +1426,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_Amount_for_Tx_in_A',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_Amount_For_Tx_In_A'
     },
@@ -1283,6 +1434,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_Current_Balance',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_Current_Balance'
     },
@@ -1290,6 +1442,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'get_Previous_Balance',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_Previous_Balance'
     },
@@ -1297,6 +1450,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [fixedArg],
         asmName: 'send_to_Address_in_B',
         declaration: 'void',
+        isInline: false,
         sentences: [],
         name: 'F_Send_To_Address_In_B'
     },
@@ -1304,6 +1458,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Get_Map_Value_Keys_In_A',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_Map_Value_Keys_In_A'
     },
@@ -1311,6 +1466,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Get_Activation_Fee',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_Activation_Fee'
     },
@@ -1318,6 +1474,7 @@ export const fixedAPITableTemplate: SC_FUNCTION[] = [
         argsMemObj: [],
         asmName: 'Get_Account_Balance',
         declaration: 'fixed',
+        isInline: false,
         sentences: [],
         name: 'F_Get_Account_Balance'
     }

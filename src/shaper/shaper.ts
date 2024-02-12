@@ -67,7 +67,14 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     function splitCode () : void {
         Program.Global.code = []
         let tokenIndex = 0
+        let isInline = false
         while (tokenIndex < tokenAST.length) {
+            if (tokenAST[tokenIndex].type === 'Keyword' &&
+                tokenAST[tokenIndex].value === 'inline') {
+                tokenIndex++
+                isInline = true
+                continue
+            }
             if (tokenAST[tokenIndex].type === 'Keyword' &&
                 tokenAST[tokenIndex + 1]?.type === 'Variable' &&
                 tokenAST[tokenIndex + 2]?.type === 'Function' &&
@@ -81,12 +88,14 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                     argsMemObj: [],
                     sentences: [],
                     declaration: tokenAST[tokenIndex].value as DECLARATION_TYPES,
+                    isInline,
                     line: tokenAST[tokenIndex + 1].line,
                     name: tokenAST[tokenIndex + 1].value,
                     arguments: tokenAST[tokenIndex + 2].params,
                     code: tokenAST[tokenIndex + 3].params
                 })
                 tokenIndex += 4
+                isInline = false
                 continue
             }
             if (tokenAST[tokenIndex].type === 'Keyword' &&
@@ -99,6 +108,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                     argsMemObj: [],
                     sentences: [],
                     declaration: (tokenAST[tokenIndex].value + '_ptr') as DECLARATION_TYPES,
+                    isInline,
                     typeDefinition: tokenAST[tokenIndex].extValue,
                     line: tokenAST[tokenIndex + 2].line,
                     name: tokenAST[tokenIndex + 2].value,
@@ -106,6 +116,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                     code: tokenAST[tokenIndex + 4].params
                 })
                 tokenIndex += 5
+                isInline = false
                 continue
             }
             if (tokenAST[tokenIndex].type === 'Macro') {
@@ -118,6 +129,9 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 })
                 tokenIndex++
                 continue
+            }
+            if (isInline) {
+                throw new Error(`At line: ${tokenAST[tokenIndex].line}. Invalid use for inline keyword. Expecting a type and a function definition.`)
             }
             // Not function neither macro, so it is global statement
             Program.Global.code.push(tokenAST[tokenIndex])
