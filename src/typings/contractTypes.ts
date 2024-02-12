@@ -48,6 +48,8 @@ export type SC_MACRO = {
 export type SC_FUNCTION = {
     /** type of function declaration */
     declaration: DECLARATION_TYPES
+    /** Property to control function substitution */
+    isInline: boolean
     /** type definition if is a struct function */
     typeDefinition?: string
     /** Function name */

@@ -62,6 +62,13 @@ export default function codeGenerator (Program: CONTRACT) {
         }
         // For every function:
         Program.functions.forEach((currentFunction, index) => {
+            if (currentFunction.isInline) {
+                if (currentFunction.name === 'main' || currentFunction.name === 'catch') {
+                    throw new Error(`At line: ${currentFunction.line}.` +
+                    " Functions 'main' and 'catch' cannot be inline.")
+                }
+                return
+            }
             GlobalCodeVars.currFunctionIndex = index
             writeAsmLine('') // blank line to be nice to debugger!
             functionHeaderGenerator()
@@ -71,6 +78,15 @@ export default function codeGenerator (Program: CONTRACT) {
             }
             functionTailGenerator()
         })
+        let calls = 0
+        while (/^%inline\.(\w+)%$/m.test(GlobalCodeVars.assemblyCode)) {
+            calls++
+            GlobalCodeVars.assemblyCode = GlobalCodeVars.assemblyCode.replace(/^%inline\.(\w+)%$/m, substituteInlineFunction)
+            if (calls > 200) {
+                throw new Error('At line: unknow. Maximum number of inline substitutions. ' +
+                    'Inline cannot be used in recursive functions neither have circular dependency of each other.')
+            }
+        }
         // Inspect if there were errros and throw now
         if (GlobalCodeVars.errors.length !== 0) {
             throw new Error(GlobalCodeVars.errors + Program.warnings)
@@ -80,6 +96,22 @@ export default function codeGenerator (Program: CONTRACT) {
             GlobalCodeVars.assemblyCode,
             Program.memory.filter(Obj => Obj.type === 'label').map(Res => Res.asmName)
         )
+    }
+
+    function substituteInlineFunction (match: string, g1: string) {
+        GlobalCodeVars.currFunctionIndex = Program.functions.findIndex(fn => fn.name === g1)
+        const func = Program.functions[GlobalCodeVars.currFunctionIndex]
+        const inlineId = GlobalCodeVars.getNewJumpID()
+        const EndOfPreviousCode = GlobalCodeVars.assemblyCode.length
+        // add code for functions sentences.
+        if (func.sentences !== undefined) {
+            func.sentences.forEach(compileSentence)
+        }
+        // Function code is in the end of assembly code, it will be substituded in the middle.
+        const functionCode = GlobalCodeVars.assemblyCode.slice(EndOfPreviousCode)
+        return `__inline${inlineId}_start:\n` +
+            functionCode.replace(/RET/g, `JMP :__inline${inlineId}_end`) +
+            `__inline${inlineId}_end:`
     }
 
     function writeAsmLine (lineContent: string, sourceCodeLine: number = 0) {

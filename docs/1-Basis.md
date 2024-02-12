@@ -7,7 +7,7 @@ This project aims to be as close to C as possible. But given special characteris
 As C, can be one line `//` or multi-line `/* .... */`;
 
 ### Keywords
-Some keywords have the same meaning and use in C: `asm`, `break`, `continue`, `default`, `do`, `else`, `for`, `goto`, `if`, `long`, `return`, `struct`, `void`, `while`. Note differences for keywords:
+Some keywords have the same meaning and use in C: `asm`, `break`, `continue`, `default`, `do`, `else`, `for`, `goto`, `if`, `inline`, `long`, `return`, `struct`, `void`, `while`. Note differences for keywords:
 * `const`: Actually this will tell compiler to set a value to a variable at the contract creation. No problem setting it a value and then changing it later. It can be used during variable declaration or later, but it can be set only once. Using const can reduce the number of codepages of your program. Examples: `const long i=5;` to seta long; `long a[4]; const a[0]=5;` to set values for array.
 * `sizeof`: Usefull to get structs sizes. Return value will be the number of longs that the variable/type needs. One long is 8 bytes. Arrays sizes are one long greater than the length, because the first index is used to store the array starting location (a pointer). Pointers sizes are always 1.
 * `switch`: The standard C is fully supported. One addition is that switch expression can be `true` or `false`, and the cases will be evaluated to match the desired result.
@@ -45,8 +45,15 @@ The compiler will convert numbers and variables between fixed and long if used i
 Same as in C `fixedVariable = (fixed)longVariable`. The compiler will make the transformation. It is also possible to use some built-in functions if the desired transformation is just to copy the value in memory (memcopy) or use in arguments for functions (bcftol). Check chapter 1.5 Built-in functions.
 
 ### Functions
-As avaliable in C, the developer can make use of functions to make coding easier or reuse code from other projects. There is no need to put function prototypes at the beginning, the function can be used before it is declared, because their definitions are collected a step before the compiling process. Functions arguments and return values are passed using user stack. Recursive functions are allowed but developer must set manually and carefully a new size for "user stack pages" thru preprocessor directives. There are two special functions: `void main()` explained before and `void catch()` explained at **Contract states** topic. It is not obligatory to use them.
+As avaliable in C, the developer can make use of functions to make coding easier or reuse code from other projects. There is no need to put function prototypes at the beginning, the function can be used before it is declared, because their definitions are collected a step before the compiling process.
+
+Functions arguments are set by caller and the function returns value thru 'r0', the first auxiliary variable. Recursive functions are allowed but developer must set manually and carefully a new size for "user stack pages" thru preprocessor directives, because they store all functions variables in the stack before recursion.
+
+There are two special functions: `void main()` explained before and `void catch()` explained at **Contract states** topic. It is not obligatory to use them.
+
 Functions can return also arrays and structs; the returning values can be used directly: example `if ( arrFn(a)[2] == 25 )` or `b = structFn(a)->value;`
+
+Inline functions, the ones declared as `inline long myFunction() { code; }`, will be inserted into caller function. This saves instructions to jump subroutine and return from subroutine. It is very useful for functions that are called only once and for small programs. If all functions are inline, the program will not use the 'code stack page', thus reducing the deployment cost by 1 page.
 
 ### Built-in functions
 From SmartC version 2.0 built-in functions were introduced.
