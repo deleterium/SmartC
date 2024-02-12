@@ -41,6 +41,7 @@ export default {
             size: param.length / 16,
             declaration: 'long',
             isDeclared: true,
+            isSet: true,
             hexContent: param
         }
     },
@@ -60,6 +61,7 @@ export default {
             scope: '',
             size: 0,
             declaration: 'void',
+            isSet: true,
             isDeclared: true
         }
     },
