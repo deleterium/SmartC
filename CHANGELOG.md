@@ -1,3 +1,14 @@
+## [v2.2](https://github.com/deleterium/SmartC/tree/v2.2) (2024-02-12)
+
+[Commits](https://github.com/deleterium/SmartC/commits/v2.2)
+- Added getAccountBalance() support by @Wekuz/@deleterium
+- Compiler now warns when using not initialized variables
+- Changed strategy for functions passing and returning values (saving use of user stack)
+- New keyword `inline` for functions declaration (saving use of code stack)
+
+## New Contributors
+* @Wekuz made their first contribution in https://github.com/deleterium/SmartC/pull/31
+
 ## [v2.1](https://github.com/deleterium/SmartC/tree/v2.1) (2022-08-06)
 
 [Commits](https://github.com/deleterium/SmartC/commits/v2.1)
