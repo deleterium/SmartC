@@ -10,7 +10,7 @@ describe('Warnings', () => {
     })
     it('should warn: longs used before initialization', () => {
         const code = 'struct PLAYER { long sa, sb; } player;\nlong a, b;\nlong message[4];\n\na+=1;\na = message[b];\na = player.sb;\n'
-        const warnings = "Warning: at line 5. Variable 'a' is used but not initialized.\nWarning: at line 6. Variable 'b' is used but not initialized.\nWarning: at line 7. Variable 'player_sb' is used but not initialized."
+        const warnings = "Warning: at line 5:1. Variable 'a' is used but not initialized.\nWarning: at line 6:13. Variable 'b' is used but not initialized.\nWarning: at line 7:12. Variable 'player_sb' is used but not initialized."
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getMachineCode().Warnings).toBe(warnings)
