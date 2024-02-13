@@ -1,5 +1,5 @@
 import preprocessor from './preprocessor/preprocessor'
-import tokenizer from './tokenizer/tokenizer'
+import tokenizer from './tokenizer/tokenizerV3'
 import parser from './parser/parser'
 import shaper from './shaper/shaper'
 import syntaxProcessor from './syntaxProcessor/syntaxProcessor'
