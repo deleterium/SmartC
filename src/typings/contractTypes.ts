@@ -42,7 +42,8 @@ export type SC_MACRO = {
     property: string
     /** Macro value, allowed many words */
     value: string
-    line: number
+    /** Line follows the scheme 'line:column' or '0:0' if unknown */
+    line: string
 }
 
 export type SC_FUNCTION = {
@@ -63,7 +64,7 @@ export type SC_FUNCTION = {
     /** Definitive sentences for function block. */
     sentences: SENTENCES[]
     /** Line number of function declaration */
-    line?: number
+    line?: string
     /** Assembly name for API Functions only */
     asmName?: string
     /** Built-in type */

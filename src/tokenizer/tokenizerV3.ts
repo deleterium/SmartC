@@ -117,7 +117,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             }
             const simpleToken = simpleTokensMap.get(currentChar)
             if (simpleToken) {
-                return { type: simpleToken, value: currentChar, line: streamCurrentLine, col: streamCurrentCol }
+                return { type: simpleToken, value: currentChar, line: `${streamCurrentLine}:${streamCurrentCol}` }
             }
             throw new Error(`At line: ${streamCurrentLine}:${streamCurrentCol}. Invalid character ${currentChar} found.`)
         }
@@ -130,7 +130,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         if (nextChar && bitFieldTypeTable[nextChar.charCodeAt(0)] & bitFieldIsDigit) {
             return stateReadNumber()
         }
-        return { type: 'dot', value: '.', line: tokenLine, col: tokenCol }
+        return { type: 'dot', value: '.', line: `${tokenLine}:${tokenCol}` }
     }
 
     function stateReadWord () {
@@ -148,7 +148,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
 
     function stateCheckWord (tokenValue: string, tokenLine: number, tokenCol: number) {
         if (easyKeywordTokens.includes(tokenValue)) {
-            return { type: 'keyword', value: tokenValue, line: tokenLine, col: tokenCol }
+            return { type: 'keyword', value: tokenValue, line: `${tokenLine}:${tokenCol}` }
         }
         if (tokenValue === 'asm') {
             return stateReadAsmStart()
@@ -156,7 +156,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         if (tokenValue === 'struct') {
             return stateReadStructStart()
         }
-        return { type: 'variable', value: tokenValue, line: tokenLine, col: tokenCol }
+        return { type: 'variable', value: tokenValue, line: `${tokenLine}:${tokenCol}` }
     }
 
     function stateReadAsmStart () {
@@ -190,7 +190,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             }
         } while (currentChar !== '}')
         const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, streamCurrentIndex)
-        return { type: 'keyword', value: 'asm', line: tokenLine, col: tokenCol, extValue: tokenValue }
+        return { type: 'keyword', value: 'asm', line: `${tokenLine}:${tokenCol}`, extValue: tokenValue }
     }
 
     function stateReadStructStart () {
@@ -201,7 +201,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             throw new Error(`At line: ${tokenLine}:${tokenCol}. struct sentence. Expecting a type name, but found EOF or comments.`)
         }
         if (nextToken.type === 'variable') {
-            return { type: 'keyword', value: 'struct', line: tokenLine, col: tokenCol, extValue: nextToken.value }
+            return { type: 'keyword', value: 'struct', line: `${tokenLine}:${tokenCol}`, extValue: nextToken.value }
         }
         throw new Error(`At line: ${streamCurrentLine}:${streamCurrentCol}. Invalid struct sentence. Expecting a type name, found '${nextToken.value}'`)
     }
@@ -216,7 +216,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         } while (currentChar && bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsNumber)
         const tokenValue = inputSourceCode.slice(tokenStartIndex, streamCurrentIndex)
         streamRewind()
-        return { type: 'numberDec', value: tokenValue, line: tokenLine, col: tokenCol }
+        return { type: 'numberDec', value: tokenValue, line: `${tokenLine}:${tokenCol}` }
     }
 
     function stateReadNumberHex () {
@@ -233,7 +233,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         } while (bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsNumberHex)
         const tokenValue = inputSourceCode.slice(tokenStartIndex + 2, streamCurrentIndex)
         streamRewind()
-        return { type: 'numberHex', value: tokenValue, line: tokenLine, col: tokenCol }
+        return { type: 'numberHex', value: tokenValue, line: `${tokenLine}:${tokenCol}` }
     }
 
     function stateSlashStart () : PRE_TOKEN | undefined {
@@ -247,7 +247,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             return stateReadCommentMultiLine()
         }
         streamRewind()
-        return { type: 'forwardslash', value: '/', line: tokenLine, col: tokenCol }
+        return { type: 'forwardslash', value: '/', line: `${tokenLine}:${tokenCol}` }
     }
 
     function stateReadCommentSingleLine () {
@@ -285,7 +285,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             currentChar = streamAdvance()
         } while (currentChar && explodedTextCodes[streamCurrentIndex] !== '\n'.charCodeAt(0))
         const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, streamCurrentIndex)
-        return { type: 'macro', value: tokenValue, line: tokenLine, col: tokenCol }
+        return { type: 'macro', value: tokenValue, line: `${tokenLine}:${tokenCol}` }
     }
 
     function stateReadString () : PRE_TOKEN {
@@ -308,7 +308,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             }
         } while (currentChar !== delimitator)
         const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, streamCurrentIndex)
-        return { type: 'string', value: tokenValue, line: tokenLine, col: tokenCol }
+        return { type: 'string', value: tokenValue, line: `${tokenLine}:${tokenCol}` }
     }
 
     return tokenizerMain()

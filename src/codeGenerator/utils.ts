@@ -65,37 +65,37 @@ export default {
             isDeclared: true
         }
     },
-    genMulToken (line: number = -1): TOKEN {
+    genMulToken (line: string = '0:0'): TOKEN {
         return { type: 'Operator', precedence: 3, value: '*', line: line }
     },
-    genDivToken (line: number = -1): TOKEN {
+    genDivToken (line: string = '0:0'): TOKEN {
         return { type: 'Operator', precedence: 3, value: '/', line: line }
     },
-    genAddToken (line: number = -1): TOKEN {
+    genAddToken (line: string = '0:0'): TOKEN {
         return { type: 'Operator', precedence: 4, value: '+', line: line }
     },
-    genSubToken (line: number = -1): TOKEN {
+    genSubToken (line: string = '0:0'): TOKEN {
         return { type: 'Operator', precedence: 4, value: '-', line: line }
     },
-    genAssignmentToken (line: number): TOKEN {
+    genAssignmentToken (line: string): TOKEN {
         return { type: 'Assignment', precedence: 9, value: '=', line: line }
     },
     genIncToken (): TOKEN {
-        return { type: 'SetUnaryOperator', precedence: 2, value: '++', line: -1 }
+        return { type: 'SetUnaryOperator', precedence: 2, value: '++', line: '0:0' }
     },
     genDecToken (): TOKEN {
-        return { type: 'SetUnaryOperator', precedence: 2, value: '--', line: -1 }
+        return { type: 'SetUnaryOperator', precedence: 2, value: '--', line: '0:0' }
     },
     genNotEqualToken (): TOKEN {
-        return { type: 'Comparision', precedence: 6, value: '!=', line: -1 }
+        return { type: 'Comparision', precedence: 6, value: '!=', line: '0:0' }
     },
-    genAPICallToken (line: number, name?: string): TOKEN {
+    genAPICallToken (line: string, name?: string): TOKEN {
         return { type: 'APICall', precedence: 0, value: assertNotUndefined(name), line: line }
     },
-    genBuiltInToken (line: number, name?: string): TOKEN {
+    genBuiltInToken (line: string, name?: string): TOKEN {
         return { type: 'BuiltInCall', precedence: 0, value: assertNotUndefined(name), line: line }
     },
-    genPushToken (line: number): TOKEN {
+    genPushToken (line: string): TOKEN {
         return { type: 'Push', precedence: 12, value: '', line: line }
     },
     memoryToConstantContent (MemObj: MEMORY_SLOT) : CONSTANT_CONTENT {

@@ -157,7 +157,7 @@ export default function memoryProcessor (
     }
 
     /** Inspect one item to get array dimension */
-    function getArraySize (tkn: TOKEN[] = [], line: number = -1) {
+    function getArraySize (tkn: TOKEN[] = [], line: string = '0:0') {
         if (tkn.length !== 1 || tkn[0].type !== 'Constant') {
             throw new Error(`At line: ${line}.` +
             ' Wrong array declaration. Only constant size declarations allowed.')
@@ -244,7 +244,7 @@ export default function memoryProcessor (
 
     /** Return an array of memory objects. Handle regular structs, arrays of structs
      * and struct pointers. This is the actual processing code */
-    function structToMemoryObject (currentStructNameDef: string, startingLine: number) : MEMORY_SLOT[] {
+    function structToMemoryObject (currentStructNameDef: string, startingLine: string) : MEMORY_SLOT[] {
         const retStructMemory : MEMORY_SLOT[] = []
         const StructTD = findSTD(currentStructNameDef)
         let StructMemHeader : MEMORY_SLOT

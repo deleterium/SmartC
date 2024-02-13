@@ -4,7 +4,7 @@ import utils from '../utils'
 import { createSimpleInstruction, toRegister } from './createInstruction'
 
 export function typeCasting (
-    AuxVars: GENCODE_AUXVARS, InSolved: GENCODE_SOLVED_OBJECT, toType: DECLARATION_TYPES, line: number
+    AuxVars: GENCODE_AUXVARS, InSolved: GENCODE_SOLVED_OBJECT, toType: DECLARATION_TYPES, line: string
 ) : GENCODE_SOLVED_OBJECT {
     const fromType = utils.getDeclarationFromMemory(InSolved.SolvedMem)
     if (fromType === toType) {

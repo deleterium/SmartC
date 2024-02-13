@@ -13,7 +13,7 @@ export default function sentencesProcessor (
 
     function sentencesProcessorMain () : SENTENCES[] {
         if (addTerminator) {
-            codetrain.push({ type: 'Terminator', value: ';', precedence: 11, line: -1 })
+            codetrain.push({ type: 'Terminator', value: ';', precedence: 11, line: '0:0' })
         }
         let sentences: SENTENCES[] = []
         for (; currentToken < codetrain.length; currentToken++) {
@@ -26,7 +26,7 @@ export default function sentencesProcessor (
      * to one item sentences array */
     function processOneSentence (): SENTENCES[] {
         const phrase: TOKEN[] = []
-        const lineOfFirstInstruction = codetrain[currentToken]?.line ?? -1
+        const lineOfFirstInstruction = codetrain[currentToken]?.line ?? '0:0'
         // Analysis for start tokens
         if (codetrain[currentToken].type === 'CodeDomain') {
             return sentencesProcessor(AuxVars, codetrain[currentToken].params)
@@ -319,7 +319,7 @@ export default function sentencesProcessor (
         }]
     }
 
-    function labelCodeToSentence (formerPhrase: TOKEN[], line: number) : SENTENCES[] {
+    function labelCodeToSentence (formerPhrase: TOKEN[], line: string) : SENTENCES[] {
         if (formerPhrase.length === 0) {
             throw new Error(`At line: ${line}.` +
             " Unexpected ':'.")

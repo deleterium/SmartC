@@ -9,7 +9,7 @@ import keywordToAsm from './keywordToAsm'
 import operatorToAsm from './operatorToAsm'
 
 /** Transforms a instruction into const instruction */
-export function setConstAsmCode (progMemory: MEMORY_SLOT[], code: string, line: number) {
+export function setConstAsmCode (progMemory: MEMORY_SLOT[], code: string, line: string) {
     const codelines = code.split('\n')
     const retlines: string[] = []
     codelines.forEach(instruction => {
@@ -69,7 +69,7 @@ export function createSimpleInstruction (instruction: string, param1: string = '
 }
 
 export function toRegister (
-    AuxVars: GENCODE_AUXVARS, InSolved: GENCODE_SOLVED_OBJECT, line: number
+    AuxVars: GENCODE_AUXVARS, InSolved: GENCODE_SOLVED_OBJECT, line: string
 ) : GENCODE_SOLVED_OBJECT {
     const retObj = flattenMemory(AuxVars, InSolved.SolvedMem, line)
 
@@ -98,7 +98,7 @@ export function createAPICallInstruction (
     let assemblyCode = ''
     const tempArgsMem: MEMORY_SLOT[] = []
     argsMem.forEach((VarObj) => {
-        const Temp = flattenMemory(AstAuxVars, VarObj, -1)
+        const Temp = flattenMemory(AstAuxVars, VarObj, '0:0')
         assemblyCode += Temp.asmCode
         tempArgsMem.push(Temp.FlatMem)
     })
@@ -120,7 +120,7 @@ export function createAPICallInstruction (
  * conversion and a boolean to indicate if it is a new object (that must be free later on).
 */
 export function flattenMemory (
-    AuxVars: GENCODE_AUXVARS, StuffedMemory: MEMORY_SLOT, line: number
+    AuxVars: GENCODE_AUXVARS, StuffedMemory: MEMORY_SLOT, line: string
 ) : FLATTEN_MEMORY_RETURN_OBJECT {
     const paramDec = utils.getDeclarationFromMemory(StuffedMemory)
 
@@ -222,7 +222,7 @@ export function flattenMemory (
 }
 
 /** Used in function calls. Mem shall be a memory not stuffed */
-export function forceSetMemFromR0 (AuxVars: GENCODE_AUXVARS, Mem: MEMORY_SLOT, line: number) {
+export function forceSetMemFromR0 (AuxVars: GENCODE_AUXVARS, Mem: MEMORY_SLOT, line: string) {
     const Temp = flattenMemory(AuxVars, Mem, line)
     if (Temp.isNew) {
         // Debug this, force set should be simple instruction

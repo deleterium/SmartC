@@ -71,7 +71,7 @@ export type GENCODE_AUXVARS = {
     /** Verifies if a variable at loc address is register or temporary reused var */
     isTemp(loc: number): boolean
     /** Get a new register variable */
-    getNewRegister(line?: number): MEMORY_SLOT
+    getNewRegister(line?: string): MEMORY_SLOT
     /** Informs that variable at loc address can be free */
     freeRegister(loc: number | undefined): void
     /** Get all post operations and clear its value */
@@ -82,13 +82,13 @@ export type GENCODE_AUXVARS = {
      * if not found, throws exception with line number. Also sets 'isDeclared'
      * to manage use of undeclared variables.
      */
-    getMemoryObjectByName (varName: string, line?: number, varDeclaration?: DECLARATION_TYPES): MEMORY_SLOT
+    getMemoryObjectByName (varName: string, line?: string, varDeclaration?: DECLARATION_TYPES): MEMORY_SLOT
     /**
      * Search and return a copy of memory object in addres 'loc'.
      * Object can be global or local function scope.
      * if not found, throws exception with line number.
      */
-    getMemoryObjectByLocation (loc: number|bigint|string, line?: number): MEMORY_SLOT
+    getMemoryObjectByLocation (loc: number|bigint|string, line?: string): MEMORY_SLOT
     /** Get a new jump id according to current Configs (genCode scope) */
     getNewJumpID(): string
 }

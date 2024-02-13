@@ -6,7 +6,7 @@ import genCode from './genCode'
 /** Translates global variables to scope auxvars to be used by genCode.
  * Also handles return value with some tests, alterations and optimizations. */
 export default function setupGenCode (
-    Globals: GLOBAL_AUXVARS, CodeGenInfo: SETUPGENCODE_ARGS, sentenceLine: number
+    Globals: GLOBAL_AUXVARS, CodeGenInfo: SETUPGENCODE_ARGS, sentenceLine: string
 ) : string {
     const AuxVars: GENCODE_AUXVARS = {
         CurrentFunction: Globals.Program.functions[Globals.currFunctionIndex],
@@ -84,7 +84,7 @@ export default function setupGenCode (
         return true
     }
 
-    function auxvarsGetNewRegister (line: number = sentenceLine): MEMORY_SLOT {
+    function auxvarsGetNewRegister (line: string = sentenceLine): MEMORY_SLOT {
         const id = AuxVars.registerInfo.find(OBJ => OBJ.inUse === false)
         if (id === undefined) {
             throw new Error(`At line: ${line}. ` +
@@ -111,7 +111,7 @@ export default function setupGenCode (
     }
 
     function auxvarsGetMemoryObjectByName (
-        varName: string, line: number = sentenceLine, varDeclaration: DECLARATION_TYPES = ''
+        varName: string, line: string = sentenceLine, varDeclaration: DECLARATION_TYPES = ''
     ) : MEMORY_SLOT {
         let MemFound: MEMORY_SLOT | undefined
         if (AuxVars.CurrentFunction !== undefined) { // find function scope variable
@@ -136,7 +136,7 @@ export default function setupGenCode (
         return deepCopy(MemFound)
     }
 
-    function auxvarsGetMemoryObjectByLocation (loc: number|bigint|string, line: number = sentenceLine): MEMORY_SLOT {
+    function auxvarsGetMemoryObjectByLocation (loc: number|bigint|string, line: string = sentenceLine): MEMORY_SLOT {
         let addr:number
         switch (typeof loc) {
         case 'number': addr = loc; break
@@ -153,7 +153,7 @@ export default function setupGenCode (
         return deepCopy(FoundMemory)
     }
 
-    function detectAndSetNotInitialized (Memory: MEMORY_SLOT, line: number, isInitialization: boolean) {
+    function detectAndSetNotInitialized (Memory: MEMORY_SLOT, line: string, isInitialization: boolean) {
         if (AuxVars.isLeftSideOfAssignment || Memory.hexContent) {
             Memory.isSet = true
             return

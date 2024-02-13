@@ -114,25 +114,29 @@ export default function codeGenerator (Program: CONTRACT) {
             `__inline${inlineId}_end:`
     }
 
-    function writeAsmLine (lineContent: string, sourceCodeLine: number = 0) {
+    function writeAsmLine (lineContent: string, sourceCodeLine: string = '0:0') {
+        const location = sourceCodeLine.split(':')
+        const lineNumber = Number(location[0])
         if (Program.Config.verboseAssembly === true &&
-            sourceCodeLine !== 0 &&
-            sourceCodeLine !== GlobalCodeVars.currSourceLine) {
-            GlobalCodeVars.assemblyCode += `^comment line ${sourceCodeLine} ${Program.sourceLines[sourceCodeLine - 1]}\n`
-            GlobalCodeVars.currSourceLine = sourceCodeLine
+            sourceCodeLine !== '0:0' &&
+            lineNumber !== GlobalCodeVars.currSourceLine) {
+            GlobalCodeVars.assemblyCode += `^comment line ${location[0]} ${Program.sourceLines[lineNumber - 1]}\n`
+            GlobalCodeVars.currSourceLine = lineNumber
         }
         GlobalCodeVars.assemblyCode += lineContent + '\n'
     }
 
-    function writeAsmCode (lines: string, sourceCodeLine: number = 0) {
+    function writeAsmCode (lines: string, sourceCodeLine: string = '0:0') {
         if (lines.length === 0) {
             return
         }
+        const location = sourceCodeLine.split(':')
+        const lineNumber = Number(location[0])
         if (Program.Config.verboseAssembly === true &&
-            sourceCodeLine !== 0 &&
-            sourceCodeLine !== GlobalCodeVars.currSourceLine) {
-            GlobalCodeVars.assemblyCode += `^comment line ${sourceCodeLine} ${Program.sourceLines[sourceCodeLine - 1]}\n`
-            GlobalCodeVars.currSourceLine = sourceCodeLine
+            lineNumber !== 0 &&
+            lineNumber !== GlobalCodeVars.currSourceLine) {
+            GlobalCodeVars.assemblyCode += `^comment line ${location[0]} ${Program.sourceLines[lineNumber - 1]}\n`
+            GlobalCodeVars.currSourceLine = lineNumber
         }
         GlobalCodeVars.assemblyCode += lines
     }

@@ -446,7 +446,7 @@ export default function binaryAsnProcessor (
     }
 
     function assignmentConstSolver (
-        Left: MEMORY_SLOT, Right: MEMORY_SLOT, assemblyInstructions: string, line: number
+        Left: MEMORY_SLOT, Right: MEMORY_SLOT, assemblyInstructions: string, line: string
     ) : GENCODE_SOLVED_OBJECT {
         if (Right.address !== -1 || Right.type !== 'constant' || Right.hexContent === undefined) {
             throw new Error(`At line: ${line}. ` +

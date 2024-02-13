@@ -387,7 +387,7 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
 
     // Process element preTokens started at position mainLoopIndex (outer scope) and returns a array of tokens
     // until endChar is found
-    function getTokensUntil (endChar: ')'|'}'|']', parentType: TOKEN_TYPES, line: number) : TOKEN [] {
+    function getTokensUntil (endChar: ')'|'}'|']', parentType: TOKEN_TYPES, line: string) : TOKEN [] {
         const returnedTokens : TOKEN [] = []
         if (AuxVars.mainLoopIndex >= preTokens.length) {
             throw new Error('At line: end of file. ' +

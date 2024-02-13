@@ -1,5 +1,6 @@
 export type PRE_TOKEN = {
-    line: number
+    /** Line tracks the tokens starting location and follows the scheme 'line:column' or '0:0' if unknown */
+    line: string
     type: string
     value: string
     /** Applicable for asm and struct tokens */
@@ -22,7 +23,8 @@ export type TOKEN_TYPES = 'Variable' | 'Constant' | 'Operator' | 'UnaryOperator'
 export type DECLARATION_TYPES = 'void' | 'long' | 'fixed' | 'struct' | 'void_ptr' | 'long_ptr' | 'fixed_ptr' | 'struct_ptr' | ''
 
 export type TOKEN = {
-    line: number
+    /** Line follows the scheme 'line:column' or '0:0' if unknown */
+    line: string
     precedence: number
     type: TOKEN_TYPES
     declaration?: DECLARATION_TYPES
@@ -161,8 +163,8 @@ export type SWITCH_ASN = {
 export type SENTENCES = SENTENCE_PHRASE | SENTENCE_IF_ENDIF | SENTENCE_IF_ELSE | SENTENCE_WHILE | SENTENCE_DO | SENTENCE_FOR | SENTENCE_STRUCT | SENTENCE_SWITCH | SENTENCE_CASE | SENTENCE_DEFAULT | SENTENCE_LABEL
 export type SENTENCE_PHRASE = {
     type: 'phrase'
-    /** phrase starting line number */
-    line: number
+    /** phrase starting location ('line:column' scheme) */
+    line: string
     /** Array of tokens, recursive on Arr, Codecave and CodeDomain */
     code?: TOKEN[]
     /** Tokens organized in an AST */
@@ -171,7 +173,7 @@ export type SENTENCE_PHRASE = {
 export type SENTENCE_IF_ENDIF = {
     type: 'ifEndif'
     id: string
-    line: number
+    line: string
     condition?: TOKEN[]
     /** Tokens organized in an AST */
     ConditionAST?: AST
@@ -180,7 +182,7 @@ export type SENTENCE_IF_ENDIF = {
 export type SENTENCE_IF_ELSE = {
     type: 'ifElse'
     id: string
-    line: number
+    line: string
     condition?: TOKEN[]
     ConditionAST?: AST
     trueBlock: SENTENCES[]
@@ -189,7 +191,7 @@ export type SENTENCE_IF_ELSE = {
 export type SENTENCE_WHILE = {
     type: 'while'
     id: string
-    line: number
+    line: string
     condition?: TOKEN[]
     ConditionAST?: AST
     trueBlock: SENTENCES[]
@@ -197,7 +199,7 @@ export type SENTENCE_WHILE = {
 export type SENTENCE_DO = {
     type: 'do'
     id: string
-    line: number
+    line: string
     condition?: TOKEN[]
     ConditionAST?: AST
     trueBlock: SENTENCES[]
@@ -205,30 +207,30 @@ export type SENTENCE_DO = {
 export type SENTENCE_FOR = {
     type: 'for'
     id: string
-    line: number
+    line: string
     threeSentences: SENTENCE_PHRASE[]
     trueBlock: SENTENCES[]
 }
 export type SENTENCE_STRUCT = {
     type: 'struct',
-    line: number,
+    line: string,
     name: string,
     members: SENTENCES[],
     Phrase: SENTENCE_PHRASE
 }
 export type SENTENCE_CASE = {
     type: 'case'
-    line: number
+    line: string
     caseId: string
     condition?: TOKEN[]
 }
 export type SENTENCE_DEFAULT = {
     type: 'default'
-    line: number
+    line: string
 }
 export type SENTENCE_SWITCH = {
     type: 'switch'
-    line: number
+    line: string
     expression?: TOKEN[]
     cases?: TOKEN[][]
     hasDefault: boolean
@@ -237,7 +239,7 @@ export type SENTENCE_SWITCH = {
 }
 export type SENTENCE_LABEL = {
     type: 'label'
-    line: number
+    line: string
     id: string
 }
 
