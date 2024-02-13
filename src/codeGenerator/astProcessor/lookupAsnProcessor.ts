@@ -76,6 +76,7 @@ export default function lookupAsnProcessor (
         Previous: GENCODE_SOLVED_OBJECT, CurrentModifier: TOKEN_MODIFIER_MEMBER
     ) : GENCODE_SOLVED_OBJECT {
         const memberName = CurrentModifier.Center.value
+        const memberLine = CurrentModifier.Center.line
         if (memberName === 'length' && CurrentModifier.type === 'MemberByVal') {
             return memberLengthProc(Previous.SolvedMem)
         }
@@ -132,26 +133,26 @@ export default function lookupAsnProcessor (
                 }
             }
             // else Previous.MemObj.Offset.type is "variable"
-            throw new Error(`Internal error at line: ${CurrentNode.Token.line}. Inspection needed.`)
+            throw new Error(`Internal error at line: ${memberLine}. Inspection needed.`)
         }
         // from now on CurrentModifier.type is 'MemberByVal') {
         if (utils.getDeclarationFromMemory(Previous.SolvedMem) === 'struct_ptr') {
-            throw new Error(`At line: ${CurrentNode.Token.line}.` +
+            throw new Error(`At line: ${memberLine}.` +
             " Using wrong member notation. Try to use '->' instead.")
         }
         if (Previous.SolvedMem.Offset === undefined) {
             Previous.SolvedMem = AuxVars.getMemoryObjectByLocation(Number('0x' + Previous.SolvedMem.hexContent) +
-                TypeD.structAccumulatedSize[memberIdx][1])
+                TypeD.structAccumulatedSize[memberIdx][1], memberLine)
             return Previous
         }
         if (Previous.SolvedMem.Offset.type === 'constant') {
             const newLoc = Previous.SolvedMem.Offset.value + Number('0x' + Previous.SolvedMem.hexContent)
-            Previous.SolvedMem = AuxVars.getMemoryObjectByLocation(newLoc + TypeD.structAccumulatedSize[memberIdx][1])
+            Previous.SolvedMem = AuxVars.getMemoryObjectByLocation(newLoc + TypeD.structAccumulatedSize[memberIdx][1], memberLine)
             return Previous
         }
         // finally Previous.MemObj.offset_type is "variable"
-        Previous.asmCode += createInstruction(AuxVars, utils.genAddToken(CurrentNode.Token.line),
-            AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line),
+        Previous.asmCode += createInstruction(AuxVars, utils.genAddToken(memberLine),
+            AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, memberLine),
             utils.createConstantMemObj(memOffset + TypeD.structAccumulatedSize[memberIdx][1]))
         Previous.SolvedMem.Offset.declaration = MembersDefinitions.declaration
         Previous.SolvedMem.Offset.typeDefinition = MembersDefinitions.typeDefinition
