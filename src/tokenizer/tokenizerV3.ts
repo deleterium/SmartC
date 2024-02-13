@@ -43,7 +43,17 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         4, 4, 4
     ]
 
-    /* These are charCodes from 0 to 122 and the next state function for state 'start'. */
+    /* These are charCodes from 0 to 122 and the next state function for state 'start'. Summary:
+     * Function           |  Char code of
+     * -------------------|---------------
+     * stateReadDot       | .
+     * stateSlashStart    | /
+     * stateReadMacro     | #
+     * stateReadString    | '"
+     * stateReadNumberHex | 0
+     * stateReadNumber    | 1-9
+     * stateReadWord      | a-zA-Z_
+     */
     const startStateFunctionTable = [
         undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined,
         undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined,
