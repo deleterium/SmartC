@@ -73,48 +73,138 @@ export function deepCopy<T1> (source: T1): T1 {
 }
 
 /**
- * Converts a utf-16 string to utf-8 hexstring
+ * Converts a utf-16 string to utf-8 hexstring. Also process escape chars
+ * \n \r \t \\ \' \" \xHH \uHHHH
  *
  * @param inStr Input string
  * @returns Same string converted, padded and reversed.
  * (multiple of 8 bytes)
  */
-export function stringToHexstring (inStr: string) : string {
+export function stringToHexstring (inStr: string, line: string) : string {
     const byarr : number [] = []
+    const hexDigits = [ // charCodes of /[0-9A-Fa-f]/ are ones here
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+        0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1,
+        1, 1, 1
+    ]
+    const hexValues = [ // charCodes of /[0-9A-Fa-f]/ and their value in HEX
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0,
+        0, 0, 0, 0, 0, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 11, 12,
+        13, 14, 15
+
+    ]
     if (inStr.length === 0) byarr.push(0)
+    let charCode, nextCharCode: number
+    let helperUnicode: number[]
     let i = 0
-    while (i < inStr.length) {
-        const charCode = inStr.charCodeAt(i)
-        switch (true) {
-        case (charCode < 0x80):
-            byarr.push(charCode)
-            break
-        case (charCode < 0x800):
-            byarr.push(0xc0 | (charCode >> 6))
-            byarr.push(0x80 | (charCode & 0x3f))
-            break
-        case (charCode < 0xd800):
-        case (charCode > 0xdfff):
-            byarr.push(0xe0 | (0x3f & (charCode >> 12)))
-            byarr.push(0x80 | (0x3f & (charCode >> 6)))
-            byarr.push(0x80 | (0x3f & charCode))
-            break
-        default: {
-            const nextCharCode = inStr.charCodeAt(i + 1)
-            if (isNaN(nextCharCode)) {
+    let state = 0
+    for (i = 0; !Number.isNaN(charCode = inStr.charCodeAt(i)); i++) {
+        switch (state) {
+        case 0: // Regular chars
+            switch (true) {
+            case (charCode < 0x80):
+                if (charCode === 92) { // Starting escape sequence with \
+                    state = 1
+                    break
+                }
+                byarr.push(charCode)
                 break
+            case (charCode < 0x800):
+                byarr.push(0xc0 | (charCode >> 6))
+                byarr.push(0x80 | (charCode & 0x3f))
+                break
+            case (charCode < 0xd800):
+            case (charCode > 0xdfff):
+                byarr.push(0xe0 | (0x3f & (charCode >> 12)))
+                byarr.push(0x80 | (0x3f & (charCode >> 6)))
+                byarr.push(0x80 | (0x3f & charCode))
+                break
+            default:
+                nextCharCode = inStr.charCodeAt(i + 1)
+                if (Number.isNaN(nextCharCode)) {
+                    throw new Error(`At line: ${line}. String with invalid character at index ${i}.`)
+                }
+                if ((charCode & 0xfc00) === 0xd800 && (nextCharCode & 0xfc00) === 0xdc00) {
+                    i++
+                    const newCharCode = ((charCode & 0x3ff) << 10) + (nextCharCode & 0x3ff) + 0x10000
+                    byarr.push(0xf0 | (0x3f & (newCharCode >> 18)))
+                    byarr.push(0x80 | (0x3f & (newCharCode >> 12)))
+                    byarr.push(0x80 | (0x3f & (newCharCode >> 6)))
+                    byarr.push(0x80 | (0x3f & newCharCode))
+                    break
+                }
+                throw new Error(`At line: ${line}. String with invalid character at index ${i}.`)
             }
-            if ((charCode & 0xfc00) === 0xd800 && (nextCharCode & 0xfc00) === 0xdc00) {
-                i++
-                const newCharCode = ((charCode & 0x3ff) << 10) + (nextCharCode & 0x3ff) + 0x10000
-                byarr.push(0xf0 | (0x3f & (newCharCode >> 18)))
-                byarr.push(0x80 | (0x3f & (newCharCode >> 12)))
-                byarr.push(0x80 | (0x3f & (newCharCode >> 6)))
-                byarr.push(0x80 | (0x3f & newCharCode))
+            break
+        case 1: // Possible escape char
+            state = 0
+            switch (charCode) {
+            case 110: // 'n'
+                byarr.push('\n'.charCodeAt(0))
+                break
+            case 114: // 'r'
+                byarr.push('\r'.charCodeAt(0))
+                break
+            case 116: // 't'
+                byarr.push('\t'.charCodeAt(0))
+                break
+            case 92: // '\\'
+                byarr.push('\\'.charCodeAt(0))
+                break
+            case 39: // '\''
+                byarr.push('\''.charCodeAt(0))
+                break
+            case 34: // '"'
+                byarr.push('"'.charCodeAt(0))
+                break
+            case 120: // 'x'
+                state = 2
+                break
+            case 117: // 'u'
+                state = 3
+                break
+            default:
+                // not escaping char
+                throw new Error(`At line: ${line}. String with invalid escaping character '\\${String.fromCharCode(charCode)}.`)
             }
+            break
+        case 2: // Read escaped \xHH
+            nextCharCode = inStr.charCodeAt(++i)
+            state = 0
+            if (!(hexDigits[charCode] && hexDigits[nextCharCode])) {
+                throw new Error(`At line: ${line}. String with malformed escaping '\\x' character. ` +
+                    'Expected 2 hexadecimal chars, but found invalid char or end of string.')
+            }
+            byarr.push(hexValues[charCode] * 16 + hexValues[nextCharCode])
+            break
+        case 3: // Read escaped \uHHHH (unicode)
+            helperUnicode = [
+                charCode,
+                inStr.charCodeAt(++i),
+                inStr.charCodeAt(++i),
+                inStr.charCodeAt(++i)
+            ]
+            state = 0
+            if (!helperUnicode.every(code => hexDigits[code] === 1)) {
+                throw new Error(`At line: ${line}. String with malformed escaping '\\u' (unicode) character. ` +
+                    'Expected 4 hexadecimal chars, but found invalid char or end of string.')
+            }
+            // Change input string to include
+            inStr = inStr.slice(0, i - 5) +
+                String.fromCharCode(
+                    hexValues[helperUnicode[0]] * 4096 + hexValues[helperUnicode[1]] * 256 +
+                    hexValues[helperUnicode[2]] * 16 + hexValues[helperUnicode[3]]
+                ) +
+                inStr.slice(i + 1)
+            i -= 6
+            break
         }
-        }
-        i++
     }
     const byteSize = (Math.floor((byarr.length - 1) / 8) + 1) * 8
     byarr.reverse()

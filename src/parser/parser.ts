@@ -98,7 +98,7 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
             sequence: ['string'],
             action (tokenID): TOKEN {
                 const PreTkn = preTokens[tokenID]
-                let val = stringToHexstring(PreTkn.value)
+                let val = stringToHexstring(PreTkn.value, PreTkn.line)
                 const parts = /^(BURST-|S-|TS-)([0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{5})/.exec(PreTkn.value)
                 if (parts !== null) {
                     val = ReedSalomonAddressDecode(parts[2], PreTkn.line)
