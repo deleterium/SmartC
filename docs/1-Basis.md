@@ -29,10 +29,14 @@ Some special features can be enabled/disable via preprocessor directives. Check 
 Variables can be `long`, `fixed` or pointers. User can assign them:
 * With decimal values: `i=2;` for longs or `i=2.0;` for fixeds,
 * Hexadecimal values: `i=0xff;` for longs and not allowed for fixeds
-* Strings (up to 8 bytes) `msg="Hello!";` or Signum addresses `addr="S-297Z-EKMN-4AVV-7YWXP";` (also valid starting with BURST or TS).
-Variables can be assigned during their declaration.
-Arrays can be declared but can be initialized only at a later instruction. Declaration of an array with 5 elements (0 to 4): `long arr[5];`. Use as in C: `arr[1]=4;`. Multi-long values can be set `arr[]='This is a text message';`. To clear the entire array: `arr[]=0;`. It is possible to get an array length a member operation: `size = arr.length;` 
+* Strings (up to 8 bytes) `msg="Hello!";` or Signum addresses `addr="S-297Z-EKMN-4AVV-7YWXP";` (also valid starting with BURST or TS). It is possible to add escape characters `\n`  `\r` `\t` `\\` `\'` `\"`. To escape a specific byte, use `\xHH` where HH are hex numbers. To escape a unicode character, use `\uHHHH` where HHHH are the hex digits from the chosen character.
+
+Long and fixed variables can be assigned during their declaration.
+
+Arrays can be declared using the standart notation, but they only can be initialized at a later instruction. Declaration of an array with 5 elements (0 to 4): `long arr[5];`. Use as in C: `arr[1]=4;`. Multi-long values can be set `arr[]='This is a text message';`. To clear the entire array: `arr[]=0;`. It is possible to get an array length a member operation: `size = arr.length;`
+
 Structs use same notation in C. Structs pointers can also be used. To access a member, use `.` or `->` depending if struct is already allocated in memory  or if it is a pointer to the memory location. Arrays of structs, arrays inside structs and recursive pointer definition are also supported.
+
 All variables are initialized with value `0` at the first time the contract is executed, unless other value is set by `const` statement.
 All variables are similar to `static` in C. So every time a function is called or the smart contract receives a transaction, all variables will keep their last value. To avoid this behavior in functions, declare variables setting them a initial value: `long i=0;`.
 Global variables are available in all functions. Functions variables can only be used inside the function.
