@@ -82,14 +82,6 @@ export default function endAsnProcessor (
     }
 
     function registerProc (retMemObj: MEMORY_SLOT) : GENCODE_SOLVED_OBJECT {
-        if (!AuxVars.isDeclaration) {
-            throw new Error(`At line: ${CurrentNode.Token.line}. ` +
-            "'register' keyword can only be used during variable declaration.")
-        }
-        if (retMemObj.address !== -1) {
-            // not clean???
-            throw new Error('Internal error')
-        }
         const lastFreeRegister = AuxVars.registerInfo.filter(Reg => Reg.inUse === false).reverse()[0]
         if (lastFreeRegister === undefined || lastFreeRegister.Template.asmName === 'r0') {
             throw new Error(`At line: ${CurrentNode.Token.line}. ` +

@@ -155,6 +155,13 @@ describe('Keyword register', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: running out of register', () => {
+        expect(() => {
+            const code = '#pragma maxAuxVars 4\nregister fixed a=1., b=2.;\nregister fixed c=3.;\nregister long d=4;\n'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line: 4/)
+    })
     it('should compile: register multi scope (verbose assembly)', () => {
         const code = '#pragma verboseAssembly\n#pragma optimizationLevel 0\n#include APIFunctions\nlong G = teste(2, 3);\nlong teste(long arg_a, long arg_b) {\nregister long a=2;\nif (arg_a) {\nregister long b = Get_A1();\na+=b;\n} else {\nregister long c = Get_A2(); a+=c;\n}\nregister long d=0;\nreturn a+d;\n}\n'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare G\n^declare teste_arg_a\n^declare teste_arg_b\n\n^comment scope r0,r1,r2\n^comment line 4 long G = teste(2, 3);\nSET @teste_arg_b #0000000000000003\nSET @teste_arg_a #0000000000000002\nJSR :__fn_teste\nSET @G $r0\n^comment scope r0,r1,r2\nFIN\n\n^comment line 5 long teste(long arg_a, long arg_b) {\n__fn_teste:\n^comment scope r0,r1,r2\n^comment line 6 register long a=2;\n^comment scope r2:teste_a\nSET @r2 #0000000000000002\n^comment line 7 if (arg_a) {\nBZR $teste_arg_a :__if1_else\n__if1_start:\n^comment scope r0,r1\n^comment line 8 register long b = Get_A1();\n^comment scope r1:teste_b\nFUN @r1 get_A1\n^comment line 9 a+=b;\nADD @r2 $r1\n^comment scope r0,r1\nJMP :__if1_endif\n__if1_else:\n^comment scope r0,r1\n^comment line 11 register long c = Get_A2(); a+=c;\n^comment scope r1:teste_c\nFUN @r1 get_A2\nADD @r2 $r1\n__if1_endif:\n^comment scope r0,r1\n^comment line 13 register long d=0;\n^comment scope r1:teste_d\nCLR @r1\n^comment line 14 return a+d;\nSET @r0 $r2\nADD @r0 $r1\nSET @r0 $r0\nRET\n^comment scope r0,r1,r2\nRET\n'
