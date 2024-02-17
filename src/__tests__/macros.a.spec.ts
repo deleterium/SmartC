@@ -195,6 +195,13 @@ describe('#pragma', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: verboseScope', () => {
+        const code = '#pragma verboseScope true\n long a;\n if (a) a++;\n a++;\n#pragma optimizationLevel 0\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n^comment scope r0,r1,r2\nBZR $a :__if1_endif\n__if1_start:\n^comment scope r0,r1,r2\nINC @a\n__if1_endif:\n^comment scope r0,r1,r2\nINC @a\n^comment scope r0,r1,r2\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
     test('should throw: maxAuxVars invalid parameter', () => {
         expect(() => {
             const code = '#pragma maxAuxVars a\nlong a;'
