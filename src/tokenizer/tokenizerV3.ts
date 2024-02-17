@@ -73,7 +73,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
     /* Not all here, just the easy */
     const easyKeywordTokens = [
         'break', 'case', 'const', 'continue', 'default', 'do', 'else', 'exit', 'fixed', 'for', 'goto',
-        'halt', 'if', 'inline', 'long', 'return', 'sleep', 'sizeof', 'switch', 'void', 'while'
+        'halt', 'if', 'inline', 'long', 'register', 'return', 'sleep', 'sizeof', 'switch', 'void', 'while'
     ]
 
     function tokenizerMain () {

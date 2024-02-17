@@ -19,6 +19,7 @@ export default function memoryProcessor (
     programTD: TYPE_DEFINITIONS[], AuxVars: SHAPER_AUXVARS, phraseCode: TOKEN [], structPrefix: string = ''
 ): MEMORY_SLOT[] {
     let tokenCounter = 0
+    let isRegister = false
 
     type LFV = 'long'|'fixed'|'void'
 
@@ -38,6 +39,13 @@ export default function memoryProcessor (
                 break
             case 'struct':
                 retMem.push(...structProcessControl())
+                break
+            case 'register':
+                if (AuxVars.isFunctionArgument) {
+                    throw new Error(`At line: ${phraseCode[tokenCounter].line}. Arguments for functions cannot be register type.`)
+                }
+                tokenCounter++
+                isRegister = true
                 break
             default:
                 tokenCounter++
@@ -107,11 +115,15 @@ export default function memoryProcessor (
         }
         header.isDeclared = AuxVars.isFunctionArgument
         header.isSet = AuxVars.isFunctionArgument
+        header.toBeRegister = isRegister
         // If is not an array, just send the header
         if (dimensions.length === 0) {
             return [header]
         }
         // But if it IS an array, update header
+        if (isRegister) {
+            throw new Error(`At line: ${phraseCode[tokenCounter].line}. 'register' modifier on arrays is not implemented.`)
+        }
         header.type = 'array'
         header.typeDefinition = structPrefix + header.asmName
         header.ArrayItem = {

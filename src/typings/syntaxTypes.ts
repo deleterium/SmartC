@@ -66,6 +66,8 @@ export type MEMORY_SLOT = {
     declaration: DECLARATION_TYPES
     /** Control warning if using variables before setting it. */
     isSet: boolean
+    /** Control if a specific register to be used in this variable */
+    toBeRegister: boolean
     /** Offset in memory. -1 if this slot is not in memory */
     address: number
     /** Variable name */

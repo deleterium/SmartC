@@ -242,6 +242,18 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
             Operation: tokens[0],
             Center: createTree(tokens.slice(1))
         }
+    case 'register':
+        if (tokens.length === 1 || tokens[1].type !== 'Keyword') {
+            throw new Error(`At line: ${tokens[0].line}. Missing the variable type for 'register' use.`)
+        }
+        if (tokens[1].value !== 'long' && tokens[1].value !== 'fixed' && tokens[1].value !== 'void') {
+            throw new Error(`At line: ${tokens[0].line}. 'registers' can be only types: 'long', 'fixed' or 'void'.`)
+        }
+        return {
+            type: 'unaryASN',
+            Operation: tokens[0],
+            Center: createTree(tokens.slice(1))
+        }
     default:
         // Never
         throw new Error(`Internal error at line: ${tokens[0].line}. Keyword '${tokens[0].value}' shown up.`)

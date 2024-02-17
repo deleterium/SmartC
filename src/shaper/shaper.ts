@@ -84,6 +84,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                     throw new Error(`At line: ${tokenAST[tokenIndex].line}.` +
                     ' Function returning a struct currently not implemented.')
                 }
+                validateFunctionReturnType(tokenAST[tokenIndex])
                 Program.functions.push({
                     argsMemObj: [],
                     sentences: [],
@@ -104,6 +105,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 tokenAST[tokenIndex + 2]?.type === 'Variable' &&
                 tokenAST[tokenIndex + 3]?.type === 'Function' &&
                 tokenAST[tokenIndex + 4]?.type === 'CodeDomain') {
+                validateFunctionReturnType(tokenAST[tokenIndex])
                 Program.functions.push({
                     argsMemObj: [],
                     sentences: [],
@@ -137,6 +139,17 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             Program.Global.code.push(tokenAST[tokenIndex])
             tokenIndex++
         }
+    }
+
+    function validateFunctionReturnType (Tkn: TOKEN) {
+        switch (Tkn.value) {
+        case 'void':
+        case 'long':
+        case 'fixed':
+        case 'struct':
+            return
+        }
+        throw new Error(`At line: ${Tkn.line}. Invalid function declaration type. Expecting 'void', 'long', 'fixed' or 'struct'`)
     }
 
     /** Reads/verifies one macro token and add it into Program.Config object */
@@ -516,6 +529,10 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             case 'label':
                 return
             default:
+                if (CurrMem.toBeRegister) {
+                    // do not allocate variables modified as register
+                    return
+                }
                 CurrMem.address = memoryAddress
                 memoryAddress++
             }
