@@ -163,6 +163,9 @@ export default function binaryAsnProcessor (
             savedDeclaration = AuxVars.isDeclaration
             AuxVars.isDeclaration = ''
         }
+        // Clear register declaration before right side evaluation
+        const prevStateOfIsRegisterSentence = AuxVars.isRegisterSentence
+        AuxVars.isRegisterSentence = false
         // If it is an array item we know, change to the item
         if (LGenObj.SolvedMem.type === 'array' &&
             LGenObj.SolvedMem.Offset?.type === 'constant') {
@@ -178,6 +181,8 @@ export default function binaryAsnProcessor (
         let RGenObj = assignmentRightSideSolver(LGenObj.SolvedMem)
         // Restore isDeclaration value
         AuxVars.isDeclaration = savedDeclaration
+        // Restore isRegisterSentence value
+        AuxVars.isRegisterSentence = prevStateOfIsRegisterSentence
         // Error check for Right side
         if (RGenObj.SolvedMem.type === 'void') {
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +

@@ -307,6 +307,9 @@ export default function unaryAsnProcessor (
             return sleepKeyProc()
         case 'sizeof':
             return sizeofKeyProc()
+        case 'register':
+            AuxVars.isRegisterSentence = true
+            return traverseNotLogical()
         case 'struct':
             // nothing to do here
             return { SolvedMem: utils.createVoidMemObj(), asmCode: '' }

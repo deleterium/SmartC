@@ -1,3 +1,4 @@
+import { assertNotUndefined } from '../repository/repository'
 import { CONTRACT } from '../typings/contractTypes'
 import { MEMORY_SLOT, SENTENCES } from '../typings/syntaxTypes'
 import optimizer from './assemblyProcessor/optimizer'
@@ -20,6 +21,7 @@ export default function codeGenerator (Program: CONTRACT) {
         errors: '',
         currFunctionIndex: -1,
         currSourceLine: 0,
+        scopedRegisters: [],
         getNewJumpID: function () {
             // Any changes here, also change function auxvarsGetNewJumpID
             this.jumpId++
@@ -37,6 +39,38 @@ export default function codeGenerator (Program: CONTRACT) {
                 }
                 return previous
             }, '')
+        },
+        printFreeRegisters () {
+            let registers = 'r0'
+            for (let i = 1; i < Program.Config.maxAuxVars; i++) {
+                if (this.scopedRegisters.findIndex(item => item === `r${i}`) === -1) {
+                    registers += `,r${i}`
+                }
+            }
+            GlobalCodeVars.assemblyCode += `^comment scope ${registers}\n`
+        },
+        startScope: function (scopeName: string) {
+            this.scopedRegisters.push(scopeName)
+            if (Program.Config.verboseScope) {
+                this.printFreeRegisters()
+            }
+        },
+        stopScope: function (scopeName: string) {
+            let liberationNeeded: string
+            do {
+                liberationNeeded = assertNotUndefined(this.scopedRegisters.pop(), 'Internal error')
+                if (/^r\d$/.test(liberationNeeded)) {
+                    const motherMemory = assertNotUndefined(Program.memory.find(obj =>
+                        obj.asmName === liberationNeeded &&
+                        obj.type !== 'register'
+                    ), 'Internal error')
+                    motherMemory.address = -1
+                    motherMemory.asmName = ''
+                }
+            } while (liberationNeeded !== scopeName)
+            if (Program.Config.verboseScope) {
+                this.printFreeRegisters()
+            }
         }
     }
 
@@ -53,7 +87,9 @@ export default function codeGenerator (Program: CONTRACT) {
         }
         // Add code for global sentences
         GlobalCodeVars.currFunctionIndex = -1
+        GlobalCodeVars.startScope('global')
         Program.Global.sentences.forEach(compileSentence)
+        GlobalCodeVars.stopScope('global')
         // jump to main function, or program ends.
         if (Program.functions.find(obj => obj.name === 'main') === undefined) {
             writeAsmLine('FIN')
@@ -74,7 +110,9 @@ export default function codeGenerator (Program: CONTRACT) {
             functionHeaderGenerator()
             // add code for functions sentences.
             if (currentFunction.sentences !== undefined) {
+                GlobalCodeVars.startScope(currentFunction.name)
                 currentFunction.sentences.forEach(compileSentence)
+                GlobalCodeVars.stopScope(currentFunction.name)
             }
             functionTailGenerator()
         })
@@ -105,7 +143,9 @@ export default function codeGenerator (Program: CONTRACT) {
         const EndOfPreviousCode = GlobalCodeVars.assemblyCode.length
         // add code for functions sentences.
         if (func.sentences !== undefined) {
+            GlobalCodeVars.startScope(`inline_${inlineId}`)
             func.sentences.forEach(compileSentence)
+            GlobalCodeVars.stopScope(`inline_${inlineId}`)
         }
         // Function code is in the end of assembly code, it will be substituded in the middle.
         const functionCode = GlobalCodeVars.assemblyCode.slice(EndOfPreviousCode)
@@ -241,8 +281,10 @@ export default function codeGenerator (Program: CONTRACT) {
             }, Sentence.line)
             writeAsmCode(assemblyCode, Sentence.line)
             writeAsmLine(sentenceID + '_start:')
+            GlobalCodeVars.startScope(`scope_${sentenceID}`)
             Sentence.trueBlock.forEach(compileSentence)
             writeAsmLine(sentenceID + '_endif:')
+            GlobalCodeVars.stopScope(`scope_${sentenceID}`)
             break
         case 'ifElse':
             sentenceID = '__if' + GlobalCodeVars.getNewJumpID()
@@ -253,14 +295,19 @@ export default function codeGenerator (Program: CONTRACT) {
             }, Sentence.line)
             writeAsmCode(assemblyCode, Sentence.line)
             writeAsmLine(sentenceID + '_start:')
+            GlobalCodeVars.startScope(`scope_${sentenceID}`)
             Sentence.trueBlock.forEach(compileSentence)
+            GlobalCodeVars.stopScope(`scope_${sentenceID}`)
             writeAsmLine('JMP :' + sentenceID + '_endif')
             writeAsmLine(sentenceID + '_else:')
+            GlobalCodeVars.startScope(`scope2_${sentenceID}`)
             Sentence.falseBlock.forEach(compileSentence)
             writeAsmLine(sentenceID + '_endif:')
+            GlobalCodeVars.stopScope(`scope2_${sentenceID}`)
             break
         case 'while':
             sentenceID = '__loop' + GlobalCodeVars.getNewJumpID()
+            GlobalCodeVars.startScope(`scope_${sentenceID}`)
             writeAsmLine(sentenceID + '_continue:', Sentence.line)
             assemblyCode = setupGenCode(GlobalCodeVars, {
                 InitialAST: Sentence.ConditionAST,
@@ -274,9 +321,11 @@ export default function codeGenerator (Program: CONTRACT) {
             GlobalCodeVars.latestLoopId.pop()
             writeAsmLine('JMP :' + sentenceID + '_continue')
             writeAsmLine(sentenceID + '_break:')
+            GlobalCodeVars.stopScope(`scope_${sentenceID}`)
             break
         case 'do':
             sentenceID = '__loop' + GlobalCodeVars.getNewJumpID()
+            GlobalCodeVars.startScope(`scope2_${sentenceID}`)
             writeAsmLine(sentenceID + '_continue:', Sentence.line)
             GlobalCodeVars.latestLoopId.push(sentenceID)
             Sentence.trueBlock.forEach(compileSentence)
@@ -289,9 +338,11 @@ export default function codeGenerator (Program: CONTRACT) {
             }, Sentence.line)
             writeAsmCode(assemblyCode)
             writeAsmLine(sentenceID + '_break:')
+            GlobalCodeVars.stopScope(`scope2_${sentenceID}`)
             break
         case 'for':
             sentenceID = '__loop' + GlobalCodeVars.getNewJumpID()
+            GlobalCodeVars.startScope(`scope_${sentenceID}`)
             assemblyCode = setupGenCode(GlobalCodeVars, {
                 InitialAST: Sentence.threeSentences[0].CodeAST
             }, Sentence.line)
@@ -314,9 +365,11 @@ export default function codeGenerator (Program: CONTRACT) {
             writeAsmCode(assemblyCode, Sentence.line)
             writeAsmLine('JMP :' + sentenceID + '_condition')
             writeAsmLine(sentenceID + '_break:')
+            GlobalCodeVars.stopScope(`scope_${sentenceID}`)
             break
         case 'switch': {
             sentenceID = '__switch' + GlobalCodeVars.getNewJumpID()
+            GlobalCodeVars.startScope(`scope_${sentenceID}`)
             let jumpTgt = sentenceID
             jumpTgt += Sentence.hasDefault ? '_default' : '_break'
             assemblyCode = setupGenCode(GlobalCodeVars, {
@@ -330,6 +383,7 @@ export default function codeGenerator (Program: CONTRACT) {
             Sentence.block.forEach(compileSentence)
             GlobalCodeVars.latestLoopId.pop()
             writeAsmLine(sentenceID + '_break:')
+            GlobalCodeVars.stopScope(`scope_${sentenceID}`)
             break
         }
         case 'case':

@@ -7,7 +7,7 @@ This project aims to be as close to C as possible. But given special characteris
 As C, can be one line `//` or multi-line `/* .... */`;
 
 ### Keywords
-Some keywords have the same meaning and use in C: `asm`, `break`, `continue`, `default`, `do`, `else`, `for`, `goto`, `if`, `inline`, `long`, `return`, `struct`, `void`, `while`. Note differences for keywords:
+Some keywords have the same meaning and use in C: `asm`, `break`, `continue`, `default`, `do`, `else`, `for`, `goto`, `if`, `inline`, `long`, `register`, `return`, `struct`, `void`, `while`. Note differences for keywords:
 * `const`: Actually this will tell compiler to set a value to a variable at the contract creation. No problem setting it a value and then changing it later. It can be used during variable declaration or later, but it can be set only once. Using const can reduce the number of codepages of your program. Examples: `const long i=5;` to seta long; `long a[4]; const a[0]=5;` to set values for array.
 * `sizeof`: Usefull to get structs sizes. Return value will be the number of longs that the variable/type needs. One long is 8 bytes. Arrays sizes are one long greater than the length, because the first index is used to store the array starting location (a pointer). Pointers sizes are always 1.
 * `switch`: The standard C is fully supported. One addition is that switch expression can be `true` or `false`, and the cases will be evaluated to match the desired result.
@@ -19,7 +19,7 @@ There are also additional keywords:
 * `exit`: Puts the contract in 'stop' mode and set program to restart from main function ('finished' mode). It will be inactive until a new transaction is received. Once a tx is received, it will start execution at `void main()` function. If main function is not defined, the execution will start again from beginning of code, running again all global statements. If the main function is defined, the global statements will be executed only in the first activations of the contract. `exit` takes no argument. If contract activation amount is zero, contract will resume execution on next block (similar to `sleep`).
 * `halt`: Puts the contract in 'stop' mode. It will be inactive until a new transaction is received, then it will resume execution at next instruction. It takes no argument. If contract activation amount is zero, contract will resume execution on next block.
 
-Others keyword have no assembly support. They are disabled: `auto`, `double`, `float`, `register`, `volatile`. For future implementation these keywords can be added: `char`, `enum`, `extern`, `int`, `short`, `signed`, `static`, `typedef`, `union`, `unsigned`.
+Others keyword have no assembly support. They are disabled: `auto`, `double`, `float`, `volatile`. For future implementation these keywords can be added: `char`, `enum`, `extern`, `int`, `short`, `signed`, `static`, `typedef`, `union`, `unsigned`.
 
 ### Preprocessor
 Some special features can be enabled/disable via preprocessor directives. Check chapter 1.2.
@@ -38,9 +38,11 @@ Arrays can be declared using the standart notation, but they only can be initial
 Structs use same notation in C. Structs pointers can also be used. To access a member, use `.` or `->` depending if struct is already allocated in memory  or if it is a pointer to the memory location. Arrays of structs, arrays inside structs and recursive pointer definition are also supported.
 
 All variables are initialized with value `0` at the first time the contract is executed, unless other value is set by `const` statement.
-All variables are similar to `static` in C. So every time a function is called or the smart contract receives a transaction, all variables will keep their last value. To avoid this behavior in functions, declare variables setting them a initial value: `long i=0;`.
+Variables defaults are similar to `static` in C. So every time a function is called or the smart contract receives a transaction, all variables will keep their last value. To avoid this behavior in functions, declare variables setting them a initial value: `long i=0;`.
 Global variables are available in all functions. Functions variables can only be used inside the function.
 Variables declarations can be inside other sentences, like `for (long i; i<10; i++)` or `if (a){ long i=0; ...}`, but their scope can only be 'global' or 'function', in other words, the result is the same as declaring variables at the program start (if global variables) or at the function start (if function variables).
+
+Some variables can be modified with the keyword `register`. The variable must be a single long to fit in one compiler's auxiliary variable. When modified as register, the variable will not be allocated in program memory, but one auxVar will be designated for it in the scope during compilation time. Example: `for (register long i=0; i<10; i++) { ... } i=1;` will raise an error in last assignment because 'i' is used out of declared scope. Keep in mind that the 'parked' auxVar can not be used as temporary values for regular operations, so it is recommended to increase the `#pragma maxAuxVars` to avoid running out of them during compiling process. If a program has many small functions, declaring them as registers will help to reduce the memory. Calling another functions when a register is parked will cause them to be stacked, so the program will need 'user stack pages'.
 
 ### Implicit types casting
 The compiler will convert numbers and variables between fixed and long if used in binary operators. Most of times long will be converted to fixed, unless there is an assigment and the left side is long. In this case (=, +=, -=, ...) fixed values will be transformed into long. Data can be lost in this transformation, so keep an eye on it!

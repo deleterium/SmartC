@@ -17,7 +17,9 @@ export default function setupGenCode (
         isDeclaration: '',
         isLeftSideOfAssignment: false,
         isConstSentence: false,
+        isRegisterSentence: false,
         hasVoidArray: false,
+        scopedRegisters: Globals.scopedRegisters,
         warnings: [],
         isTemp: auxvarsIsTemp,
         getNewRegister: auxvarsGetNewRegister,
@@ -32,11 +34,17 @@ export default function setupGenCode (
         CodeGenInfo.InitialAST = assertNotUndefined(CodeGenInfo.InitialAST)
         CodeGenInfo.initialIsReversedLogic = CodeGenInfo.initialIsReversedLogic ?? false
         // Create registers array
-        AuxVars.memory.filter(OBJ => /^r\d$/.test(OBJ.asmName)).forEach(MEM => {
+        AuxVars.memory.filter(OBJ => /^r\d$/.test(OBJ.asmName) && OBJ.type === 'register').forEach(MEM => {
             AuxVars.registerInfo.push({
                 inUse: false,
                 Template: MEM
             })
+        })
+        // Mark in use registers (keyword 'register')
+        AuxVars.registerInfo.forEach(Mem => {
+            if (AuxVars.scopedRegisters.find(item => item === Mem.Template.asmName)) {
+                Mem.inUse = true
+            }
         })
         const code = genCode(Globals.Program, AuxVars, {
             RemAST: CodeGenInfo.InitialAST,
@@ -79,6 +87,10 @@ export default function setupGenCode (
         if (loc === -1) return false
         const id = AuxVars.registerInfo.find(OBJ => OBJ.Template.address === loc)
         if (id === undefined) {
+            return false
+        }
+        if (AuxVars.scopedRegisters.find(items => items === id.Template.asmName)) {
+            // It is a register, but scoped. Do not mess!!!
             return false
         }
         return true
@@ -125,6 +137,9 @@ export default function setupGenCode (
         }
         if (MemFound === undefined) {
             throw new Error(`At line: ${line}. Using variable '${varName}' before declaration.`)
+        }
+        if (MemFound.toBeRegister && MemFound.asmName === '') {
+            throw new Error(`At line: ${line}. Using variable '${varName}' out of scope!`)
         }
         if (!MemFound.isSet) {
             detectAndSetNotInitialized(MemFound, line, varDeclaration !== '')

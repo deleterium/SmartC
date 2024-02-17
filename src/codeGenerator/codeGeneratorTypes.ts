@@ -16,12 +16,20 @@ export type GLOBAL_AUXVARS = {
     currFunctionIndex: number
     /** Line counter for source code */
     currSourceLine: number
+    /** Handle register allocation and liberation in each scope */
+    scopedRegisters: string[]
     /** Get a new jump id according to current Configs (global scope) */
     getNewJumpID(): string
     /** Query the value of last loop id */
     getLatestLoopID(): string
     /** Query the value of last loop id that is a pure loop (excluding 'switch' ids) */
     getLatestPureLoopID(): string
+    /** Helper for debugger to know what are the free registers. */
+    printFreeRegisters(): void
+    /** Operations to start a new scope for registers */
+    startScope(arg :string): void
+    /** Operations to close a scope for registers */
+    stopScope(arg :string): void
 }
 
 export type SETUPGENCODE_ARGS = {
@@ -64,10 +72,13 @@ export type GENCODE_AUXVARS = {
     isLeftSideOfAssignment: boolean
     /** Flag to inform lower level AST that it is const declaration sentence */
     isConstSentence: boolean
+    /** Flag to inform lower level AST that it is register declaration sentence */
+    isRegisterSentence: boolean
     /** Flag to inform lower level AST that there are an void array assignment */
     hasVoidArray: boolean
     /** Warnings found */
     warnings: string[]
+    scopedRegisters: string[]
     /** Verifies if a variable at loc address is register or temporary reused var */
     isTemp(loc: number): boolean
     /** Get a new register variable */
