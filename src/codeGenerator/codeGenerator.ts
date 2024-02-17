@@ -51,7 +51,7 @@ export default function codeGenerator (Program: CONTRACT) {
         },
         startScope: function (scopeName: string) {
             this.scopedRegisters.push(scopeName)
-            if (Program.Config.verboseAssembly) {
+            if (Program.Config.verboseScope) {
                 this.printFreeRegisters()
             }
         },
@@ -68,7 +68,7 @@ export default function codeGenerator (Program: CONTRACT) {
                     motherMemory.asmName = ''
                 }
             } while (liberationNeeded !== scopeName)
-            if (Program.Config.verboseAssembly) {
+            if (Program.Config.verboseScope) {
                 this.printFreeRegisters()
             }
         }

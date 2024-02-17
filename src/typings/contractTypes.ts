@@ -33,6 +33,8 @@ export type SC_CONFIG = {
     PCodeHashId: string,
     /** Adds a comment in generated assembly code with source code line number and content */
     verboseAssembly: boolean,
+    /** Adds a comment when new scope start/ends with the free registers, and warns when one register is locked  */
+    verboseScope: boolean,
 }
 
 export type SC_MACRO = {

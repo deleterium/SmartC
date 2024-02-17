@@ -235,6 +235,9 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         case 'verboseAssembly':
             Program.Config.verboseAssembly = bool
             return true
+        case 'verboseScope':
+            Program.Config.verboseScope = bool
+            return true
         default:
             throw new Error(`At line: ${MacroToken.line}.` +
             ` Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +
@@ -531,6 +534,10 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             default:
                 if (CurrMem.toBeRegister) {
                     // do not allocate variables modified as register
+                    if (Program.Config.verboseAssembly) {
+                        // It will be needed by Simulator
+                        Program.Config.verboseScope = true
+                    }
                     return
                 }
                 CurrMem.address = memoryAddress

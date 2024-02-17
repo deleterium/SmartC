@@ -66,7 +66,8 @@ export class SmartC {
             PUserStackPages: 0,
             PCodeStackPages: 0,
             PCodeHashId: '',
-            verboseAssembly: false
+            verboseAssembly: false,
+            verboseScope: false
         },
         warnings: []
     }
