@@ -42,6 +42,7 @@ export default {
             declaration: 'long',
             isDeclared: true,
             isSet: true,
+            toBeRegister: false,
             hexContent: param
         }
     },
@@ -62,6 +63,7 @@ export default {
             size: 0,
             declaration: 'void',
             isSet: true,
+            toBeRegister: true,
             isDeclared: true
         }
     },
