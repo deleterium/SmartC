@@ -125,6 +125,7 @@ export default function codeGenerator (Program: CONTRACT) {
                     'Inline cannot be used in recursive functions neither have circular dependency of each other.')
             }
         }
+        checkUnusedVariables()
         // Inspect if there were errros and throw now
         if (GlobalCodeVars.errors.length !== 0) {
             throw new Error(GlobalCodeVars.errors + Program.warnings)
@@ -250,6 +251,18 @@ export default function codeGenerator (Program: CONTRACT) {
         if (GlobalCodeVars.assemblyCode.lastIndexOf('RET') + 4 !== GlobalCodeVars.assemblyCode.length) {
             writeAsmLine('RET')
         }
+    }
+
+    function checkUnusedVariables () {
+        Program.memory.forEach(Mem => {
+            if (Mem.isSet === false) {
+                if (Mem.scope) {
+                    Program.warnings.push(`Warning: Unused variable '${Mem.name}' in function '${Mem.scope}'.`)
+                    return
+                }
+                Program.warnings.push(`Warning: Unused global variable '${Mem.name}'.`)
+            }
+        })
     }
 
     /** Hot stuff!!! Assemble sentences!! */

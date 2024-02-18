@@ -270,7 +270,7 @@ export default function memoryProcessor (
                     throw new Error(`At line: ${startingLine}.` +
                     ` Could not find type definition for 'struct' '${currentStructNameDef}'.`)
                 }
-                return createMemoryObjectFromSTD(currentStructNameDef, phraseCode[tokenCounter].value, isStructPointer)
+                return createMemoryObjectFromSTD(currentStructNameDef, phraseCode[tokenCounter].value, isStructPointer, false)
             }
             // isStructPointer is true
             if (StructTD === undefined) {
@@ -308,7 +308,7 @@ export default function memoryProcessor (
         StructMemHeader.asmName = AuxVars.currentPrefix + phraseCode[startingTokenCounter].value
         StructMemHeader.scope = AuxVars.currentScopeName
         StructMemHeader.isDeclared = AuxVars.isFunctionArgument
-        StructMemHeader.isSet = AuxVars.isFunctionArgument
+        StructMemHeader.isSet = true // do not control using variables in array
         StructMemHeader.type = 'array'
         StructMemHeader.typeDefinition = StructMemHeader.asmName
         StructMemHeader.ArrayItem = {
@@ -326,7 +326,8 @@ export default function memoryProcessor (
             retStructMemory.push(...createMemoryObjectFromSTD(
                 currentStructNameDef,
                 phraseCode[tokenCounter - structArrDimensions.length].value + '_' + ((i - 1) / StructMemHeader.size).toString(),
-                isStructPointer
+                isStructPointer,
+                true
             ))
         }
         // create array type definition
@@ -350,7 +351,7 @@ export default function memoryProcessor (
     /** Create an array of memory objects from a given structTypeName.
      * The memory objects will be named variableName. */
     function createMemoryObjectFromSTD (
-        structTypeName: string, variableName: string, ispointer: boolean
+        structTypeName: string, variableName: string, ispointer: boolean, isArray: boolean
     ) : MEMORY_SLOT[] {
         const StructTD = assertNotUndefined(findSTD(structTypeName),
             'Internal error.')
@@ -359,6 +360,9 @@ export default function memoryProcessor (
             newmemory.push(...deepCopy(StructTD.structMembers))
         }
         newmemory.forEach(Mem => {
+            if (isArray) {
+                Mem.isSet = true
+            }
             if (Mem.name === '') {
                 Mem.name = variableName
             } else {
