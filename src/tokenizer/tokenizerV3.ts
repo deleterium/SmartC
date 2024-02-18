@@ -1,3 +1,4 @@
+import { ReedSalomonAddressDecode, parseDecimalNumber, stringToHexstring } from '../repository/repository'
 import { PRE_TOKEN } from '../typings/syntaxTypes'
 
 /**
@@ -9,21 +10,13 @@ import { PRE_TOKEN } from '../typings/syntaxTypes'
 export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
     const explodedText = inputSourceCode.split('')
     const explodedTextCodes = explodedText.map(str => str.charCodeAt(0))
+    const preTokens: PRE_TOKEN[] = []
 
     let streamCurrentLine = 1
     let streamCurrentCol = 0
     let streamCurrentIndex = -1
     let streamLastLineLength = 0
     let streamLastChar = ''
-
-    /* Not all here, just the easy */
-    const simpleTokensMap = new Map<string, string>([
-        ['*', 'star'], ['!', 'not'], ['[', 'bracket'], [']', 'bracket'], ['-', 'minus'],
-        ['+', 'plus'], ['\\', 'backslash'], ['<', 'less'], ['>', 'greater'], ['|', 'pipe'],
-        ['&', 'and'], ['%', 'percent'], ['^', 'caret'], [',', 'comma'], ['~', 'tilde'],
-        ['`', 'grave'], ['(', 'paren'], [')', 'paren'], [':', 'colon'], ['{', 'curly'],
-        ['}', 'curly'], ['=', 'equal'], [';', 'semi']
-    ])
 
     const bitFieldIsBlank = 0x01 // matches '/r', '/t', '/n', ' '
     const bitFieldIsDigit = 0x02 // matches 0-9
@@ -43,10 +36,11 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         4, 4, 4
     ]
 
-    /* These are charCodes from 0 to 122 and the next state function for state 'start'. Summary:
+    /* These are charCodes from 0 to 126 and the next state function for state 'start'. Summary:
      * Function           |  Char code of
      * -------------------|---------------
-     * stateReadDot       | .
+     * stateReadCHARNAME  | !%&*+,-.:;<=>^|~
+     * stateReadRecursive | [](){}
      * stateSlashStart    | /
      * stateReadMacro     | #
      * stateReadString    | '"
@@ -58,26 +52,24 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined,
         undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined,
         undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-        undefined, undefined, undefined, undefined, stateReadString, stateReadMacro, undefined, undefined, undefined, stateReadString,
-        undefined, undefined, undefined, undefined, undefined, undefined, stateReadDot, stateSlashStart, stateReadNumberHex, stateReadNumber,
-        stateReadNumber, stateReadNumber, stateReadNumber, stateReadNumber, stateReadNumber, stateReadNumber, stateReadNumber, stateReadNumber, undefined, undefined,
-        undefined, undefined, undefined, undefined, undefined, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord,
+        undefined, undefined, undefined, stateReadExclamation, stateReadString, stateReadMacro, undefined, stateReadPercent, stateReadAnd, stateReadString,
+        stateReadRecursive, stateReadRecursive, stateReadStar, stateReadPlus, stateReadComma, stateReadMinus, stateReadDot, stateSlashStart, stateReadNumberHex,
+        stateReadNumber, stateReadNumber, stateReadNumber, stateReadNumber, stateReadNumber, stateReadNumber, stateReadNumber, stateReadNumber, stateReadNumber, stateReadColon,
+        stateReadSemicolon, stateReadLess, stateReadEqual, stateReadGreater, undefined, undefined, stateReadWord, stateReadWord, stateReadWord, stateReadWord,
         stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord,
         stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord,
-        stateReadWord, undefined, undefined, undefined, undefined, stateReadWord, undefined, stateReadWord, stateReadWord, stateReadWord,
+        stateReadWord, stateReadWord, stateReadRecursive, undefined, stateReadRecursive, stateReadCaret, stateReadWord, undefined, stateReadWord, stateReadWord,
+        stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord,
         stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord,
-        stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord, stateReadWord,
-        stateReadWord, stateReadWord, stateReadWord
+        stateReadWord, stateReadWord, stateReadWord, stateReadRecursive, stateReadPipe, stateReadRecursive, stateReadTilde
     ]
-
     /* Not all here, just the easy */
     const easyKeywordTokens = [
         'break', 'case', 'const', 'continue', 'default', 'do', 'else', 'exit', 'fixed', 'for', 'goto',
-        'halt', 'if', 'inline', 'long', 'register', 'return', 'sleep', 'sizeof', 'switch', 'void', 'while'
+        'halt', 'if', 'inline', 'long', 'register', 'return', 'sleep', 'switch', 'void', 'while'
     ]
 
     function tokenizerMain () {
-        const preTokens: PRE_TOKEN[] = []
         let nextToken: PRE_TOKEN | undefined
         do {
             nextToken = stateStart()
@@ -101,6 +93,11 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         return streamLastChar
     }
 
+    function streamRead () {
+        streamLastChar = explodedText[streamCurrentIndex]
+        return streamLastChar
+    }
+
     function streamRewind () {
         if (streamLastChar === '\n') {
             streamCurrentLine--
@@ -113,37 +110,35 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
 
     function stateStart () : PRE_TOKEN | undefined {
         let currentChar: string
+        let currentCharCode: number
         while (true) {
             currentChar = streamAdvance()
+            currentCharCode = explodedTextCodes[streamCurrentIndex]
             if (currentChar === undefined) {
                 return undefined
             }
-            if (bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsBlank) {
+            if (bitFieldTypeTable[currentCharCode] & bitFieldIsBlank) {
                 continue
             }
-            const nextStateFunction = startStateFunctionTable[explodedTextCodes[streamCurrentIndex]]
+            const nextStateFunction = startStateFunctionTable[currentCharCode]
             if (nextStateFunction) {
                 return nextStateFunction()
             }
-            const simpleToken = simpleTokensMap.get(currentChar)
-            if (simpleToken) {
-                return { type: simpleToken, value: currentChar, line: `${streamCurrentLine}:${streamCurrentCol}` }
-            }
-            throw new Error(`At line: ${streamCurrentLine}:${streamCurrentCol}. Invalid character ${currentChar} found.`)
+            throw new Error(`At line: ${streamCurrentLine}:${streamCurrentCol}. Invalid character '${currentChar}' found.`)
         }
     }
 
-    function stateReadDot () {
+    function stateReadDot () : PRE_TOKEN { // char .
         const tokenLine = streamCurrentLine
         const tokenCol = streamCurrentCol
         const nextChar = explodedText[streamCurrentIndex + 1]
         if (nextChar && bitFieldTypeTable[nextChar.charCodeAt(0)] & bitFieldIsDigit) {
             return stateReadNumber()
         }
-        return { type: 'dot', value: '.', line: `${tokenLine}:${tokenCol}` }
+        return { type: 'Member', precedence: 0, value: '.', line: `${tokenLine}:${tokenCol}` }
     }
 
-    function stateReadWord () {
+    function stateReadWord () : PRE_TOKEN {
         const tokenLine = streamCurrentLine
         const tokenCol = streamCurrentCol
         const tokenStartIndex = streamCurrentIndex
@@ -156,20 +151,23 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         return stateCheckWord(tokenValue, tokenLine, tokenCol)
     }
 
-    function stateCheckWord (tokenValue: string, tokenLine: number, tokenCol: number) {
+    function stateCheckWord (tokenValue: string, tokenLine: number, tokenCol: number) : PRE_TOKEN {
+        const line = `${tokenLine}:${tokenCol}`
         if (easyKeywordTokens.includes(tokenValue)) {
-            return { type: 'keyword', value: tokenValue, line: `${tokenLine}:${tokenCol}` }
+            return { type: 'Keyword', precedence: 12, value: tokenValue, line }
         }
-        if (tokenValue === 'asm') {
+        switch (tokenValue) {
+        case 'sizeof':
+            return { type: 'Keyword', precedence: 2, value: tokenValue, line }
+        case 'asm':
             return stateReadAsmStart()
-        }
-        if (tokenValue === 'struct') {
+        case 'struct':
             return stateReadStructStart()
         }
-        return { type: 'variable', value: tokenValue, line: `${tokenLine}:${tokenCol}` }
+        return { type: 'Variable', precedence: 0, value: tokenValue, line }
     }
 
-    function stateReadAsmStart () {
+    function stateReadAsmStart () : PRE_TOKEN {
         const tokenLine = streamCurrentLine
         const tokenCol = streamCurrentCol
         let currentChar: string
@@ -188,37 +186,34 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         } while (true)
     }
 
-    function stateReadAsmBrackets () {
-        const tokenLine = streamCurrentLine
-        const tokenCol = streamCurrentCol
+    function stateReadAsmBrackets () : PRE_TOKEN {
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
         const tokenStartIndex = streamCurrentIndex
         let currentChar: string
         do {
             currentChar = streamAdvance()
             if (currentChar === undefined) {
-                throw new Error(`At line: ${tokenLine}:${tokenCol}. Invalid asm { ... } sentence. Expecting '}', found end of file.`)
+                throw new Error(`At line: ${line}. Invalid asm { ... } sentence. Expecting '}', found end of file.`)
             }
         } while (currentChar !== '}')
         const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, streamCurrentIndex)
-        return { type: 'keyword', value: 'asm', line: `${tokenLine}:${tokenCol}`, extValue: tokenValue }
+        return { type: 'Keyword', precedence: 12, value: 'asm', line, extValue: tokenValue }
     }
 
-    function stateReadStructStart () {
-        const tokenLine = streamCurrentLine
-        const tokenCol = streamCurrentCol
+    function stateReadStructStart () : PRE_TOKEN {
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
         const nextToken = stateStart()
         if (nextToken === undefined) {
-            throw new Error(`At line: ${tokenLine}:${tokenCol}. struct sentence. Expecting a type name, but found EOF or comments.`)
+            throw new Error(`At line: ${line}. struct sentence. Expecting a type name, but found EOF or comments.`)
         }
-        if (nextToken.type === 'variable') {
-            return { type: 'keyword', value: 'struct', line: `${tokenLine}:${tokenCol}`, extValue: nextToken.value }
+        if (nextToken.type === 'Variable') {
+            return { type: 'Keyword', precedence: 12, value: 'struct', line, extValue: nextToken.value }
         }
         throw new Error(`At line: ${streamCurrentLine}:${streamCurrentCol}. Invalid struct sentence. Expecting a type name, found '${nextToken.value}'`)
     }
 
-    function stateReadNumber () {
-        const tokenLine = streamCurrentLine
-        const tokenCol = streamCurrentCol
+    function stateReadNumber () : PRE_TOKEN {
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
         const tokenStartIndex = streamCurrentIndex
         let currentChar: string
         do {
@@ -226,12 +221,15 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         } while (currentChar && bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsNumber)
         const tokenValue = inputSourceCode.slice(tokenStartIndex, streamCurrentIndex)
         streamRewind()
-        return { type: 'numberDec', value: tokenValue, line: `${tokenLine}:${tokenCol}` }
+
+        const Parsed = parseDecimalNumber(tokenValue, line)
+        const valString = Parsed.value.toString(16)
+        const paddedValString = valString.padStart((Math.floor((valString.length - 1) / 16) + 1) * 16, '0')
+        return { type: 'Constant', precedence: 0, value: paddedValString, line, extValue: Parsed.declaration }
     }
 
-    function stateReadNumberHex () {
-        const tokenLine = streamCurrentLine
-        const tokenCol = streamCurrentCol
+    function stateReadNumberHex () : PRE_TOKEN {
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
         const tokenStartIndex = streamCurrentIndex
         const currentChar = streamAdvance()
         if (currentChar !== 'x' && currentChar !== 'X') {
@@ -243,24 +241,28 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         } while (bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsNumberHex)
         const tokenValue = inputSourceCode.slice(tokenStartIndex + 2, streamCurrentIndex)
         streamRewind()
-        return { type: 'numberHex', value: tokenValue, line: `${tokenLine}:${tokenCol}` }
+
+        let val = tokenValue.replace(/_/g, '').toLowerCase()
+        val = val.padStart((Math.floor((val.length - 1) / 16) + 1) * 16, '0')
+        return { type: 'Constant', precedence: 0, value: val, line, extValue: 'long' }
     }
 
     function stateSlashStart () : PRE_TOKEN | undefined {
-        const tokenLine = streamCurrentLine
-        const tokenCol = streamCurrentCol
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
         const currentChar = streamAdvance()
-        if (currentChar === '/') {
+        switch (currentChar) {
+        case '/':
             return stateReadCommentSingleLine()
-        }
-        if (currentChar === '*') {
+        case '*':
             return stateReadCommentMultiLine()
+        case '=':
+            return { type: 'SetOperator', precedence: 10, value: '/=', line }
         }
         streamRewind()
-        return { type: 'forwardslash', value: '/', line: `${tokenLine}:${tokenCol}` }
+        return { type: 'Operator', precedence: 3, value: '/', line }
     }
 
-    function stateReadCommentSingleLine () {
+    function stateReadCommentSingleLine () : undefined {
         let currentChar: string
         do {
             currentChar = streamAdvance()
@@ -268,7 +270,7 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         return undefined
     }
 
-    function stateReadCommentMultiLine () {
+    function stateReadCommentMultiLine () : undefined {
         const tokenLine = streamCurrentLine
         const tokenCol = streamCurrentCol
         let currentChar: string
@@ -287,21 +289,19 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
     }
 
     function stateReadMacro () : PRE_TOKEN {
-        const tokenLine = streamCurrentLine
-        const tokenCol = streamCurrentCol
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
         const tokenStartIndex = streamCurrentIndex
         let currentChar: string
         do {
             currentChar = streamAdvance()
         } while (currentChar && explodedTextCodes[streamCurrentIndex] !== '\n'.charCodeAt(0))
         const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, streamCurrentIndex)
-        return { type: 'macro', value: tokenValue, line: `${tokenLine}:${tokenCol}` }
+        return { type: 'Macro', precedence: 0, value: tokenValue, line }
     }
 
     function stateReadString () : PRE_TOKEN {
-        const delimitator = streamLastChar
-        const tokenLine = streamCurrentLine
-        const tokenCol = streamCurrentCol
+        const delimitator = streamRead()
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
         const tokenStartIndex = streamCurrentIndex
         let currentChar: string
         do {
@@ -314,11 +314,217 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
                 }
             }
             if (currentChar === undefined) {
-                throw new Error(`At line: ${tokenLine}:${tokenCol}. End of file reached while trying to find \`${delimitator}\` string delimitator.`)
+                throw new Error(`At line: ${line}. End of file reached while trying to find \`${delimitator}\` string delimitator.`)
             }
         } while (currentChar !== delimitator)
         const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, streamCurrentIndex)
-        return { type: 'string', value: tokenValue, line: `${tokenLine}:${tokenCol}` }
+
+        let val = stringToHexstring(tokenValue, line)
+        const parts = /^(BURST-|S-|TS-)([0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{5})/.exec(tokenValue)
+        if (parts !== null) {
+            val = ReedSalomonAddressDecode(parts[2], line)
+        }
+        return { type: 'Constant', precedence: 0, value: val, line }
+    }
+
+    function stateReadStar () : PRE_TOKEN { // char *
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const currentChar = streamAdvance()
+        if (currentChar === '=') {
+            return { type: 'SetOperator', precedence: 10, value: '*=', line }
+        }
+        if (currentChar === '/') {
+            throw new Error(`At line: ${line}. Ending a comment that was not started.`)
+        }
+        streamRewind()
+        if (isBinaryOperator()) {
+            return { type: 'Operator', precedence: 3, value: '*', line }
+        }
+        return { type: 'UnaryOperator', precedence: 2, value: '*', line }
+    }
+
+    function stateReadLess () : PRE_TOKEN { // char <
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        let currentChar = streamAdvance()
+        if (currentChar === '<') {
+            currentChar = streamAdvance()
+            if (currentChar === '=') {
+                return { type: 'SetOperator', precedence: 10, value: '<<=', line }
+            }
+            streamRewind()
+            return { type: 'Operator', precedence: 5, value: '<<', line }
+        }
+        if (currentChar === '=') {
+            return { type: 'Comparision', precedence: 6, value: '<=', line }
+        }
+        streamRewind()
+        return { type: 'Comparision', precedence: 6, value: '<', line }
+    }
+
+    function stateReadEqual () : PRE_TOKEN { // char =
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const currentChar = streamAdvance()
+        if (currentChar === '=') {
+            return { type: 'Comparision', precedence: 6, value: '==', line }
+        }
+        streamRewind()
+        return { type: 'Assignment', precedence: 10, value: '=', line }
+    }
+
+    function stateReadGreater () : PRE_TOKEN { // char >
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        let currentChar = streamAdvance()
+        if (currentChar === '>') {
+            currentChar = streamAdvance()
+            if (currentChar === '=') {
+                return { type: 'SetOperator', precedence: 10, value: '>>=', line }
+            }
+            streamRewind()
+            return { type: 'Operator', precedence: 5, value: '>>', line }
+        }
+        if (currentChar === '=') {
+            return { type: 'Comparision', precedence: 6, value: '>=', line }
+        }
+        streamRewind()
+        return { type: 'Comparision', precedence: 6, value: '>', line }
+    }
+
+    function stateReadPlus () : PRE_TOKEN { // char +
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const currentChar = streamAdvance()
+        if (currentChar === '+') {
+            return { type: 'SetUnaryOperator', precedence: 1, value: '++', line }
+        }
+        if (currentChar === '=') {
+            return { type: 'SetOperator', precedence: 10, value: '+=', line }
+        }
+        streamRewind()
+        if (isBinaryOperator()) {
+            return { type: 'Operator', precedence: 4, value: '+', line }
+        }
+        return { type: 'UnaryOperator', precedence: 2, value: '+', line }
+    }
+
+    function stateReadMinus () : PRE_TOKEN { // char -
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const currentChar = streamAdvance()
+        switch (currentChar) {
+        case '-':
+            return { type: 'SetUnaryOperator', precedence: 1, value: '--', line }
+        case '=':
+            return { type: 'SetOperator', precedence: 10, value: '-=', line }
+        case '>':
+            return { type: 'Member', precedence: 0, value: '->', line }
+        }
+        streamRewind()
+        if (isBinaryOperator()) {
+            return { type: 'Operator', precedence: 4, value: '-', line }
+        }
+        return { type: 'UnaryOperator', precedence: 2, value: '-', line }
+    }
+
+    function stateReadAnd () : PRE_TOKEN { // char &
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const currentChar = streamAdvance()
+        if (currentChar === '&') {
+            return { type: 'Comparision', precedence: 8, value: '&&', line }
+        }
+        if (currentChar === '=') {
+            return { type: 'SetOperator', precedence: 10, value: '&=', line }
+        }
+        streamRewind()
+        if (isBinaryOperator()) {
+            return { type: 'Operator', precedence: 7, value: '&', line }
+        }
+        return { type: 'UnaryOperator', precedence: 2, value: '&', line }
+    }
+
+    function stateReadPipe () : PRE_TOKEN { // char |
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const currentChar = streamAdvance()
+        if (currentChar === '|') {
+            return { type: 'Comparision', precedence: 9, value: '||', line }
+        }
+        if (currentChar === '=') {
+            return { type: 'SetOperator', precedence: 10, value: '|=', line }
+        }
+        streamRewind()
+        return { type: 'Operator', precedence: 7, value: '|', line }
+    }
+
+    function stateReadCaret () : PRE_TOKEN { // char ^
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const currentChar = streamAdvance()
+        if (currentChar === '=') {
+            return { type: 'SetOperator', precedence: 10, value: '^=', line }
+        }
+        streamRewind()
+        return { type: 'Operator', precedence: 7, value: '^', line }
+    }
+
+    function stateReadPercent () : PRE_TOKEN { // char %
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const currentChar = streamAdvance()
+        if (currentChar === '=') {
+            return { type: 'SetOperator', precedence: 10, value: '%=', line }
+        }
+        streamRewind()
+        return { type: 'Operator', precedence: 3, value: '%', line }
+    }
+
+    function stateReadExclamation () : PRE_TOKEN { // char !
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const currentChar = streamAdvance()
+        if (currentChar === '=') {
+            return { type: 'Comparision', precedence: 6, value: '!=', line }
+        }
+        streamRewind()
+        return { type: 'UnaryOperator', precedence: 2, value: '!', line }
+    }
+
+    function stateReadTilde () : PRE_TOKEN { // char ~
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        return { type: 'UnaryOperator', precedence: 2, value: '~', line }
+    }
+
+    function stateReadComma () : PRE_TOKEN { // char ,
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        return { type: 'Delimiter', precedence: 11, value: ',', line }
+    }
+
+    function stateReadSemicolon () : PRE_TOKEN { // char ;
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        return { type: 'Terminator', precedence: 12, value: ';', line }
+    }
+
+    function stateReadColon () : PRE_TOKEN { // char :
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        return { type: 'Colon', precedence: 0, value: ':', line }
+    }
+
+    function stateReadRecursive () : PRE_TOKEN { // chars { } ( ) [ ]
+        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        return { type: 'PreToken', precedence: -1, value: streamRead(), line }
+    }
+
+    function isBinaryOperator () {
+        if (preTokens.length === 0) {
+            return false
+        }
+        switch (preTokens[preTokens.length - 1].type) {
+        case 'PreToken':
+            switch (preTokens[preTokens.length - 1].value) {
+            case ']':
+            case ')':
+                return true
+            }
+            return false
+        case 'Variable':
+        case 'Constant':
+        case 'SetUnaryOperator':
+            return true
+        }
+        return false
     }
 
     return tokenizerMain()

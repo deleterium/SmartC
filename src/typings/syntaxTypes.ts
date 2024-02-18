@@ -1,12 +1,3 @@
-export type PRE_TOKEN = {
-    /** Line tracks the tokens starting location and follows the scheme 'line:column' or '0:0' if unknown */
-    line: string
-    type: string
-    value: string
-    /** Applicable for asm and struct tokens */
-    extValue?: string
-}
-
 export type HEX_CONTENT = number | bigint | string
 
 export type CONSTANT_CONTENT = {
@@ -14,26 +5,29 @@ export type CONSTANT_CONTENT = {
     declaration: 'long' | 'fixed'
 }
 
-/** Allowed token types */
+/** Allowed token types. 'PreToken' type only in first phase (not recursive). */
 export type TOKEN_TYPES = 'Variable' | 'Constant' | 'Operator' | 'UnaryOperator' |
 'SetUnaryOperator' | 'Assignment'| 'SetOperator'|'Comparision'|'CheckOperator'|
 'Arr'|'CodeCave'|'CodeDomain'|'Delimiter'|'Terminator'|'Macro'|'Member'|'Colon'|
-'Keyword'|'Function' | 'APICall' | 'BuiltInCall' | 'Push'
+'Keyword'|'Function' | 'APICall' | 'BuiltInCall' | 'Push' | 'PreToken'
 
 export type DECLARATION_TYPES = 'void' | 'long' | 'fixed' | 'struct' | 'void_ptr' | 'long_ptr' | 'fixed_ptr' | 'struct_ptr' | ''
 
-export type TOKEN = {
+export interface PRE_TOKEN {
     /** Line follows the scheme 'line:column' or '0:0' if unknown */
     line: string
     precedence: number
     type: TOKEN_TYPES
-    declaration?: DECLARATION_TYPES
     /** Empty string for Arr, CodeCave, CodeDomain */
     value: string
-    /** Only applicable to Arr, CodeCave, CodeDomain, Variable with modifier */
-    params?: TOKEN[]
     /** Only applicable to types: asm, break, continue, constant, struct or label */
     extValue?: string
+}
+
+export interface TOKEN extends PRE_TOKEN {
+    declaration?: DECLARATION_TYPES
+    /** Only applicable to Arr, CodeCave, CodeDomain, Variable with modifier */
+    params?: TOKEN[]
 }
 
 export type MEMORY_BASE_TYPES = 'register' | 'long' | 'fixed' | 'constant' | 'struct' | 'structRef' | 'array' | 'label' | 'void'

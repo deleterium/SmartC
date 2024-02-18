@@ -99,12 +99,12 @@ describe('SetUnaryOperator', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
-    test('should throw: -- double meaning', () => {
-        expect(() => {
-            const code = 'long a, b, c; a=b- -c;'
-            const compiler = new SmartC({ language: 'C', sourceCode: code })
-            compiler.compile()
-        }).toThrowError(/^At line/)
+    it('should compile: -- double meaning (ok for new parser)', () => {
+        const code = 'long a, b, c; a=b- -c;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n^declare b\n^declare c\n\nCLR @r0\nSUB @r0 $c\nSET @a $b\nSUB @a $r0\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
     })
 })
 
