@@ -55,6 +55,8 @@ export default function sentencesProcessor (
             return breakCodeToSentence()
         case 'continue':
             return continueCodeToSentence()
+        case 'register':
+            break
         case 'struct':
             // Handle struct. It can be type:phrase or type:struct. handle here only type:struct
             if (codetrain[currentToken + 1]?.type === 'CodeDomain') {
@@ -72,6 +74,9 @@ export default function sentencesProcessor (
                 return labelCodeToSentence(phrase, lineOfFirstInstruction)
             }
             switch (codetrain[currentToken].value) {
+            case 'register':
+                validateRegisterNextType()
+                break
             case 'if':
             case 'while':
             case 'for':
@@ -92,6 +97,20 @@ export default function sentencesProcessor (
             currentToken++
         }
         throw new Error(`At line: ${codetrain[currentToken - 1].line}. Missing ';'. `)
+    }
+
+    function validateRegisterNextType () {
+        const nextToken = codetrain[currentToken + 1]
+        if (nextToken === undefined) {
+            throw new Error(`At line: ${codetrain[currentToken].line}. Invalid use of register. Expecting a declaration type.`)
+        }
+        switch (nextToken.value) {
+        case 'void':
+        case 'long':
+        case 'fixed':
+            return
+        }
+        throw new Error(`At line: ${nextToken.line}. Invalid register declaration type. Expecting 'void', 'long' or 'fixed', but found '${nextToken.value}.'`)
     }
 
     function ifCodeToSentence () : SENTENCES[] {
