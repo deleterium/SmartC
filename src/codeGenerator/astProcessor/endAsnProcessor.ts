@@ -1,13 +1,13 @@
 import { assertNotUndefined } from '../../repository/repository'
-import { CONTRACT } from '../../typings/contractTypes'
+import { CONTRACT, SC_FUNCTION } from '../../typings/contractTypes'
 import { END_ASN, LONG_TYPE_DEFINITION, MEMORY_SLOT, STRUCT_TYPE_DEFINITION } from '../../typings/syntaxTypes'
 import { createSimpleInstruction, createInstruction } from '../assemblyProcessor/createInstruction'
-import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
+import { GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
 import genCode from './genCode'
 
 export default function endAsnProcessor (
-    Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
+    Program: CONTRACT, ScopeInfo: GENCODE_ARGS
 ) : GENCODE_SOLVED_OBJECT {
     let CurrentNode: END_ASN
 
@@ -53,13 +53,13 @@ export default function endAsnProcessor (
 
     function variableProc () : GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.logicalOp) {
-            let { SolvedMem, asmCode } = genCode(Program, AuxVars, {
+            let { SolvedMem, asmCode } = genCode(Program, {
                 RemAST: CurrentNode,
                 logicalOp: false,
                 revLogic: ScopeInfo.revLogic
             })
             asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genNotEqualToken(),
                 SolvedMem,
                 utils.createConstantMemObj(0),
@@ -67,29 +67,30 @@ export default function endAsnProcessor (
                 ScopeInfo.jumpFalse,
                 ScopeInfo.jumpTrue
             )
-            AuxVars.freeRegister(SolvedMem.address)
+            Program.Context.freeRegister(SolvedMem.address)
             return { SolvedMem: utils.createVoidMemObj(), asmCode: asmCode }
         }
-        const retMemObj = AuxVars.getMemoryObjectByName(
+        const retMemObj = Program.Context.getMemoryObjectByName(
             CurrentNode.Token.value,
             CurrentNode.Token.line,
-            AuxVars.isDeclaration
+            Program.Context.SentenceContext.isDeclaration
         )
-        if (AuxVars.isRegisterSentence) {
+        if (Program.Context.SentenceContext.isRegisterSentence) {
             return registerProc(retMemObj)
         }
         return { SolvedMem: retMemObj, asmCode: '' }
     }
 
     function registerProc (retMemObj: MEMORY_SLOT) : GENCODE_SOLVED_OBJECT {
-        const lastFreeRegister = AuxVars.registerInfo.filter(Reg => Reg.inUse === false).reverse()[0]
+        const lastFreeRegister = Program.Context.registerInfo.filter(Reg => Reg.inUse === false).reverse()[0]
         if (lastFreeRegister === undefined || lastFreeRegister.Template.asmName === 'r0') {
             throw new Error(`At line: ${CurrentNode.Token.line}. ` +
             'No more registers available. ' +
             `Increase the number with '#pragma maxAuxVars ${Program.Config.maxAuxVars + 1}' or try to reduce nested operations.`)
         }
         lastFreeRegister.inUse = true
-        AuxVars.scopedRegisters.push(lastFreeRegister.Template.asmName)
+        lastFreeRegister.endurance = 'Scope'
+        Program.Context.scopedRegisters.push(lastFreeRegister.Template.asmName)
         const varPrevAsmName = retMemObj.asmName
         const motherMemory = assertNotUndefined(Program.memory.find(obj => obj.asmName === retMemObj.asmName), 'Internal error')
         retMemObj.address = lastFreeRegister.Template.address
@@ -103,6 +104,7 @@ export default function endAsnProcessor (
     }
 
     function keywordProc () : GENCODE_SOLVED_OBJECT {
+        const CurrentFunction: SC_FUNCTION | undefined = Program.functions[Program.Context.currFunctionIndex]
         if (ScopeInfo.logicalOp) {
             throw new Error(`At line: ${CurrentNode.Token.line}. ` +
             `Cannot use of keyword '${CurrentNode.Token.value}' in logical statements.`)
@@ -116,7 +118,7 @@ export default function endAsnProcessor (
         case 'sleep':
             return {
                 SolvedMem: utils.createVoidMemObj(),
-                asmCode: createInstruction(AuxVars, CurrentNode.Token)
+                asmCode: createInstruction(Program, CurrentNode.Token)
             }
         case 'void':
             throw new Error(`At line: ${CurrentNode.Token.line}. ` +
@@ -134,9 +136,9 @@ export default function endAsnProcessor (
             let StructTypeDefinition = Program.typesDefinitions.find(
                 Obj => Obj.type === 'struct' && Obj.name === CurrentNode.Token.extValue
             ) as STRUCT_TYPE_DEFINITION | undefined
-            if (StructTypeDefinition === undefined && AuxVars.CurrentFunction !== undefined) {
+            if (StructTypeDefinition === undefined && CurrentFunction !== undefined) {
                 StructTypeDefinition = Program.typesDefinitions.find(
-                    Obj => Obj.type === 'struct' && Obj.name === AuxVars.CurrentFunction?.name + '_' + CurrentNode.Token.extValue
+                    Obj => Obj.type === 'struct' && Obj.name === CurrentFunction?.name + '_' + CurrentNode.Token.extValue
                 ) as STRUCT_TYPE_DEFINITION | undefined
             }
             if (StructTypeDefinition === undefined) {
@@ -150,16 +152,16 @@ export default function endAsnProcessor (
         }
         case 'return':
             // this is 'return;'
-            if (AuxVars.CurrentFunction === undefined) {
+            if (CurrentFunction === undefined) {
                 throw new Error(`At line: ${CurrentNode.Token.line}.` +
                 " Can not use 'return' in global statements.")
             }
-            if (AuxVars.CurrentFunction.declaration !== 'void') {
+            if (CurrentFunction.declaration !== 'void') {
                 throw new Error(`At line: ${CurrentNode.Token.line}.` +
-                ` Function '${AuxVars.CurrentFunction.name}'` +
-                ` must return a '${AuxVars.CurrentFunction.declaration}' value.`)
+                ` Function '${CurrentFunction.name}'` +
+                ` must return a '${CurrentFunction.declaration}' value.`)
             }
-            if (AuxVars.CurrentFunction.name === 'main' || AuxVars.CurrentFunction.name === 'catch') {
+            if (CurrentFunction.name === 'main' || CurrentFunction.name === 'catch') {
                 return {
                     SolvedMem: utils.createVoidMemObj(),
                     asmCode: createSimpleInstruction('exit')
@@ -167,7 +169,7 @@ export default function endAsnProcessor (
             }
             return {
                 SolvedMem: utils.createVoidMemObj(),
-                asmCode: createInstruction(AuxVars, CurrentNode.Token)
+                asmCode: createInstruction(Program, CurrentNode.Token)
             }
         default:
             throw new Error(`Internal error at line: ${CurrentNode.Token.line}.`)

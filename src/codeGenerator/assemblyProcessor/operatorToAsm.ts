@@ -1,6 +1,6 @@
 import { assertExpression } from '../../repository/repository'
+import { CONTRACT } from '../../typings/contractTypes'
 import { TOKEN, MEMORY_SLOT } from '../../typings/syntaxTypes'
-import { GENCODE_AUXVARS } from '../codeGeneratorTypes'
 import utils from '../utils'
 import { createInstruction, flattenMemory } from './createInstruction'
 
@@ -9,10 +9,10 @@ import { createInstruction, flattenMemory } from './createInstruction'
  * @returns the assembly code necessary for the assignment to happen
  */
 export default function operatorToAsm (
-    AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, LeftMem: MEMORY_SLOT, RightMem: MEMORY_SLOT
+    Program: CONTRACT, OperatorToken: TOKEN, LeftMem: MEMORY_SLOT, RightMem: MEMORY_SLOT
 ) : string {
-    const FlatLeft = flattenMemory(AuxVars, LeftMem, OperatorToken.line)
-    const FlatRight = flattenMemory(AuxVars, RightMem, OperatorToken.line)
+    const FlatLeft = flattenMemory(Program, LeftMem, OperatorToken.line)
+    const FlatRight = flattenMemory(Program, RightMem, OperatorToken.line)
 
     function operatorToAsmMain () : string {
         assertExpression(LeftMem.type !== 'constant')
@@ -84,7 +84,7 @@ export default function operatorToAsm (
         if (RightMem.type === 'constant') {
             const optimizationResult = testOptimizations()
             if (optimizationResult === undefined) {
-                AuxVars.freeRegister(FlatRight.FlatMem.address)
+                Program.Context.freeRegister(FlatRight.FlatMem.address)
                 return ''
             }
             if (optimizationResult.length > 0) {
@@ -125,13 +125,13 @@ export default function operatorToAsm (
         case '0000000000000000':
             return
         case '0000000000000001':
-            AuxVars.freeRegister(FlatRight.FlatMem.address)
-            return createInstruction(AuxVars, utils.genIncToken(), FlatLeft.FlatMem)
+            Program.Context.freeRegister(FlatRight.FlatMem.address)
+            return createInstruction(Program, utils.genIncToken(), FlatLeft.FlatMem)
         case '0000000000000002':
-            AuxVars.freeRegister(FlatRight.FlatMem.address)
-            if (!AuxVars.memory.find(MEM => MEM.asmName === 'n2' && MEM.hexContent === '0000000000000002')) {
-                return createInstruction(AuxVars, utils.genIncToken(), FlatLeft.FlatMem) +
-                createInstruction(AuxVars, utils.genIncToken(), FlatLeft.FlatMem)
+            Program.Context.freeRegister(FlatRight.FlatMem.address)
+            if (!Program.memory.find(MEM => MEM.asmName === 'n2' && MEM.hexContent === '0000000000000002')) {
+                return createInstruction(Program, utils.genIncToken(), FlatLeft.FlatMem) +
+                createInstruction(Program, utils.genIncToken(), FlatLeft.FlatMem)
             }
         }
         return ''
@@ -142,37 +142,37 @@ export default function operatorToAsm (
             return
         }
         if (RightMem.hexContent === '0000000000000001') {
-            AuxVars.freeRegister(FlatRight.FlatMem.address)
-            return createInstruction(AuxVars, utils.genDecToken(), FlatLeft.FlatMem)
+            Program.Context.freeRegister(FlatRight.FlatMem.address)
+            return createInstruction(Program, utils.genDecToken(), FlatLeft.FlatMem)
         }
         return ''
     }
 
     function testOptimizationsMultiply () : string|undefined {
         if (RightMem.hexContent === '0000000000000001') {
-            AuxVars.freeRegister(FlatRight.FlatMem.address)
+            Program.Context.freeRegister(FlatRight.FlatMem.address)
             return
         }
         if (RightMem.hexContent === '0000000000000000') {
-            AuxVars.freeRegister(FlatRight.FlatMem.address)
-            return createInstruction(AuxVars, utils.genAssignmentToken(OperatorToken.line), FlatLeft.FlatMem, RightMem)
+            Program.Context.freeRegister(FlatRight.FlatMem.address)
+            return createInstruction(Program, utils.genAssignmentToken(OperatorToken.line), FlatLeft.FlatMem, RightMem)
         }
         return ''
     }
 
     function testOptimizationsDivide () : string|undefined {
         if (RightMem.hexContent === '0000000000000001') {
-            AuxVars.freeRegister(FlatRight.FlatMem.address)
+            Program.Context.freeRegister(FlatRight.FlatMem.address)
             return
         }
         return ''
     }
 
     function returnThisCode (asm : string) : string {
-        AuxVars.freeRegister(FlatRight.FlatMem.address)
+        Program.Context.freeRegister(FlatRight.FlatMem.address)
         if (FlatLeft.isNew === true) {
-            asm += createInstruction(AuxVars, utils.genAssignmentToken(OperatorToken.line), LeftMem, FlatLeft.FlatMem)
-            AuxVars.freeRegister(FlatLeft.FlatMem.address)
+            asm += createInstruction(Program, utils.genAssignmentToken(OperatorToken.line), LeftMem, FlatLeft.FlatMem)
+            Program.Context.freeRegister(FlatLeft.FlatMem.address)
         }
         return FlatLeft.asmCode + FlatRight.asmCode + asm
     }

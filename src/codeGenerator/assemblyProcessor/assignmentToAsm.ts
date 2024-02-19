@@ -1,6 +1,7 @@
 import { assertExpression, assertNotUndefined } from '../../repository/repository'
+import { CONTRACT } from '../../typings/contractTypes'
 import { MEMORY_SLOT, OFFSET_MODIFIER_CONSTANT } from '../../typings/syntaxTypes'
-import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_AUXVARS } from '../codeGeneratorTypes'
+import { FLATTEN_MEMORY_RETURN_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
 import { flattenMemory } from './createInstruction'
 
@@ -9,7 +10,7 @@ import { flattenMemory } from './createInstruction'
  * @returns the assembly code necessary for the assignment to happen
  */
 export default function assignmentToAsm (
-    auxVars: GENCODE_AUXVARS, Left: MEMORY_SLOT, Right: MEMORY_SLOT, operationLine: string
+    Program: CONTRACT, Left: MEMORY_SLOT, Right: MEMORY_SLOT, operationLine: string
 ) : string {
     /** Main function */
     function assignmentToAsmMain (): string {
@@ -49,8 +50,8 @@ export default function assignmentToAsm (
         case 'constant':
             return leftRegularOffsetConstantToAsm(Left.Offset)
         case 'variable':
-            RightMem = flattenMemory(auxVars, Right, operationLine)
-            offsetVarName = auxVars.getMemoryObjectByLocation(Left.Offset.addr).asmName
+            RightMem = flattenMemory(Program, Right, operationLine)
+            offsetVarName = Program.Context.getMemoryObjectByLocation(Left.Offset.addr).asmName
             assemblyCode = `SET @($${Left.asmName} + $${offsetVarName}) $${RightMem.FlatMem.asmName}\n`
             freeIfItIsNew(RightMem)
             return RightMem.asmCode + assemblyCode
@@ -66,7 +67,7 @@ export default function assignmentToAsm (
             return leftRegularOffsetUndefinedAndRightConstantOffsetUndefinedToAsm()
         case 'constant':
             Right.hexContent = assertNotUndefined(Right.hexContent)
-            newVarName = auxVars.getMemoryObjectByLocation(utils.addHexSimple(Right.Offset.value, Right.hexContent), operationLine).asmName
+            newVarName = Program.Context.getMemoryObjectByLocation(utils.addHexSimple(Right.Offset.value, Right.hexContent), operationLine).asmName
             return `SET @${Left.asmName} $${newVarName}\n`
         case 'variable':
             throw new Error('Not implemented.')
@@ -87,7 +88,7 @@ export default function assignmentToAsm (
             optVarName = 'f'
         }
         optVarName += Number('0x' + Right.hexContent).toString(10)
-        const findOpt = auxVars.memory.find(MEM => MEM.asmName === optVarName && MEM.hexContent === Right.hexContent)
+        const findOpt = Program.memory.find(MEM => MEM.asmName === optVarName && MEM.hexContent === Right.hexContent)
         if (findOpt) {
             return `SET @${Left.asmName} $${findOpt.asmName}\n`
         }
@@ -104,7 +105,7 @@ export default function assignmentToAsm (
         case 'constant':
             return leftRegularOffsetUndefinedAndRightRegularOffsetConstantToAsm(Right.Offset)
         case 'variable':
-            offsetVarName = auxVars.getMemoryObjectByLocation(Right.Offset.addr, operationLine).asmName
+            offsetVarName = Program.Context.getMemoryObjectByLocation(Right.Offset.addr, operationLine).asmName
             return `SET @${Left.asmName} $($${Right.asmName} + $${offsetVarName})\n`
         }
     }
@@ -129,7 +130,7 @@ export default function assignmentToAsm (
         if (RightOffset.value === 0) {
             return `SET @${Left.asmName} $($${Right.asmName})\n`
         }
-        const MemOffset = flattenMemory(auxVars, utils.createConstantMemObj(RightOffset.value), operationLine)
+        const MemOffset = flattenMemory(Program, utils.createConstantMemObj(RightOffset.value), operationLine)
         const assemblyCode = `SET @${Left.asmName} $($${Right.asmName} + $${MemOffset.FlatMem.asmName})\n`
         freeIfItIsNew(MemOffset)
         return MemOffset.asmCode + assemblyCode
@@ -143,26 +144,26 @@ export default function assignmentToAsm (
         }
         if (Right.Offset.type === 'constant') {
             const memLoc = utils.addHexSimple(Right.hexContent, Right.Offset.value)
-            const RightMem = auxVars.getMemoryObjectByLocation(memLoc, operationLine)
+            const RightMem = Program.Context.getMemoryObjectByLocation(memLoc, operationLine)
             return `SET @${Left.asmName} $${RightMem.asmName}\n`
         }
         // Right.Offset.type is 'variable'
-        const offsetVarName = auxVars.getMemoryObjectByLocation(Right.Offset.addr, operationLine).asmName
+        const offsetVarName = Program.Context.getMemoryObjectByLocation(Right.Offset.addr, operationLine).asmName
         return `SET @${Left.asmName} $($${Right.asmName} + $${offsetVarName})\n`
     }
 
     /** Left type is 'register', 'long' or 'structRef', with offset constant. Create assembly instruction. */
     function leftRegularOffsetConstantToAsm (LeftOffset: OFFSET_MODIFIER_CONSTANT) : string {
-        const RightMem = flattenMemory(auxVars, Right, operationLine)
+        const RightMem = flattenMemory(Program, Right, operationLine)
         let assemblyCode: string
         if (LeftOffset.value === 0) {
             assemblyCode = `SET @($${Left.asmName}) $${RightMem.FlatMem.asmName}\n`
             if (RightMem.isNew) {
-                auxVars.freeRegister(RightMem.FlatMem.address)
+                Program.Context.freeRegister(RightMem.FlatMem.address)
             }
             return RightMem.asmCode + assemblyCode
         }
-        const MemOffset = flattenMemory(auxVars, utils.createConstantMemObj(LeftOffset.value), operationLine)
+        const MemOffset = flattenMemory(Program, utils.createConstantMemObj(LeftOffset.value), operationLine)
         assemblyCode = `SET @($${Left.asmName} + $${MemOffset.FlatMem.asmName}) $${RightMem.FlatMem.asmName}\n`
         freeIfItIsNew(MemOffset)
         freeIfItIsNew(RightMem)
@@ -181,8 +182,8 @@ export default function assignmentToAsm (
             // Optimimization steps before lead to impossible reach code
             throw new Error(`Internal error at line: ${operationLine}.`)
         case 'variable':
-            RightMem = flattenMemory(auxVars, Right, operationLine)
-            leftOffsetVarName = auxVars.getMemoryObjectByLocation(Left.Offset.addr, operationLine).asmName
+            RightMem = flattenMemory(Program, Right, operationLine)
+            leftOffsetVarName = Program.Context.getMemoryObjectByLocation(Left.Offset.addr, operationLine).asmName
             assemblyCode = `SET @($${Left.asmName} + $${leftOffsetVarName}) $${RightMem.FlatMem.asmName}\n`
             freeIfItIsNew(RightMem)
             return RightMem.asmCode + assemblyCode
@@ -202,18 +203,18 @@ export default function assignmentToAsm (
         const paddedLong = assertNotUndefined(Right.hexContent).padStart(arraySize * 16, '0')
         let assemblyCode = ''
         for (let i = 0; i < arraySize; i++) {
-            const newLeft = auxVars.getMemoryObjectByLocation(utils.addHexSimple(Left.hexContent, i), operationLine)
+            const newLeft = Program.Context.getMemoryObjectByLocation(utils.addHexSimple(Left.hexContent, i), operationLine)
             const newRight = utils.createConstantMemObj(
                 paddedLong.slice(16 * (arraySize - i - 1), 16 * (arraySize - i))
             )
-            assemblyCode += assignmentToAsm(auxVars, newLeft, newRight, operationLine)
+            assemblyCode += assignmentToAsm(Program, newLeft, newRight, operationLine)
         }
         return assemblyCode
     }
 
     function freeIfItIsNew (FlatObj: FLATTEN_MEMORY_RETURN_OBJECT): void {
         if (FlatObj.isNew) {
-            auxVars.freeRegister(FlatObj.FlatMem.address)
+            Program.Context.freeRegister(FlatObj.FlatMem.address)
         }
     }
 

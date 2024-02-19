@@ -4,13 +4,13 @@ import {
     MEMORY_SLOT, ARRAY_TYPE_DEFINITION, STRUCT_TYPE_DEFINITION, DECLARATION_TYPES, LOOKUP_ASN, TOKEN_MODIFIER, TOKEN_MODIFIER_ARRAY, TOKEN_MODIFIER_MEMBER
 } from '../../typings/syntaxTypes'
 import { createInstruction } from '../assemblyProcessor/createInstruction'
-import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
+import { GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
 import functionSolver from './functionSolver'
 import genCode from './genCode'
 
 export default function lookupAsnProcessor (
-    Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
+    Program: CONTRACT, ScopeInfo: GENCODE_ARGS
 ) : GENCODE_SOLVED_OBJECT {
     let arrayIndex = -1
     let CurrentNode: LOOKUP_ASN
@@ -21,16 +21,16 @@ export default function lookupAsnProcessor (
         switch (CurrentNode.Token.type) {
         case 'Variable':
             StartObj = {
-                SolvedMem: AuxVars.getMemoryObjectByName(
+                SolvedMem: Program.Context.getMemoryObjectByName(
                     CurrentNode.Token.value,
                     CurrentNode.Token.line,
-                    AuxVars.isDeclaration
+                    Program.Context.SentenceContext.isDeclaration
                 ),
                 asmCode: ''
             }
             break
         case 'Function':
-            StartObj = functionSolver(Program, AuxVars, ScopeInfo)
+            StartObj = functionSolver(Program, ScopeInfo)
             break
         default:
             throw new Error(`Internal error at line: ${CurrentNode.Token.line}.`)
@@ -46,7 +46,7 @@ export default function lookupAsnProcessor (
                 ' Function returning void value can not be used in conditionals decision.')
             }
             EndObj.asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genNotEqualToken(),
                 EndObj.SolvedMem,
                 utils.createConstantMemObj(0),
@@ -54,7 +54,7 @@ export default function lookupAsnProcessor (
                 ScopeInfo.jumpFalse,
                 ScopeInfo.jumpTrue
             )
-            AuxVars.freeRegister(EndObj.SolvedMem.address)
+            Program.Context.freeRegister(EndObj.SolvedMem.address)
             return { SolvedMem: utils.createVoidMemObj(), asmCode: EndObj.asmCode }
         }
         return EndObj
@@ -112,11 +112,11 @@ export default function lookupAsnProcessor (
             }
             if (Previous.SolvedMem.Offset.type === 'constant') {
                 // Deference location and continue
-                const TmpMemObj = AuxVars.getNewRegister()
+                const TmpMemObj = Program.Context.getNewRegister()
                 TmpMemObj.declaration = Previous.SolvedMem.Offset.declaration
                 TmpMemObj.typeDefinition = Previous.SolvedMem.Offset.typeDefinition
                 Previous.asmCode += createInstruction(
-                    AuxVars,
+                    Program,
                     utils.genAssignmentToken(CurrentNode.Token.line),
                     TmpMemObj,
                     Previous.SolvedMem
@@ -141,18 +141,18 @@ export default function lookupAsnProcessor (
             " Using wrong member notation. Try to use '->' instead.")
         }
         if (Previous.SolvedMem.Offset === undefined) {
-            Previous.SolvedMem = AuxVars.getMemoryObjectByLocation(Number('0x' + Previous.SolvedMem.hexContent) +
+            Previous.SolvedMem = Program.Context.getMemoryObjectByLocation(Number('0x' + Previous.SolvedMem.hexContent) +
                 TypeD.structAccumulatedSize[memberIdx][1], memberLine)
             return Previous
         }
         if (Previous.SolvedMem.Offset.type === 'constant') {
             const newLoc = Previous.SolvedMem.Offset.value + Number('0x' + Previous.SolvedMem.hexContent)
-            Previous.SolvedMem = AuxVars.getMemoryObjectByLocation(newLoc + TypeD.structAccumulatedSize[memberIdx][1], memberLine)
+            Previous.SolvedMem = Program.Context.getMemoryObjectByLocation(newLoc + TypeD.structAccumulatedSize[memberIdx][1], memberLine)
             return Previous
         }
         // finally Previous.MemObj.offset_type is "variable"
-        Previous.asmCode += createInstruction(AuxVars, utils.genAddToken(memberLine),
-            AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, memberLine),
+        Previous.asmCode += createInstruction(Program, utils.genAddToken(memberLine),
+            Program.Context.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, memberLine),
             utils.createConstantMemObj(memOffset + TypeD.structAccumulatedSize[memberIdx][1]))
         Previous.SolvedMem.Offset.declaration = MembersDefinitions.declaration
         Previous.SolvedMem.Offset.typeDefinition = MembersDefinitions.typeDefinition
@@ -167,9 +167,9 @@ export default function lookupAsnProcessor (
         }
         const len = assertNotUndefined(TypeD.MemoryTemplate.ArrayItem?.totalSize)
         if (Memory.Offset?.type === 'variable') {
-            AuxVars.freeRegister(Memory.Offset.addr)
+            Program.Context.freeRegister(Memory.Offset.addr)
         }
-        AuxVars.freeRegister(Memory.address)
+        Program.Context.freeRegister(Memory.address)
         return {
             SolvedMem: utils.createConstantMemObj((len - 1) / TypeD.MemoryTemplate.size),
             asmCode: ''
@@ -225,26 +225,26 @@ export default function lookupAsnProcessor (
             }
         }
         // Solve array parameter AST
-        const ParamMemObj = genCode(Program, AuxVars, {
+        const ParamMemObj = genCode(Program, {
             RemAST: CurrentModifier.Center,
             logicalOp: false,
             revLogic: false
         })
         if (ParamMemObj.SolvedMem.Offset) {
             // Need to deference array index...
-            const TmpMemObj = AuxVars.getNewRegister()
+            const TmpMemObj = Program.Context.getNewRegister()
             TmpMemObj.declaration = utils.getDeclarationFromMemory(ParamMemObj.SolvedMem)
-            ParamMemObj.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Token.line), TmpMemObj, ParamMemObj.SolvedMem)
+            ParamMemObj.asmCode += createInstruction(Program, utils.genAssignmentToken(CurrentNode.Token.line), TmpMemObj, ParamMemObj.SolvedMem)
             if (ParamMemObj.SolvedMem.Offset.type === 'variable') {
-                AuxVars.freeRegister(ParamMemObj.SolvedMem.Offset.addr)
+                Program.Context.freeRegister(ParamMemObj.SolvedMem.Offset.addr)
             }
-            AuxVars.freeRegister(ParamMemObj.SolvedMem.address)
+            Program.Context.freeRegister(ParamMemObj.SolvedMem.address)
             ParamMemObj.SolvedMem = TmpMemObj
         }
         Previous.asmCode += ParamMemObj.asmCode
         // special case for left side void array multi long assignment
         if (ParamMemObj.SolvedMem.type === 'void') {
-            AuxVars.hasVoidArray = true
+            Program.Context.SentenceContext.hasVoidArray = true
             return Previous
         }
         // big decision tree depending on Previous.MemObj.Offset.value and ParamMemObj.address
@@ -256,7 +256,7 @@ export default function lookupAsnProcessor (
         }
         Previous.SolvedMem.Offset.declaration = Previous.SolvedMem.ArrayItem.declaration
         Previous.SolvedMem.Offset.typeDefinition = Previous.SolvedMem.ArrayItem.typeDefinition
-        if (AuxVars.isTemp(Previous.SolvedMem.Offset.addr)) {
+        if (Program.Context.isTemp(Previous.SolvedMem.Offset.addr)) {
             return arrProcOffsetRegister(Previous, ParamMemObj.SolvedMem, multiplier)
         }
         // Finally Previous.MemObj.Offset.addr is variable and not register
@@ -317,7 +317,7 @@ export default function lookupAsnProcessor (
                 typeDefinition: Previous.SolvedMem.ArrayItem.typeDefinition
             }
             Previous.asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genMulToken(CurrentNode.Token.line),
                 Param,
                 utils.createConstantMemObj(multiplier)
@@ -333,11 +333,11 @@ export default function lookupAsnProcessor (
                 }
                 return Previous
             }
-            TmpMemObj = AuxVars.getNewRegister()
+            TmpMemObj = Program.Context.getNewRegister()
             Previous.asmCode += createInstruction(
-                AuxVars, utils.genAssignmentToken(CurrentNode.Token.line), TmpMemObj, utils.createConstantMemObj(multiplier)
+                Program, utils.genAssignmentToken(CurrentNode.Token.line), TmpMemObj, utils.createConstantMemObj(multiplier)
             )
-            Previous.asmCode += createInstruction(AuxVars, utils.genMulToken(CurrentNode.Token.line), TmpMemObj, Param)
+            Previous.asmCode += createInstruction(Program, utils.genMulToken(CurrentNode.Token.line), TmpMemObj, Param)
             Previous.SolvedMem.Offset = {
                 type: 'variable',
                 addr: TmpMemObj.address,
@@ -364,13 +364,13 @@ export default function lookupAsnProcessor (
             return Previous
         case 'register':
             Previous.asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genMulToken(CurrentNode.Token.line),
                 Param,
                 utils.createConstantMemObj(multiplier)
             )
             Previous.asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genAddToken(CurrentNode.Token.line),
                 Param,
                 utils.createConstantMemObj(Previous.SolvedMem.Offset.value)
@@ -392,16 +392,16 @@ export default function lookupAsnProcessor (
                 }
                 return Previous
             }
-            TmpMemObj = AuxVars.getNewRegister()
-            Previous.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Token.line), TmpMemObj, Param)
+            TmpMemObj = Program.Context.getNewRegister()
+            Previous.asmCode += createInstruction(Program, utils.genAssignmentToken(CurrentNode.Token.line), TmpMemObj, Param)
             Previous.asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genMulToken(CurrentNode.Token.line),
                 TmpMemObj,
                 utils.createConstantMemObj(multiplier)
             )
             Previous.asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genAddToken(CurrentNode.Token.line),
                 TmpMemObj,
                 utils.createConstantMemObj(Previous.SolvedMem.Offset.value)
@@ -428,53 +428,53 @@ export default function lookupAsnProcessor (
         case 'constant': {
             multiplier *= Number('0x' + Param.hexContent)
             Previous.asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genAddToken(CurrentNode.Token.line),
-                AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line),
+                Program.Context.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line),
                 utils.createConstantMemObj(multiplier)
             )
             return Previous
         }
         case 'register':
             Previous.asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genMulToken(CurrentNode.Token.line),
                 Param,
                 utils.createConstantMemObj(multiplier)
             )
             Previous.asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genAddToken(CurrentNode.Token.line),
-                AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line),
+                Program.Context.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line),
                 Param
             )
-            AuxVars.freeRegister(Param.address)
+            Program.Context.freeRegister(Param.address)
             return Previous
         case 'regularVariable':
             if (multiplier === 1) {
                 Previous.asmCode += createInstruction(
-                    AuxVars,
+                    Program,
                     utils.genAddToken(CurrentNode.Token.line),
-                    AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line),
+                    Program.Context.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line),
                     Param
                 )
                 return Previous
             }
-            TmpMemObj = AuxVars.getNewRegister()
-            Previous.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Token.line), TmpMemObj, Param)
+            TmpMemObj = Program.Context.getNewRegister()
+            Previous.asmCode += createInstruction(Program, utils.genAssignmentToken(CurrentNode.Token.line), TmpMemObj, Param)
             Previous.asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genMulToken(CurrentNode.Token.line),
                 TmpMemObj,
                 utils.createConstantMemObj(multiplier)
             )
             Previous.asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genAddToken(CurrentNode.Token.line),
-                AuxVars.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line),
+                Program.Context.getMemoryObjectByLocation(Previous.SolvedMem.Offset.addr, CurrentNode.Token.line),
                 TmpMemObj
             )
-            AuxVars.freeRegister(TmpMemObj.address)
+            Program.Context.freeRegister(TmpMemObj.address)
             return Previous
         }
     }
@@ -483,7 +483,7 @@ export default function lookupAsnProcessor (
         if (loc === -1) {
             return 'constant'
         }
-        if (AuxVars.isTemp(loc)) {
+        if (Program.Context.isTemp(loc)) {
             return 'register'
         }
         return 'regularVariable'
