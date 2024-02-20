@@ -156,7 +156,7 @@ export type SWITCH_ASN = {
 }
 
 // eslint-disable-next-line no-use-before-define
-export type SENTENCES = SENTENCE_PHRASE | SENTENCE_IF_ENDIF | SENTENCE_IF_ELSE | SENTENCE_WHILE | SENTENCE_DO | SENTENCE_FOR | SENTENCE_STRUCT | SENTENCE_SWITCH | SENTENCE_CASE | SENTENCE_DEFAULT | SENTENCE_LABEL
+export type SENTENCES = SENTENCE_PHRASE | SENTENCE_IF_ENDIF | SENTENCE_IF_ELSE | SENTENCE_WHILE | SENTENCE_DO | SENTENCE_FOR | SENTENCE_STRUCT | SENTENCE_SWITCH | SENTENCE_CASE | SENTENCE_DEFAULT | SENTENCE_LABEL | SENTENCE_SCOPE
 export type SENTENCE_PHRASE = {
     type: 'phrase'
     /** phrase starting location ('line:column' scheme) */
@@ -237,6 +237,13 @@ export type SENTENCE_LABEL = {
     type: 'label'
     line: string
     id: string
+}
+export type SENTENCE_SCOPE = {
+    type: 'scope'
+    id: string
+    line: string
+    ConditionAST?: AST
+    alwaysBlock: SENTENCES[]
 }
 
 export type STRUCT_TYPE_DEFINITION = {

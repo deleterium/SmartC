@@ -237,6 +237,14 @@ export default function codeGenerator (Program: CONTRACT) {
                 throw err
             }
             break
+        case 'scope':
+            sentenceID = '__scope' + Program.Context.getNewJumpID()
+            writeAsmLine(sentenceID + '_start:')
+            Program.Context.startScope(`scope_${sentenceID}`)
+            Sentence.alwaysBlock.forEach(compileSentence)
+            writeAsmLine(sentenceID + '_end:')
+            Program.Context.stopScope(`scope_${sentenceID}`)
+            break
         case 'ifEndif':
             sentenceID = '__if' + Program.Context.getNewJumpID()
             assemblyCode = setupGenCode({

@@ -32,6 +32,9 @@ export default function syntaxProcessor (Program: CONTRACT) : void {
             )
             delete SentenceObj.code
             break
+        case 'scope':
+            SentenceObj.alwaysBlock.forEach(processSentence)
+            break
         case 'ifElse':
             SentenceObj.falseBlock.forEach(processSentence)
         // eslint-disable-next-line no-fallthrough

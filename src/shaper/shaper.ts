@@ -379,6 +379,9 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         case 'phrase':
             Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, assertNotUndefined(Sentence.code)))
             return
+        case 'scope':
+            Sentence.alwaysBlock.forEach(createMemoryTable)
+            break
         case 'ifElse':
             Sentence.falseBlock.forEach(createMemoryTable)
         // eslint-disable-next-line no-fallthrough

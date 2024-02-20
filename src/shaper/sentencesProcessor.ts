@@ -17,19 +17,27 @@ export default function sentencesProcessor (
         }
         let sentences: SENTENCES[] = []
         for (; currentToken < codetrain.length; currentToken++) {
-            sentences = sentences.concat(processOneSentence())
+            sentences = sentences.concat(processOneSentence(false))
         }
         return sentences
     }
 
     /** Expects only one sentence in codetrain and converts it
      * to one item sentences array */
-    function processOneSentence (): SENTENCES[] {
+    function processOneSentence (expectingScope: boolean): SENTENCES[] {
         const phrase: TOKEN[] = []
         const lineOfFirstInstruction = codetrain[currentToken]?.line ?? '0:0'
         // Analysis for start tokens
         if (codetrain[currentToken].type === 'CodeDomain') {
-            return sentencesProcessor(AuxVars, codetrain[currentToken].params)
+            if (expectingScope) {
+                return sentencesProcessor(AuxVars, codetrain[currentToken].params)
+            }
+            return [{
+                type: 'scope',
+                id: `__scope${lineOfFirstInstruction}`,
+                line: lineOfFirstInstruction,
+                alwaysBlock: sentencesProcessor(AuxVars, codetrain[currentToken].params)
+            }]
         }
         switch (codetrain[currentToken].value) {
         // These keywords must start one sentence.
@@ -123,7 +131,7 @@ export default function sentencesProcessor (
         }
         const condition = codetrain[currentToken].params
         currentToken++
-        const trueBlock = processOneSentence()
+        const trueBlock = processOneSentence(true)
         if (codetrain[currentToken + 1]?.type === 'Keyword' &&
             codetrain[currentToken + 1]?.value === 'else') {
             currentToken += 2
@@ -133,7 +141,7 @@ export default function sentencesProcessor (
                 line: line,
                 condition: condition,
                 trueBlock: trueBlock,
-                falseBlock: processOneSentence()
+                falseBlock: processOneSentence(true)
             }]
         }
         return [{
@@ -156,7 +164,7 @@ export default function sentencesProcessor (
         const condition = codetrain[currentToken].params
         currentToken++
         AuxVars.latestLoopId.push(id)
-        const trueBlock = processOneSentence()
+        const trueBlock = processOneSentence(true)
         AuxVars.latestLoopId.pop()
         return [{
             type: 'while',
@@ -184,7 +192,7 @@ export default function sentencesProcessor (
         }
         currentToken++
         AuxVars.latestLoopId.push(id)
-        const trueBlock = processOneSentence()
+        const trueBlock = processOneSentence(true)
         AuxVars.latestLoopId.pop()
         return [{
             type: 'for',
@@ -200,7 +208,7 @@ export default function sentencesProcessor (
         const id = `__loop${line}`
         currentToken++
         AuxVars.latestLoopId.push(id)
-        const trueBlock = processOneSentence()
+        const trueBlock = processOneSentence(true)
         AuxVars.latestLoopId.pop()
         currentToken++
         if (codetrain[currentToken]?.value === 'while' &&
@@ -230,7 +238,7 @@ export default function sentencesProcessor (
             type: 'struct',
             line: line,
             name: structName,
-            members: processOneSentence(),
+            members: processOneSentence(true),
             Phrase: { type: 'phrase', line: codetrain[currentToken - 1].line }
         }
         Node.Phrase.code = [codetrain[currentToken - 1]]
@@ -264,7 +272,7 @@ export default function sentencesProcessor (
         }
         currentToken++
         AuxVars.latestLoopId.push(id)
-        const block = processOneSentence()
+        const block = processOneSentence(true)
         AuxVars.latestLoopId.pop()
         const cases = block.reduce((previous: TOKEN[][], Sentence) => {
             if (Sentence.type === 'case') {

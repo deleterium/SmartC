@@ -285,7 +285,14 @@ describe('Keywords right usage', () => {
     })
     it('should compile: Nested of CodeDomains', () => {
         const code = '#pragma optimizationLevel 0\nlong a;{{a++;}}'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\nINC @a\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare a\n\n__scope1_start:\n__scope2_start:\nINC @a\n__scope2_end:\n__scope1_end:\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
+    it('should compile: many nested of CodeDomains + scoped registers', () => {
+        const code = '#pragma optimizationLevel 0\n#include APIFunctions\n#pragma maxAuxVars 6\nlong a; a=1; { register long b = Get_A1(); { register long c = Get_A2(); { register long d = Get_A3(); { register long e = Get_A4(); a+=e+d+c+b+10; } a-=d; } a-=c; } a-=b; { register long c1 = Get_A2(); { register long d1 = Get_A3(); { register long e1 = Get_A4(); a+=e1+d1+c1+b+10; } a-=d1; } a-=c1; } a-=b; } a--;'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare r5\n^declare a\n\nSET @a #0000000000000001\n__scope1_start:\nFUN @r5 get_A1\n__scope2_start:\nFUN @r4 get_A2\n__scope3_start:\nFUN @r3 get_A3\n__scope4_start:\nFUN @r2 get_A4\nSET @r0 $r2\nADD @r0 $r3\nADD @r0 $r4\nADD @r0 $r5\nSET @r1 #000000000000000a\nADD @r1 $r0\nADD @a $r1\n__scope4_end:\nSUB @a $r3\n__scope3_end:\nSUB @a $r4\n__scope2_end:\nSUB @a $r5\n__scope5_start:\nFUN @r4 get_A2\n__scope6_start:\nFUN @r3 get_A3\n__scope7_start:\nFUN @r2 get_A4\nSET @r0 $r2\nADD @r0 $r3\nADD @r0 $r4\nADD @r0 $r5\nSET @r1 #000000000000000a\nADD @r1 $r0\nADD @a $r1\n__scope7_end:\nSUB @a $r3\n__scope6_end:\nSUB @a $r4\n__scope5_end:\nSUB @a $r5\n__scope1_end:\nDEC @a\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
