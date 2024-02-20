@@ -147,6 +147,7 @@ export function flattenMemory (
             RetObj.declaration = paramDec
             const offsetVarName = Program.Context.getMemoryObjectByLocation(StuffedMemory.Offset.addr, line).asmName
             retInstructions += `SET @${RetObj.asmName} $($${StuffedMemory.asmName} + $${offsetVarName})\n`
+            Program.Context.freeRegister(StuffedMemory.Offset.addr)
             return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
         }
         // StuffedMemory.Offset.type is 'constant'

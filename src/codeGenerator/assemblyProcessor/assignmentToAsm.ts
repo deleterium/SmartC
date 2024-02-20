@@ -149,6 +149,7 @@ export default function assignmentToAsm (
         }
         // Right.Offset.type is 'variable'
         const offsetVarName = Program.Context.getMemoryObjectByLocation(Right.Offset.addr, operationLine).asmName
+        Program.Context.freeRegister(Right.Offset.addr)
         return `SET @${Left.asmName} $($${Right.asmName} + $${offsetVarName})\n`
     }
 
