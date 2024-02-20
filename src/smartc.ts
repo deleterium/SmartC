@@ -8,6 +8,7 @@ import assembler from './assembler/assembler'
 
 import { PRE_TOKEN, TOKEN } from './typings/syntaxTypes'
 import { CONTRACT, MACHINE_OBJECT } from './typings/contractTypes'
+import { createContext } from './context'
 
 /**
  * SmartC Compiler class.
@@ -38,6 +39,7 @@ export class SmartC {
     private readonly sourceCode
     private preAssemblyCode?: string
     private MachineCode?: MACHINE_OBJECT
+    // @ts-ignore
     private Program: CONTRACT = {
         sourceLines: [],
         Global: {
@@ -75,6 +77,7 @@ export class SmartC {
         this.Program.sourceLines = Options.sourceCode.split('\n')
         this.language = Options.language
         this.sourceCode = Options.sourceCode
+        this.Program.Context = createContext(this.Program)
     }
 
     /**
