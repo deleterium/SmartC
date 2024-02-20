@@ -1,14 +1,14 @@
 import { deepCopy } from '../../repository/repository'
-import { CONTRACT } from '../../typings/contractTypes'
+import { CONTRACT, SC_FUNCTION } from '../../typings/contractTypes'
 import { MEMORY_SLOT, DECLARATION_TYPES, UNARY_ASN } from '../../typings/syntaxTypes'
 import { createSimpleInstruction, createInstruction } from '../assemblyProcessor/createInstruction'
 import { typeCasting } from '../assemblyProcessor/typeCastingToAsm'
-import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
+import { GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
 import genCode from './genCode'
 
 export default function unaryAsnProcessor (
-    Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
+    Program: CONTRACT, ScopeInfo: GENCODE_ARGS
 ): GENCODE_SOLVED_OBJECT {
     let CurrentNode: UNARY_ASN
 
@@ -47,7 +47,7 @@ export default function unaryAsnProcessor (
 
     function notOpProc () :GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.logicalOp === true) {
-            return genCode(Program, AuxVars, {
+            return genCode(Program, {
                 RemAST: CurrentNode.Center,
                 logicalOp: true,
                 revLogic: !ScopeInfo.revLogic,
@@ -55,22 +55,22 @@ export default function unaryAsnProcessor (
                 jumpTrue: ScopeInfo.jumpFalse // Yes, this is swapped!
             })
         }
-        const rnd = AuxVars.getNewJumpID()
+        const rnd = Program.Context.getNewJumpID()
         const idNotSF = '__NOT_' + rnd + '_sF' // set false
         const idNotST = '__NOT_' + rnd + '_sT' // set true
         const idEnd = '__NOT_' + rnd + '_end'
-        const CGenObj = genCode(Program, AuxVars, {
+        const CGenObj = genCode(Program, {
             RemAST: CurrentNode.Center,
             logicalOp: true,
             revLogic: !ScopeInfo.revLogic,
             jumpFalse: idNotST,
             jumpTrue: idNotSF
         })
-        const TmpMemObj = AuxVars.getNewRegister()
+        const TmpMemObj = Program.Context.getNewRegister()
         // Logical return is long value!
         CGenObj.asmCode += createSimpleInstruction('Label', idNotST)
         CGenObj.asmCode += createInstruction(
-            AuxVars,
+            Program,
             utils.genAssignmentToken(CurrentNode.Operation.line),
             TmpMemObj,
             utils.createConstantMemObj(1)
@@ -78,18 +78,18 @@ export default function unaryAsnProcessor (
         CGenObj.asmCode += createSimpleInstruction('Jump', idEnd)
         CGenObj.asmCode += createSimpleInstruction('Label', idNotSF)
         CGenObj.asmCode += createInstruction(
-            AuxVars,
+            Program,
             utils.genAssignmentToken(CurrentNode.Operation.line),
             TmpMemObj,
             utils.createConstantMemObj(0)
         )
         CGenObj.asmCode += createSimpleInstruction('Label', idEnd)
-        AuxVars.freeRegister(CGenObj.SolvedMem.address)
+        Program.Context.freeRegister(CGenObj.SolvedMem.address)
         return { SolvedMem: TmpMemObj, asmCode: CGenObj.asmCode }
     }
 
     function traverseDefault () : GENCODE_SOLVED_OBJECT {
-        return genCode(Program, AuxVars, {
+        return genCode(Program, {
             RemAST: CurrentNode.Center,
             logicalOp: ScopeInfo.logicalOp,
             revLogic: ScopeInfo.revLogic,
@@ -99,7 +99,7 @@ export default function unaryAsnProcessor (
     }
 
     function traverseNotLogical () : GENCODE_SOLVED_OBJECT {
-        return genCode(Program, AuxVars, {
+        return genCode(Program, {
             RemAST: CurrentNode.Center,
             logicalOp: false,
             revLogic: ScopeInfo.revLogic,
@@ -110,7 +110,7 @@ export default function unaryAsnProcessor (
 
     function pointerOpProc () : GENCODE_SOLVED_OBJECT {
         const CGenObj = traverseNotLogical()
-        if (AuxVars.isDeclaration.length !== 0) {
+        if (Program.Context.SentenceContext.isDeclaration.length !== 0) {
             // do not do any other operation when declaring a pointer.
             return CGenObj
         }
@@ -126,13 +126,13 @@ export default function unaryAsnProcessor (
         }
         if (CGenObj.SolvedMem.Offset) {
             // Double deference: deference and continue
-            const TmpMemObj = AuxVars.getNewRegister()
+            const TmpMemObj = Program.Context.getNewRegister()
             TmpMemObj.declaration = utils.getDeclarationFromMemory(CGenObj.SolvedMem)
-            CGenObj.asmCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, CGenObj.SolvedMem)
+            CGenObj.asmCode += createInstruction(Program, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, CGenObj.SolvedMem)
             if (CGenObj.SolvedMem.Offset.type === 'variable') {
-                AuxVars.freeRegister(CGenObj.SolvedMem.Offset.addr)
+                Program.Context.freeRegister(CGenObj.SolvedMem.Offset.addr)
             }
-            AuxVars.freeRegister(CGenObj.SolvedMem.address)
+            Program.Context.freeRegister(CGenObj.SolvedMem.address)
             CGenObj.SolvedMem = TmpMemObj
         }
         CGenObj.SolvedMem.Offset = {
@@ -142,7 +142,7 @@ export default function unaryAsnProcessor (
         }
         if (ScopeInfo.logicalOp === true) {
             CGenObj.asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genNotEqualToken(),
                 CGenObj.SolvedMem,
                 utils.createConstantMemObj(0),
@@ -150,7 +150,7 @@ export default function unaryAsnProcessor (
                 ScopeInfo.jumpFalse,
                 ScopeInfo.jumpTrue
             )
-            AuxVars.freeRegister(CGenObj.SolvedMem.address)
+            Program.Context.freeRegister(CGenObj.SolvedMem.address)
             return { SolvedMem: utils.createVoidMemObj(), asmCode: CGenObj.asmCode }
         }
         return CGenObj
@@ -167,14 +167,14 @@ export default function unaryAsnProcessor (
                 asmCode: asmCode
             }
         }
-        const TmpMemObj = AuxVars.getNewRegister()
+        const TmpMemObj = Program.Context.getNewRegister()
         TmpMemObj.declaration = utils.getDeclarationFromMemory(CGenObj)
-        asmCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, utils.createConstantMemObj(0))
-        asmCode += createInstruction(AuxVars, utils.genSubToken(CurrentNode.Operation.line), TmpMemObj, CGenObj)
-        AuxVars.freeRegister(CGenObj.address)
+        asmCode += createInstruction(Program, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, utils.createConstantMemObj(0))
+        asmCode += createInstruction(Program, utils.genSubToken(CurrentNode.Operation.line), TmpMemObj, CGenObj)
+        Program.Context.freeRegister(CGenObj.address)
         if (ScopeInfo.logicalOp === true) {
             asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genNotEqualToken(),
                 TmpMemObj,
                 utils.createConstantMemObj(0),
@@ -182,7 +182,7 @@ export default function unaryAsnProcessor (
                 ScopeInfo.jumpFalse,
                 ScopeInfo.jumpTrue
             )
-            AuxVars.freeRegister(TmpMemObj.address)
+            Program.Context.freeRegister(TmpMemObj.address)
             return { SolvedMem: utils.createVoidMemObj(), asmCode: asmCode }
         }
         return { SolvedMem: TmpMemObj, asmCode: asmCode }
@@ -192,18 +192,18 @@ export default function unaryAsnProcessor (
         let clearVar = false
         let { SolvedMem: CGenObj, asmCode } = traverseNotLogical()
         let TmpMemObj: MEMORY_SLOT
-        if (!AuxVars.isTemp(CGenObj.address)) {
-            TmpMemObj = AuxVars.getNewRegister()
+        if (!Program.Context.isTemp(CGenObj.address)) {
+            TmpMemObj = Program.Context.getNewRegister()
             TmpMemObj.declaration = utils.getDeclarationFromMemory(CGenObj)
-            asmCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, CGenObj)
+            asmCode += createInstruction(Program, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, CGenObj)
             clearVar = true
         } else {
             TmpMemObj = CGenObj
         }
-        asmCode += createInstruction(AuxVars, CurrentNode.Operation, TmpMemObj)
+        asmCode += createInstruction(Program, CurrentNode.Operation, TmpMemObj)
         if (ScopeInfo.logicalOp === true) {
             asmCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genNotEqualToken(),
                 TmpMemObj,
                 utils.createConstantMemObj(0),
@@ -211,12 +211,12 @@ export default function unaryAsnProcessor (
                 ScopeInfo.jumpFalse,
                 ScopeInfo.jumpTrue
             )
-            AuxVars.freeRegister(CGenObj.address)
-            AuxVars.freeRegister(TmpMemObj.address)
+            Program.Context.freeRegister(CGenObj.address)
+            Program.Context.freeRegister(TmpMemObj.address)
             return { SolvedMem: utils.createVoidMemObj(), asmCode: asmCode }
         }
         if (clearVar) {
-            AuxVars.freeRegister(CGenObj.address)
+            Program.Context.freeRegister(CGenObj.address)
         }
         return { SolvedMem: TmpMemObj, asmCode: asmCode }
     }
@@ -250,14 +250,14 @@ export default function unaryAsnProcessor (
                 }
                 const Copyvar = deepCopy(RetMem)
                 delete Copyvar.Offset
-                TmpMemObj = AuxVars.getNewRegister()
+                TmpMemObj = Program.Context.getNewRegister()
                 TmpMemObj.declaration = RetMem.declaration
-                asmCode += createInstruction(AuxVars, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, Copyvar)
+                asmCode += createInstruction(Program, utils.genAssignmentToken(CurrentNode.Operation.line), TmpMemObj, Copyvar)
                 asmCode += createInstruction(
-                    AuxVars,
+                    Program,
                     utils.genAddToken(),
                     TmpMemObj,
-                    AuxVars.getMemoryObjectByLocation(RetMem.Offset.addr)
+                    Program.Context.getMemoryObjectByLocation(RetMem.Offset.addr)
                 )
                 break
             }
@@ -294,10 +294,10 @@ export default function unaryAsnProcessor (
         case 'long':
         case 'fixed':
         case 'void':
-            AuxVars.isDeclaration = CurrentNode.Operation.value
+            Program.Context.SentenceContext.isDeclaration = CurrentNode.Operation.value
             return traverseNotLogical()
         case 'const':
-            AuxVars.isConstSentence = true
+            Program.Context.SentenceContext.isConstSentence = true
             return traverseNotLogical()
         case 'return':
             return returnKeyProc()
@@ -308,7 +308,7 @@ export default function unaryAsnProcessor (
         case 'sizeof':
             return sizeofKeyProc()
         case 'register':
-            AuxVars.isRegisterSentence = true
+            Program.Context.SentenceContext.isRegisterSentence = true
             return traverseNotLogical()
         case 'struct':
             // nothing to do here
@@ -320,48 +320,49 @@ export default function unaryAsnProcessor (
     }
 
     function returnKeyProc () : GENCODE_SOLVED_OBJECT {
-        if (AuxVars.CurrentFunction === undefined) {
+        const CurrentFunction: SC_FUNCTION | undefined = Program.functions[Program.Context.currFunctionIndex]
+        if (CurrentFunction === undefined) {
             throw new Error(`At line: ${CurrentNode.Operation.line}.` +
             " Can not use 'return' in global statements.")
         }
-        if (AuxVars.CurrentFunction.declaration === 'void') {
+        if (CurrentFunction.declaration === 'void') {
             throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-            ` Function '${AuxVars.CurrentFunction.name}' must return` +
-            ` a ${AuxVars.CurrentFunction.declaration}' value.`)
+            ` Function '${CurrentFunction.name}' must return` +
+            ` a ${CurrentFunction.declaration}' value.`)
         }
-        if (AuxVars.CurrentFunction.name === 'main' || AuxVars.CurrentFunction.name === 'catch') {
+        if (CurrentFunction.name === 'main' || CurrentFunction.name === 'catch') {
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-            ` Special function ${AuxVars.CurrentFunction.name} must return void value.`)
+            ` Special function ${CurrentFunction.name} must return void value.`)
         }
         const CGenObj = traverseNotLogical()
-        CGenObj.asmCode += AuxVars.getPostOperations()
-        if (utils.isNotValidDeclarationOp(AuxVars.CurrentFunction.declaration, CGenObj.SolvedMem)) {
+        CGenObj.asmCode += Program.Context.SentenceContext.getAndClearPostOperations()
+        if (utils.isNotValidDeclarationOp(CurrentFunction.declaration, CGenObj.SolvedMem)) {
             throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                ` Function ${AuxVars.CurrentFunction.name} must return` +
-                ` '${AuxVars.CurrentFunction.declaration}' value,` +
+                ` Function ${CurrentFunction.name} must return` +
+                ` '${CurrentFunction.declaration}' value,` +
                 ` but it is returning '${CGenObj.SolvedMem.declaration}'.`)
         }
-        CGenObj.asmCode += createInstruction(AuxVars, CurrentNode.Operation, CGenObj.SolvedMem)
-        AuxVars.freeRegister(CGenObj.SolvedMem.address)
+        CGenObj.asmCode += createInstruction(Program, CurrentNode.Operation, CGenObj.SolvedMem)
+        Program.Context.freeRegister(CGenObj.SolvedMem.address)
         return { SolvedMem: utils.createVoidMemObj(), asmCode: CGenObj.asmCode }
     }
 
     function gotoKeyProc () : GENCODE_SOLVED_OBJECT {
         const CGenObj = traverseNotLogical()
-        CGenObj.asmCode += AuxVars.getPostOperations()
+        CGenObj.asmCode += Program.Context.SentenceContext.getAndClearPostOperations()
         if (CGenObj.SolvedMem.type !== 'label') {
             throw new Error(`At line: ${CurrentNode.Operation.line}. Argument for keyword 'goto' is not a label.`)
         }
-        CGenObj.asmCode += createInstruction(AuxVars, CurrentNode.Operation, CGenObj.SolvedMem)
-        AuxVars.freeRegister(CGenObj.SolvedMem.address)
+        CGenObj.asmCode += createInstruction(Program, CurrentNode.Operation, CGenObj.SolvedMem)
+        Program.Context.freeRegister(CGenObj.SolvedMem.address)
         return { SolvedMem: utils.createVoidMemObj(), asmCode: CGenObj.asmCode }
     }
 
     function sleepKeyProc () : GENCODE_SOLVED_OBJECT {
         const CGenObj = traverseNotLogical()
-        CGenObj.asmCode += AuxVars.getPostOperations()
-        CGenObj.asmCode += createInstruction(AuxVars, CurrentNode.Operation, CGenObj.SolvedMem)
-        AuxVars.freeRegister(CGenObj.SolvedMem.address)
+        CGenObj.asmCode += Program.Context.SentenceContext.getAndClearPostOperations()
+        CGenObj.asmCode += createInstruction(Program, CurrentNode.Operation, CGenObj.SolvedMem)
+        Program.Context.freeRegister(CGenObj.SolvedMem.address)
         return { SolvedMem: utils.createVoidMemObj(), asmCode: CGenObj.asmCode }
     }
 
@@ -386,7 +387,7 @@ export default function unaryAsnProcessor (
         if (cDecl === CurrentNode.Operation.declaration) {
             return CGenObj
         }
-        return typeCasting(AuxVars, CGenObj, CurrentNode.Operation.declaration, CurrentNode.Operation.line)
+        return typeCasting(Program, CGenObj, CurrentNode.Operation.declaration, CurrentNode.Operation.line)
     }
 
     return unaryAsnProcessorMain()

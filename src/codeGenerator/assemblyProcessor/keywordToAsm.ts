@@ -1,20 +1,21 @@
 import { assertNotUndefined } from '../../repository/repository'
+import { CONTRACT } from '../../typings/contractTypes'
 import { TOKEN, MEMORY_SLOT } from '../../typings/syntaxTypes'
-import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_AUXVARS } from '../codeGeneratorTypes'
+import { FLATTEN_MEMORY_RETURN_OBJECT } from '../codeGeneratorTypes'
 import { flattenMemory } from './createInstruction'
 
 /**
  * Create instruction for keywords asm, break, continue, exit, goto, halt, label, return and sleep.
  */
 export default function keywordToAsm (
-    AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, FlatMem?: MEMORY_SLOT
+    Program: CONTRACT, OperatorToken: TOKEN, FlatMem?: MEMORY_SLOT
 ): string {
     let TmpMemObj: FLATTEN_MEMORY_RETURN_OBJECT
     switch (OperatorToken.value) {
     case 'break':
-        return `JMP :%generateUtils.getLatestLoopId()%_${OperatorToken.value}\n`
+        return `JMP :${Program.Context.getLatestLoopID()}_${OperatorToken.value}\n`
     case 'continue':
-        return `JMP :%generateUtils.getLatestPureLoopId()%_${OperatorToken.value}\n`
+        return `JMP :${Program.Context.getLatestPureLoopID()}_${OperatorToken.value}\n`
     case 'goto':
         return `JMP :${assertNotUndefined(FlatMem).name}\n`
     case 'halt':
@@ -25,23 +26,23 @@ export default function keywordToAsm (
         if (FlatMem === undefined) {
             return 'RET\n'
         }
-        TmpMemObj = flattenMemory(AuxVars, FlatMem, OperatorToken.line)
+        TmpMemObj = flattenMemory(Program, FlatMem, OperatorToken.line)
         TmpMemObj.asmCode += `SET @r0 $${TmpMemObj.FlatMem.asmName}\n`
         TmpMemObj.asmCode += 'RET\n'
-        AuxVars.freeRegister(FlatMem.address)
+        Program.Context.freeRegister(FlatMem.address)
         if (TmpMemObj.isNew === true) {
-            AuxVars.freeRegister(TmpMemObj.FlatMem.address)
+            Program.Context.freeRegister(TmpMemObj.FlatMem.address)
         }
         return TmpMemObj.asmCode
     case 'sleep':
         if (FlatMem === undefined) {
             return 'SLP\n'
         }
-        TmpMemObj = flattenMemory(AuxVars, assertNotUndefined(FlatMem), OperatorToken.line)
+        TmpMemObj = flattenMemory(Program, assertNotUndefined(FlatMem), OperatorToken.line)
         TmpMemObj.asmCode += `SLP $${TmpMemObj.FlatMem.asmName}\n`
-        AuxVars.freeRegister(FlatMem.address)
+        Program.Context.freeRegister(FlatMem.address)
         if (TmpMemObj.isNew === true) {
-            AuxVars.freeRegister(TmpMemObj.FlatMem.address)
+            Program.Context.freeRegister(TmpMemObj.FlatMem.address)
         }
         return TmpMemObj.asmCode
     case 'asm': {

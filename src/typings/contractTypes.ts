@@ -1,3 +1,4 @@
+import { GLOBAL_CONTEXT } from '../codeGenerator/codeGeneratorTypes'
 import { BUILTIN_TYPES, DECLARATION_TYPES, MEMORY_SLOT, SENTENCES, TOKEN, TYPE_DEFINITIONS } from './syntaxTypes'
 
 export type SC_CONFIG = {
@@ -99,8 +100,8 @@ export type CONTRACT = {
     typesDefinitions: TYPE_DEFINITIONS[],
     /** Compiler configurations */
     Config: SC_CONFIG,
-    /** Compilation warnings */
-    warnings: string[],
+    /** Variables and helper functions */
+    Context: GLOBAL_CONTEXT
 }
 
 export type MACHINE_OBJECT = {

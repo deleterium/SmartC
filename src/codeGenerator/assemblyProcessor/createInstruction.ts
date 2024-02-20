@@ -1,6 +1,7 @@
 import { assertExpression, assertNotUndefined } from '../../repository/repository'
+import { CONTRACT } from '../../typings/contractTypes'
 import { MEMORY_SLOT, OFFSET_MODIFIER_CONSTANT, TOKEN } from '../../typings/syntaxTypes'
-import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_AUXVARS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
+import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 
 import utils from '../utils'
 import assignmentToAsm from './assignmentToAsm'
@@ -69,21 +70,21 @@ export function createSimpleInstruction (instruction: string, param1: string = '
 }
 
 export function toRegister (
-    AuxVars: GENCODE_AUXVARS, InSolved: GENCODE_SOLVED_OBJECT, line: string
+    Program: CONTRACT, InSolved: GENCODE_SOLVED_OBJECT, line: string
 ) : GENCODE_SOLVED_OBJECT {
-    const retObj = flattenMemory(AuxVars, InSolved.SolvedMem, line)
+    const retObj = flattenMemory(Program, InSolved.SolvedMem, line)
 
-    if (!AuxVars.isTemp(retObj.FlatMem.address)) {
+    if (!Program.Context.isTemp(retObj.FlatMem.address)) {
         const inType = utils.getDeclarationFromMemory(InSolved.SolvedMem)
-        const TmpMemObj = AuxVars.getNewRegister(line)
+        const TmpMemObj = Program.Context.getNewRegister(line)
         retObj.asmCode += `SET @${TmpMemObj.asmName} $${retObj.FlatMem.asmName}\n`
         utils.setMemoryDeclaration(TmpMemObj, inType)
-        AuxVars.freeRegister(retObj.FlatMem.address)
-        AuxVars.freeRegister(InSolved.SolvedMem.address)
+        Program.Context.freeRegister(retObj.FlatMem.address)
+        Program.Context.freeRegister(InSolved.SolvedMem.address)
         retObj.FlatMem = TmpMemObj
     }
     if (retObj.isNew === true) {
-        AuxVars.freeRegister(InSolved.SolvedMem.address)
+        Program.Context.freeRegister(InSolved.SolvedMem.address)
     }
     return {
         SolvedMem: retObj.FlatMem,
@@ -93,12 +94,12 @@ export function toRegister (
 
 /** Create assembly code for one api function call */
 export function createAPICallInstruction (
-    AstAuxVars: GENCODE_AUXVARS, ApiToken: TOKEN, RetMem: MEMORY_SLOT, argsMem: MEMORY_SLOT[]
+    Program: CONTRACT, ApiToken: TOKEN, RetMem: MEMORY_SLOT, argsMem: MEMORY_SLOT[]
 ) : string {
     let assemblyCode = ''
     const tempArgsMem: MEMORY_SLOT[] = []
     argsMem.forEach((VarObj) => {
-        const Temp = flattenMemory(AstAuxVars, VarObj, '0:0')
+        const Temp = flattenMemory(Program, VarObj, '0:0')
         assemblyCode += Temp.asmCode
         tempArgsMem.push(Temp.FlatMem)
     })
@@ -110,7 +111,7 @@ export function createAPICallInstruction (
     tempArgsMem.forEach(Arg => {
         assemblyCode += ` $${Arg.asmName}`
     })
-    tempArgsMem.forEach(Arg => AstAuxVars.freeRegister(Arg.address))
+    tempArgsMem.forEach(Arg => Program.Context.freeRegister(Arg.address))
     return assemblyCode + '\n'
 }
 
@@ -120,7 +121,7 @@ export function createAPICallInstruction (
  * conversion and a boolean to indicate if it is a new object (that must be free later on).
 */
 export function flattenMemory (
-    AuxVars: GENCODE_AUXVARS, StuffedMemory: MEMORY_SLOT, line: string
+    Program: CONTRACT, StuffedMemory: MEMORY_SLOT, line: string
 ) : FLATTEN_MEMORY_RETURN_OBJECT {
     const paramDec = utils.getDeclarationFromMemory(StuffedMemory)
 
@@ -142,10 +143,11 @@ export function flattenMemory (
         }
         let RetObj: MEMORY_SLOT
         if (StuffedMemory.Offset.type === 'variable') {
-            RetObj = AuxVars.getNewRegister()
+            RetObj = Program.Context.getNewRegister()
             RetObj.declaration = paramDec
-            const offsetVarName = AuxVars.getMemoryObjectByLocation(StuffedMemory.Offset.addr, line).asmName
+            const offsetVarName = Program.Context.getMemoryObjectByLocation(StuffedMemory.Offset.addr, line).asmName
             retInstructions += `SET @${RetObj.asmName} $($${StuffedMemory.asmName} + $${offsetVarName})\n`
+            Program.Context.freeRegister(StuffedMemory.Offset.addr)
             return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
         }
         // StuffedMemory.Offset.type is 'constant'
@@ -154,7 +156,7 @@ export function flattenMemory (
         case 'register':
         case 'long':
         case 'structRef':
-            RetObj = AuxVars.getNewRegister()
+            RetObj = Program.Context.getNewRegister()
             RetObj.declaration = paramDec
             if (StuffedMemory.Offset.value === 0) {
                 retInstructions += `SET @${RetObj.asmName} $($${StuffedMemory.asmName})\n`
@@ -164,15 +166,15 @@ export function flattenMemory (
             retInstructions += FlatConstant.asmCode
             retInstructions += `SET @${RetObj.asmName} $($${StuffedMemory.asmName} + $${FlatConstant.FlatMem.asmName})\n`
             if (FlatConstant.isNew) {
-                AuxVars.freeRegister(FlatConstant.FlatMem.address)
+                Program.Context.freeRegister(FlatConstant.FlatMem.address)
             }
             return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
         case 'array':
             // Looks like an array but can be converted to regular variable
-            RetObj = AuxVars.getMemoryObjectByLocation(
+            RetObj = Program.Context.getMemoryObjectByLocation(
                 utils.addHexSimple(StuffedMemory.hexContent, StuffedMemory.Offset.value), line
             )
-            AuxVars.freeRegister(StuffedMemory.address)
+            Program.Context.freeRegister(StuffedMemory.address)
             return { FlatMem: RetObj, asmCode: retInstructions, isNew: true }
         default:
             throw new Error(`Internal error at line: ${line}. Not implemented type in flattenMemory()`)
@@ -180,8 +182,8 @@ export function flattenMemory (
     }
 
     function flattenConstantWithOffsetConstant (ConstOffset: OFFSET_MODIFIER_CONSTANT) : FLATTEN_MEMORY_RETURN_OBJECT {
-        const deferencedVar = AuxVars.getMemoryObjectByLocation(utils.addHexSimple(ConstOffset.value, StuffedMemory.hexContent), line)
-        if (AuxVars.isTemp(deferencedVar.address)) {
+        const deferencedVar = Program.Context.getMemoryObjectByLocation(utils.addHexSimple(ConstOffset.value, StuffedMemory.hexContent), line)
+        if (Program.Context.isTemp(deferencedVar.address)) {
             deferencedVar.declaration = paramDec
         }
         return { FlatMem: deferencedVar, asmCode: '', isNew: false }
@@ -201,13 +203,13 @@ export function flattenMemory (
         if (paramDec === 'fixed') {
             prefix = 'f'
         }
-        const OptMem = AuxVars.memory.find(MEM => {
+        const OptMem = Program.memory.find(MEM => {
             return MEM.asmName === prefix + Number('0x' + hexString) && MEM.hexContent === hexString
         })
         if (OptMem) {
             return { FlatMem: OptMem, asmCode: '', isNew: false }
         }
-        const RetObj = AuxVars.getNewRegister()
+        const RetObj = Program.Context.getNewRegister()
         RetObj.declaration = paramDec
         let asmInstruction = ''
         if (hexString === '0000000000000000') {
@@ -222,8 +224,8 @@ export function flattenMemory (
 }
 
 /** Used in function calls. Mem shall be a memory not stuffed */
-export function forceSetMemFromR0 (AuxVars: GENCODE_AUXVARS, Mem: MEMORY_SLOT, line: string) {
-    const Temp = flattenMemory(AuxVars, Mem, line)
+export function forceSetMemFromR0 (Program: CONTRACT, Mem: MEMORY_SLOT, line: string) {
+    const Temp = flattenMemory(Program, Mem, line)
     if (Temp.isNew) {
         // Debug this, force set should be simple instruction
         throw new Error('Internal error')
@@ -233,26 +235,26 @@ export function forceSetMemFromR0 (AuxVars: GENCODE_AUXVARS, Mem: MEMORY_SLOT, l
 
 /** Translate one single instruction from ast to assembly code */
 export function createInstruction (
-    AuxVars: GENCODE_AUXVARS, OperatorToken: TOKEN, MemParam1?: MEMORY_SLOT, MemParam2?: MEMORY_SLOT,
+    Program: CONTRACT, OperatorToken: TOKEN, MemParam1?: MEMORY_SLOT, MemParam2?: MEMORY_SLOT,
     rLogic?:boolean, jpFalse?: string, jpTrue?:string
 ) : string {
     switch (OperatorToken.type) {
     case 'Assignment':
         return assignmentToAsm(
-            AuxVars,
+            Program,
             assertNotUndefined(MemParam1),
             assertNotUndefined(MemParam2),
             OperatorToken.line
         )
     case 'Operator':
     case 'SetOperator':
-        return operatorToAsm(AuxVars, OperatorToken, assertNotUndefined(MemParam1), assertNotUndefined(MemParam2))
+        return operatorToAsm(Program, OperatorToken, assertNotUndefined(MemParam1), assertNotUndefined(MemParam2))
     case 'UnaryOperator':
     case 'SetUnaryOperator':
         return unaryOperatorToAsm(OperatorToken, assertNotUndefined(MemParam1))
     case 'Comparision':
         return comparisionToAsm(
-            AuxVars,
+            Program,
             OperatorToken,
             assertNotUndefined(MemParam1),
             assertNotUndefined(MemParam2),
@@ -261,15 +263,15 @@ export function createInstruction (
             assertNotUndefined(jpTrue)
         )
     case 'Push': {
-        const FlatParam = flattenMemory(AuxVars, assertNotUndefined(MemParam1), OperatorToken.line)
+        const FlatParam = flattenMemory(Program, assertNotUndefined(MemParam1), OperatorToken.line)
         FlatParam.asmCode += `PSH $${FlatParam.FlatMem.asmName}\n`
         if (FlatParam.isNew === true) {
-            AuxVars.freeRegister(FlatParam.FlatMem.address)
+            Program.Context.freeRegister(FlatParam.FlatMem.address)
         }
         return FlatParam.asmCode
     }
     case 'Keyword':
-        return keywordToAsm(AuxVars, OperatorToken, MemParam1)
+        return keywordToAsm(Program, OperatorToken, MemParam1)
     default:
         throw new Error(`Internal error at line: ${OperatorToken.line}.`)
     }

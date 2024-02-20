@@ -1,12 +1,12 @@
 import { CONTRACT } from '../../typings/contractTypes'
 import { SWITCH_ASN } from '../../typings/syntaxTypes'
 import { createInstruction, createSimpleInstruction } from '../assemblyProcessor/createInstruction'
-import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
+import { GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
 import genCode from './genCode'
 
 export default function switchAsnProcessor (
-    Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
+    Program: CONTRACT, ScopeInfo: GENCODE_ARGS
 ) : GENCODE_SOLVED_OBJECT {
     let CurrentNode: SWITCH_ASN
 
@@ -14,7 +14,7 @@ export default function switchAsnProcessor (
         CurrentNode = utils.assertAsnType('switchASN', ScopeInfo.RemAST)
         let assemblyCode = ''
 
-        const Expression = genCode(Program, AuxVars, {
+        const Expression = genCode(Program, {
             RemAST: CurrentNode.Expression,
             logicalOp: false,
             revLogic: ScopeInfo.revLogic
@@ -28,14 +28,14 @@ export default function switchAsnProcessor (
             return switchLogical(true)
         }
         CurrentNode.caseConditions.forEach((Cond, index) => {
-            const OneCondition = genCode(Program, AuxVars, {
+            const OneCondition = genCode(Program, {
                 RemAST: Cond,
                 logicalOp: false,
                 revLogic: ScopeInfo.revLogic
             })
             assemblyCode += OneCondition.asmCode
             assemblyCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genNotEqualToken(),
                 Expression.SolvedMem,
                 OneCondition.SolvedMem,
@@ -66,7 +66,7 @@ export default function switchAsnProcessor (
                 Args.jumpFalse = ScopeInfo.jumpFalse + '_' + index
                 Args.jumpTrue = ScopeInfo.jumpFalse + '_' + index + '_next'
             }
-            const OneCondition = genCode(Program, AuxVars, Args)
+            const OneCondition = genCode(Program, Args)
             assemblyCode += OneCondition.asmCode
             assemblyCode += createSimpleInstruction('Label', ScopeInfo.jumpFalse + '_' + index + '_next')
         })

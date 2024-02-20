@@ -5,12 +5,12 @@ import { createBuiltinInstruction } from '../assemblyProcessor/builtinToAsm'
 import {
     createSimpleInstruction, createInstruction, createAPICallInstruction, forceSetMemFromR0
 } from '../assemblyProcessor/createInstruction'
-import { GENCODE_AUXVARS, GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
+import { GENCODE_ARGS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
 import genCode from './genCode'
 
 export default function functionSolver (
-    Program: CONTRACT, AuxVars: GENCODE_AUXVARS, ScopeInfo: GENCODE_ARGS
+    Program: CONTRACT, ScopeInfo: GENCODE_ARGS
 ) : GENCODE_SOLVED_OBJECT {
     let CurrentNode: LOOKUP_ASN
 
@@ -39,15 +39,15 @@ export default function functionSolver (
         let returnAssemblyCode = ''
         // It is regular function call
         let isRecursive = false
-        if (FunctionToCall.name === AuxVars.CurrentFunction?.name) {
+        if (Program.Context.currFunctionIndex !== -1 && FunctionToCall.name === Program.functions[Program.Context.currFunctionIndex].name) {
             isRecursive = true
             // stack current scope variables
-            AuxVars.memory.filter(OBJ => OBJ.scope === FunctionToCall.name && OBJ.address > 0).reverse().forEach(MEM => {
+            Program.memory.filter(OBJ => OBJ.scope === FunctionToCall.name && OBJ.address > 0).reverse().forEach(MEM => {
                 returnAssemblyCode += createSimpleInstruction('Push', MEM.asmName)
             })
         }
         // Save registers currently in use in stack. Function execution will overwrite them
-        const registerStack = AuxVars.registerInfo.filter(OBJ => OBJ.inUse === true).reverse()
+        const registerStack = Program.Context.registerInfo.filter(OBJ => OBJ.inUse === true).reverse()
         registerStack.forEach(OBJ => {
             returnAssemblyCode += createSimpleInstruction('Push', OBJ.Template.asmName)
         })
@@ -62,7 +62,7 @@ export default function functionSolver (
         }
         // Push arguments into stack
         for (let i = rawArgs.length - 1; i >= 0; i--) {
-            const ArgGenObj = genCode(Program, AuxVars, {
+            const ArgGenObj = genCode(Program, {
                 RemAST: rawArgs[i],
                 logicalOp: false,
                 revLogic: false
@@ -79,12 +79,12 @@ export default function functionSolver (
             }
             returnAssemblyCode += ArgGenObj.asmCode
             returnAssemblyCode += createInstruction(
-                AuxVars,
+                Program,
                 utils.genAssignmentToken(CurrentNode.Token.line),
                 fnArg,
                 ArgGenObj.SolvedMem
             )
-            AuxVars.freeRegister(ArgGenObj.SolvedMem.address)
+            Program.Context.freeRegister(ArgGenObj.SolvedMem.address)
         }
         // Create instruction
         if (FunctionToCall.isInline) {
@@ -96,10 +96,10 @@ export default function functionSolver (
         if (FunctionToCall.declaration === 'void') {
             FnRetObj = utils.createVoidMemObj()
         } else {
-            FnRetObj = AuxVars.getNewRegister()
+            FnRetObj = Program.Context.getNewRegister()
             FnRetObj.declaration = FunctionToCall.declaration
             FnRetObj.typeDefinition = FunctionToCall.typeDefinition
-            returnAssemblyCode += forceSetMemFromR0(AuxVars, FnRetObj, CurrentNode.Token.line)
+            returnAssemblyCode += forceSetMemFromR0(Program, FnRetObj, CurrentNode.Token.line)
         }
         // Load registers again
         registerStack.reverse()
@@ -108,7 +108,7 @@ export default function functionSolver (
         })
         if (isRecursive) {
         // unstack current scope variables
-            AuxVars.memory.filter(OBJ => OBJ.scope === FunctionToCall.name && OBJ.address > 0).forEach(MEM => {
+            Program.memory.filter(OBJ => OBJ.scope === FunctionToCall.name && OBJ.address > 0).forEach(MEM => {
                 returnAssemblyCode += createSimpleInstruction('Pop', MEM.asmName)
             })
         }
@@ -122,7 +122,7 @@ export default function functionSolver (
         if (ifnToCall.declaration === 'void' || ifnToCall.name === 'bcftol' || ifnToCall.name === 'bcltof') {
             FnRetObj = utils.createVoidMemObj()
         } else {
-            FnRetObj = AuxVars.getNewRegister() // reserve tempvar for return type
+            FnRetObj = Program.Context.getNewRegister() // reserve tempvar for return type
             FnRetObj.declaration = ifnToCall.declaration
         }
         if (rawArgs[0].type === 'nullASN') {
@@ -134,7 +134,7 @@ export default function functionSolver (
             ` It must have '${ifnToCall.argsMemObj.length}' args.`)
         }
         rawArgs.forEach((RawSentence, idx) => {
-            const ArgGenObj = genCode(Program, AuxVars, {
+            const ArgGenObj = genCode(Program, {
                 RemAST: RawSentence,
                 logicalOp: false,
                 revLogic: false
@@ -153,7 +153,7 @@ export default function functionSolver (
         })
         if (type === 'api') {
             returnAssemblyCode += createAPICallInstruction(
-                AuxVars,
+                Program,
                 utils.genAPICallToken(CurrentNode.Token.line, ifnToCall.asmName),
                 FnRetObj,
                 processedArgs
@@ -164,14 +164,14 @@ export default function functionSolver (
                 return { SolvedMem: processedArgs[0], asmCode: returnAssemblyCode }
             }
             returnAssemblyCode += createBuiltinInstruction(
-                AuxVars,
+                Program,
                 utils.genBuiltInToken(CurrentNode.Token.line, ifnToCall.asmName),
                 ifnToCall.builtin,
                 FnRetObj,
                 processedArgs
             )
         }
-        processedArgs.forEach(varnm => AuxVars.freeRegister(varnm.address))
+        processedArgs.forEach(varnm => Program.Context.freeRegister(varnm.address))
         return { SolvedMem: FnRetObj, asmCode: returnAssemblyCode }
     }
     return functionSolverMain()

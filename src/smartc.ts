@@ -8,6 +8,7 @@ import assembler from './assembler/assembler'
 
 import { PRE_TOKEN, TOKEN } from './typings/syntaxTypes'
 import { CONTRACT, MACHINE_OBJECT } from './typings/contractTypes'
+import { createContext } from './context'
 
 /**
  * SmartC Compiler class.
@@ -38,6 +39,7 @@ export class SmartC {
     private readonly sourceCode
     private preAssemblyCode?: string
     private MachineCode?: MACHINE_OBJECT
+    // @ts-ignore
     private Program: CONTRACT = {
         sourceLines: [],
         Global: {
@@ -68,14 +70,14 @@ export class SmartC {
             PCodeHashId: '',
             verboseAssembly: false,
             verboseScope: false
-        },
-        warnings: []
+        }
     }
 
     constructor (Options: { language: 'C' | 'Assembly', sourceCode: string }) {
         this.Program.sourceLines = Options.sourceCode.split('\n')
         this.language = Options.language
         this.sourceCode = Options.sourceCode
+        this.Program.Context = createContext(this.Program)
     }
 
     /**
@@ -104,7 +106,7 @@ export class SmartC {
             throw new Error('Invalid usage. Language must be "C" or "Assembly".')
         }
         this.MachineCode = assembler(this.preAssemblyCode)
-        this.MachineCode.Warnings = this.Program.warnings.join('\n')
+        this.MachineCode.Warnings = this.Program.Context.warnings.join('\n')
         return this
     }
 

@@ -1,10 +1,11 @@
+import { CONTRACT } from '../../typings/contractTypes'
 import { DECLARATION_TYPES } from '../../typings/syntaxTypes'
-import { GENCODE_AUXVARS, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
+import { GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
 import utils from '../utils'
 import { createSimpleInstruction, toRegister } from './createInstruction'
 
 export function typeCasting (
-    AuxVars: GENCODE_AUXVARS, InSolved: GENCODE_SOLVED_OBJECT, toType: DECLARATION_TYPES, line: string
+    Program: CONTRACT, InSolved: GENCODE_SOLVED_OBJECT, toType: DECLARATION_TYPES, line: string
 ) : GENCODE_SOLVED_OBJECT {
     const fromType = utils.getDeclarationFromMemory(InSolved.SolvedMem)
     if (fromType === toType) {
@@ -15,7 +16,7 @@ export function typeCasting (
         switch (toType) {
         case 'void':
             // From anything to void
-            AuxVars.freeRegister(InSolved.SolvedMem.address)
+            Program.Context.freeRegister(InSolved.SolvedMem.address)
             InSolved.SolvedMem = utils.createVoidMemObj()
             return InSolved
         case 'long':
@@ -37,13 +38,13 @@ export function typeCasting (
         switch (fromType) {
         case 'long':
             // From long to fixed
-            InSolved = toRegister(AuxVars, InSolved, line)
+            InSolved = toRegister(Program, InSolved, line)
             InSolved.asmCode += createSimpleInstruction('LongToFixed', InSolved.SolvedMem.asmName)
             utils.setMemoryDeclaration(InSolved.SolvedMem, 'fixed')
             return InSolved
         case 'void':
             // From void to fixed
-            InSolved.SolvedMem = AuxVars.getNewRegister(line)
+            InSolved.SolvedMem = Program.Context.getNewRegister(line)
             InSolved.asmCode += `CLR @${InSolved.SolvedMem.asmName}\n`
             utils.setMemoryDeclaration(InSolved.SolvedMem, 'fixed')
             return InSolved
@@ -62,12 +63,12 @@ export function typeCasting (
         switch (fromType) {
         case 'void':
             // From void to long
-            InSolved.SolvedMem = AuxVars.getNewRegister(line)
+            InSolved.SolvedMem = Program.Context.getNewRegister(line)
             InSolved.asmCode += `CLR @${InSolved.SolvedMem.asmName}\n`
             utils.setMemoryDeclaration(InSolved.SolvedMem, 'long')
             return InSolved
         case 'fixed':
-            InSolved = toRegister(AuxVars, InSolved, line)
+            InSolved = toRegister(Program, InSolved, line)
             InSolved.asmCode += createSimpleInstruction('FixedToLong', InSolved.SolvedMem.asmName)
             utils.setMemoryDeclaration(InSolved.SolvedMem, 'long')
             return InSolved
