@@ -68,8 +68,7 @@ export class SmartC {
             PCodeHashId: '',
             verboseAssembly: false,
             verboseScope: false
-        },
-        warnings: []
+        }
     }
 
     constructor (Options: { language: 'C' | 'Assembly', sourceCode: string }) {
@@ -104,7 +103,7 @@ export class SmartC {
             throw new Error('Invalid usage. Language must be "C" or "Assembly".')
         }
         this.MachineCode = assembler(this.preAssemblyCode)
-        this.MachineCode.Warnings = this.Program.warnings.join('\n')
+        this.MachineCode.Warnings = this.Program.Context.warnings.join('\n')
         return this
     }
 

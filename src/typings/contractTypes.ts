@@ -102,8 +102,6 @@ export type CONTRACT = {
     Config: SC_CONFIG,
     /** Variables and helper functions */
     Context: GLOBAL_CONTEXT
-    /** Compilation warnings */
-    warnings: string[],
 }
 
 export type MACHINE_OBJECT = {

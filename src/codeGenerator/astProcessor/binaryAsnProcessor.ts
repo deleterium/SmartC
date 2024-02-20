@@ -106,13 +106,13 @@ export default function binaryAsnProcessor (
         switch (castSide) {
         case 'left':
             if (!(leftDeclaration.endsWith('_ptr') && rightDeclaration.endsWith('_ptr'))) {
-                Program.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on left side of operator '${CurrentNode.Operation.value}'.`)
+                Program.Context.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on left side of operator '${CurrentNode.Operation.value}'.`)
             }
             LGenObj = typeCasting(Program, LGenObj, rightDeclaration, CurrentNode.Operation.line)
             break
         case 'right': {
             if (!(leftDeclaration.endsWith('_ptr') && rightDeclaration.endsWith('_ptr'))) {
-                Program.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of operator '${CurrentNode.Operation.value}'.`)
+                Program.Context.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of operator '${CurrentNode.Operation.value}'.`)
             }
             const oldAsm = RGenObj.asmCode
             RGenObj = typeCasting(Program, RGenObj, leftDeclaration, CurrentNode.Operation.line)
@@ -197,7 +197,7 @@ export default function binaryAsnProcessor (
             throw new Error('Internal error')
         case 'right':
             if (!(lDecl.endsWith('_ptr') && rDecl.endsWith('_ptr'))) {
-                Program.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of assignment '='.`)
+                Program.Context.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of assignment '='.`)
             }
             RGenObj = typeCasting(Program, RGenObj, lDecl, CurrentNode.Operation.line)
         }
@@ -578,13 +578,13 @@ export default function binaryAsnProcessor (
         switch (castSide) {
         case 'left':
             if (!(leftDeclaration.endsWith('_ptr') && rightDeclaration.endsWith('_ptr'))) {
-                Program.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on left side of comparision '${CurrentNode.Operation.value}'.`)
+                Program.Context.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on left side of comparision '${CurrentNode.Operation.value}'.`)
             }
             LGenObj = typeCasting(Program, LGenObj, rightDeclaration, CurrentNode.Operation.line)
             break
         case 'right':
             if (!(leftDeclaration.endsWith('_ptr') && rightDeclaration.endsWith('_ptr'))) {
-                Program.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of comparision '${CurrentNode.Operation.value}'.`)
+                Program.Context.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of comparision '${CurrentNode.Operation.value}'.`)
             }
             RGenObj = typeCasting(Program, RGenObj, leftDeclaration, CurrentNode.Operation.line)
         }

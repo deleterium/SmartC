@@ -23,6 +23,8 @@ export type GLOBAL_CONTEXT = {
     jumpId: number
     /** Assembly code being created */
     assemblyCode: string
+    /** Storing warnings from compilation */
+    warnings: string[]
     /** Errors found */
     errors: string
     /** Current function being processed */

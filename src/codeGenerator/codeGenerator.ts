@@ -163,7 +163,7 @@ export default function codeGenerator (Program: CONTRACT) {
         checkUnusedVariables()
         // Inspect if there were errros and throw now
         if (Program.Context.errors.length !== 0) {
-            throw new Error(Program.Context.errors + Program.warnings)
+            throw new Error(Program.Context.errors + Program.Context.warnings.join('\n'))
         }
         return optimizer(
             Program.Config.optimizationLevel,
@@ -292,10 +292,10 @@ export default function codeGenerator (Program: CONTRACT) {
         Program.memory.forEach(Mem => {
             if (Mem.isSet === false) {
                 if (Mem.scope) {
-                    Program.warnings.push(`Warning: Unused variable '${Mem.name}' in function '${Mem.scope}'.`)
+                    Program.Context.warnings.push(`Warning: Unused variable '${Mem.name}' in function '${Mem.scope}'.`)
                     return
                 }
-                Program.warnings.push(`Warning: Unused global variable '${Mem.name}'.`)
+                Program.Context.warnings.push(`Warning: Unused global variable '${Mem.name}'.`)
             }
         })
     }
