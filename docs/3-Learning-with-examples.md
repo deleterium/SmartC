@@ -63,7 +63,7 @@ long counter;
 
 void main(void) {
     long txid;
-    while ((txid = getNextTx() != 0) {
+    while ((txid = getNextTx()) != 0) {
         // Process transaction in a specific function
         processTX();
     }
@@ -94,7 +94,7 @@ void processTX(void){
 
 while (true) {
     long txid;
-    while ((txid = getNextTx() != 0) {
+    while ((txid = getNextTx()) != 0) {
         sendAmount(getAmount(txid), getSender(txid))
     }
     // After all transactions processed
