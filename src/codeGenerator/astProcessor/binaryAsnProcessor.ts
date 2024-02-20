@@ -283,31 +283,22 @@ export default function binaryAsnProcessor (
             jumpFalse: ScopeInfo.jumpFalse,
             jumpTrue: ScopeInfo.jumpTrue
         })
-        const registerFinalState = deepCopy(AuxVars.registerInfo)
-        // if returning var is not the reused one, put it in that returning location and solve right side again
-        if (RetGenObj.SolvedMem.address !== Left.address && AuxVars.isTemp(RetGenObj.SolvedMem.address)) {
-            AuxVars.registerInfo.shift()
-            const index = RetGenObj.SolvedMem.address + 1
-            AuxVars.registerInfo = registerInitialState
-            AuxVars.registerInfo.splice(index, 0, { inUse: false, Template: NewRegister })
-            const TestRetGenObj = genCode(Program, AuxVars, {
-                RemAST: CurrentNode.Right,
-                logicalOp: false,
-                revLogic: ScopeInfo.revLogic,
-                jumpFalse: ScopeInfo.jumpFalse,
-                jumpTrue: ScopeInfo.jumpTrue
-            })
-            // Verify if alteration suceed in optimization
-            if (TestRetGenObj.SolvedMem.address === Left.address) {
-                // alteration suceed!
-                // RetGenObj = TestRGenObj
-                AuxVars.registerInfo.splice(index, 1)
-                return TestRetGenObj
-            }
-            // not suceed, undo changes.
-            AuxVars.registerInfo = registerFinalState
+        if (RetGenObj.SolvedMem.address === Left.address || !Program.Context.isTemp(RetGenObj.SolvedMem.address)) {
+            // Strategy to reuse was right on first try!
+            return RetGenObj
         }
-        return RetGenObj
+        // If returning var is not the reused one, put it in that returning location and solve right side again
+        const index = RetGenObj.SolvedMem.address + 1
+        Program.Context.registerInfo = registerInitialState
+        Program.Context.registerInfo.splice(index, 0, { endurance: 'Sentence', inUse: false, Template: NewRegister })
+        const TestRetGenObj = genCode(Program, {
+            RemAST: CurrentNode.Right,
+            logicalOp: false,
+            revLogic: ScopeInfo.revLogic,
+            jumpFalse: ScopeInfo.jumpFalse,
+            jumpTrue: ScopeInfo.jumpTrue
+        })
+        return TestRetGenObj
     }
 
     /** Tests if implicit type casting is needed and also checks valid operations for binary operators.
