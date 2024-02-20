@@ -30,6 +30,28 @@ describe('Miscelaneous', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: Simple example program', () => {
+        const code = `
+            #program name CountingTx
+            #program description Counting transactions without delay
+            #program activationAmount 0.1
+            long counter;
+            void main(void) {
+                long txid;
+                while ((txid = getNextTx()) != 0) {
+                    processTX();
+                }
+            }
+            void processTX(void){
+                const counter = 10;
+                counter++;
+            }`
+        const assembly = '^program name CountingTx\n^program description Counting transactions without delay\n^program activationAmount 10000000\n^declare r0\n^declare r1\n^declare r2\n^declare _counterTimestamp\n^declare counter\n^declare main_txid\n\n\nPCS\n__loop1_continue:\nFUN A_to_Tx_after_Timestamp $_counterTimestamp\nFUN @main_txid get_A1\nBZR $main_txid :__GNT_2\nFUN @_counterTimestamp get_Timestamp_for_Tx_in_A\n__GNT_2:\nBNZ $main_txid :__opt_1\nFIN\n__opt_1:\nJSR :__fn_processTX\nJMP :__loop1_continue\n\n__fn_processTX:\n^const SET @counter #000000000000000a\nINC @counter\nRET\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+        expect(compiler.getMachineCode().Warnings).toBe('')
+    })
 })
 
 describe('Wrong code to check error safeguards', () => {
