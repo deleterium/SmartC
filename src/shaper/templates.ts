@@ -106,7 +106,7 @@ export const autoCounterTemplate : MEMORY_SLOT = {
     declaration: 'long',
     isDeclared: true,
     toBeRegister: false,
-    isSet: false,
+    isSet: true,
     name: '_counterTimestamp',
     scope: '',
     size: 1,
