@@ -7,6 +7,7 @@ import { PRE_TOKEN, TOKEN, TOKEN_TYPES } from '../typings/syntaxTypes'
  */
 export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
     let mainLoopIndex: number
+    const startOfSearch: PRE_TOKEN[] = []
 
     function getNextRawToken () {
         mainLoopIndex++
@@ -35,12 +36,19 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
         case ']':
         case ')':
         case '}':
+            if (startOfSearch.length > 0) {
+                const startingToken = startOfSearch.pop()
+                throw new Error(`At line: ${CurrentPreToken.line}. Expecting to close the '${startingToken?.value}' ` +
+                `started at line ${startingToken?.line}, but found '${CurrentPreToken.value}'.`)
+            }
             throw new Error(`At line: ${CurrentPreToken.line}. Unexpected closing '${CurrentPreToken.value}'.`)
         case '[':
+            startOfSearch.push(CurrentPreToken)
             RetToken = { type: 'Arr', value: '', precedence: 0, line: CurrentPreToken.line }
             RetToken.params = getTokensUntil(']', RetToken.type, RetToken.line)
             return RetToken
         case '(':
+            startOfSearch.push(CurrentPreToken)
             if (mainLoopIndex > 1 && preTokens[mainLoopIndex - 2].type === 'Variable') {
                 RetToken = { type: 'Function', value: '', precedence: 0, line: CurrentPreToken.line }
             } else {
@@ -49,6 +57,7 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
             RetToken.params = getTokensUntil(')', RetToken.type, RetToken.line)
             return RetToken
         case '{':
+            startOfSearch.push(CurrentPreToken)
             RetToken = { type: 'CodeDomain', value: '', precedence: 0, line: CurrentPreToken.line }
             RetToken.params = getTokensUntil('}', RetToken.type, RetToken.line)
             return RetToken
@@ -74,6 +83,7 @@ export default function parser (preTokens: PRE_TOKEN[]): TOKEN[] {
                 `Missing closing '${endChar}' for for '${parentType}' started at line: ${line}.`)
             }
         }
+        startOfSearch.pop()
         // discard closing char
         mainLoopIndex++
         return returnedTokens
