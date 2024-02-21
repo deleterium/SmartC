@@ -225,7 +225,7 @@ export default function binaryAsnProcessor (
             )
         }
         Program.Context.SentenceContext.leftSideReserved = -1
-        if (LGenObj.asmCode === '' && CurrentNode.Operation.type === 'Assignment' && LGenObj.SolvedMem.Offset === undefined) {
+        if (CurrentNode.Left.type === 'endASN' && CurrentNode.Operation.type === 'Assignment') {
             // Simple operation, this will avoid pushing variables on function calls, if they will be set by returning instruction
             Program.Context.SentenceContext.leftSideReserved = LGenObj.SolvedMem.address
         }
