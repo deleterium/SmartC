@@ -144,35 +144,7 @@ export default function binaryAsnProcessor (
 
     function assignmentProc () : GENCODE_SOLVED_OBJECT {
         assignmentStartErrorTests()
-        if (CurrentNode.Operation.type === 'Assignment') {
-            Program.Context.SentenceContext.isLeftSideOfAssignment = true
-        }
-        Program.Context.SentenceContext.hasVoidArray = false
-        const LGenObj = genCode(Program, {
-            RemAST: CurrentNode.Left,
-            logicalOp: false,
-            revLogic: ScopeInfo.revLogic,
-            jumpFalse: ScopeInfo.jumpFalse,
-            jumpTrue: ScopeInfo.jumpTrue
-        })
-        Program.Context.SentenceContext.isLeftSideOfAssignment = false
-        assignmentLeftSideErrorTests(LGenObj.SolvedMem)
-        // If it is an array item we know, change to the item
-        if (LGenObj.SolvedMem.type === 'array' &&
-            LGenObj.SolvedMem.Offset?.type === 'constant') {
-            if (LGenObj.SolvedMem.ArrayItem !== undefined && LGenObj.SolvedMem.ArrayItem.totalSize <= LGenObj.SolvedMem.Offset.value + 1) {
-                throw new Error(`At line ${CurrentNode.Operation.line}. ` +
-                    'Array index is outside array size.')
-            }
-            LGenObj.SolvedMem = Program.Context.getMemoryObjectByLocation(
-                utils.addHexSimple(LGenObj.SolvedMem.hexContent, LGenObj.SolvedMem.Offset.value)
-            )
-        }
-        Program.Context.SentenceContext.leftSideReserved = -1
-        if (LGenObj.asmCode === '' && CurrentNode.Operation.type === 'Assignment' && LGenObj.SolvedMem.Offset === undefined) {
-            // Simple operation, this will avoid pushing variables on function calls, if they will be set by returning instruction
-            Program.Context.SentenceContext.leftSideReserved = LGenObj.SolvedMem.address
-        }
+        const LGenObj = assignmentLeftSideSolver()
         // Set/save SentenceContext values before evaluate right side
         const savedDeclaration = Program.Context.SentenceContext.isDeclaration
         const prevStateOfIsRegisterSentence = Program.Context.SentenceContext.isRegisterSentence
@@ -225,6 +197,39 @@ export default function binaryAsnProcessor (
             (CurrentNode.Left.type === 'unaryASN' && CurrentNode.Left.Operation.value !== '*')) {
             throw new Error(`At line: ${CurrentNode.Operation.line}. Invalid left value for assignment.`)
         }
+    }
+
+    function assignmentLeftSideSolver () {
+        if (CurrentNode.Operation.type === 'Assignment') {
+            Program.Context.SentenceContext.isLeftSideOfAssignment = true
+        }
+        Program.Context.SentenceContext.hasVoidArray = false
+        const LGenObj = genCode(Program, {
+            RemAST: CurrentNode.Left,
+            logicalOp: false,
+            revLogic: ScopeInfo.revLogic,
+            jumpFalse: ScopeInfo.jumpFalse,
+            jumpTrue: ScopeInfo.jumpTrue
+        })
+        Program.Context.SentenceContext.isLeftSideOfAssignment = false
+        assignmentLeftSideErrorTests(LGenObj.SolvedMem)
+        // If it is an array item we know, change to the item
+        if (LGenObj.SolvedMem.type === 'array' &&
+            LGenObj.SolvedMem.Offset?.type === 'constant') {
+            if (LGenObj.SolvedMem.ArrayItem !== undefined && LGenObj.SolvedMem.ArrayItem.totalSize <= LGenObj.SolvedMem.Offset.value + 1) {
+                throw new Error(`At line ${CurrentNode.Operation.line}. ` +
+                    'Array index is outside array size.')
+            }
+            LGenObj.SolvedMem = Program.Context.getMemoryObjectByLocation(
+                utils.addHexSimple(LGenObj.SolvedMem.hexContent, LGenObj.SolvedMem.Offset.value)
+            )
+        }
+        Program.Context.SentenceContext.leftSideReserved = -1
+        if (LGenObj.asmCode === '' && CurrentNode.Operation.type === 'Assignment' && LGenObj.SolvedMem.Offset === undefined) {
+            // Simple operation, this will avoid pushing variables on function calls, if they will be set by returning instruction
+            Program.Context.SentenceContext.leftSideReserved = LGenObj.SolvedMem.address
+        }
+        return LGenObj
     }
 
     function assignmentLeftSideErrorTests (Left: MEMORY_SLOT) : void {
