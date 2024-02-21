@@ -166,6 +166,10 @@ export function createContext (Program: CONTRACT) : GLOBAL_CONTEXT {
                 this.postOperations = ''
                 return ret
             }
+        },
+        TokenizerDetection: {
+            hasFixed: false,
+            hasAutoCounter: false
         }
     }
 }

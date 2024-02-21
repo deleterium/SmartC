@@ -303,7 +303,7 @@ describe('Built-in functions', () => {
     })
     it('should compile: setMapValue(); setMapValueFx()', () => {
         const code = '#pragma optimizationLevel 0\n setMapValue(0, 1, 1_0000); setMapValueFx(2, 3, 0.2222);'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n\nCLR @r0\nSET @r1 #0000000000000001\nSET @r2 #0000000000002710\nFUN set_A1_A2 $r0 $r1\nFUN set_A4 $r2\nFUN Set_Map_Value_Keys_In_A\nSET @r0 #0000000000000002\nSET @r1 #0000000000000003\nSET @r2 #0000000001530ce0\nFUN set_A1_A2 $r0 $r1\nFUN set_A4 $r2\nFUN Set_Map_Value_Keys_In_A\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n\nCLR @r0\nSET @r1 #0000000000000001\nSET @r2 #0000000000002710\nFUN set_A1_A2 $r0 $r1\nFUN set_A4 $r2\nFUN Set_Map_Value_Keys_In_A\nSET @r0 #0000000000000002\nSET @r1 #0000000000000003\nSET @r2 #0000000001530ce0\nFUN set_A1_A2 $r0 $r1\nFUN set_A4 $r2\nFUN Set_Map_Value_Keys_In_A\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -331,7 +331,7 @@ describe('Built-in functions', () => {
     })
     it('should compile: sendQuantityAndAmount(); sendQuantityAndAmountFx()', () => {
         const code = '#pragma optimizationLevel 0\n sendQuantityAndAmount(1_000, 0xa5531, 22, 0xdede); sendQuantityAndAmountFx(1_000, 0xa5531, .02, 0xdede); '
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n\nSET @r0 #000000000000dede\nSET @r1 #00000000000a5531\nFUN set_B1_B2 $r0 $r1\nSET @r0 #0000000000000016\nSET @r1 #00000000000003e8\nFUN set_B3 $r0\nFUN send_to_Address_in_B $r1\nSET @r0 #000000000000dede\nSET @r1 #00000000000a5531\nFUN set_B1_B2 $r0 $r1\nSET @r0 #00000000001e8480\nSET @r1 #00000000000003e8\nFUN set_B3 $r0\nFUN send_to_Address_in_B $r1\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n\nSET @r0 #000000000000dede\nSET @r1 #00000000000a5531\nFUN set_B1_B2 $r0 $r1\nSET @r0 #0000000000000016\nSET @r1 #00000000000003e8\nFUN set_B3 $r0\nFUN send_to_Address_in_B $r1\nSET @r0 #000000000000dede\nSET @r1 #00000000000a5531\nFUN set_B1_B2 $r0 $r1\nSET @r0 #00000000001e8480\nSET @r1 #00000000000003e8\nFUN set_B3 $r0\nFUN send_to_Address_in_B $r1\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -352,7 +352,7 @@ describe('Built-in functions', () => {
     })
     it('should compile: distributeToHolders()', () => {
         const code = '#pragma optimizationLevel 0\n #pragma maxAuxVars 5\n long holdersAssetMinQuantity, holdersAsset, amountToDistribute, assetToDistribute, quantityToDistribute; distributeToHolders(holdersAssetMinQuantity, holdersAsset, amountToDistribute, assetToDistribute, quantityToDistribute); asm { ^comment break } distributeToHoldersFx(1, 2, 3.3, 4, 5);'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare holdersAssetMinQuantity\n^declare holdersAsset\n^declare amountToDistribute\n^declare assetToDistribute\n^declare quantityToDistribute\n\nFUN set_B1_B2 $holdersAssetMinQuantity $holdersAsset\nFUN set_A1 $amountToDistribute\nFUN set_A3_A4 $assetToDistribute $quantityToDistribute\nFUN Distribute_To_Asset_Holders\n^comment break\nSET @r0 #0000000000000001\nSET @r1 #0000000000000002\nFUN set_B1_B2 $r0 $r1\nSET @r0 #0000000013ab6680\nFUN set_A1 $r0\nSET @r0 #0000000000000004\nSET @r1 #0000000000000005\nFUN set_A3_A4 $r0 $r1\nFUN Distribute_To_Asset_Holders\nFIN\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare holdersAssetMinQuantity\n^declare holdersAsset\n^declare amountToDistribute\n^declare assetToDistribute\n^declare quantityToDistribute\n\nFUN set_B1_B2 $holdersAssetMinQuantity $holdersAsset\nFUN set_A1 $amountToDistribute\nFUN set_A3_A4 $assetToDistribute $quantityToDistribute\nFUN Distribute_To_Asset_Holders\n^comment break\nSET @r0 #0000000000000001\nSET @r1 #0000000000000002\nFUN set_B1_B2 $r0 $r1\nSET @r0 #0000000013ab6680\nFUN set_A1 $r0\nSET @r0 #0000000000000004\nSET @r1 #0000000000000005\nFUN set_A3_A4 $r0 $r1\nFUN Distribute_To_Asset_Holders\nFIN\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

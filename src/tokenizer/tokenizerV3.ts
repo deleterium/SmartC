@@ -1,4 +1,5 @@
 import { ReedSalomonAddressDecode, parseDecimalNumber, stringToHexstring } from '../repository/repository'
+import { CONTRACT } from '../typings/contractTypes'
 import { PRE_TOKEN } from '../typings/syntaxTypes'
 
 /**
@@ -7,10 +8,12 @@ import { PRE_TOKEN } from '../typings/syntaxTypes'
  * @param inputSourceCode source code text
  * @returns array of pre tokens
  */
-export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
+export default function tokenizer (Program: CONTRACT, inputSourceCode: string): PRE_TOKEN[] {
     const explodedText = inputSourceCode.split('')
     const explodedTextCodes = explodedText.map(str => str.charCodeAt(0))
     const preTokens: PRE_TOKEN[] = []
+    let detectionHasFixed: boolean = false
+    let detectionHasAutoCounter: boolean = false
 
     let streamCurrentLine = 1
     let streamCurrentCol = 0
@@ -154,6 +157,10 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
     function stateCheckWord (tokenValue: string, tokenLine: number, tokenCol: number) : PRE_TOKEN {
         const line = `${tokenLine}:${tokenCol}`
         if (easyKeywordTokens.includes(tokenValue)) {
+            if (!detectionHasFixed && tokenValue === 'fixed') {
+                detectionHasFixed = true
+                Program.Context.TokenizerDetection.hasFixed = true
+            }
             return { type: 'Keyword', precedence: 12, value: tokenValue, line }
         }
         switch (tokenValue) {
@@ -163,6 +170,10 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
             return stateReadAsmStart()
         case 'struct':
             return stateReadStructStart()
+        }
+        if (!detectionHasAutoCounter && (tokenValue === 'getNextTx' || tokenValue === 'getNextTxFromBlockheight')) {
+            detectionHasAutoCounter = true
+            Program.Context.TokenizerDetection.hasAutoCounter = true
         }
         return { type: 'Variable', precedence: 0, value: tokenValue, line }
     }
@@ -225,6 +236,10 @@ export default function tokenizer (inputSourceCode: string): PRE_TOKEN[] {
         const Parsed = parseDecimalNumber(tokenValue, line)
         const valString = Parsed.value.toString(16)
         const paddedValString = valString.padStart((Math.floor((valString.length - 1) / 16) + 1) * 16, '0')
+        if (!detectionHasFixed && Parsed.declaration === 'fixed') {
+            detectionHasFixed = true
+            Program.Context.TokenizerDetection.hasFixed = true
+        }
         return { type: 'Constant', precedence: 0, value: paddedValString, line, extValue: Parsed.declaration }
     }
 

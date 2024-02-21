@@ -72,6 +72,11 @@ export type GLOBAL_CONTEXT = {
     getMemoryObjectByLocation (loc: number|bigint|string, line?: string): MEMORY_SLOT
     /** Options to be used in each sentence */
     SentenceContext: SENTENCE_CONTEXT
+    /** Use tokenizer loop to detect some properties */
+    TokenizerDetection: {
+        hasFixed: boolean,
+        hasAutoCounter: boolean
+    }
 }
 
 export type GENCODE_ARGS = {
