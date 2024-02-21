@@ -1,6 +1,6 @@
 {
   "name": "smartc-signum-compiler",
-  "version": "9999.9.3",
+  "version": "9999.9.4",
   "description": "C Compiler for smart contracts on Signum network",
   "main": "dist/smartc.js",
   "types": "dist/smartc.d.ts",
