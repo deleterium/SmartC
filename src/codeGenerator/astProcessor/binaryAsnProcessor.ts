@@ -157,15 +157,6 @@ export default function binaryAsnProcessor (
         })
         Program.Context.SentenceContext.isLeftSideOfAssignment = false
         assignmentLeftSideErrorTests(LGenObj.SolvedMem)
-        // Clear isDeclaration before right side evaluation.
-        let savedDeclaration: DECLARATION_TYPES = ''
-        if (Program.Context.SentenceContext.isDeclaration.length !== 0) {
-            savedDeclaration = Program.Context.SentenceContext.isDeclaration
-            Program.Context.SentenceContext.isDeclaration = ''
-        }
-        // Clear register declaration before right side evaluation
-        const prevStateOfIsRegisterSentence = Program.Context.SentenceContext.isRegisterSentence
-        Program.Context.SentenceContext.isRegisterSentence = false
         // If it is an array item we know, change to the item
         if (LGenObj.SolvedMem.type === 'array' &&
             LGenObj.SolvedMem.Offset?.type === 'constant') {
@@ -177,12 +168,21 @@ export default function binaryAsnProcessor (
                 utils.addHexSimple(LGenObj.SolvedMem.hexContent, LGenObj.SolvedMem.Offset.value)
             )
         }
+        Program.Context.SentenceContext.leftSideReserved = -1
+        if (LGenObj.asmCode === '' && CurrentNode.Operation.type === 'Assignment' && LGenObj.SolvedMem.Offset === undefined) {
+            // Simple operation, this will avoid pushing variables on function calls, if they will be set by returning instruction
+            Program.Context.SentenceContext.leftSideReserved = LGenObj.SolvedMem.address
+        }
+        // Set/save SentenceContext values before evaluate right side
+        const savedDeclaration = Program.Context.SentenceContext.isDeclaration
+        const prevStateOfIsRegisterSentence = Program.Context.SentenceContext.isRegisterSentence
+        Program.Context.SentenceContext.isRegisterSentence = false
         // Get right side gencode object
         let RGenObj = assignmentRightSideSolver(LGenObj.SolvedMem)
-        // Restore isDeclaration value
+        // Restore SentenceContext values
         Program.Context.SentenceContext.isDeclaration = savedDeclaration
-        // Restore isRegisterSentence value
         Program.Context.SentenceContext.isRegisterSentence = prevStateOfIsRegisterSentence
+        Program.Context.SentenceContext.leftSideReserved = -1
         // Error check for Right side
         if (RGenObj.SolvedMem.type === 'void') {
             throw new Error(`At line: ${CurrentNode.Operation.line}. ` +

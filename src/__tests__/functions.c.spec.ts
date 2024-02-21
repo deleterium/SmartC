@@ -86,3 +86,41 @@ describe('Built-in functions', () => {
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
 })
+describe('User defined functions (2)', () => {
+    it('should compile: Right order and selection saving register in use and in scope', () => {
+        const code = `#pragma maxAuxVars 6
+            #pragma optimizationLevel 0
+
+            long a=2;
+            register long * br5;
+            register long cr4=1;
+            register long dr3;
+            
+            dr3 = teste1(++cr4);
+            dr3 = teste1(cr4++);
+            *br5 = teste();
+            *br5 += teste();
+            *br5 += teste1(cr4+1);
+            *(br5+1) = teste();
+            *(br5+1) += teste();
+            *(br5+1) += teste1(cr4+1);
+            *(br5+a) += teste1(cr4+1);
+            
+            long teste() {
+            const long counter = 0;
+            counter ++;
+            return counter;
+            
+            }
+            long teste1(long arg) {
+            const long counter = 0;
+            counter +=arg;
+            return counter;
+            }`
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare r3\n^declare r4\n^declare r5\n^declare a\n^declare teste_counter\n^declare teste1_arg\n^declare teste1_counter\n\nSET @a #0000000000000002\nSET @r4 #0000000000000001\nINC @r4\nSET @teste1_arg $r4\nPSH $r5\nPSH $r4\nJSR :__fn_teste1\nSET @r3 $r0\nPOP @r4\nPOP @r5\nSET @teste1_arg $r4\nPSH $r5\nPSH $r4\nJSR :__fn_teste1\nSET @r3 $r0\nPOP @r4\nPOP @r5\nINC @r4\nPSH $r5\nPSH $r4\nPSH $r3\nJSR :__fn_teste\nSET @r0 $r0\nPOP @r3\nPOP @r4\nPOP @r5\nSET @($r5) $r0\nPSH $r5\nPSH $r4\nPSH $r3\nJSR :__fn_teste\nSET @r0 $r0\nPOP @r3\nPOP @r4\nPOP @r5\nSET @r1 $($r5)\nADD @r1 $r0\nSET @($r5) $r1\nSET @r0 $r4\nINC @r0\nSET @teste1_arg $r0\nPSH $r5\nPSH $r4\nPSH $r3\nJSR :__fn_teste1\nSET @r0 $r0\nPOP @r3\nPOP @r4\nPOP @r5\nSET @r1 $($r5)\nADD @r1 $r0\nSET @($r5) $r1\nSET @r0 $r5\nINC @r0\nPSH $r5\nPSH $r4\nPSH $r3\nPSH $r0\nJSR :__fn_teste\nSET @r1 $r0\nPOP @r0\nPOP @r3\nPOP @r4\nPOP @r5\nSET @($r0) $r1\nSET @r0 $r5\nINC @r0\nPSH $r5\nPSH $r4\nPSH $r3\nPSH $r0\nJSR :__fn_teste\nSET @r1 $r0\nPOP @r0\nPOP @r3\nPOP @r4\nPOP @r5\nSET @r2 $($r0)\nADD @r2 $r1\nSET @($r0) $r2\nSET @r0 $r5\nINC @r0\nSET @r1 $r4\nINC @r1\nSET @teste1_arg $r1\nPSH $r5\nPSH $r4\nPSH $r3\nPSH $r0\nJSR :__fn_teste1\nSET @r1 $r0\nPOP @r0\nPOP @r3\nPOP @r4\nPOP @r5\nSET @r2 $($r0)\nADD @r2 $r1\nSET @($r0) $r2\nSET @r0 $r5\nADD @r0 $a\nSET @r1 $r4\nINC @r1\nSET @teste1_arg $r1\nPSH $r5\nPSH $r4\nPSH $r3\nPSH $r0\nJSR :__fn_teste1\nSET @r1 $r0\nPOP @r0\nPOP @r3\nPOP @r4\nPOP @r5\nSET @r2 $($r0)\nADD @r2 $r1\nSET @($r0) $r2\nFIN\n\n__fn_teste:\n^const SET @teste_counter #0000000000000000\nINC @teste_counter\nSET @r0 $teste_counter\nRET\n\n__fn_teste1:\n^const SET @teste1_counter #0000000000000000\nADD @teste1_counter $teste1_arg\nSET @r0 $teste1_counter\nRET\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+        expect(compiler.getMachineCode().Warnings).toBe('')
+    })
+})

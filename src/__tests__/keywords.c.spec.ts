@@ -94,14 +94,14 @@ describe('Keyword register', () => {
                 return a+inc(a);
             }
             long inc(long val) { return val+1; }`
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare G\n^declare teste_arg_a\n^declare teste_arg_b\n^declare inc_val\n\nSET @teste_arg_b #0000000000000003\nSET @teste_arg_a #0000000000000002\nJSR :__fn_teste\nSET @G $r0\nFIN\n\n__fn_teste:\nSET @r2 #0000000000000002\nBZR $teste_arg_a :__if1_else\n__if1_start:\nFUN @r1 get_A1\nPSH $r2\nPSH $r1\nSET @inc_val $r1\nJSR :__fn_inc\nSET @r0 $r0\nPOP @r1\nPOP @r2\nADD @r2 $r0\nJMP :__if1_endif\n__if1_else:\nFUN @r1 get_A2\nADD @r2 $r1\n__if1_endif:\nPSH $r2\nSET @inc_val $r2\nJSR :__fn_inc\nSET @r0 $r0\nPOP @r2\nADD @r0 $r2\nSET @r0 $r0\nRET\n\n__fn_inc:\nSET @r0 $inc_val\nINC @r0\nSET @r0 $r0\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare G\n^declare teste_arg_a\n^declare teste_arg_b\n^declare inc_val\n\nSET @teste_arg_b #0000000000000003\nSET @teste_arg_a #0000000000000002\nJSR :__fn_teste\nSET @G $r0\nFIN\n\n__fn_teste:\nSET @r2 #0000000000000002\nBZR $teste_arg_a :__if1_else\n__if1_start:\nFUN @r1 get_A1\nSET @inc_val $r1\nPSH $r2\nPSH $r1\nJSR :__fn_inc\nSET @r0 $r0\nPOP @r1\nPOP @r2\nADD @r2 $r0\nJMP :__if1_endif\n__if1_else:\nFUN @r1 get_A2\nADD @r2 $r1\n__if1_endif:\nSET @inc_val $r2\nPSH $r2\nJSR :__fn_inc\nSET @r0 $r0\nPOP @r2\nADD @r0 $r2\nSET @r0 $r0\nRET\n\n__fn_inc:\nSET @r0 $inc_val\nINC @r0\nSET @r0 $r0\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
     it('should compile: register increment on a function call argument (detecting right actual registers vs register variable type', () => {
         const code = '#pragma optimizationLevel 0\n#include APIFunctions\nlong G = teste(2, 3); long teste(long arg_a, long arg_b) { register long a=2; return a+inc(a+1); } long inc(long val) { return val+1; }'
-        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare G\n^declare teste_arg_a\n^declare teste_arg_b\n^declare inc_val\n\nSET @teste_arg_b #0000000000000003\nSET @teste_arg_a #0000000000000002\nJSR :__fn_teste\nSET @G $r0\nFIN\n\n__fn_teste:\nSET @r2 #0000000000000002\nPSH $r2\nSET @r0 $r2\nINC @r0\nSET @inc_val $r0\nJSR :__fn_inc\nSET @r0 $r0\nPOP @r2\nADD @r0 $r2\nSET @r0 $r0\nRET\n\n__fn_inc:\nSET @r0 $inc_val\nINC @r0\nSET @r0 $r0\nRET\n'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare G\n^declare teste_arg_a\n^declare teste_arg_b\n^declare inc_val\n\nSET @teste_arg_b #0000000000000003\nSET @teste_arg_a #0000000000000002\nJSR :__fn_teste\nSET @G $r0\nFIN\n\n__fn_teste:\nSET @r2 #0000000000000002\nSET @r0 $r2\nINC @r0\nSET @inc_val $r0\nPSH $r2\nJSR :__fn_inc\nSET @r0 $r0\nPOP @r2\nADD @r0 $r2\nSET @r0 $r0\nRET\n\n__fn_inc:\nSET @r0 $inc_val\nINC @r0\nSET @r0 $r0\nRET\n'
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)

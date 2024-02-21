@@ -157,6 +157,7 @@ export function createContext (Program: CONTRACT) : GLOBAL_CONTEXT {
         SentenceContext: {
             isDeclaration: '',
             isLeftSideOfAssignment: false,
+            leftSideReserved: -1,
             isConstSentence: false,
             isRegisterSentence: false,
             hasVoidArray: false,

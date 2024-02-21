@@ -46,11 +46,6 @@ export default function functionSolver (
                 returnAssemblyCode += createSimpleInstruction('Push', MEM.asmName)
             })
         }
-        // Save registers currently in use in stack. Function execution will overwrite them
-        const registerStack = Program.Context.registerInfo.filter(OBJ => OBJ.inUse === true).reverse()
-        registerStack.forEach(OBJ => {
-            returnAssemblyCode += createSimpleInstruction('Push', OBJ.Template.asmName)
-        })
         // Check function arguments
         if (rawArgs[0].type === 'nullASN') {
             rawArgs.pop()
@@ -60,7 +55,7 @@ export default function functionSolver (
             ` Wrong number of arguments for function '${FunctionToCall.name}'.` +
             ` It must have '${FunctionToCall.argsMemObj.length}' args.`)
         }
-        // Push arguments into stack
+        // Solve caller arguments and set to callee arguments
         for (let i = rawArgs.length - 1; i >= 0; i--) {
             const ArgGenObj = genCode(Program, {
                 RemAST: rawArgs[i],
@@ -86,6 +81,12 @@ export default function functionSolver (
             )
             Program.Context.freeRegister(ArgGenObj.SolvedMem.address)
         }
+        // Save registers currently in use in stack. Function execution may overwrite them
+        const registerStack = Program.Context.registerInfo.filter(OBJ => OBJ.inUse === true).reverse()
+        registerStack.forEach(OBJ => {
+            if (OBJ.Template.address === Program.Context.SentenceContext.leftSideReserved) return
+            returnAssemblyCode += createSimpleInstruction('Push', OBJ.Template.asmName)
+        })
         // Create instruction
         if (FunctionToCall.isInline) {
             returnAssemblyCode += `%inline.${FunctionToCall.name}%\n`
@@ -104,6 +105,7 @@ export default function functionSolver (
         // Load registers again
         registerStack.reverse()
         registerStack.forEach(OBJ => {
+            if (OBJ.Template.address === Program.Context.SentenceContext.leftSideReserved) return
             returnAssemblyCode += createSimpleInstruction('Pop', OBJ.Template.asmName)
         })
         if (isRecursive) {

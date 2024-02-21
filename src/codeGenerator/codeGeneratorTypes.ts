@@ -14,6 +14,9 @@ export type SENTENCE_CONTEXT = {
     getAndClearPostOperations(): string
     /** Post increment or decrement that shall be included at last */
     postOperations: string
+    /** Variable reserved for left side assignment. Currently only using for function call
+     * decision to store or ignore register values */
+    leftSideReserved: number
 }
 
 export type GLOBAL_CONTEXT = {

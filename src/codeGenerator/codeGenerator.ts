@@ -379,6 +379,7 @@ export default function codeGenerator (Program: CONTRACT) {
         CodeGenInfo.initialIsReversedLogic = CodeGenInfo.initialIsReversedLogic ?? false
         Program.Context.SentenceContext.isDeclaration = ''
         Program.Context.SentenceContext.isLeftSideOfAssignment = false
+        Program.Context.SentenceContext.leftSideReserved = -1
         Program.Context.SentenceContext.isConstSentence = false
         Program.Context.SentenceContext.isRegisterSentence = false
         Program.Context.SentenceContext.hasVoidArray = false
@@ -393,7 +394,7 @@ export default function codeGenerator (Program: CONTRACT) {
         })
 
         validateReturnedVariable(CodeGenInfo.InitialAST, code.SolvedMem, CodeGenInfo.initialJumpTarget)
-        code.asmCode += Program.Context.SentenceContext.postOperations
+        code.asmCode += Program.Context.SentenceContext.getAndClearPostOperations()
         if (code.SolvedMem.Offset?.type === 'variable') {
             Program.Context.freeRegister(code.SolvedMem.Offset.addr)
         }
