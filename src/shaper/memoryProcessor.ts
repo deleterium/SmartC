@@ -1,22 +1,20 @@
 import { assertExpression, assertNotEqual, assertNotUndefined, deepCopy } from '../repository/repository'
+import { CONTRACT } from '../typings/contractTypes'
 import {
-    ARRAY_TYPE_DEFINITION, MEMORY_SLOT, STRUCT_TYPE_DEFINITION, TOKEN, TYPE_DEFINITIONS
+    ARRAY_TYPE_DEFINITION, MEMORY_SLOT, STRUCT_TYPE_DEFINITION, TOKEN
 } from '../typings/syntaxTypes'
-import { SHAPER_AUXVARS } from './shaperTypes'
 import { getMemoryTemplate, getTypeDefinitionTemplate } from './templates'
 
 /** Process a tokens sequence from a Sentence phrase and return the variables
  * that were defined, in Memory object form
- * @param programTD Side effect: Program.typesDefinitions will receive
- * new arrays definitions, if declared in code.
- * @param AuxVars Read only. It contains information about current function beeing processed.
+ * @param Program - Helper and Context.
  * @param phraseCode Code to be analyzed
  * @param structPrefix Optional. If processing struct members, set as struct name + '_'.
  * @returns Array of memory objects declared
  * @throws {Error} on any mistakes
  */
 export default function memoryProcessor (
-    programTD: TYPE_DEFINITIONS[], AuxVars: SHAPER_AUXVARS, phraseCode: TOKEN [], structPrefix: string = ''
+    Program: CONTRACT, phraseCode: TOKEN [], structPrefix: string = ''
 ): MEMORY_SLOT[] {
     let tokenCounter = 0
     let isRegister = false
@@ -41,6 +39,7 @@ export default function memoryProcessor (
                 retMem.push(...structProcessControl())
                 break
             case 'register':
+                if (Program.Context.ShaperContext.isFunctionArgument) {
                     throw new Error(Program.Context.formatError(phraseCode[tokenCounter].line,
                         'Arguments for functions cannot be register type.'))
                 }
@@ -101,8 +100,8 @@ export default function memoryProcessor (
         // prepare lovHeader
         const header = deepCopy(definitionTD.MemoryTemplate)
         header.name = phraseCode[startingTokenCounter].value
-        header.asmName = AuxVars.currentPrefix + phraseCode[startingTokenCounter].value
-        header.scope = AuxVars.currentScopeName
+        header.asmName = Program.Context.ShaperContext.currentPrefix + phraseCode[startingTokenCounter].value
+        header.scope = Program.Context.ShaperContext.currentScopeName
         if (definition === 'void') {
             if (isPointer === false) {
                 throw new Error(Program.Context.formatError(phraseCode[startingTokenCounter].line,
@@ -114,8 +113,8 @@ export default function memoryProcessor (
                 header.declaration += '_ptr'
             }
         }
-        header.isDeclared = AuxVars.isFunctionArgument
-        header.isSet = AuxVars.isFunctionArgument
+        header.isDeclared = Program.Context.ShaperContext.isFunctionArgument
+        header.isSet = Program.Context.ShaperContext.isFunctionArgument
         header.toBeRegister = isRegister
         // If is not an array, just send the header
         if (dimensions.length === 0) {
@@ -146,13 +145,13 @@ export default function memoryProcessor (
             const Mem2 = deepCopy(definitionTD.MemoryTemplate)
             Mem2.name = `${header.name}_${i - 1}`
             Mem2.asmName = `${header.asmName}_${i - 1}`
-            Mem2.scope = AuxVars.currentScopeName
+            Mem2.scope = Program.Context.ShaperContext.currentScopeName
             Mem2.declaration = header.ArrayItem.declaration
             Mem2.isSet = true // No way to track array items for using before initialized
             retArrMem.push(Mem2)
         }
         // create array type definition
-        programTD.push(createArrayTypeDefinition(header, dimensions))
+        Program.typesDefinitions.push(createArrayTypeDefinition(header, dimensions))
         return retArrMem
     }
 
@@ -240,7 +239,7 @@ export default function memoryProcessor (
                 throw new Error(Program.Context.formatError(line,
                     `Invalid element (value: '${phraseCode[tokenCounter].value}') found in struct definition.`))
             case 'Variable':
-                if (AuxVars.isFunctionArgument && !isPointer) {
+                if (Program.Context.ShaperContext.isFunctionArgument && !isPointer) {
                     throw new Error(Program.Context.formatError(line,
                         'Passing struct by value as argument is not supported. Pass by reference.'))
                 }
@@ -290,10 +289,10 @@ export default function memoryProcessor (
                 StructMemHeader.size = 1
             }
             StructMemHeader.name = phraseCode[startingTokenCounter].value
-            StructMemHeader.asmName = AuxVars.currentPrefix + phraseCode[startingTokenCounter].value
-            StructMemHeader.scope = AuxVars.currentScopeName
-            StructMemHeader.isDeclared = AuxVars.isFunctionArgument
-            StructMemHeader.isSet = AuxVars.isFunctionArgument
+            StructMemHeader.asmName = Program.Context.ShaperContext.currentPrefix + phraseCode[startingTokenCounter].value
+            StructMemHeader.scope = Program.Context.ShaperContext.currentScopeName
+            StructMemHeader.isDeclared = Program.Context.ShaperContext.isFunctionArgument
+            StructMemHeader.isSet = Program.Context.ShaperContext.isFunctionArgument
             return [StructMemHeader]
         }
         // It IS array of structs
@@ -308,16 +307,16 @@ export default function memoryProcessor (
                 'Arrays of struct pointers are not currently supported.'))
         }
         StructMemHeader.name = phraseCode[startingTokenCounter].value
-        StructMemHeader.asmName = AuxVars.currentPrefix + phraseCode[startingTokenCounter].value
-        StructMemHeader.scope = AuxVars.currentScopeName
-        StructMemHeader.isDeclared = AuxVars.isFunctionArgument
+        StructMemHeader.asmName = Program.Context.ShaperContext.currentPrefix + phraseCode[startingTokenCounter].value
+        StructMemHeader.scope = Program.Context.ShaperContext.currentScopeName
+        StructMemHeader.isDeclared = Program.Context.ShaperContext.isFunctionArgument
         StructMemHeader.isSet = true // do not control using variables in array
         StructMemHeader.type = 'array'
         StructMemHeader.typeDefinition = StructMemHeader.asmName
         StructMemHeader.ArrayItem = {
             type: StructMemHeader.type,
             declaration: StructMemHeader.declaration,
-            typeDefinition: AuxVars.currentPrefix + currentStructNameDef,
+            typeDefinition: Program.Context.ShaperContext.currentPrefix + currentStructNameDef,
             totalSize: 0
         }
         StructMemHeader.ArrayItem.totalSize = 1 + structArrDimensions.reduce(function (total, num) {
@@ -334,18 +333,18 @@ export default function memoryProcessor (
             ))
         }
         // create array type definition
-        programTD.push(createArrayTypeDefinition(StructMemHeader, structArrDimensions))
+        Program.typesDefinitions.push(createArrayTypeDefinition(StructMemHeader, structArrDimensions))
         return retStructMemory
     }
 
     /** Find and return a struct type definiton with a given structTypeName */
     function findSTD (structTypeName: string = ''): STRUCT_TYPE_DEFINITION | undefined {
-        let FoundTD = programTD.find(obj => {
+        let FoundTD = Program.typesDefinitions.find(obj => {
             return obj.type === 'struct' && obj.name === structTypeName
         }) as (STRUCT_TYPE_DEFINITION | undefined)
-        if (FoundTD === undefined && AuxVars.currentPrefix.length > 0) {
-            FoundTD = programTD.find(obj => {
-                return obj.type === 'struct' && obj.name === AuxVars.currentPrefix + structTypeName
+        if (FoundTD === undefined && Program.Context.ShaperContext.currentPrefix.length > 0) {
+            FoundTD = Program.typesDefinitions.find(obj => {
+                return obj.type === 'struct' && obj.name === Program.Context.ShaperContext.currentPrefix + structTypeName
             }) as (STRUCT_TYPE_DEFINITION | undefined)
         }
         return FoundTD
@@ -371,7 +370,7 @@ export default function memoryProcessor (
             } else {
                 Mem.name = variableName + '_' + Mem.name
             }
-            Mem.asmName = AuxVars.currentPrefix + Mem.name
+            Mem.asmName = Program.Context.ShaperContext.currentPrefix + Mem.name
         })
         return newmemory
     }

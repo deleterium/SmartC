@@ -26,7 +26,7 @@ export default function syntaxProcessor (Program: CONTRACT) : void {
     function processSentence (SentenceObj: SENTENCES) {
         switch (SentenceObj.type) {
         case 'phrase':
-            SentenceObj.CodeAST = createTree(
+            SentenceObj.CodeAST = createTree(Program,
                 assertNotUndefined(SentenceObj.code,
                     'Internal error. Unknow object arrived at processSentence')
             )
@@ -44,7 +44,7 @@ export default function syntaxProcessor (Program: CONTRACT) : void {
             if (assertNotUndefined(SentenceObj.condition).length === 0) {
                 throw new Error(Program.Context.formatError(SentenceObj.line, 'Sentence condition can not be empty.'))
             }
-            SentenceObj.ConditionAST = createTree(SentenceObj.condition)
+            SentenceObj.ConditionAST = createTree(Program, SentenceObj.condition)
             delete SentenceObj.condition
             SentenceObj.trueBlock.forEach(processSentence)
             break
@@ -58,8 +58,8 @@ export default function syntaxProcessor (Program: CONTRACT) : void {
         case 'switch':
             SentenceObj.JumpTable = {
                 type: 'switchASN',
-                Expression: createTree(SentenceObj.expression),
-                caseConditions: assertNotUndefined(SentenceObj.cases).map(Sentence => createTree(Sentence))
+                Expression: createTree(Program, SentenceObj.expression),
+                caseConditions: assertNotUndefined(SentenceObj.cases).map(Sentence => createTree(Program, Sentence))
             }
             delete SentenceObj.expression
             delete SentenceObj.cases

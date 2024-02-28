@@ -1,11 +1,12 @@
 import { assertNotUndefined, isDeclarationType } from '../repository/repository'
+import { CONTRACT } from '../typings/contractTypes'
 import { AST, LOOKUP_ASN, TOKEN } from '../typings/syntaxTypes'
 
 /**
  * Traverse an array of tokens to create a real AST based on
  * simple operations. Uses precedence values to decide the operations order.
  */
-export default function createTree (tokenArray: TOKEN[] | undefined): AST {
+export default function createTree (Program: CONTRACT, tokenArray: TOKEN[] | undefined): AST {
     const tokenToAst = assertNotUndefined(tokenArray,
         'Internal error. Undefined AST to create syntactic tree')
     if (tokenToAst.length === 0) {
@@ -14,27 +15,27 @@ export default function createTree (tokenArray: TOKEN[] | undefined): AST {
     const needle = findSplitTokenIndex(tokenToAst)
     switch (tokenToAst[needle].type) {
     case 'Constant':
-        return ConstantToAST(tokenToAst)
+        return ConstantToAST(Program, tokenToAst)
     case 'Variable':
-        return VariableToAST(tokenToAst)
+        return VariableToAST(Program, tokenToAst)
     case 'CodeCave':
-        return CodeCaveToAST(tokenToAst)
+        return CodeCaveToAST(Program, tokenToAst)
     case 'Operator':
     case 'Assignment':
     case 'SetOperator':
     case 'Comparision':
     case 'Delimiter':
-        return BinariesToAST(tokenToAst, needle)
+        return BinariesToAST(Program, tokenToAst, needle)
     case 'Keyword':
-        return KeywordToAST(tokenToAst, needle)
+        return KeywordToAST(Program, tokenToAst, needle)
     case 'UnaryOperator':
-        return UnaryOperatorToAST(tokenToAst, needle)
+        return UnaryOperatorToAST(Program, tokenToAst, needle)
     case 'SetUnaryOperator':
         if (needle === 0) {
-            return preSetUnaryToAST(tokenToAst)
+            return preSetUnaryToAST(Program, tokenToAst)
         }
         if (needle === tokenToAst.length - 1) {
-            return postSetUnaryToAST(tokenToAst)
+            return postSetUnaryToAST(Program, tokenToAst)
         }
         throw new Error(Program.Context.formatError(tokenToAst[needle].line,
             `Invalid use of 'SetUnaryOperator' '${tokenToAst[needle].value}'.`))
@@ -68,14 +69,14 @@ function findSplitTokenIndex (tokens: TOKEN[]) : number {
     }
 }
 
-function ConstantToAST (tokens: TOKEN[]) : AST {
+function ConstantToAST (Program: CONTRACT, tokens: TOKEN[]) : AST {
     if (tokens.length !== 1) {
         throw new Error(Program.Context.formatError(tokens[0].line, 'Constants cannot have modifiers.'))
     }
     return { type: 'endASN', Token: tokens[0] }
 }
 
-function VariableToAST (tokens: TOKEN[]) : AST {
+function VariableToAST (Program: CONTRACT, tokens: TOKEN[]) : AST {
     if (tokens.length === 1) {
         return { type: 'endASN', Token: tokens[0] }
     }
@@ -92,7 +93,7 @@ function VariableToAST (tokens: TOKEN[]) : AST {
         modifiers: []
     }
     if (retNode.Token.type === 'Function') {
-        retNode.FunctionArgs = createTree(retNode.Token.params)
+        retNode.FunctionArgs = createTree(Program, retNode.Token.params)
         delete retNode.Token.params
     }
 
@@ -101,7 +102,7 @@ function VariableToAST (tokens: TOKEN[]) : AST {
         case 'Arr':
             retNode.modifiers.push({
                 type: 'Array',
-                Center: createTree(tokens[idx].params)
+                Center: createTree(Program, tokens[idx].params)
             })
             break
         case 'Member':
@@ -136,17 +137,17 @@ function VariableToAST (tokens: TOKEN[]) : AST {
     return retNode
 }
 
-function CodeCaveToAST (tokens: TOKEN[]) : AST {
+function CodeCaveToAST (Program: CONTRACT, tokens: TOKEN[]) : AST {
     if (tokens.length === 1) {
-        const newAST = createTree(tokens[0].params)
+        const newAST = createTree(Program, tokens[0].params)
         delete tokens[0].params
         return newAST
     }
     if (tokens[0].params === undefined) {
-        return createTree(tokens.slice(1))
+        return createTree(Program, tokens.slice(1))
     }
     if (tokens.length === 2) {
-        const remainingAST = createTree(tokens.slice(1))
+        const remainingAST = createTree(Program, tokens.slice(1))
         const askedType = tokens[0].params.reduce((previous, Tkn) => {
             // Get declaration for type casting from params!
             if (Tkn.type === 'Keyword') return previous + Tkn.value
@@ -173,7 +174,7 @@ function CodeCaveToAST (tokens: TOKEN[]) : AST {
     throw new Error(Program.Context.formatError(tokens[0].line, `Modifiers not implemented on '${tokens[0].type}'.`))
 }
 
-function BinariesToAST (tokens: TOKEN[], operatorLoc: number) : AST {
+function BinariesToAST (Program: CONTRACT, tokens: TOKEN[], operatorLoc: number) : AST {
     if (operatorLoc === 0) {
         throw new Error(Program.Context.formatError(tokens[0].line,
             `Missing left value for binary operator '${tokens[operatorLoc].value}'.`))
@@ -184,13 +185,13 @@ function BinariesToAST (tokens: TOKEN[], operatorLoc: number) : AST {
     }
     return {
         type: 'binaryASN',
-        Left: createTree(tokens.slice(0, operatorLoc)),
+        Left: createTree(Program, tokens.slice(0, operatorLoc)),
         Operation: tokens[operatorLoc],
-        Right: createTree(tokens.slice(operatorLoc + 1))
+        Right: createTree(Program, tokens.slice(operatorLoc + 1))
     }
 }
 
-function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
+function KeywordToAST (Program: CONTRACT, tokens: TOKEN[], keywordLoc: number) : AST {
     if (keywordLoc !== 0) {
         throw new Error(Program.Context.formatError(tokens[keywordLoc].line,
             `Probable missing ';' before keyword ${tokens[keywordLoc].value}.`))
@@ -207,7 +208,7 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
         return {
             type: 'unaryASN',
             Operation: tokens[0],
-            Center: createTree(tokens.slice(1))
+            Center: createTree(Program, tokens.slice(1))
         }
     case 'exit':
     case 'halt':
@@ -236,7 +237,7 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
         return {
             type: 'unaryASN',
             Operation: tokens[0],
-            Center: createTree(tokens.slice(1))
+            Center: createTree(Program, tokens.slice(1))
         }
     case 'return':
     case 'sleep':
@@ -246,7 +247,7 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
         return {
             type: 'unaryASN',
             Operation: tokens[0],
-            Center: createTree(tokens.slice(1))
+            Center: createTree(Program, tokens.slice(1))
         }
     default:
         // Never
@@ -254,7 +255,7 @@ function KeywordToAST (tokens: TOKEN[], keywordLoc: number) : AST {
     }
 }
 
-function UnaryOperatorToAST (tokens: TOKEN[], operatorLoc: number) : AST {
+function UnaryOperatorToAST (Program: CONTRACT, tokens: TOKEN[], operatorLoc: number) : AST {
     if (operatorLoc !== 0) {
         throw new Error(Program.Context.formatError(tokens[operatorLoc].line,
             `Invalid use of 'UnaryOperator' '${tokens[operatorLoc].value}'.`))
@@ -273,12 +274,12 @@ function UnaryOperatorToAST (tokens: TOKEN[], operatorLoc: number) : AST {
     }
     return {
         type: 'unaryASN',
-        Center: createTree(tokens.slice(1)),
+        Center: createTree(Program, tokens.slice(1)),
         Operation: tokens[0]
     }
 }
 
-function preSetUnaryToAST (tokens: TOKEN[]) : AST {
+function preSetUnaryToAST (Program: CONTRACT, tokens: TOKEN[]) : AST {
     if (tokens.length === 1) {
         throw new Error(Program.Context.formatError(tokens[0].line,
             `Missing value to apply 'SetUnaryOperator' '${tokens[0].value}'.`))
@@ -296,12 +297,12 @@ function preSetUnaryToAST (tokens: TOKEN[]) : AST {
     }
     return {
         type: 'exceptionASN',
-        Left: createTree(tokens.slice(1)),
+        Left: createTree(Program, tokens.slice(1)),
         Operation: tokens[0]
     }
 }
 
-function postSetUnaryToAST (tokens: TOKEN[]) : AST {
+function postSetUnaryToAST (Program: CONTRACT, tokens: TOKEN[]) : AST {
     const operatorLoc = tokens.length - 1
     // Process exceptions for post increment and post decrement (left-to-right associativity)
     if (tokens[0].type !== 'Variable') {
@@ -317,7 +318,7 @@ function postSetUnaryToAST (tokens: TOKEN[]) : AST {
     }
     return {
         type: 'exceptionASN',
-        Right: createTree(tokens.slice(0, operatorLoc)),
+        Right: createTree(Program, tokens.slice(0, operatorLoc)),
         Operation: tokens[operatorLoc]
     }
 }

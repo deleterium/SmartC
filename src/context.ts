@@ -183,6 +183,12 @@ export function createContext (Program: CONTRACT) : GLOBAL_CONTEXT {
         TokenizerDetection: {
             hasFixed: false,
             hasAutoCounter: false
+        },
+        ShaperContext: {
+            latestLoopId: [],
+            isFunctionArgument: false,
+            currentScopeName: '',
+            currentPrefix: ''
         }
     }
 }

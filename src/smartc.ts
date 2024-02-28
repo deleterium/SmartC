@@ -94,7 +94,7 @@ export class SmartC {
         case 'C':
             preprocessed = preprocessor(this.sourceCode)
             tokenized = tokenizer(this.Program, preprocessed)
-            parsed = parser(tokenized)
+            parsed = parser(this.Program, tokenized)
             shaper(this.Program, parsed)
             syntaxProcessor(this.Program)
             this.preAssemblyCode = codeGenerator(this.Program)

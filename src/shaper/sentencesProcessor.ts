@@ -1,11 +1,12 @@
 import { assertNotEqual, assertNotUndefined } from '../repository/repository'
+import { CONTRACT } from '../typings/contractTypes'
 import { TOKEN, SENTENCES, SENTENCE_PHRASE, SENTENCE_STRUCT } from '../typings/syntaxTypes'
-import { SHAPER_AUXVARS } from './shaperTypes'
 
 /** Expect one or more sentences in codetrain and converts it
  * to items in sentences array */
 export default function sentencesProcessor (
-    AuxVars: SHAPER_AUXVARS, codetrain: TOKEN[] = [], addTerminator: boolean = false
+    Program: CONTRACT,
+    codetrain: TOKEN[] = [], addTerminator: boolean = false
 ) : SENTENCES[] {
     /** Current scope counter for sentence processing */
     let currentToken = 0
@@ -30,13 +31,13 @@ export default function sentencesProcessor (
         // Analysis for start tokens
         if (codetrain[currentToken].type === 'CodeDomain') {
             if (expectingScope) {
-                return sentencesProcessor(AuxVars, codetrain[currentToken].params)
+                return sentencesProcessor(Program, codetrain[currentToken].params)
             }
             return [{
                 type: 'scope',
                 id: `__scope${lineOfFirstInstruction}`,
                 line: lineOfFirstInstruction,
-                alwaysBlock: sentencesProcessor(AuxVars, codetrain[currentToken].params)
+                alwaysBlock: sentencesProcessor(Program, codetrain[currentToken].params)
             }]
         }
         switch (codetrain[currentToken].value) {
@@ -166,9 +167,9 @@ export default function sentencesProcessor (
         }
         const condition = codetrain[currentToken].params
         currentToken++
-        AuxVars.latestLoopId.push(id)
+        Program.Context.ShaperContext.latestLoopId.push(id)
         const trueBlock = processOneSentence(true)
-        AuxVars.latestLoopId.pop()
+        Program.Context.ShaperContext.latestLoopId.pop()
         return [{
             type: 'while',
             id: id,
@@ -186,7 +187,7 @@ export default function sentencesProcessor (
             throw new Error(Program.Context.formatError(codetrain[currentToken - 1].line,
                 "Expecting condition for 'for' statement."))
         }
-        const threeSentences = sentencesProcessor(AuxVars, codetrain[currentToken].params, true)
+        const threeSentences = sentencesProcessor(Program, codetrain[currentToken].params, true)
         if (threeSentences.length !== 3) {
             throw new Error(Program.Context.formatError(line,
                 `Expected 3 sentences for 'for(;;){}' loop. Got ${threeSentences.length}.`))
@@ -196,9 +197,9 @@ export default function sentencesProcessor (
                 "Sentences inside 'for(;;)' can not be other loops or conditionals."))
         }
         currentToken++
-        AuxVars.latestLoopId.push(id)
+        Program.Context.ShaperContext.latestLoopId.push(id)
         const trueBlock = processOneSentence(true)
-        AuxVars.latestLoopId.pop()
+        Program.Context.ShaperContext.latestLoopId.pop()
         return [{
             type: 'for',
             id: id,
@@ -212,9 +213,9 @@ export default function sentencesProcessor (
         const line = codetrain[currentToken].line
         const id = `__loop${line}`
         currentToken++
-        AuxVars.latestLoopId.push(id)
+        Program.Context.ShaperContext.latestLoopId.push(id)
         const trueBlock = processOneSentence(true)
-        AuxVars.latestLoopId.pop()
+        Program.Context.ShaperContext.latestLoopId.pop()
         currentToken++
         if (codetrain[currentToken]?.value === 'while' &&
             codetrain[currentToken + 1]?.type === 'CodeCave' &&
@@ -278,9 +279,9 @@ export default function sentencesProcessor (
                 "Expression cannot be empty in 'switch (expression) {block}' statement."))
         }
         currentToken++
-        AuxVars.latestLoopId.push(id)
+        Program.Context.ShaperContext.latestLoopId.push(id)
         const block = processOneSentence(true)
-        AuxVars.latestLoopId.pop()
+        Program.Context.ShaperContext.latestLoopId.pop()
         const cases = block.reduce((previous: TOKEN[][], Sentence) => {
             if (Sentence.type === 'case') {
                 return previous.concat([assertNotUndefined(Sentence.condition)])
@@ -313,8 +314,8 @@ export default function sentencesProcessor (
             throw new Error(Program.Context.formatError(codetrain[currentToken - 1].line,
                 "Expecting variable for 'case var:' statement."))
         }
-        if (AuxVars.latestLoopId.length === 0 ||
-            !AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1].includes('switch')) {
+        if (Program.Context.ShaperContext.latestLoopId.length === 0 ||
+            !Program.Context.ShaperContext.latestLoopId[Program.Context.ShaperContext.latestLoopId.length - 1].includes('switch')) {
             throw new Error(Program.Context.formatError(line, "'case' outside a switch statement."))
         }
         let condition = [codetrain[currentToken]]
@@ -343,8 +344,8 @@ export default function sentencesProcessor (
             throw new Error(Program.Context.formatError(codetrain[currentToken - 1].line,
                 "Missing ':' in 'default :' statement."))
         }
-        if (AuxVars.latestLoopId.length === 0 ||
-            !AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1].includes('switch')) {
+        if (Program.Context.ShaperContext.latestLoopId.length === 0 ||
+            !Program.Context.ShaperContext.latestLoopId[Program.Context.ShaperContext.latestLoopId.length - 1].includes('switch')) {
             throw new Error(Program.Context.formatError(line, "'default' outside a switch statement."))
         }
         return [{
@@ -375,12 +376,12 @@ export default function sentencesProcessor (
 
     function breakCodeToSentence () : SENTENCES[] {
         const line = codetrain[currentToken].line
-        if (AuxVars.latestLoopId.length === 0) {
+        if (Program.Context.ShaperContext.latestLoopId.length === 0) {
             throw new Error(Program.Context.formatError(line, "'break' outside a loop or switch."))
         }
         if (codetrain[currentToken + 1]?.type === 'Terminator') {
             currentToken++
-            codetrain[currentToken - 1].extValue = AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1]
+            codetrain[currentToken - 1].extValue = Program.Context.ShaperContext.latestLoopId[Program.Context.ShaperContext.latestLoopId.length - 1]
             return [{ type: 'phrase', code: [codetrain[currentToken - 1]], line: line }]
         }
         throw new Error(Program.Context.formatError(line, "Missing ';' after 'break' keyword."))
@@ -388,7 +389,7 @@ export default function sentencesProcessor (
 
     function continueCodeToSentence () : SENTENCES[] {
         const line = codetrain[currentToken].line
-        const loopId = AuxVars.latestLoopId.reduce((previous, current) => {
+        const loopId = Program.Context.ShaperContext.latestLoopId.reduce((previous, current) => {
             if (current.includes('loop')) {
                 return current
             }

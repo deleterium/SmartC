@@ -82,6 +82,12 @@ export type GLOBAL_CONTEXT = {
         hasFixed: boolean,
         hasAutoCounter: boolean
     }
+    ShaperContext: {
+        latestLoopId: string[],
+        isFunctionArgument: boolean,
+        currentScopeName: string,
+        currentPrefix: string
+    }
 }
 
 export type GENCODE_ARGS = {

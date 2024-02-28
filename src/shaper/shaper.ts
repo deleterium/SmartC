@@ -10,7 +10,6 @@ import {
 } from './templates'
 import sentencesProcessor from './sentencesProcessor'
 import memoryProcessor from './memoryProcessor'
-import { SHAPER_AUXVARS } from './shaperTypes'
 
 /** Translate an array of tokens into the object representing the program.
  * This is the second phase of parser
@@ -20,13 +19,6 @@ import { SHAPER_AUXVARS } from './shaperTypes'
  * @throws {Error} at any mistakes
  */
 export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
-    const AuxVars: SHAPER_AUXVARS = {
-        latestLoopId: [],
-        isFunctionArgument: false,
-        currentScopeName: '',
-        currentPrefix: ''
-    }
-
     /* * * Main function! * * */
     function shapeMain () : void {
         splitCode()
@@ -338,9 +330,9 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
 
     /** Process global code, transforming them into global sentences properties  */
     function processGlobalCode () : void {
-        AuxVars.currentScopeName = ''
-        AuxVars.currentPrefix = ''
-        Program.Global.sentences = sentencesProcessor(AuxVars, Program.Global.code)
+        Program.Context.ShaperContext.currentScopeName = ''
+        Program.Context.ShaperContext.currentPrefix = ''
+        Program.Global.sentences = sentencesProcessor(Program, Program.Global.code)
         Program.Global.sentences.forEach(createMemoryTable)
         delete Program.Global.code
     }
@@ -350,7 +342,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     function createMemoryTable (Sentence: SENTENCES) : void {
         switch (Sentence.type) {
         case 'phrase':
-            Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, assertNotUndefined(Sentence.code)))
+            Program.memory.push(...memoryProcessor(Program, assertNotUndefined(Sentence.code)))
             return
         case 'scope':
             Sentence.alwaysBlock.forEach(createMemoryTable)
@@ -364,12 +356,12 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             Sentence.trueBlock.forEach(createMemoryTable)
             return
         case 'for':
-            Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, assertNotUndefined(Sentence.threeSentences[0].code)))
+            Program.memory.push(...memoryProcessor(Program, assertNotUndefined(Sentence.threeSentences[0].code)))
             Sentence.trueBlock.forEach(createMemoryTable)
             return
         case 'struct':
             structToTypeDefinition(Sentence)
-            Program.memory.push(...memoryProcessor(Program.typesDefinitions, AuxVars, assertNotUndefined(Sentence.Phrase.code)))
+            Program.memory.push(...memoryProcessor(Program, assertNotUndefined(Sentence.Phrase.code)))
             return
         case 'switch':
             Sentence.block.forEach(createMemoryTable)
@@ -389,19 +381,18 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     function structToTypeDefinition (StructPhrase: SENTENCE_STRUCT) {
         // create struct type definition
         const NewStructTD = getTypeDefinitionTemplate('struct')
-        NewStructTD.name = AuxVars.currentPrefix + StructPhrase.name
-        NewStructTD.MemoryTemplate.typeDefinition = AuxVars.currentPrefix + StructPhrase.name
-        NewStructTD.MemoryTemplate.isDeclared = AuxVars.isFunctionArgument
-        const savedPrefix = AuxVars.currentPrefix
-        AuxVars.currentPrefix = ''
+        NewStructTD.name = Program.Context.ShaperContext.currentPrefix + StructPhrase.name
+        NewStructTD.MemoryTemplate.typeDefinition = Program.Context.ShaperContext.currentPrefix + StructPhrase.name
+        NewStructTD.MemoryTemplate.isDeclared = Program.Context.ShaperContext.isFunctionArgument
+        const savedPrefix = Program.Context.ShaperContext.currentPrefix
+        Program.Context.ShaperContext.currentPrefix = ''
         StructPhrase.members.forEach(StruPhrs => {
             if (StruPhrs.type !== 'phrase') {
                 throw new Error(Program.Context.formatError(StruPhrs.line, 'Invalid sentence in struct members.'))
             }
             if (StruPhrs.code !== undefined) {
                 NewStructTD.structMembers.push(...memoryProcessor(
-                    Program.typesDefinitions,
-                    AuxVars,
+                    Program,
                     StruPhrs.code,
                     StructPhrase.name + '_'
                 ))
@@ -415,25 +406,25 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 accumulatedSize++
             }
         })
-        AuxVars.currentPrefix = savedPrefix
+        Program.Context.ShaperContext.currentPrefix = savedPrefix
         Program.typesDefinitions.push(NewStructTD)
     }
 
     /** Process/checks function arguments and code, transforming them
      * into argsMemObj and sentences properties  */
     function processFunctionCodeAndArguments (CurrentFunction: SC_FUNCTION, fnNum: number) {
-        CurrentFunction.sentences = sentencesProcessor(AuxVars, CurrentFunction.code)
-        AuxVars.currentScopeName = CurrentFunction.name
-        AuxVars.currentPrefix = AuxVars.currentScopeName + '_'
-        AuxVars.isFunctionArgument = true
-        const sentence = sentencesProcessor(AuxVars, CurrentFunction.arguments, true)
+        CurrentFunction.sentences = sentencesProcessor(Program, CurrentFunction.code)
+        Program.Context.ShaperContext.currentScopeName = CurrentFunction.name
+        Program.Context.ShaperContext.currentPrefix = Program.Context.ShaperContext.currentScopeName + '_'
+        Program.Context.ShaperContext.isFunctionArgument = true
+        const sentence = sentencesProcessor(Program, CurrentFunction.arguments, true)
         if (sentence.length !== 1 || sentence[0].type !== 'phrase' || sentence[0].code === undefined) {
             throw new Error(Program.Context.formatError(CurrentFunction.line,
                 `Wrong arguments for function '${CurrentFunction.name}'.`))
         }
-        CurrentFunction.argsMemObj = memoryProcessor(Program.typesDefinitions, AuxVars, sentence[0].code)
+        CurrentFunction.argsMemObj = memoryProcessor(Program, sentence[0].code)
         Program.memory = Program.memory.concat(CurrentFunction.argsMemObj)
-        AuxVars.isFunctionArgument = false
+        Program.Context.ShaperContext.isFunctionArgument = false
         delete Program.functions[fnNum].arguments
         delete Program.functions[fnNum].code
         CurrentFunction.sentences.forEach(createMemoryTable)
