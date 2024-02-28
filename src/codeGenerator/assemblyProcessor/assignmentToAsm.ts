@@ -77,8 +77,8 @@ export default function assignmentToAsm (
     function leftRegularOffsetUndefinedAndRightConstantOffsetUndefinedToAsm () : string {
         Right.hexContent = assertNotUndefined(Right.hexContent)
         if (Right.hexContent.length > 17) {
-            throw new Error(`At line: ${operationLine}.` +
-            ' Overflow on long value assignment (value bigger than 64 bits)')
+            throw new Error(Program.Context.formatError(operationLine,
+                'Overflow on long value assignment (value bigger than 64 bits)'))
         }
         if (Right.hexContent === '0000000000000000') {
             return `CLR @${Left.asmName}\n`
@@ -198,8 +198,8 @@ export default function assignmentToAsm (
         // special case for multi-long text assignment
         const arraySize = assertNotUndefined(Left.ArrayItem).totalSize - 1
         if (Right.size > arraySize) {
-            throw new Error(`At line: ${operationLine}.` +
-            ' Overflow on array value assignment (value bigger than array size).')
+            throw new Error(Program.Context.formatError(operationLine,
+                'Overflow on array value assignment (value bigger than array size).'))
         }
         const paddedLong = assertNotUndefined(Right.hexContent).padStart(arraySize * 16, '0')
         let assemblyCode = ''

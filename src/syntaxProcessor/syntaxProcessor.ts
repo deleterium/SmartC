@@ -42,7 +42,7 @@ export default function syntaxProcessor (Program: CONTRACT) : void {
         case 'while':
         case 'do':
             if (assertNotUndefined(SentenceObj.condition).length === 0) {
-                throw new Error(`At line ${SentenceObj.line}. Sentence condition can not be empty`)
+                throw new Error(Program.Context.formatError(SentenceObj.line, 'Sentence condition can not be empty.'))
             }
             SentenceObj.ConditionAST = createTree(SentenceObj.condition)
             delete SentenceObj.condition

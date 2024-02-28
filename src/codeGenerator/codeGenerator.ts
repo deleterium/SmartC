@@ -51,11 +51,11 @@ export default function codeGenerator (Program: CONTRACT) {
         // For every function:
         Program.functions.forEach((currentFunction, index) => {
             if (currentFunction.isInline) {
-                if (currentFunction.name === 'main' || currentFunction.name === 'catch') {
-                    throw new Error(`At line: ${currentFunction.line}.` +
-                    " Functions 'main' and 'catch' cannot be inline.")
+                if (currentFunction.name !== 'main' && currentFunction.name !== 'catch') {
+                    return
                 }
-                return
+                Program.Context.errors.push(Program.Context.formatError(currentFunction.line,
+                    "Functions 'main' and 'catch' cannot be inline."))
             }
             Program.Context.currFunctionIndex = index
             writeAsmLine('') // blank line to be nice to debugger!
@@ -71,16 +71,23 @@ export default function codeGenerator (Program: CONTRACT) {
         let calls = 0
         while (/^%inline\.(\w+)%$/m.test(Program.Context.assemblyCode)) {
             calls++
-            Program.Context.assemblyCode = Program.Context.assemblyCode.replace(/^%inline\.(\w+)%$/m, substituteInlineFunction)
             if (calls > 200) {
-                throw new Error('At line: unknow. Maximum number of inline substitutions. ' +
-                    'Inline cannot be used in recursive functions neither have circular dependency of each other.')
+                const Result = /^%inline\.(\w+)%$/m.exec(Program.Context.assemblyCode)
+                if (Result === null) {
+                    // never
+                    throw new Error('Internal error')
+                }
+                const Fn = assertNotUndefined(Program.functions.find(f => f.name === Result[1]))
+                throw new Error(Program.Context.formatError(Fn.line,
+                    'Maximum number of inline substitutions. ' +
+                    'Inline cannot be used in recursive functions neither have circular dependency of each other.'))
             }
+            Program.Context.assemblyCode = Program.Context.assemblyCode.replace(/^%inline\.(\w+)%$/m, substituteInlineFunction)
         }
         checkUnusedVariables()
         // Inspect if there were errros and throw now
         if (Program.Context.errors.length !== 0) {
-            throw new Error(Program.Context.errors + Program.Context.warnings.join('\n'))
+            throw new Error(Program.Context.errors.concat(Program.Context.warnings).join('\n'))
         }
         return optimizer(
             Program.Config.optimizationLevel,
@@ -132,10 +139,6 @@ export default function codeGenerator (Program: CONTRACT) {
             Program.Context.currSourceLine = lineNumber
         }
         Program.Context.assemblyCode += lines
-    }
-
-    function addError (erroMessage: string) {
-        Program.Context.errors += erroMessage + '\n'
     }
 
     /** Add content of macro 'program' information to assembly code */
@@ -209,10 +212,10 @@ export default function codeGenerator (Program: CONTRACT) {
         Program.memory.forEach(Mem => {
             if (Mem.isSet === false) {
                 if (Mem.scope) {
-                    Program.Context.warnings.push(`Warning: Unused variable '${Mem.name}' in function '${Mem.scope}'.`)
+                    Program.Context.warnings.push(`Warning! Unused variable '${Mem.name}' in function '${Mem.scope}'.`)
                     return
                 }
-                Program.Context.warnings.push(`Warning: Unused global variable '${Mem.name}'.`)
+                Program.Context.warnings.push(`Warning! Unused global variable '${Mem.name}'.`)
             }
         })
     }
@@ -230,7 +233,7 @@ export default function codeGenerator (Program: CONTRACT) {
                 )
             } catch (err) {
                 if (err instanceof Error) {
-                    addError(err.message)
+                    Program.Context.errors.push(err.message)
                     break
                 }
                 // Fatal error
@@ -408,10 +411,10 @@ export default function codeGenerator (Program: CONTRACT) {
         if (initialJumpTarget === undefined &&
                 RetObj.type === 'register') {
             if ((InitAST.type === 'unaryASN' && InitAST.Operation.value !== '*') ||
-                    (InitAST.type === 'binaryASN' &&
-                        (InitAST.Operation.type === 'Comparision' || InitAST.Operation.type === 'Operator'))) {
-                throw new Error(`At line: ${InitAST.Operation.line}. ` +
-                    'Operation returning a value that is not being used. Use casting to (void) to avoid this error.')
+                (InitAST.type === 'binaryASN' &&
+                (InitAST.Operation.type === 'Comparision' || InitAST.Operation.type === 'Operator'))) {
+                throw new Error(Program.Context.formatError(InitAST.Operation.line,
+                    'Operation returning a value that is not being used. Use casting to (void) to avoid this error.'))
             }
         }
     }

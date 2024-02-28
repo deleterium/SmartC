@@ -81,8 +81,8 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 tokenAST[tokenIndex + 3]?.type === 'CodeDomain') {
                 // Function found. Does not return pointer
                 if (tokenAST[tokenIndex].value === 'struct') {
-                    throw new Error(`At line: ${tokenAST[tokenIndex].line}.` +
-                    ' Function returning a struct currently not implemented.')
+                    throw new Error(Program.Context.formatError(tokenAST[tokenIndex].line,
+                        'Function returning a struct currently not implemented.'))
                 }
                 validateFunctionReturnType(tokenAST[tokenIndex])
                 Program.functions.push({
@@ -133,7 +133,8 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 continue
             }
             if (isInline) {
-                throw new Error(`At line: ${tokenAST[tokenIndex].line}. Invalid use for inline keyword. Expecting a type and a function definition.`)
+                throw new Error(Program.Context.formatError(tokenAST[tokenIndex].line,
+                    'Invalid use for inline keyword. Expecting a type and a function definition.'))
             }
             // Not function neither macro, so it is global statement
             Program.Global.code.push(tokenAST[tokenIndex])
@@ -149,7 +150,8 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         case 'struct':
             return
         }
-        throw new Error(`At line: ${Tkn.line}. Invalid function declaration type. Expecting 'void', 'long', 'fixed' or 'struct'`)
+        throw new Error(Program.Context.formatError(Tkn.line,
+            "Invalid function declaration type. Expecting 'void', 'long', 'fixed' or 'struct'"))
     }
 
     /** Reads/verifies one macro token and add it into Program.Config object */
@@ -187,20 +189,20 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 usedBoolVal = true
                 break
             }
-            throw new Error(`At line: ${Token.line}.` +
-            ` Unknow macro property '#${Token.type} ${Token.property}'.` +
-            " Do you mean 'APIFunctions'? Check valid values on Help page")
+            throw new Error(Program.Context.formatError(Token.line,
+                `Unknow macro property '#${Token.type} ${Token.property}'.` +
+                " Do you mean 'APIFunctions'? Check valid values on Help page"))
         case 'program':
             processMacroProgram(Token)
             break
         default:
-            throw new Error(`At line: ${Token.line}.` +
-            ` Unknow macro: '#${Token.type}'. Please check valid values on Help page`)
+            throw new Error(Program.Context.formatError(Token.line,
+                `Unknow macro: '#${Token.type}'. Please check valid values on Help page`))
         }
         // Check if there was an error assign boolean values
         if (throwBoolVal && usedBoolVal) {
-            throw new Error(`At line: ${Token.line}.` +
-            ` Macro: '#${Token.type} ${Token.property}' with wrong value. Please check valid values on Help page.`)
+            throw new Error(Program.Context.formatError(Token.line,
+                `Macro: '#${Token.type} ${Token.property}' with wrong value. Please check valid values on Help page.`))
         }
     }
 
@@ -213,13 +215,13 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 Program.Config.maxAuxVars = num
                 return false
             }
-            throw new Error(`At line: ${MacroToken.line}. Value out of permitted range 1..10.`)
+            throw new Error(Program.Context.formatError(MacroToken.line, 'Value out of permitted range 1..10.'))
         case 'maxConstVars':
             if (num >= 0 && num <= 10) {
                 Program.Config.maxConstVars = num
                 return false
             }
-            throw new Error(`At line: ${MacroToken.line}. Value out of permitted range 0..10.`)
+            throw new Error(Program.Context.formatError(MacroToken.line, 'Value out of permitted range 0..10.'))
         case 'reuseAssignedVar':
             Program.Config.reuseAssignedVar = bool
             return true
@@ -228,7 +230,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 Program.Config.optimizationLevel = num
                 return false
             }
-            throw new Error(`At line: ${MacroToken.line}. Value out of permitted range 0..3.`)
+            throw new Error(Program.Context.formatError(MacroToken.line, 'Value out of permitted range 0..3.'))
         case 'version':
             // Nothing to do. 'version' is a reminder for programmers.
             return false
@@ -239,9 +241,9 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             Program.Config.verboseScope = bool
             return true
         default:
-            throw new Error(`At line: ${MacroToken.line}.` +
-            ` Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +
-            ' Please check valid values on Help page')
+            throw new Error(Program.Context.formatError(MacroToken.line,
+                `Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +
+                ' Please check valid values on Help page'))
         }
     }
 
@@ -253,12 +255,12 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 Program.Config.PName = MacroToken.value
                 return
             }
-            throw new Error(`At line: ${MacroToken.line}.` +
-            ' Program name must contains only letters [a-z][A-Z][0-9], from 1 to 30 chars.')
+            throw new Error(Program.Context.formatError(MacroToken.line,
+                'Program name must contains only letters [a-z][A-Z][0-9], from 1 to 30 chars.'))
         case 'description':
             if (MacroToken.value.length >= 1000) {
-                throw new Error(`At line: ${MacroToken.line}.` +
-                ` Program description max lenght is 1000 chars. It is ${MacroToken.value.length} chars.`)
+                throw new Error(Program.Context.formatError(MacroToken.line,
+                    `Program description max lenght is 1000 chars. It is ${MacroToken.value.length} chars.`))
             }
             Program.Config.PDescription = MacroToken.value
             return
@@ -276,29 +278,29 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
                 Program.Config.PUserStackPages = Number(MacroToken.value)
                 return
             }
-            throw new Error(`At line: ${MacroToken.line}.` +
-            ' Program user stack pages must be a number between 0 and 10, included.')
+            throw new Error(Program.Context.formatError(MacroToken.line,
+                'Program user stack pages must be a number between 0 and 10, included.'))
         case 'codeStackPages':
             if (/^\d\s*$|^10\s*$/.test(MacroToken.value)) {
                 Program.Config.PCodeStackPages = Number(MacroToken.value)
                 return
             }
-            throw new Error(`At line: ${MacroToken.line}.` +
-            ' Program code stack pages must be a number between 0 and 10, included.')
+            throw new Error(Program.Context.formatError(MacroToken.line,
+                'Program code stack pages must be a number between 0 and 10, included.'))
         case 'codeHashId':
             if (/^\d+\s*$/.test(MacroToken.value)) {
                 Program.Config.PCodeHashId = MacroToken.value.trim()
                 return
             }
-            throw new Error(`At line: ${MacroToken.line}.` +
-            ' Program code hash id must be a decimal number. Use 0 to let compiler fill the value at assembly output.')
+            throw new Error(Program.Context.formatError(MacroToken.line,
+                'Program code hash id must be a decimal number. Use 0 to let compiler fill the value at assembly output.'))
         case 'compilerVersion':
             // Nothing to do. compilerVersion is a reminder for programmers.
             break
         default:
-            throw new Error(`At line: ${MacroToken.line}.` +
-            ` Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +
-            ' Please check valid values on Help page')
+            throw new Error(Program.Context.formatError(MacroToken.line,
+                `Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +
+                ' Please check valid values on Help page'))
         }
     }
 
@@ -394,7 +396,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         AuxVars.currentPrefix = ''
         StructPhrase.members.forEach(StruPhrs => {
             if (StruPhrs.type !== 'phrase') {
-                throw new Error(`At line: ${StruPhrs.line}. Invalid sentence in struct members.`)
+                throw new Error(Program.Context.formatError(StruPhrs.line, 'Invalid sentence in struct members.'))
             }
             if (StruPhrs.code !== undefined) {
                 NewStructTD.structMembers.push(...memoryProcessor(
@@ -426,8 +428,8 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         AuxVars.isFunctionArgument = true
         const sentence = sentencesProcessor(AuxVars, CurrentFunction.arguments, true)
         if (sentence.length !== 1 || sentence[0].type !== 'phrase' || sentence[0].code === undefined) {
-            throw new Error(`At line: ${CurrentFunction.line}.` +
-            `Wrong arguments for function '${CurrentFunction.name}'.`)
+            throw new Error(Program.Context.formatError(CurrentFunction.line,
+                `Wrong arguments for function '${CurrentFunction.name}'.`))
         }
         CurrentFunction.argsMemObj = memoryProcessor(Program.typesDefinitions, AuxVars, sentence[0].code)
         Program.memory = Program.memory.concat(CurrentFunction.argsMemObj)
@@ -467,22 +469,22 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         for (i = 0; i < Program.functions.length; i++) {
             for (j = i + 1; j < Program.functions.length; j++) {
                 if (Program.functions[i].name === Program.functions[j].name) {
-                    throw new Error(`At line: ${Program.functions[j].line}.` +
-                    ` Found second definition for function '${Program.functions[j].name}'.`)
+                    throw new Error(Program.Context.formatError(Program.functions[j].line,
+                        `Found second definition for function '${Program.functions[j].name}'.`))
                 }
             }
             for (j = 0; j < Program.Global.BuiltInFunctions.length; j++) {
                 if (Program.functions[i].name === Program.Global.BuiltInFunctions[j].name) {
-                    throw new Error(`At line: ${Program.functions[i].line}.` +
-                    ` Function '${Program.functions[i].name}' has same name of one built-in Functions.`)
+                    throw new Error(Program.Context.formatError(Program.functions[i].line,
+                        `Function '${Program.functions[i].name}' has same name of one built-in Functions.`))
                 }
             }
             if (Program.Config.APIFunctions === true) {
                 for (j = 0; j < Program.Global.APIFunctions.length; j++) {
                     if (Program.functions[i].name === Program.Global.APIFunctions[j].name ||
                         Program.functions[i].name === Program.Global.APIFunctions[j].asmName) {
-                        throw new Error(`At line: ${Program.functions[i].line}.` +
-                        ` Function '${Program.functions[i].name}' has same name of one API Functions.`)
+                        throw new Error(Program.Context.formatError(Program.functions[i].line,
+                            `Function '${Program.functions[i].name}' has same name of one API Functions.`))
                     }
                 }
             }

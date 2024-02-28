@@ -84,9 +84,9 @@ export default function endAsnProcessor (
     function registerProc (retMemObj: MEMORY_SLOT) : GENCODE_SOLVED_OBJECT {
         const lastFreeRegister = Program.Context.registerInfo.filter(Reg => Reg.inUse === false).reverse()[0]
         if (lastFreeRegister === undefined || lastFreeRegister.Template.asmName === 'r0') {
-            throw new Error(`At line: ${CurrentNode.Token.line}. ` +
-            'No more registers available. ' +
-            `Increase the number with '#pragma maxAuxVars ${Program.Config.maxAuxVars + 1}' or try to reduce nested operations.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                'No more registers available. ' +
+                `Increase the number with '#pragma maxAuxVars ${Program.Config.maxAuxVars + 1}' or try to reduce nested operations.`))
         }
         lastFreeRegister.inUse = true
         lastFreeRegister.endurance = 'Scope'
@@ -106,8 +106,8 @@ export default function endAsnProcessor (
     function keywordProc () : GENCODE_SOLVED_OBJECT {
         const CurrentFunction: SC_FUNCTION | undefined = Program.functions[Program.Context.currFunctionIndex]
         if (ScopeInfo.logicalOp) {
-            throw new Error(`At line: ${CurrentNode.Token.line}. ` +
-            `Cannot use of keyword '${CurrentNode.Token.value}' in logical statements.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                `Cannot use of keyword '${CurrentNode.Token.value}' in logical statements.`))
         }
         switch (CurrentNode.Token.value) {
         case 'break':
@@ -121,8 +121,8 @@ export default function endAsnProcessor (
                 asmCode: createInstruction(Program, CurrentNode.Token)
             }
         case 'void':
-            throw new Error(`At line: ${CurrentNode.Token.line}. ` +
-            "Invalid use of keyword 'void'.")
+            throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                "Invalid use of keyword 'void'."))
         case 'long': {
             const LongTypeDefinition = Program.typesDefinitions.find(
                 Obj => Obj.type === 'long'
@@ -142,8 +142,8 @@ export default function endAsnProcessor (
                 ) as STRUCT_TYPE_DEFINITION | undefined
             }
             if (StructTypeDefinition === undefined) {
-                throw new Error(`At line: ${CurrentNode.Token.line}. ` +
-                    `Struct type definition for '${CurrentNode.Token.extValue}' not found.`)
+                throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                    `Struct type definition for '${CurrentNode.Token.extValue}' not found.`))
             }
             return {
                 SolvedMem: StructTypeDefinition.MemoryTemplate,
@@ -153,13 +153,13 @@ export default function endAsnProcessor (
         case 'return':
             // this is 'return;'
             if (CurrentFunction === undefined) {
-                throw new Error(`At line: ${CurrentNode.Token.line}.` +
-                " Can not use 'return' in global statements.")
+                throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                    "Can not use 'return' in global statements."))
             }
             if (CurrentFunction.declaration !== 'void') {
-                throw new Error(`At line: ${CurrentNode.Token.line}.` +
-                ` Function '${CurrentFunction.name}'` +
-                ` must return a '${CurrentFunction.declaration}' value.`)
+                throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                    `Function '${CurrentFunction.name}'` +
+                    ` must return a '${CurrentFunction.declaration}' value.`))
             }
             if (CurrentFunction.name === 'main' || CurrentFunction.name === 'catch') {
                 return {

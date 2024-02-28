@@ -12,7 +12,8 @@ export function createContext (Program: CONTRACT) : GLOBAL_CONTEXT {
         if (isInitialization) {
             return
         }
-        Program.Context.warnings.push(`Warning: at line ${line}. Variable '${Memory.name}' is used but not initialized.`)
+        Program.Context.warnings.push('Warning! ' + Program.Context.formatError(line,
+            `Variable '${Memory.name}' is used but not initialized.`))
         Memory.isSet = true // No more warning for same variable
     }
 
@@ -53,9 +54,20 @@ export function createContext (Program: CONTRACT) : GLOBAL_CONTEXT {
         jumpId: 0,
         assemblyCode: '',
         warnings: [],
-        errors: '',
+        errors: [],
         currFunctionIndex: -1,
         currSourceLine: 0,
+        formatError (line: string, message: string) : string {
+            let error = `At line: ${line}. ${message}\n`
+            const lineNo = Number(line.split(':')[0])
+            const colNo = Number(line.split(':')[1])
+            if (line === undefined || line === '0:0' || Number.isNaN(lineNo) || Number.isNaN(colNo)) {
+                return error
+            }
+            error += ' |' + Program.sourceLines[lineNo - 1] + '\n'
+            error += ' |' + '^'.padStart(colNo)
+            return error
+        },
         scopedRegisters: [],
         getNewJumpID: function () {
             // Any changes here, also change function auxvarsGetNewJumpID
@@ -124,7 +136,7 @@ export function createContext (Program: CONTRACT) : GLOBAL_CONTEXT {
                 MemFound = Program.memory.find(obj => obj.name === varName && obj.scope === '')
             }
             if (MemFound === undefined) {
-                throw new Error(`At line: ${line}. Using variable '${varName}' before declaration.`)
+                throw new Error(Program.Context.formatError(line, `Using variable '${varName}' before declaration.`))
             }
             if (MemFound.toBeRegister && MemFound.asmName === '') {
                 throw new Error(`At line: ${line}. Using variable '${varName}' out of scope!`)

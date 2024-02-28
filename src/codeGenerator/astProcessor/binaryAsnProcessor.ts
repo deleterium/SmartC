@@ -35,8 +35,8 @@ export default function binaryAsnProcessor (
 
     function delimiterProc () : GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.jumpFalse !== undefined) {
-            throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-            ' It is not possible to evaluate multiple sentences in logical operations.')
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                'It is not possible to evaluate multiple sentences in logical operations.'))
         }
         const LGenObj = genCode(Program, {
             RemAST: CurrentNode.Left,
@@ -76,7 +76,8 @@ export default function binaryAsnProcessor (
         LGenObj.asmCode += RGenObj.asmCode
         // Error handling
         if (LGenObj.SolvedMem.type === 'void' || RGenObj.SolvedMem.type === 'void') {
-            throw new Error(`At line: ${CurrentNode.Operation.line}. Can not make operations with void values.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                'Can not make operations with void values.'))
         }
         // Optimizations 1
         const PossibleRetObj = OperatorOptConstantConstant(
@@ -106,13 +107,15 @@ export default function binaryAsnProcessor (
         switch (castSide) {
         case 'left':
             if (!(leftDeclaration.endsWith('_ptr') && rightDeclaration.endsWith('_ptr'))) {
-                Program.Context.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on left side of operator '${CurrentNode.Operation.value}'.`)
+                Program.Context.warnings.push('Warning! ' + Program.Context.formatError(CurrentNode.Operation.line,
+                    `Implicit type casting conversion on left side of operator '${CurrentNode.Operation.value}'.`))
             }
             LGenObj = typeCasting(Program, LGenObj, rightDeclaration, CurrentNode.Operation.line)
             break
         case 'right': {
             if (!(leftDeclaration.endsWith('_ptr') && rightDeclaration.endsWith('_ptr'))) {
-                Program.Context.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of operator '${CurrentNode.Operation.value}'.`)
+                Program.Context.warnings.push('Warning! ' + Program.Context.formatError(CurrentNode.Operation.line,
+                    `Implicit type casting conversion on right side of operator '${CurrentNode.Operation.value}'.`))
             }
             const oldAsm = RGenObj.asmCode
             RGenObj = typeCasting(Program, RGenObj, leftDeclaration, CurrentNode.Operation.line)
@@ -157,8 +160,8 @@ export default function binaryAsnProcessor (
         Program.Context.SentenceContext.leftSideReserved = -1
         // Error check for Right side
         if (RGenObj.SolvedMem.type === 'void') {
-            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-            `Invalid right value for '${CurrentNode.Operation.type}'. Possible void value.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                `Invalid right value for '${CurrentNode.Operation.type}'. Possible void value.`))
         }
         // Implicit type casting on assignment
         const lDecl = utils.getDeclarationFromMemory(LGenObj.SolvedMem)
@@ -169,7 +172,8 @@ export default function binaryAsnProcessor (
             throw new Error('Internal error')
         case 'right':
             if (!(lDecl.endsWith('_ptr') && rDecl.endsWith('_ptr'))) {
-                Program.Context.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of assignment '='.`)
+                Program.Context.warnings.push('Warning! ' + Program.Context.formatError(CurrentNode.Operation.line,
+                    "Implicit type casting conversion on right side of assignment '='."))
             }
             RGenObj = typeCasting(Program, RGenObj, lDecl, CurrentNode.Operation.line)
         }
@@ -190,12 +194,13 @@ export default function binaryAsnProcessor (
 
     function assignmentStartErrorTests () : void {
         if (ScopeInfo.jumpFalse !== undefined) {
-            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-            'Can not use assignment during logical operations with branches')
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                'Can not use assignment during logical operations with branches'))
         }
         if (CurrentNode.Left.type === 'binaryASN' ||
             (CurrentNode.Left.type === 'unaryASN' && CurrentNode.Left.Operation.value !== '*')) {
-            throw new Error(`At line: ${CurrentNode.Operation.line}. Invalid left value for assignment.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                'Invalid left value for assignment.'))
         }
     }
 
@@ -217,8 +222,8 @@ export default function binaryAsnProcessor (
         if (LGenObj.SolvedMem.type === 'array' &&
             LGenObj.SolvedMem.Offset?.type === 'constant') {
             if (LGenObj.SolvedMem.ArrayItem !== undefined && LGenObj.SolvedMem.ArrayItem.totalSize <= LGenObj.SolvedMem.Offset.value + 1) {
-                throw new Error(`At line ${CurrentNode.Operation.line}. ` +
-                    'Array index is outside array size.')
+                throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                    'Array index is outside array size.'))
             }
             LGenObj.SolvedMem = Program.Context.getMemoryObjectByLocation(
                 utils.addHexSimple(LGenObj.SolvedMem.hexContent, LGenObj.SolvedMem.Offset.value)
@@ -234,8 +239,8 @@ export default function binaryAsnProcessor (
 
     function assignmentLeftSideErrorTests (Left: MEMORY_SLOT) : void {
         if (Left.address === -1) {
-            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-            `Invalid left value for ${CurrentNode.Operation.type}.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                `Invalid left value for ${CurrentNode.Operation.type}.`))
         }
         if (Left.type === 'array' && Program.Context.SentenceContext.hasVoidArray === false) {
             if (Left.Offset === undefined ||
@@ -243,16 +248,16 @@ export default function binaryAsnProcessor (
                 Left.Offset.addr === 0 &&
                 Left.Offset.declaration.includes('_ptr'))) {
                 // Array assignment base type || Array assignment inside struct
-                throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-                `Invalid left value for '${CurrentNode.Operation.type}'. Can not reassign an array.`)
+                throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                    `Invalid left value for '${CurrentNode.Operation.type}'. Can not reassign an array.`))
             }
         }
         if (Program.Context.SentenceContext.hasVoidArray &&
             (CurrentNode.Right.type !== 'endASN' ||
             (CurrentNode.Right.type === 'endASN' &&
             CurrentNode.Right.Token.type !== 'Constant'))) {
-            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-            'Invalid right value for multi-array assignment. It must be a constant.')
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                'Invalid right value for multi-array assignment. It must be a constant.'))
         }
     }
 
@@ -354,13 +359,15 @@ export default function binaryAsnProcessor (
         case '&=':
         case '|=':
         case '^=':
-            throw new Error(`At line ${CurrentNode.Operation.line}. Cannot use operator ${operVal} with fixed type numbers.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                `Cannot use operator ${operVal} with fixed type numbers.`))
         case '>>':
         case '<<':
         case '>>=':
         case '<<=':
             if (fixedSide === 'right') {
-                throw new Error(`At line ${CurrentNode.Operation.line}. Cannot use operator ${operVal} with fixed type numbers on right side.`)
+                throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                    `Cannot use operator ${operVal} with fixed type numbers on right side.`))
             }
             return 'none'
         case '/=':
@@ -390,10 +397,12 @@ export default function binaryAsnProcessor (
         case '^=':
         case '>>':
         case '<<':
-            throw new Error(`At line ${CurrentNode.Operation.line}. Cannot use operator ${operVal} with fixed type numbers.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                `Cannot use operator ${operVal} with fixed type numbers.`))
         case '>>=':
         case '<<=':
-            throw new Error(`At line ${CurrentNode.Operation.line}. Cannot use operator ${operVal} with fixed type numbers on right side.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                `Cannot use operator ${operVal} with fixed type numbers on right side.`))
         default:
             return 'none'
         }
@@ -409,13 +418,15 @@ export default function binaryAsnProcessor (
             if (lDecl.includes('ptr') && rDecl === 'long' && Program.Context.SentenceContext.hasVoidArray) {
                 return 'none'
             }
-            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of assigment does not match. Types are '${lDecl}' and '${rDecl}'.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                `Left and right side of assigment does not match. Types are '${lDecl}' and '${rDecl}'.`))
         case '+=':
         case '-=':
             if (lDecl.endsWith('_ptr') && rDecl === 'long') {
                 return 'none'
             }
-            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                `Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`))
         case '+':
         case '-':
             if (lDecl.includes('_ptr') && rDecl === 'long') {
@@ -424,7 +435,8 @@ export default function binaryAsnProcessor (
             if (rDecl.includes('_ptr') && lDecl === 'long') {
                 return 'none'
             }
-            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                `Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`))
         case '==':
         case '!=':
         case '<=':
@@ -440,10 +452,12 @@ export default function binaryAsnProcessor (
             if (lDecl === 'long' && rDecl.includes('_ptr')) {
                 return 'left'
             }
-            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                `Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`))
         default:
             // / * % & | ^ %= &= |= ^= >> << >>= <<= /= *=
-            throw new Error(`At line ${CurrentNode.Operation.line}. Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                `Left and right side of ${operVal} does not match. Types are '${lDecl}' and '${rDecl}'.`))
         }
     }
 
@@ -451,8 +465,8 @@ export default function binaryAsnProcessor (
         Left: MEMORY_SLOT, Right: MEMORY_SLOT, assemblyInstructions: string, line: string
     ) : GENCODE_SOLVED_OBJECT {
         if (Right.address !== -1 || Right.type !== 'constant' || Right.hexContent === undefined) {
-            throw new Error(`At line: ${line}. ` +
-            "Right side of an assigment with 'const' keyword must be a constant.")
+            throw new Error(Program.Context.formatError(line,
+                "Right side of an assigment with 'const' keyword must be a constant."))
         }
         // Inspect ASM code and change accordingly
         assemblyInstructions = setConstAsmCode(Program.memory, assemblyInstructions, line)
@@ -583,13 +597,15 @@ export default function binaryAsnProcessor (
         switch (castSide) {
         case 'left':
             if (!(leftDeclaration.endsWith('_ptr') && rightDeclaration.endsWith('_ptr'))) {
-                Program.Context.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on left side of comparision '${CurrentNode.Operation.value}'.`)
+                Program.Context.warnings.push('Warning! ' + Program.Context.formatError(CurrentNode.Operation.line,
+                    `Implicit type casting conversion on left side of comparision '${CurrentNode.Operation.value}'.`))
             }
             LGenObj = typeCasting(Program, LGenObj, rightDeclaration, CurrentNode.Operation.line)
             break
         case 'right':
             if (!(leftDeclaration.endsWith('_ptr') && rightDeclaration.endsWith('_ptr'))) {
-                Program.Context.warnings.push(`Warning: at line ${CurrentNode.Operation.line}. Implicit type casting conversion on right side of comparision '${CurrentNode.Operation.value}'.`)
+                Program.Context.warnings.push('Warning! ' + Program.Context.formatError(CurrentNode.Operation.line,
+                    `Implicit type casting conversion on right side of comparision '${CurrentNode.Operation.value}'.`))
             }
             RGenObj = typeCasting(Program, RGenObj, leftDeclaration, CurrentNode.Operation.line)
         }

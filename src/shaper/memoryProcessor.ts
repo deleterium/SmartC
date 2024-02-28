@@ -41,8 +41,8 @@ export default function memoryProcessor (
                 retMem.push(...structProcessControl())
                 break
             case 'register':
-                if (AuxVars.isFunctionArgument) {
-                    throw new Error(`At line: ${phraseCode[tokenCounter].line}. Arguments for functions cannot be register type.`)
+                    throw new Error(Program.Context.formatError(phraseCode[tokenCounter].line,
+                        'Arguments for functions cannot be register type.'))
                 }
                 tokenCounter++
                 isRegister = true
@@ -65,7 +65,8 @@ export default function memoryProcessor (
             switch (phraseCode[tokenCounter].type) {
             case 'Delimiter':
                 if (keywordIndex + 1 === tokenCounter) {
-                    throw new Error(`At line: ${phraseCode[tokenCounter].line}. Delimiter ',' not expected.`)
+                    throw new Error(Program.Context.formatError(phraseCode[tokenCounter].line,
+                        "Delimiter ',' not expected."))
                 }
                 tokenCounter++
                 valid = true
@@ -104,8 +105,8 @@ export default function memoryProcessor (
         header.scope = AuxVars.currentScopeName
         if (definition === 'void') {
             if (isPointer === false) {
-                throw new Error(`At line: ${phraseCode[startingTokenCounter].line}.` +
-                ' Can not declare variables as void.')
+                throw new Error(Program.Context.formatError(phraseCode[startingTokenCounter].line,
+                    'Can not declare variables as void.'))
             }
             header.declaration = 'void_ptr'
         } else { // phraseCode[keywordIndex].value === 'long' | 'fixed'
@@ -122,7 +123,8 @@ export default function memoryProcessor (
         }
         // But if it IS an array, update header
         if (isRegister) {
-            throw new Error(`At line: ${phraseCode[tokenCounter].line}. 'register' modifier on arrays is not implemented.`)
+            throw new Error(Program.Context.formatError(phraseCode[tokenCounter].line,
+                "'register' modifier on arrays is not implemented."))
         }
         header.type = 'array'
         header.typeDefinition = structPrefix + header.asmName
@@ -171,8 +173,8 @@ export default function memoryProcessor (
     /** Inspect one item to get array dimension */
     function getArraySize (tkn: TOKEN[] = [], line: string = '0:0') {
         if (tkn.length !== 1 || tkn[0].type !== 'Constant') {
-            throw new Error(`At line: ${line}.` +
-            ' Wrong array declaration. Only constant size declarations allowed.')
+            throw new Error(Program.Context.formatError(line,
+                'Wrong array declaration. Only constant size declarations allowed.'))
         }
         return parseInt(tkn[0].value, 16)
     }
@@ -221,7 +223,7 @@ export default function memoryProcessor (
             switch (phraseCode[tokenCounter].type) {
             case 'Delimiter':
                 if (keywordIndex + 1 === tokenCounter) {
-                    throw new Error(`At line: ${line}. Delimiter ',' not expected.`)
+                    throw new Error(Program.Context.formatError(line, "Delimiter ',' not expected."))
                 }
                 tokenCounter++
                 isPointer = false
@@ -235,20 +237,20 @@ export default function memoryProcessor (
                     tokenCounter++
                     break
                 }
-                throw new Error(`At line: ${line}.` +
-                ` Invalid element (value: '${phraseCode[tokenCounter].value}') found in struct definition.`)
+                throw new Error(Program.Context.formatError(line,
+                    `Invalid element (value: '${phraseCode[tokenCounter].value}') found in struct definition.`))
             case 'Variable':
                 if (AuxVars.isFunctionArgument && !isPointer) {
-                    throw new Error(`At line: ${line}.` +
-                    ' Passing struct by value as argument is not supported. Pass by reference.')
+                    throw new Error(Program.Context.formatError(line,
+                        'Passing struct by value as argument is not supported. Pass by reference.'))
                 }
                 retMemory.push(...structToMemoryObject(structNameDef, phraseCode[keywordIndex].line))
                 tokenCounter++
                 break
             default:
-                throw new Error(`At line: ${line}.` +
-                ` Invalid element (type: '${phraseCode[tokenCounter].type}' ` +
-                ` value: '${phraseCode[tokenCounter].value}') found in struct definition!`)
+                throw new Error(Program.Context.formatError(line,
+                    `Invalid element (type: '${phraseCode[tokenCounter].type}' ` +
+                    ` value: '${phraseCode[tokenCounter].value}') found in struct definition!`))
             }
         }
         return retMemory
@@ -267,8 +269,8 @@ export default function memoryProcessor (
             // It IS NOT array of structs
             if (isStructPointer === false) {
                 if (StructTD === undefined) {
-                    throw new Error(`At line: ${startingLine}.` +
-                    ` Could not find type definition for 'struct' '${currentStructNameDef}'.`)
+                    throw new Error(Program.Context.formatError(startingLine,
+                        `Could not find type definition for 'struct' '${currentStructNameDef}'.`))
                 }
                 return createMemoryObjectFromSTD(currentStructNameDef, phraseCode[tokenCounter].value, isStructPointer, false)
             }
@@ -296,13 +298,14 @@ export default function memoryProcessor (
         }
         // It IS array of structs
         if (StructTD === undefined) {
-            throw new Error(`At line: ${startingLine}.` +
-            ` Could not find type definition for 'struct' '${currentStructNameDef}'.`)
+            throw new Error(Program.Context.formatError(startingLine,
+                `Could not find type definition for 'struct' '${currentStructNameDef}'.`))
         }
         // Prepare structMemHeader
         StructMemHeader = deepCopy(StructTD.MemoryTemplate)
         if (isStructPointer) {
-            throw new Error(`At line: ${startingLine}. Arrays of struct pointers are not currently supported.`)
+            throw new Error(Program.Context.formatError(startingLine,
+                'Arrays of struct pointers are not currently supported.'))
         }
         StructMemHeader.name = phraseCode[startingTokenCounter].value
         StructMemHeader.asmName = AuxVars.currentPrefix + phraseCode[startingTokenCounter].value

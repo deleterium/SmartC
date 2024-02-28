@@ -117,12 +117,12 @@ export default function unaryAsnProcessor (
         const declar = utils.getDeclarationFromMemory(CGenObj.SolvedMem)
         if (declar.includes('_ptr') === false) {
             if (CurrentNode.Center.type === 'endASN' || CurrentNode.Center.type === 'lookupASN') {
-                throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                ` Trying to read/set content of variable ${CurrentNode.Center.Token.value}` +
-                ' that is not declared as pointer.')
+                throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                    `Trying to read/set content of variable ${CurrentNode.Center.Token.value}` +
+                    ' that is not declared as pointer.'))
             }
-            throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-            ' Trying to read/set content of a value that is not declared as pointer.')
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                'Trying to read/set content of a value that is not declared as pointer.'))
         }
         if (CGenObj.SolvedMem.Offset) {
             // Double deference: deference and continue
@@ -223,22 +223,22 @@ export default function unaryAsnProcessor (
 
     function addressOfOpProc () : GENCODE_SOLVED_OBJECT {
         if (ScopeInfo.jumpFalse !== undefined) {
-            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-            "Can not use UnaryOperator '&' during logical operations with branches.")
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                "Can not use UnaryOperator '&' during logical operations with branches."))
         }
         let { SolvedMem: RetMem, asmCode } = traverseNotLogical()
         let TmpMemObj: MEMORY_SLOT
         switch (RetMem.type) {
         case 'void':
-            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-            'Trying to get address of void value.')
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                'Trying to get address of void value.'))
         case 'register':
             TmpMemObj = utils.createConstantMemObj(RetMem.address)
             TmpMemObj.declaration = RetMem.declaration
             break
         case 'constant':
-            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-            'Trying to get address of a constant value.')
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                'Trying to get address of a constant value.'))
         case 'array':
             if (RetMem.Offset !== undefined) {
                 if (RetMem.Offset.type === 'constant') {
@@ -322,25 +322,25 @@ export default function unaryAsnProcessor (
     function returnKeyProc () : GENCODE_SOLVED_OBJECT {
         const CurrentFunction: SC_FUNCTION | undefined = Program.functions[Program.Context.currFunctionIndex]
         if (CurrentFunction === undefined) {
-            throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-            " Can not use 'return' in global statements.")
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                "Can not use 'return' in global statements."))
         }
         if (CurrentFunction.declaration === 'void') {
-            throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-            ` Function '${CurrentFunction.name}' must return` +
-            ` a ${CurrentFunction.declaration}' value.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                `Function '${CurrentFunction.name}' must return` +
+                ` a '${CurrentFunction.declaration}' value.`))
         }
         if (CurrentFunction.name === 'main' || CurrentFunction.name === 'catch') {
-            throw new Error(`At line: ${CurrentNode.Operation.line}. ` +
-            ` Special function ${CurrentFunction.name} must return void value.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                `Special function ${CurrentFunction.name} must return void value.`))
         }
         const CGenObj = traverseNotLogical()
         CGenObj.asmCode += Program.Context.SentenceContext.getAndClearPostOperations()
         if (utils.isNotValidDeclarationOp(CurrentFunction.declaration, CGenObj.SolvedMem)) {
-            throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-                ` Function ${CurrentFunction.name} must return` +
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                `Function ${CurrentFunction.name} must return` +
                 ` '${CurrentFunction.declaration}' value,` +
-                ` but it is returning '${CGenObj.SolvedMem.declaration}'.`)
+                ` but it is returning '${CGenObj.SolvedMem.declaration}'.`))
         }
         CGenObj.asmCode += createInstruction(Program, CurrentNode.Operation, CGenObj.SolvedMem)
         Program.Context.freeRegister(CGenObj.SolvedMem.address)
@@ -351,7 +351,8 @@ export default function unaryAsnProcessor (
         const CGenObj = traverseNotLogical()
         CGenObj.asmCode += Program.Context.SentenceContext.getAndClearPostOperations()
         if (CGenObj.SolvedMem.type !== 'label') {
-            throw new Error(`At line: ${CurrentNode.Operation.line}. Argument for keyword 'goto' is not a label.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                "Argument for keyword 'goto' is not a label."))
         }
         CGenObj.asmCode += createInstruction(Program, CurrentNode.Operation, CGenObj.SolvedMem)
         Program.Context.freeRegister(CGenObj.SolvedMem.address)
@@ -369,7 +370,8 @@ export default function unaryAsnProcessor (
     function sizeofKeyProc () : GENCODE_SOLVED_OBJECT {
         const CGenObj = traverseNotLogical()
         if (CGenObj.SolvedMem.type === 'structRef' && CGenObj.SolvedMem.Offset !== undefined) {
-            throw new Error(`At line: ${CurrentNode.Operation.line}. Struct pointer members not supported by 'sizeof'.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+                "Struct pointer members not supported by 'sizeof'."))
         }
         let size = CGenObj.SolvedMem.size
         if (CGenObj.SolvedMem.Offset === undefined && CGenObj.SolvedMem.ArrayItem !== undefined) {

@@ -29,11 +29,13 @@ export type GLOBAL_CONTEXT = {
     /** Storing warnings from compilation */
     warnings: string[]
     /** Errors found */
-    errors: string
+    errors: string[]
     /** Current function being processed */
     currFunctionIndex: number
     /** Line counter for source code */
     currSourceLine: number
+    /** Format errors with line and marks */
+    formatError (line: string | undefined, message: string) : string
     /** Handle register allocation and liberation in each scope */
     scopedRegisters: string[]
     /** Get a new jump id according to current Configs (global scope) */

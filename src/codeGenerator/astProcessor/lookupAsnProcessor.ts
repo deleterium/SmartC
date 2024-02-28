@@ -36,14 +36,14 @@ export default function lookupAsnProcessor (
             throw new Error(`Internal error at line: ${CurrentNode.Token.line}.`)
         }
         if (CurrentNode.modifiers.length !== 0 && StartObj.SolvedMem.type === 'void') {
-            throw new Error(`At line: ${CurrentNode.Token.line}.` +
-            ' Function returning void value can not have modifiers.')
+            throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                'Function returning void value can not have modifiers.'))
         }
         const EndObj = CurrentNode.modifiers.reduce(modifierProcessor, StartObj)
         if (ScopeInfo.logicalOp === true) {
             if (EndObj.SolvedMem.type === 'void') {
-                throw new Error(`At line: ${CurrentNode.Token.line}.` +
-                ' Function returning void value can not be used in conditionals decision.')
+                throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                    'Function returning void value can not be used in conditionals decision.'))
             }
             EndObj.asmCode += createInstruction(
                 Program,
@@ -98,8 +98,8 @@ export default function lookupAsnProcessor (
         arrayIndex = -1
         if (CurrentModifier.type === 'MemberByRef') {
             if (utils.getDeclarationFromMemory(Previous.SolvedMem) !== 'struct_ptr') {
-                throw new Error(`At line: ${CurrentNode.Token.line}. ` +
-                ` Variable '${Previous.SolvedMem.name}' not defined as struct pointer. Try to use '.' instead.`)
+                throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                    `Variable '${Previous.SolvedMem.name}' not defined as struct pointer. Try to use '.' instead.`))
             }
             if (Previous.SolvedMem.Offset === undefined) {
                 Previous.SolvedMem.Offset = {
@@ -137,8 +137,8 @@ export default function lookupAsnProcessor (
         }
         // from now on CurrentModifier.type is 'MemberByVal') {
         if (utils.getDeclarationFromMemory(Previous.SolvedMem) === 'struct_ptr') {
-            throw new Error(`At line: ${memberLine}.` +
-            " Using wrong member notation. Try to use '->' instead.")
+            throw new Error(Program.Context.formatError(memberLine,
+                "Using wrong member notation. Try to use '->' instead."))
         }
         if (Previous.SolvedMem.Offset === undefined) {
             Previous.SolvedMem = Program.Context.getMemoryObjectByLocation(Number('0x' + Previous.SolvedMem.hexContent) +
@@ -162,8 +162,8 @@ export default function lookupAsnProcessor (
     function memberLengthProc (Memory: MEMORY_SLOT) : GENCODE_SOLVED_OBJECT {
         const TypeD = getArrayTypeDefinition(Memory)
         if (TypeD === undefined) {
-            throw new Error(`At line: ${CurrentNode.Token.line}.` +
-            ` Array type definition not found for variable '${Memory.name}'.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                `Array type definition not found for variable '${Memory.name}'.`))
         }
         const len = assertNotUndefined(TypeD.MemoryTemplate.ArrayItem?.totalSize)
         if (Memory.Offset?.type === 'variable') {
@@ -184,8 +184,8 @@ export default function lookupAsnProcessor (
             typeName = Memory.Offset.typeDefinition
         }
         if (typeName === undefined) {
-            throw new Error(`At line: ${CurrentNode.Token.line}. ` +
-            `Variable '${Memory.name}' has no struct type definition`)
+            throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                `Variable '${Memory.name}' has no struct type definition`))
         }
         const StructTypeDefinition = Program.typesDefinitions.find(Obj =>
             Obj.type === 'struct' && Obj.name === typeName
@@ -197,8 +197,8 @@ export default function lookupAsnProcessor (
         let memberIdx = -1
         memberIdx = TypeD.structAccumulatedSize.findIndex(item => item[0] === memberName)
         if (memberIdx === -1) {
-            throw new Error(`At line: ${CurrentNode.Token.line}. ` +
-            `Member '${memberName}' not found on struct type definition.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                `Member '${memberName}' not found on struct type definition.`))
         }
         return memberIdx
     }
@@ -270,8 +270,8 @@ export default function lookupAsnProcessor (
             return TypeDefinition.arrayMultiplierDim[desiredDimension]
         }
         if (utils.getDeclarationFromMemory(Memory).includes('_ptr') === false) {
-            throw new Error(`At line: ${CurrentNode.Token.line}.` +
-            ` Array type definition not found. Is '${Memory}' declared as array or pointer?`)
+            throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                `Array type definition not found. Is '${Memory}' declared as array or pointer?`))
         }
         return 1 // allow use of array notation on pointer variables.
     }
@@ -297,8 +297,8 @@ export default function lookupAsnProcessor (
             throw new Error('Internal error.')
         }
         if (utils.getDeclarationFromMemory(Param) === 'fixed') {
-            throw new Error(`At line ${CurrentNode.Token.line}. ` +
-            'Array index cannot be fixed type.')
+            throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                'Array index cannot be fixed type.'))
         }
         switch (paramType) {
         case 'constant':

@@ -53,7 +53,7 @@ export function typeCasting (
         case 'long_ptr':
         case 'fixed_ptr':
         case 'struct_ptr':
-            throw new Error(`At line: ${line}. It is not possible to cast ${fromType} to fixed number.`)
+            throw new Error(Program.Context.formatError(line, `It is not possible to cast ${fromType} to fixed number.`))
         default:
             throw new Error('Internal error')
         }
@@ -73,7 +73,7 @@ export function typeCasting (
             utils.setMemoryDeclaration(InSolved.SolvedMem, 'long')
             return InSolved
         case 'struct':
-            throw new Error(`At line: ${line}. It is not possible to cast ${fromType} to long number.`)
+            throw new Error(Program.Context.formatError(line, `It is not possible to cast ${fromType} to long number.`))
         case 'void_ptr':
         case 'long_ptr':
         case 'fixed_ptr':
@@ -94,7 +94,7 @@ export function typeCasting (
             return InSolved
         case 'fixed':
             // From fixed to any pointer
-            throw new Error(`At line: ${line}. It is not possible to cast ${fromType} to a pointer type.`)
+            throw new Error(Program.Context.formatError(line, `It is not possible to cast ${fromType} to a pointer type.`))
         case 'struct':
             // From struct to pointer (address of first value in struct)
             InSolved.SolvedMem = utils.createConstantMemObj(InSolved.SolvedMem.hexContent)

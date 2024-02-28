@@ -48,7 +48,8 @@ export default function sentencesProcessor (
         case 'for':
             return forCodeToSentence()
         case 'else':
-            throw new Error(`At line: ${lineOfFirstInstruction}. 'else' not associated with an 'if(){}else{}' sentence`)
+            throw new Error(Program.Context.formatError(lineOfFirstInstruction,
+                "'else' not associated with an 'if(){}else{}' sentence"))
         case 'asm':
             return [{ type: 'phrase', code: [codetrain[currentToken]], line: lineOfFirstInstruction }]
         case 'do':
@@ -98,19 +99,20 @@ export default function sentencesProcessor (
             case 'case':
             case 'default':
                 // These keywords must start a sentence treated before. Throw if found now.
-                throw new Error(`At line: ${codetrain[currentToken].line}.` +
-                ` Statement including '${codetrain[currentToken].value}' in wrong way. Possible missing ';' before it.`)
+                throw new Error(Program.Context.formatError(codetrain[currentToken].line,
+                    `Statement including '${codetrain[currentToken].value}' in wrong way. Possible missing ';' before it.`))
             }
             phrase.push(codetrain[currentToken])
             currentToken++
         }
-        throw new Error(`At line: ${codetrain[currentToken - 1].line}. Missing ';'. `)
+        throw new Error(Program.Context.formatError(codetrain[currentToken - 1].line, "Missing ';'. "))
     }
 
     function validateRegisterNextType () {
         const nextToken = codetrain[currentToken + 1]
         if (nextToken === undefined) {
-            throw new Error(`At line: ${codetrain[currentToken].line}. Invalid use of register. Expecting a declaration type.`)
+            throw new Error(Program.Context.formatError(codetrain[currentToken].line,
+                'Invalid use of register. Expecting a declaration type.'))
         }
         switch (nextToken.value) {
         case 'void':
@@ -118,7 +120,8 @@ export default function sentencesProcessor (
         case 'fixed':
             return
         }
-        throw new Error(`At line: ${nextToken.line}. Invalid register declaration type. Expecting 'void', 'long' or 'fixed', but found '${nextToken.value}.'`)
+        throw new Error(Program.Context.formatError(nextToken.line,
+            `Invalid register declaration type. Expecting 'void', 'long' or 'fixed', but found '${nextToken.value}.'`))
     }
 
     function ifCodeToSentence () : SENTENCES[] {
@@ -126,8 +129,8 @@ export default function sentencesProcessor (
         const id = `__if${line}`
         currentToken++
         if (codetrain[currentToken] === undefined || codetrain[currentToken].type !== 'CodeCave') {
-            throw new Error(`At line: ${codetrain[currentToken - 1].line}.` +
-            " Expecting condition for 'if' statement.")
+            throw new Error(Program.Context.formatError(codetrain[currentToken - 1].line,
+                "Expecting condition for 'if' statement."))
         }
         const condition = codetrain[currentToken].params
         currentToken++
@@ -158,8 +161,8 @@ export default function sentencesProcessor (
         const id = `__loop${line}`
         currentToken++
         if (codetrain[currentToken] === undefined || codetrain[currentToken].type !== 'CodeCave') {
-            throw new Error(`At line: ${codetrain[currentToken - 1].line}.` +
-            " Expecting condition for 'while' statement.")
+            throw new Error(Program.Context.formatError(codetrain[currentToken - 1].line,
+                "Expecting condition for 'while' statement."))
         }
         const condition = codetrain[currentToken].params
         currentToken++
@@ -180,15 +183,17 @@ export default function sentencesProcessor (
         const id = `__loop${line}`
         currentToken++
         if (codetrain[currentToken] === undefined || codetrain[currentToken]?.type !== 'CodeCave') {
-            throw new Error(`At line: ${codetrain[currentToken - 1].line}.` +
-            " Expecting condition for 'for' statement.")
+            throw new Error(Program.Context.formatError(codetrain[currentToken - 1].line,
+                "Expecting condition for 'for' statement."))
         }
         const threeSentences = sentencesProcessor(AuxVars, codetrain[currentToken].params, true)
         if (threeSentences.length !== 3) {
-            throw new Error(`At line: ${line}. Expected 3 sentences for 'for(;;){}' loop. Got ${threeSentences.length}`)
+            throw new Error(Program.Context.formatError(line,
+                `Expected 3 sentences for 'for(;;){}' loop. Got ${threeSentences.length}.`))
         }
         if (!threeSentences.every(Obj => Obj.type === 'phrase')) {
-            throw new Error(`At line: ${line}. Sentences inside 'for(;;)' can not be other loops or conditionals`)
+            throw new Error(Program.Context.formatError(line,
+                "Sentences inside 'for(;;)' can not be other loops or conditionals."))
         }
         currentToken++
         AuxVars.latestLoopId.push(id)
@@ -223,7 +228,8 @@ export default function sentencesProcessor (
                 condition: codetrain[currentToken - 1].params
             }]
         }
-        throw new Error(`At line: ${codetrain[currentToken].line}. Wrong do{}while(); sentence.`)
+        throw new Error(Program.Context.formatError(codetrain[currentToken].line,
+            'Wrong do{}while(); sentence.'))
     }
 
     function structCodeToSentence () : SENTENCES[] {
@@ -250,7 +256,8 @@ export default function sentencesProcessor (
             Node.Phrase.code.push(codetrain[currentToken])
             currentToken++
         }
-        throw new Error(`At line: end of file. Missing ';' to end 'struct' statement started at line ${line}.`)
+        throw new Error(Program.Context.formatError(line,
+            "End of file reached searching for ';' to end 'struct' statement"))
     }
 
     function switchCodeToSentence () : SENTENCES[] {
@@ -258,17 +265,17 @@ export default function sentencesProcessor (
         const id = `__switch${line}`
         currentToken++
         if (codetrain[currentToken] === undefined || codetrain[currentToken].type !== 'CodeCave') {
-            throw new Error(`At line: ${line}.` +
-            " Expecting (expression) for 'switch (expr) {block}' statement.")
+            throw new Error(Program.Context.formatError(line,
+                "Expecting (expression) for 'switch (expr) {block}' statement."))
         }
         if (codetrain[currentToken + 1] === undefined || codetrain[currentToken + 1].type !== 'CodeDomain') {
-            throw new Error(`At line: ${line}.` +
-            " Expecting a {block} for 'switch (expression) {block}' statement.")
+            throw new Error(Program.Context.formatError(line,
+                "Expecting a {block} for 'switch (expression) {block}' statement."))
         }
         const expression = assertNotUndefined(codetrain[currentToken].params)
         if (expression.length === 0) {
-            throw new Error(`At line: ${line}.` +
-            " Expression cannot be empty in 'switch (expression) {block}' statement.")
+            throw new Error(Program.Context.formatError(line,
+                "Expression cannot be empty in 'switch (expression) {block}' statement."))
         }
         currentToken++
         AuxVars.latestLoopId.push(id)
@@ -282,12 +289,12 @@ export default function sentencesProcessor (
         }, [])
         const defaults = block.filter(Obj => Obj.type === 'default')
         if (cases.length === 0) {
-            throw new Error(`At line: ${line}.` +
-            " 'switch' statement must include at least one 'case' label.")
+            throw new Error(Program.Context.formatError(line,
+                "'switch' statement must include at least one 'case' label."))
         }
         if (defaults.length > 1) {
-            throw new Error(`At line: ${line}.` +
-            " 'switch' statement cannot have two or more 'default' labels.")
+            throw new Error(Program.Context.formatError(line,
+                "'switch' statement cannot have two or more 'default' labels."))
         }
         return [{
             type: 'switch',
@@ -303,12 +310,12 @@ export default function sentencesProcessor (
         const line = codetrain[currentToken].line
         currentToken++
         if (codetrain[currentToken] === undefined) {
-            throw new Error(`At line: ${codetrain[currentToken - 1].line}.` +
-            " Expecting variable for 'case var:' statement.")
+            throw new Error(Program.Context.formatError(codetrain[currentToken - 1].line,
+                "Expecting variable for 'case var:' statement."))
         }
         if (AuxVars.latestLoopId.length === 0 ||
             !AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1].includes('switch')) {
-            throw new Error(`At line: ${line}. 'case' outside a switch statement.`)
+            throw new Error(Program.Context.formatError(line, "'case' outside a switch statement."))
         }
         let condition = [codetrain[currentToken]]
         if (codetrain[currentToken].type === 'CodeCave') {
@@ -316,8 +323,8 @@ export default function sentencesProcessor (
         }
         currentToken++
         if (codetrain[currentToken] === undefined || codetrain[currentToken].type !== 'Colon') {
-            throw new Error(`At line: ${codetrain[currentToken - 1].line}.` +
-            " Missing ':' in 'case var :' statement.")
+            throw new Error(Program.Context.formatError(codetrain[currentToken - 1].line,
+                "Missing ':' in 'case var :' statement."))
         }
         const caseStrId = '_' + caseId
         caseId++
@@ -333,12 +340,12 @@ export default function sentencesProcessor (
         const line = codetrain[currentToken].line
         currentToken++
         if (codetrain[currentToken] === undefined || codetrain[currentToken].type !== 'Colon') {
-            throw new Error(`At line: ${codetrain[currentToken - 1].line}.` +
-            " Missing ':' in 'default :' statement.")
+            throw new Error(Program.Context.formatError(codetrain[currentToken - 1].line,
+                "Missing ':' in 'default :' statement."))
         }
         if (AuxVars.latestLoopId.length === 0 ||
             !AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1].includes('switch')) {
-            throw new Error(`At line: ${line}. 'default' outside a switch statement.`)
+            throw new Error(Program.Context.formatError(line, "'default' outside a switch statement."))
         }
         return [{
             type: 'default',
@@ -348,16 +355,16 @@ export default function sentencesProcessor (
 
     function labelCodeToSentence (formerPhrase: TOKEN[], line: string) : SENTENCES[] {
         if (formerPhrase.length === 0) {
-            throw new Error(`At line: ${line}.` +
-            " Unexpected ':'.")
+            throw new Error(Program.Context.formatError(line,
+                "Unexpected ':'."))
         }
         if (formerPhrase.length > 1) {
-            throw new Error(`At line: ${line}.` +
-            "  Labels cannot have more than one word. Maybe missing ';'?")
+            throw new Error(Program.Context.formatError(line,
+                "Labels cannot have more than one word. Maybe missing ';'?"))
         }
         if (formerPhrase[0].type !== 'Variable') {
-            throw new Error(`At line: ${line}.` +
-            '  Labels must be a name.')
+            throw new Error(Program.Context.formatError(line,
+                'Labels must be a name.'))
         }
         return [{
             type: 'label',
@@ -369,14 +376,14 @@ export default function sentencesProcessor (
     function breakCodeToSentence () : SENTENCES[] {
         const line = codetrain[currentToken].line
         if (AuxVars.latestLoopId.length === 0) {
-            throw new Error(`At line: ${line}. 'break' outside a loop or switch.`)
+            throw new Error(Program.Context.formatError(line, "'break' outside a loop or switch."))
         }
         if (codetrain[currentToken + 1]?.type === 'Terminator') {
             currentToken++
             codetrain[currentToken - 1].extValue = AuxVars.latestLoopId[AuxVars.latestLoopId.length - 1]
             return [{ type: 'phrase', code: [codetrain[currentToken - 1]], line: line }]
         }
-        throw new Error(`At line: ${line}. Missing ';' after 'break' keyword.`)
+        throw new Error(Program.Context.formatError(line, "Missing ';' after 'break' keyword."))
     }
 
     function continueCodeToSentence () : SENTENCES[] {
@@ -388,15 +395,15 @@ export default function sentencesProcessor (
             return previous
         }, '')
         if (loopId === '') {
-            throw new Error(`At line: ${line}.` +
-            " 'continue' outside a loop.")
+            throw new Error(Program.Context.formatError(line,
+                "'continue' outside a loop."))
         }
         if (codetrain[currentToken + 1]?.type === 'Terminator') {
             currentToken++
             codetrain[currentToken - 1].extValue = loopId
             return [{ type: 'phrase', code: [codetrain[currentToken - 1]], line: line }]
         }
-        throw new Error(`At line: ${line}. Missing ';' after 'continue' keyword.`)
+        throw new Error(Program.Context.formatError(line, "Missing ';' after 'continue' keyword."))
     }
 
     return sentencesProcessorMain()

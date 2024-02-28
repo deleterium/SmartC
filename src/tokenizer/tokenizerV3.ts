@@ -127,7 +127,8 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
             if (nextStateFunction) {
                 return nextStateFunction()
             }
-            throw new Error(`At line: ${streamCurrentLine}:${streamCurrentCol}. Invalid character '${currentChar}' found.`)
+            throw new Error(Program.Context.formatError(streamCurrentLine + ':' + streamCurrentCol,
+                `Invalid character '${currentChar}' found.`))
         }
     }
 
@@ -185,7 +186,8 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
         do {
             currentChar = streamAdvance()
             if (currentChar === undefined) {
-                throw new Error(`At line: ${tokenLine}:${tokenCol}. Invalid asm { ... } sentence. Expecting '{', found end of file.`)
+                throw new Error(Program.Context.formatError(tokenLine + ':' + tokenCol,
+                    "Invalid asm { ... } sentence. Expecting '{', found end of file."))
             }
             if (bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsBlank) {
                 continue
@@ -193,7 +195,8 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
             if (currentChar === '{') {
                 return stateReadAsmBrackets()
             }
-            throw new Error(`At line: ${streamCurrentLine}:${streamCurrentCol}. Invalid asm { ... } sentence. Expecting '{', found '${currentChar}'.`)
+            throw new Error(Program.Context.formatError(streamCurrentLine + ':' + streamCurrentCol,
+                `Invalid asm { ... } sentence. Expecting '{', found '${currentChar}'.`))
         } while (true)
     }
 
@@ -204,7 +207,8 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
         do {
             currentChar = streamAdvance()
             if (currentChar === undefined) {
-                throw new Error(`At line: ${line}. Invalid asm { ... } sentence. Expecting '}', found end of file.`)
+                throw new Error(Program.Context.formatError(line,
+                    "Invalid asm { ... } sentence. Expecting '}', found end of file."))
             }
         } while (currentChar !== '}')
         const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, streamCurrentIndex)
@@ -215,12 +219,14 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
         const line = `${streamCurrentLine}:${streamCurrentCol}`
         const nextToken = stateStart()
         if (nextToken === undefined) {
-            throw new Error(`At line: ${line}. struct sentence. Expecting a type name, but found EOF or comments.`)
+            throw new Error(Program.Context.formatError(line,
+                'struct sentence. Expecting a type name, but found EOF or comments.'))
         }
         if (nextToken.type === 'Variable') {
             return { type: 'Keyword', precedence: 12, value: 'struct', line, extValue: nextToken.value }
         }
-        throw new Error(`At line: ${streamCurrentLine}:${streamCurrentCol}. Invalid struct sentence. Expecting a type name, found '${nextToken.value}'`)
+        throw new Error(Program.Context.formatError(streamCurrentLine + ':' + streamCurrentCol,
+            `Invalid struct sentence. Expecting a type name, found '${nextToken.value}'`))
     }
 
     function stateReadNumber () : PRE_TOKEN {
@@ -292,7 +298,8 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
         while (true) {
             currentChar = streamAdvance()
             if (currentChar === undefined) {
-                throw new Error(`At line: ${tokenLine}:${tokenCol - 1}. End of file reached while trying to find '*/' to end this comment section.`)
+                throw new Error(Program.Context.formatError(tokenLine + ':' + (tokenCol - 1),
+                    "End of file reached while trying to find '*/' to end this comment section."))
             }
             if (currentChar === '*') {
                 currentChar = streamAdvance()
@@ -329,7 +336,8 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
                 }
             }
             if (currentChar === undefined) {
-                throw new Error(`At line: ${line}. End of file reached while trying to find \`${delimitator}\` string delimitator.`)
+                throw new Error(Program.Context.formatError(line,
+                    `End of file reached while trying to find \`${delimitator}\` string delimitator.`))
             }
         } while (currentChar !== delimitator)
         const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, streamCurrentIndex)
@@ -349,7 +357,7 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
             return { type: 'SetOperator', precedence: 10, value: '*=', line }
         }
         if (currentChar === '/') {
-            throw new Error(`At line: ${line}. Ending a comment that was not started.`)
+            throw new Error(Program.Context.formatError(line, 'Ending a comment that was not started.'))
         }
         streamRewind()
         if (isBinaryOperator()) {

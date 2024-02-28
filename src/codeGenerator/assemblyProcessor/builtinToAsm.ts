@@ -547,7 +547,7 @@ export function createBuiltinInstruction (
     function readShortMessageToAsm (tempArgsMem: FLATTEN_MEMORY_RETURN_OBJECT[]) : string {
         let retAsm: string
         if (argsMem[2].type !== 'constant') {
-            throw new Error(`At line: ${BuiltinToken.line}. Only constants supported for length in 'sendShortMessage'.`)
+            throw new Error(Program.Context.formatError(BuiltinToken.line, "Only constants supported for length in 'sendShortMessage'"))
         }
         Program.Context.freeRegister(tempArgsMem[2].FlatMem.address)
         auxFlatMem = flattenMemory(Program, utils.createConstantMemObj(0n), BuiltinToken.line)
@@ -558,7 +558,7 @@ export function createBuiltinInstruction (
         Program.Context.freeRegister(auxFlatMem.FlatMem.address)
         const len = Number('0x' + argsMem[2].hexContent)
         if (Number.isNaN(len) || len > 4) {
-            throw new Error(`At line: ${BuiltinToken.line}. Argument 'length' outside range (0 <= length <= 4) in 'readShortMessage'.`)
+            throw new Error(Program.Context.formatError(BuiltinToken.line, "Argument 'length' outside range (0 <= length <= 4) in 'readShortMessage'."))
         }
         if (len === 0) {
             return ''
@@ -718,12 +718,12 @@ export function createBuiltinInstruction (
     function sendShortMessageToAsm (tempArgsMem: FLATTEN_MEMORY_RETURN_OBJECT[]) : string {
         let retAsm: string
         if (argsMem[1].type !== 'constant') {
-            throw new Error(`At line: ${BuiltinToken.line}. Only constants supported for length in 'sendShortMessage'.`)
+            throw new Error(Program.Context.formatError(BuiltinToken.line, "Only constants supported for length in 'sendShortMessage'."))
         }
         Program.Context.freeRegister(tempArgsMem[1].FlatMem.address)
         const len = Number('0x' + argsMem[1].hexContent)
         if (Number.isNaN(len) || len > 4) {
-            throw new Error(`At line: ${BuiltinToken.line}. Argument 'length' outside range (0 <= length <= 4) in 'sendShortMessage'.`)
+            throw new Error(Program.Context.formatError(BuiltinToken.line, "Argument 'length' outside range (0 <= length <= 4) in 'sendShortMessage'."))
         }
         if (len === 0) {
             return ''

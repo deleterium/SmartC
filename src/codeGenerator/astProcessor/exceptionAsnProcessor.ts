@@ -10,8 +10,8 @@ export default function exceptionAsnProcessor (
 ) : GENCODE_SOLVED_OBJECT {
     const CurrentNode = utils.assertAsnType('exceptionASN', ScopeInfo.RemAST)
     if (ScopeInfo.jumpFalse !== undefined) {
-        throw new Error(`At line: ${CurrentNode.Operation.line}.` +
-        ' Can not use SetUnaryOperator (++ or --) during logical operations with branches')
+        throw new Error(Program.Context.formatError(CurrentNode.Operation.line,
+            'Can not use SetUnaryOperator (++ or --) during logical operations with branches'))
     }
     if (CurrentNode.Left !== undefined) {
         const LGenObj = genCode(Program, {

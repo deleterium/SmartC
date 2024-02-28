@@ -31,7 +31,7 @@ export default function functionSolver (
         if (ApiToCall) {
             return internalFunctionSolver('api', ApiToCall, subSentences)
         }
-        throw new Error(`At line: ${CurrentNode.Token.line}. Function '${fnName}' not declared.`)
+        throw new Error(Program.Context.formatError(CurrentNode.Token.line, `Function '${fnName}' not declared.`))
     }
 
     function userFunctionSolver (FunctionToCall: SC_FUNCTION, rawArgs: AST[]) : GENCODE_SOLVED_OBJECT {
@@ -51,9 +51,9 @@ export default function functionSolver (
             rawArgs.pop()
         }
         if (rawArgs.length !== FunctionToCall.argsMemObj.length) {
-            throw new Error(`At line: ${CurrentNode.Token.line}.` +
-            ` Wrong number of arguments for function '${FunctionToCall.name}'.` +
-            ` It must have '${FunctionToCall.argsMemObj.length}' args.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                ` Wrong number of arguments for function '${FunctionToCall.name}'.` +
+                ` It must have '${FunctionToCall.argsMemObj.length}' args.`))
         }
         // Solve caller arguments and set to callee arguments
         for (let i = rawArgs.length - 1; i >= 0; i--) {
@@ -64,13 +64,13 @@ export default function functionSolver (
             })
             const fnArg = FunctionToCall.argsMemObj[i]
             if (utils.isNotValidDeclarationOp(fnArg.declaration, ArgGenObj.SolvedMem)) {
-                throw new Error(`At line: ${CurrentNode.Token.line}.` +
+                throw new Error(Program.Context.formatError(CurrentNode.Token.line,
                     ` Type of function argument #${i + 1} is different from variable: ` +
-                    ` Expecting '${fnArg.declaration}', got '${ArgGenObj.SolvedMem.declaration}'.`)
+                    ` Expecting '${fnArg.declaration}', got '${ArgGenObj.SolvedMem.declaration}'.`))
             }
             if (ArgGenObj.SolvedMem.size !== 1 && ArgGenObj.SolvedMem.Offset === undefined) {
-                throw new Error(`At line: ${CurrentNode.Token.line}.` +
-                ' Overflow in argument size.')
+                throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                    ' Overflow in argument size.'))
             }
             returnAssemblyCode += ArgGenObj.asmCode
             returnAssemblyCode += createInstruction(
@@ -131,9 +131,9 @@ export default function functionSolver (
             rawArgs.pop()
         }
         if (rawArgs.length !== ifnToCall.argsMemObj.length) {
-            throw new Error(`At line: ${CurrentNode.Token.line}.` +
-            ` Wrong number of arguments for function '${ifnToCall.name}'.` +
-            ` It must have '${ifnToCall.argsMemObj.length}' args.`)
+            throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                ` Wrong number of arguments for function '${ifnToCall.name}'.` +
+                ` It must have '${ifnToCall.argsMemObj.length}' args.`))
         }
         rawArgs.forEach((RawSentence, idx) => {
             const ArgGenObj = genCode(Program, {
@@ -143,13 +143,13 @@ export default function functionSolver (
             })
             returnAssemblyCode += ArgGenObj.asmCode
             if (utils.isNotValidDeclarationOp(ifnToCall.argsMemObj[idx].declaration, ArgGenObj.SolvedMem)) {
-                throw new Error(`At line: ${CurrentNode.Token.line}.` +
+                throw new Error(Program.Context.formatError(CurrentNode.Token.line,
                     ` Type of API Function argument #${idx + 1} is different from variable. ` +
-                    ` Expecting '${ifnToCall.argsMemObj[idx].declaration}', got '${ArgGenObj.SolvedMem.declaration}'.`)
+                    ` Expecting '${ifnToCall.argsMemObj[idx].declaration}', got '${ArgGenObj.SolvedMem.declaration}'.`))
             }
             if (ArgGenObj.SolvedMem.size !== 1 && ArgGenObj.SolvedMem.Offset === undefined) {
-                throw new Error(`At line: ${CurrentNode.Token.line}.` +
-                ' Overflow in argument size.')
+                throw new Error(Program.Context.formatError(CurrentNode.Token.line,
+                    ' Overflow in argument size.'))
             }
             processedArgs.push(ArgGenObj.SolvedMem)
         })
