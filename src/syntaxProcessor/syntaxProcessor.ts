@@ -26,11 +26,25 @@ export default function syntaxProcessor (Program: CONTRACT) : void {
     function processSentence (SentenceObj: SENTENCES) {
         switch (SentenceObj.type) {
         case 'phrase':
-            SentenceObj.CodeAST = createTree(Program,
-                assertNotUndefined(SentenceObj.code,
-                    'Internal error. Unknow object arrived at processSentence')
-            )
-            delete SentenceObj.code
+            try {
+                SentenceObj.CodeAST = createTree(
+                    Program,
+                    assertNotUndefined(SentenceObj.code, 'Internal error. Unknow object arrived at processSentence')
+                )
+                delete SentenceObj.code
+            } catch (err) {
+                if (err instanceof Error) {
+                    Program.Context.errors.push(err.message)
+                    // delete the offending sentence and continue.
+                    SentenceObj.CodeAST = {
+                        type: 'nullASN'
+                    }
+                    delete SentenceObj.code
+                    break
+                }
+                // Fatal error
+                throw err
+            }
             break
         case 'scope':
             SentenceObj.alwaysBlock.forEach(processSentence)
