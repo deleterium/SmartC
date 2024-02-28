@@ -237,7 +237,7 @@ describe('Warnings', () => {
     it('should compile with warning: right side of operator', () => {
         const code = 'long la=0    ; fixed fa, fb=0.0; fa = fb - la;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare la\n^declare fa\n^declare fb\n\nCLR @la\nCLR @fb\nSET @fa $fb\nSET @r0 $la\nMUL @r0 $f100000000\nSUB @fa $r0\nFIN\n'
-        const warnings = "Warning: at line 1:42. Implicit type casting conversion on right side of operator '-'."
+        const warnings = "Warning! At line: 1:42. Implicit type casting conversion on right side of operator '-'.\n |long la=0    ; fixed fa, fb=0.0; fa = fb - la;\n |                                         ^"
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -246,7 +246,7 @@ describe('Warnings', () => {
     it('should compile with warning: left side of operator', () => {
         const code = 'long la=2    ; fixed fa, fb=0.0; fa = la - fb;\n#pragma optimizationLevel 0'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare la\n^declare fa\n^declare fb\n\nSET @la #0000000000000002\nCLR @fb\nSET @fa $la\nMUL @fa $f100000000\nSUB @fa $fb\nFIN\n'
-        const warnings = "Warning: at line 1:42. Implicit type casting conversion on left side of operator '-'."
+        const warnings = "Warning! At line: 1:42. Implicit type casting conversion on left side of operator '-'.\n |long la=2    ; fixed fa, fb=0.0; fa = la - fb;\n |                                         ^"
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -255,7 +255,7 @@ describe('Warnings', () => {
     it('should compile with warning: rigth side of comparision', () => {
         const code = 'long la, lb=10; fixed fa=1.0; if(fa < lb) la=1;\n#pragma optimizationLevel 0'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare la\n^declare lb\n^declare fa\n\nSET @lb #000000000000000a\nSET @fa $f100000000\nSET @r0 $lb\nMUL @r0 $f100000000\nBGE $fa $r0 :__if1_endif\n__if1_start:\nSET @la #0000000000000001\n__if1_endif:\nFIN\n'
-        const warnings = "Warning: at line 1:37. Implicit type casting conversion on right side of comparision '<'."
+        const warnings = "Warning! At line: 1:37. Implicit type casting conversion on right side of comparision '<'.\n |long la, lb=10; fixed fa=1.0; if(fa < lb) la=1;\n |                                    ^"
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -264,7 +264,7 @@ describe('Warnings', () => {
     it('should compile with warning: left side of comparision', () => {
         const code = 'long la=1    ; fixed     fb=1.1; if(la < fb) la++;\n#pragma optimizationLevel 0\n'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare la\n^declare fb\n\nSET @la #0000000000000001\nSET @fb #00000000068e7780\nSET @r0 $la\nMUL @r0 $f100000000\nBGE $r0 $fb :__if1_endif\n__if1_start:\nINC @la\n__if1_endif:\nFIN\n'
-        const warnings = "Warning: at line 1:40. Implicit type casting conversion on left side of comparision '<'."
+        const warnings = "Warning! At line: 1:40. Implicit type casting conversion on left side of comparision '<'.\n |long la=1    ; fixed     fb=1.1; if(la < fb) la++;\n |                                       ^"
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
@@ -273,7 +273,7 @@ describe('Warnings', () => {
     it('should compile with warning: right side of assignment', () => {
         const code = 'long la    ; fixed     fb=0.0; la = fb;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare la\n^declare fb\n\nCLR @fb\nSET @la $fb\nDIV @la $f100000000\nFIN\n'
-        const warnings = "Warning: at line 1:35. Implicit type casting conversion on right side of assignment '='."
+        const warnings = "Warning! At line: 1:35. Implicit type casting conversion on right side of assignment '='.\n |long la    ; fixed     fb=0.0; la = fb;\n |                                  ^"
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
