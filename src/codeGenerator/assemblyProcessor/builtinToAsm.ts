@@ -680,10 +680,10 @@ export function createBuiltinInstruction (
         Program.Context.freeRegister(tempArgsMem[recipientArg].FlatMem.address)
         if (argsMem[messageArg].type === 'constant' || (argsMem[messageArg].type === 'array' && argsMem[messageArg].Offset === undefined)) {
             const theHexContent = assertNotUndefined(argsMem[messageArg].hexContent)
-            const m1 = Program.Context.getMemoryObjectByLocation(theHexContent).asmName
-            const m2 = Program.Context.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 1)).asmName
-            const m3 = Program.Context.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 2)).asmName
-            const m4 = Program.Context.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 3)).asmName
+            const m1 = Program.Context.getMemoryObjectByLocation(theHexContent, BuiltinToken.line).asmName
+            const m2 = Program.Context.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 1), BuiltinToken.line).asmName
+            const m3 = Program.Context.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 2), BuiltinToken.line).asmName
+            const m4 = Program.Context.getMemoryObjectByLocation(utils.addHexSimple(theHexContent, 3), BuiltinToken.line).asmName
             return retAsm +
                 `FUN set_A1_A2 $${m1} $${m2}\n` +
                 `FUN set_A3_A4 $${m3} $${m4}\n` +
