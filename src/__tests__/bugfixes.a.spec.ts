@@ -270,4 +270,11 @@ describe('Tests for bugfixes', () => {
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
     })
+    it('should compile: bug 35 Not clearing registers state on delimiters', () => {
+        const code = '#pragma optimizationLevel 3\nlong onMap;\nonMap = getMapValue(2, 2), onMap *= 25, setMapValue(2, 2, onMap);'
+        const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare onMap\n\nSET @r0 #0000000000000002\nSET @r1 #0000000000000002\nCLR @r2\nFUN set_A1_A2 $r0 $r1\nFUN set_A3 $r2\nFUN @onMap Get_Map_Value_Keys_In_A\nSET @r0 #0000000000000019\nMUL @onMap $r0\nSET @r0 #0000000000000002\nFUN set_A4 $onMap\nFUN Set_Map_Value_Keys_In_A\nFIN\n'
+        const compiler = new SmartC({ language: 'C', sourceCode: code })
+        compiler.compile()
+        expect(compiler.getAssemblyCode()).toBe(assembly)
+    })
 })

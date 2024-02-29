@@ -46,6 +46,13 @@ export default function binaryAsnProcessor (
             jumpTrue: ScopeInfo.jumpTrue
         })
         LGenObj.asmCode += Program.Context.SentenceContext.getAndClearPostOperations()
+        // clear left side state
+        if (LGenObj.SolvedMem.Offset?.type === 'variable') {
+            Program.Context.freeRegister(LGenObj.SolvedMem.Offset.addr)
+        }
+        Program.Context.freeRegister(LGenObj.SolvedMem.address)
+        Program.Context.registerInfo = Program.Context.registerInfo.filter(Item => Item.endurance !== 'Sentence')
+        // solve right side
         const RGenObj = genCode(Program, {
             RemAST: CurrentNode.Right,
             logicalOp: false,
@@ -54,7 +61,6 @@ export default function binaryAsnProcessor (
             jumpTrue: ScopeInfo.jumpTrue
         })
         RGenObj.asmCode = LGenObj.asmCode + RGenObj.asmCode + Program.Context.SentenceContext.getAndClearPostOperations()
-        Program.Context.freeRegister(LGenObj.SolvedMem.address)
         return RGenObj
     }
 
