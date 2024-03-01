@@ -116,6 +116,7 @@ export default function memoryProcessor (
         header.isDeclared = Program.Context.ShaperContext.isFunctionArgument
         header.isSet = Program.Context.ShaperContext.isFunctionArgument
         header.toBeRegister = isRegister
+        header.line = phraseCode[tokenCounter].line
         // If is not an array, just send the header
         if (dimensions.length === 0) {
             return [header]
@@ -146,6 +147,7 @@ export default function memoryProcessor (
             Mem2.name = `${header.name}_${i - 1}`
             Mem2.asmName = `${header.asmName}_${i - 1}`
             Mem2.scope = Program.Context.ShaperContext.currentScopeName
+            Mem2.line = phraseCode[tokenCounter].line
             Mem2.declaration = header.ArrayItem.declaration
             Mem2.isSet = true // No way to track array items for using before initialized
             retArrMem.push(Mem2)
@@ -291,6 +293,7 @@ export default function memoryProcessor (
             StructMemHeader.name = phraseCode[startingTokenCounter].value
             StructMemHeader.asmName = Program.Context.ShaperContext.currentPrefix + phraseCode[startingTokenCounter].value
             StructMemHeader.scope = Program.Context.ShaperContext.currentScopeName
+            StructMemHeader.line = phraseCode[startingTokenCounter].line
             StructMemHeader.isDeclared = Program.Context.ShaperContext.isFunctionArgument
             StructMemHeader.isSet = Program.Context.ShaperContext.isFunctionArgument
             return [StructMemHeader]
@@ -309,6 +312,7 @@ export default function memoryProcessor (
         StructMemHeader.name = phraseCode[startingTokenCounter].value
         StructMemHeader.asmName = Program.Context.ShaperContext.currentPrefix + phraseCode[startingTokenCounter].value
         StructMemHeader.scope = Program.Context.ShaperContext.currentScopeName
+        StructMemHeader.line = phraseCode[startingTokenCounter].line
         StructMemHeader.isDeclared = Program.Context.ShaperContext.isFunctionArgument
         StructMemHeader.isSet = true // do not control using variables in array
         StructMemHeader.type = 'array'
@@ -371,6 +375,7 @@ export default function memoryProcessor (
                 Mem.name = variableName + '_' + Mem.name
             }
             Mem.asmName = Program.Context.ShaperContext.currentPrefix + Mem.name
+            Mem.line = phraseCode[tokenCounter].line
         })
         return newmemory
     }

@@ -67,6 +67,7 @@ const longArg : MEMORY_SLOT = {
     asmName: 'dummy_dummy',
     type: 'long',
     scope: 'dummy',
+    line: '0:0',
     declaration: 'long',
     isSet: false,
     toBeRegister: false,
@@ -80,6 +81,7 @@ const longPtrArg : MEMORY_SLOT = {
     asmName: 'dummy_dummy',
     type: 'long',
     scope: 'dummy',
+    line: '0:0',
     declaration: 'long_ptr',
     isSet: false,
     toBeRegister: false,
@@ -93,6 +95,7 @@ const fixedArg : MEMORY_SLOT = {
     asmName: 'dummy_dummy',
     type: 'fixed',
     scope: 'dummy',
+    line: '0:0',
     declaration: 'fixed',
     isSet: false,
     toBeRegister: false,
@@ -109,6 +112,7 @@ export const autoCounterTemplate : MEMORY_SLOT = {
     isSet: true,
     name: '_counterTimestamp',
     scope: '',
+    line: '0:0',
     size: 1,
     type: 'long'
 }
@@ -150,6 +154,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
                 asmName: 'memcopy_addr1',
                 type: 'long',
                 scope: 'memcopy',
+                line: '0:0',
                 declaration: 'void_ptr',
                 isSet: false,
                 toBeRegister: false,
@@ -162,6 +167,7 @@ export const BuiltInTemplate: SC_FUNCTION[] = [
                 asmName: 'memcopy_addr2',
                 type: 'long',
                 scope: 'memcopy',
+                line: '0:0',
                 declaration: 'void_ptr',
                 isSet: false,
                 toBeRegister: false,
@@ -632,6 +638,7 @@ export function getMemoryTemplate (memType: MEMORY_BASE_TYPES) : MEMORY_SLOT {
         address: -1,
         name: '',
         scope: '',
+        line: '0:0',
         size: -1
     }
 }
@@ -646,6 +653,7 @@ export const fixedBaseTemplate : MEMORY_SLOT = {
     name: 'f100000000',
     hexContent: '0000000005f5e100',
     scope: '',
+    line: '0:0',
     size: 1,
     type: 'fixed'
 }

@@ -371,6 +371,7 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
             MemTempl.asmName = Sentence.id
             MemTempl.name = Sentence.id
             MemTempl.isDeclared = true
+            MemTempl.line = Sentence.line
             Program.memory.push(MemTempl)
         }
         }
@@ -436,19 +437,14 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         for (i = 0; i < Program.memory.length - 1; i++) {
             for (j = i + 1; j < Program.memory.length; j++) {
                 if (Program.memory[i].asmName === Program.memory[j].asmName) {
-                    if (Program.memory[i].type !== Program.memory[j].type) {
-                        throw new Error('At line: unknown.' +
-                        ` Global check: it was found that variable '${Program.memory[i].name}' was declared more` +
-                        ` one time with types '${Program.memory[i].type}' and '${Program.memory[j].type}'.`)
+                    if (Program.memory[i].type === 'label' || Program.memory[j].type === 'label') {
+                        throw new Error(Program.Context.formatError(Program.memory[j].line,
+                            `Label '${Program.memory[i].name}' was declared more than one time, ` +
+                            `first declaration at line ${Program.memory[i].line}.` +
+                            'Labels also cannot have same name from variables.'))
                     }
-                    if (Program.memory[i].type === 'label') {
-                        throw new Error('At line: unknow.' +
-                        ` Global check: it was found that label '${Program.memory[i].name}' was` +
-                        ' declared more than one time.')
-                    }
-                    throw new Error('At line: unknow.' +
-                    ` Global check: it was found that variable '${Program.memory[i].name}' was` +
-                    ' declared more than one time.')
+                    throw new Error(Program.Context.formatError(Program.memory[j].line,
+                        `Variable '${Program.memory[i].name}' was first declared at line ${Program.memory[i].line}.`))
                 }
             }
         }

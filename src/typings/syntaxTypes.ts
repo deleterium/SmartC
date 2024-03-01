@@ -68,6 +68,8 @@ export type MEMORY_SLOT = {
     name: string
     /** Variable scope */
     scope: string
+    /** Line of declaration */
+    line: string
     /** Variable size in longs */
     size: number
     /** struct type definition OR array type definition  */

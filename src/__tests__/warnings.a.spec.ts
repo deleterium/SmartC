@@ -25,15 +25,34 @@ describe('Warnings', () => {
     it('should compile with warning: unused global variable', () => {
         const code = 'long la=0, lb; fixed fa, fb=0.0; fa = fb - (fixed)la;'
         const assembly = '^declare r0\n^declare r1\n^declare r2\n^declare f100000000\n^const SET @f100000000 #0000000005f5e100\n^declare la\n^declare lb\n^declare fa\n^declare fb\n\nCLR @la\nCLR @fb\nSET @r0 $la\nMUL @r0 $f100000000\nSET @fa $fb\nSUB @fa $r0\nFIN\n'
-        const warnings = "Warning! Unused global variable 'lb'."
+        const warnings = "Warning! At line: 1:12. Unused variable 'lb'.\n |long la=0, lb; fixed fa, fb=0.0; fa = fb - (fixed)la;\n |           ^"
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getAssemblyCode()).toBe(assembly)
         expect(compiler.getMachineCode().Warnings).toBe(warnings)
     })
     it('should warn: Variable not used inside a function', () => {
-        const code = 'search(2); struct PLAYER { long address, balance, VDLS; } *playerPtr, players[2]; struct PLAYER * search(long playerAddress) {    long nPlayers=0;    struct PLAYER * foundPlayer;    playerPtr = &players[0];    for (long auxI = 0; auxI < nPlayers; auxI++) {        if (playerPtr->address == playerAddress) {            return playerPtr;        }        playerPtr += (sizeof(struct PLAYER));        playerPtr = playerPtr + (sizeof(struct PLAYER));        playerPtr++;    }    return NULL;}'
-        const warnings = "Warning! Unused variable 'foundPlayer' in function 'search'."
+        const code = `search(2); 
+struct PLAYER {
+    long address, balance, VDLS;
+    } *playerPtr, players[2]; 
+struct PLAYER * search(long playerAddress) {
+    long nPlayers=0;
+    struct PLAYER * foundPlayer;
+    playerPtr = &players[0];
+    for (long auxI = 0; auxI < nPlayers; auxI++) {
+        if (playerPtr->address == playerAddress) {
+            return playerPtr;
+        }
+        playerPtr += (sizeof(struct PLAYER));
+        playerPtr = playerPtr + (sizeof(struct PLAYER));
+        playerPtr++;
+    }
+    return NULL;
+}`
+        const warnings = `Warning! At line: 7:21. Unused variable 'foundPlayer'.
+ |    struct PLAYER * foundPlayer;
+ |                    ^`
         const compiler = new SmartC({ language: 'C', sourceCode: code })
         compiler.compile()
         expect(compiler.getMachineCode().Warnings).toBe(warnings)

@@ -211,11 +211,8 @@ export default function codeGenerator (Program: CONTRACT) {
     function checkUnusedVariables () {
         Program.memory.forEach(Mem => {
             if (Mem.isSet === false) {
-                if (Mem.scope) {
-                    Program.Context.warnings.push(`Warning! Unused variable '${Mem.name}' in function '${Mem.scope}'.`)
-                    return
-                }
-                Program.Context.warnings.push(`Warning! Unused global variable '${Mem.name}'.`)
+                Program.Context.warnings.push('Warning! ' + Program.Context.formatError(Mem.line,
+                    `Unused variable '${Mem.name}'.`))
             }
         })
     }
