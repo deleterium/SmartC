@@ -356,3 +356,91 @@ export const BitField = {
         4, 4, 4
     ]
 }
+
+export type STREAM_PAIR = { char: string, code: number }
+
+export class StringStream {
+    private _index = -1
+    private _explodedInput: string[]
+    private _explodedInputCode: number[]
+    private _lastLineLength = 0
+    private _lastChar = ''
+    private _line = 1
+    private _col = 0
+
+    constructor (input: string) {
+        this._explodedInput = input.split('')
+        this._explodedInputCode = this._explodedInput.map(char => char.charCodeAt(0))
+    }
+
+    public get line () {
+        return this._line
+    }
+
+    public set line (value: number) {
+        this._line = value
+    }
+
+    public get col () {
+        return this._col
+    }
+
+    public set col (value) {
+        this._col = value
+    }
+
+    public get lineCol () {
+        return `${this._line}:${this._col}`
+    }
+
+    public get index () {
+        return this._index
+    }
+
+    public advance () : STREAM_PAIR {
+        this._index++
+        this._lastChar = this._explodedInput[this._index]
+        if (this._lastChar === '\n') {
+            this._line++
+            this._col = 0
+            return {
+                char: this._lastChar,
+                code: this._explodedInputCode[this._index]
+            }
+        }
+        this._col++
+        this._lastLineLength = this.col
+        return {
+            char: this._lastChar,
+            code: this._explodedInputCode[this._index]
+        }
+    }
+
+    public read () : STREAM_PAIR {
+        return {
+            char: this._explodedInput[this._index],
+            code: this._explodedInputCode[this._index]
+        }
+    }
+
+    public rewind () : void {
+        if (this._lastChar === '\n') {
+            this.line--
+            this.col = this._lastLineLength
+        }
+        this._index--
+        this.col--
+        this._lastChar = ''
+    }
+
+    public testNext () : STREAM_PAIR {
+        return {
+            char: this._explodedInput[this._index + 1],
+            code: this._explodedInputCode[this._index + 1]
+        }
+    }
+
+    public EOF () : boolean {
+        return this._index >= this._explodedInput.length
+    }
+}
