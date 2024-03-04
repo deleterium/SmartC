@@ -336,3 +336,23 @@ export function isDeclarationType (str: string) : str is DECLARATION_TYPES {
     }
     return false
 }
+
+export const BitField = {
+    isBlank: 0x01, // matches '/r', '/t', '/n', ' '
+    isDigit: 0x02, // matches 0-9
+    isWord: 0x04, // matches a-zA-Z_
+    isNumber: 0x08, // matches 0-9._
+    isNumberHex: 0x10, // matches 0-9a-fA-F_
+
+    /* These are charCodes from 0 to 122 and the char classes as used here.
+    * Bit field: isBlank isDigit isWord isNumber isNumberHex */
+    typeTable: [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 8, 0, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 0, 0,
+        0, 0, 0, 0, 0, 20, 20, 20, 20, 20, 20, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 28, 0, 20, 20, 20,
+        20, 20, 20, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4
+    ]
+}

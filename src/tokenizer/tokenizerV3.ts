@@ -1,4 +1,4 @@
-import { ReedSalomonAddressDecode, parseDecimalNumber, stringToHexstring } from '../repository/repository'
+import { BitField, ReedSalomonAddressDecode, parseDecimalNumber, stringToHexstring } from '../repository/repository'
 import { CONTRACT } from '../typings/contractTypes'
 import { PRE_TOKEN } from '../typings/syntaxTypes'
 
@@ -20,24 +20,6 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
     let streamCurrentIndex = -1
     let streamLastLineLength = 0
     let streamLastChar = ''
-
-    const bitFieldIsBlank = 0x01 // matches '/r', '/t', '/n', ' '
-    const bitFieldIsDigit = 0x02 // matches 0-9
-    const bitFieldIsWord = 0x04 // matches a-zA-Z_
-    const bitFieldIsNumber = 0x08 // matches 0-9._
-    const bitFieldIsNumberHex = 0x10 // matches 0-9a-fA-F_
-
-    /* These are charCodes from 0 to 122 and the char classes as used here.
-     * Bit field: isBlank isDigit isWord isNumber isNumberHex */
-    const bitFieldTypeTable = [
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 8, 0, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 0, 0,
-        0, 0, 0, 0, 0, 20, 20, 20, 20, 20, 20, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 28, 0, 20, 20, 20,
-        20, 20, 20, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4
-    ]
 
     /* These are charCodes from 0 to 126 and the next state function for state 'start'. Summary:
      * Function           |  Char code of
@@ -120,7 +102,7 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
             if (currentChar === undefined) {
                 return undefined
             }
-            if (bitFieldTypeTable[currentCharCode] & bitFieldIsBlank) {
+            if (BitField.typeTable[currentCharCode] & BitField.isBlank) {
                 continue
             }
             const nextStateFunction = startStateFunctionTable[currentCharCode]
@@ -136,7 +118,7 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
         const tokenLine = streamCurrentLine
         const tokenCol = streamCurrentCol
         const nextChar = explodedText[streamCurrentIndex + 1]
-        if (nextChar && bitFieldTypeTable[nextChar.charCodeAt(0)] & bitFieldIsDigit) {
+        if (nextChar && BitField.typeTable[nextChar.charCodeAt(0)] & BitField.isDigit) {
             return stateReadNumber()
         }
         return { type: 'Member', precedence: 0, value: '.', line: `${tokenLine}:${tokenCol}` }
@@ -149,7 +131,7 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
         let currentChar: string
         do {
             currentChar = streamAdvance()
-        } while (currentChar && bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsWord)
+        } while (currentChar && BitField.typeTable[explodedTextCodes[streamCurrentIndex]] & BitField.isWord)
         const tokenValue = inputSourceCode.slice(tokenStartIndex, streamCurrentIndex)
         streamRewind()
         return stateCheckWord(tokenValue, tokenLine, tokenCol)
@@ -189,7 +171,7 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
                 throw new Error(Program.Context.formatError(tokenLine + ':' + tokenCol,
                     "Invalid asm { ... } sentence. Expecting '{', found end of file."))
             }
-            if (bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsBlank) {
+            if (BitField.typeTable[explodedTextCodes[streamCurrentIndex]] & BitField.isBlank) {
                 continue
             }
             if (currentChar === '{') {
@@ -235,7 +217,7 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
         let currentChar: string
         do {
             currentChar = streamAdvance()
-        } while (currentChar && bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsNumber)
+        } while (currentChar && BitField.typeTable[explodedTextCodes[streamCurrentIndex]] & BitField.isNumber)
         const tokenValue = inputSourceCode.slice(tokenStartIndex, streamCurrentIndex)
         streamRewind()
 
@@ -259,7 +241,7 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
         }
         do {
             streamAdvance()
-        } while (bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsNumberHex)
+        } while (BitField.typeTable[explodedTextCodes[streamCurrentIndex]] & BitField.isNumberHex)
         const tokenValue = inputSourceCode.slice(tokenStartIndex + 2, streamCurrentIndex)
         streamRewind()
 
