@@ -1,10 +1,10 @@
-import { CONTRACT, SC_FUNCTION, SC_MACRO } from '../typings/contractTypes'
+import { CONTRACT, SC_FUNCTION } from '../typings/contractTypes'
 import {
     TOKEN, DECLARATION_TYPES, SENTENCES, SENTENCE_STRUCT,
     MEMORY_SLOT,
     REGISTER_TYPE_DEFINITION
 } from '../typings/syntaxTypes'
-import { assertNotUndefined, deepCopy, parseDecimalNumber } from '../repository/repository'
+import { assertNotUndefined, deepCopy } from '../repository/repository'
 import {
     APITableTemplate, getMemoryTemplate, getTypeDefinitionTemplate, BuiltInTemplate, fixedBaseTemplate, fixedAPITableTemplate, autoCounterTemplate
 } from './templates'
@@ -22,7 +22,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
     /* * * Main function! * * */
     function shapeMain () : void {
         splitCode()
-        Program.Global.macros.forEach(processMacroControl)
         Program.typesDefinitions = [
             getTypeDefinitionTemplate('register'),
             getTypeDefinitionTemplate('long'),
@@ -144,156 +143,6 @@ export default function shaper (Program: CONTRACT, tokenAST: TOKEN[]): void {
         }
         throw new Error(Program.Context.formatError(Tkn.line,
             "Invalid function declaration type. Expecting 'void', 'long', 'fixed' or 'struct'"))
-    }
-
-    /** Reads/verifies one macro token and add it into Program.Config object */
-    function processMacroControl (Token: SC_MACRO) : void {
-        let boolVal: boolean | undefined
-        let throwBoolVal = false
-        let usedBoolVal = false
-        switch (Token.value) {
-        case undefined:
-        case '':
-        case 'true':
-        case '1':
-            boolVal = true
-            break
-        case 'false':
-        case '0':
-            boolVal = false
-            break
-        default:
-            boolVal = true
-            throwBoolVal = true
-        }
-        switch (Token.type) {
-        case 'pragma':
-            usedBoolVal = processMacroPragma(Token, boolVal)
-            break
-        case 'include':
-            if (Token.property === 'APIFunctions') {
-                Program.Config.APIFunctions = boolVal
-                usedBoolVal = true
-                break
-            }
-            if (Token.property === 'fixedAPIFunctions') {
-                Program.Config.fixedAPIFunctions = boolVal
-                usedBoolVal = true
-                break
-            }
-            throw new Error(Program.Context.formatError(Token.line,
-                `Unknow macro property '#${Token.type} ${Token.property}'.` +
-                " Do you mean 'APIFunctions'? Check valid values on Help page"))
-        case 'program':
-            processMacroProgram(Token)
-            break
-        default:
-            throw new Error(Program.Context.formatError(Token.line,
-                `Unknow macro: '#${Token.type}'. Please check valid values on Help page`))
-        }
-        // Check if there was an error assign boolean values
-        if (throwBoolVal && usedBoolVal) {
-            throw new Error(Program.Context.formatError(Token.line,
-                `Macro: '#${Token.type} ${Token.property}' with wrong value. Please check valid values on Help page.`))
-        }
-    }
-
-    /** Process all macro pragma options. Return true if bool was used in assignment. */
-    function processMacroPragma (MacroToken: SC_MACRO, bool: boolean): boolean {
-        const num = parseInt(MacroToken.value)
-        switch (MacroToken.property) {
-        case 'maxAuxVars':
-            if (num >= 0 && num <= 10) {
-                Program.Config.maxAuxVars = num
-                return false
-            }
-            throw new Error(Program.Context.formatError(MacroToken.line, 'Value out of permitted range 1..10.'))
-        case 'maxConstVars':
-            if (num >= 0 && num <= 10) {
-                Program.Config.maxConstVars = num
-                return false
-            }
-            throw new Error(Program.Context.formatError(MacroToken.line, 'Value out of permitted range 0..10.'))
-        case 'reuseAssignedVar':
-            Program.Config.reuseAssignedVar = bool
-            return true
-        case 'optimizationLevel':
-            if (num >= 0 && num <= 4) {
-                Program.Config.optimizationLevel = num
-                return false
-            }
-            throw new Error(Program.Context.formatError(MacroToken.line, 'Value out of permitted range 0..3.'))
-        case 'version':
-            // Nothing to do. 'version' is a reminder for programmers.
-            return false
-        case 'verboseAssembly':
-            Program.Config.verboseAssembly = bool
-            return true
-        case 'verboseScope':
-            Program.Config.verboseScope = bool
-            return true
-        default:
-            throw new Error(Program.Context.formatError(MacroToken.line,
-                `Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +
-                ' Please check valid values on Help page'))
-        }
-    }
-
-    /** Process all macro Program options */
-    function processMacroProgram (MacroToken: SC_MACRO) : void {
-        switch (MacroToken.property) {
-        case 'name':
-            if (/^[0-9a-zA-Z]{1,30}$/.test(MacroToken.value)) {
-                Program.Config.PName = MacroToken.value
-                return
-            }
-            throw new Error(Program.Context.formatError(MacroToken.line,
-                'Program name must contains only letters [a-z][A-Z][0-9], from 1 to 30 chars.'))
-        case 'description':
-            if (MacroToken.value.length >= 1000) {
-                throw new Error(Program.Context.formatError(MacroToken.line,
-                    `Program description max lenght is 1000 chars. It is ${MacroToken.value.length} chars.`))
-            }
-            Program.Config.PDescription = MacroToken.value
-            return
-        case 'activationAmount':
-            Program.Config.PActivationAmount = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
-            return
-        case 'creator':
-            Program.Config.PCreator = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
-            return
-        case 'contract':
-            Program.Config.PContract = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
-            return
-        case 'userStackPages':
-            if (/^\d\s*$|^10\s*$/.test(MacroToken.value)) {
-                Program.Config.PUserStackPages = Number(MacroToken.value)
-                return
-            }
-            throw new Error(Program.Context.formatError(MacroToken.line,
-                'Program user stack pages must be a number between 0 and 10, included.'))
-        case 'codeStackPages':
-            if (/^\d\s*$|^10\s*$/.test(MacroToken.value)) {
-                Program.Config.PCodeStackPages = Number(MacroToken.value)
-                return
-            }
-            throw new Error(Program.Context.formatError(MacroToken.line,
-                'Program code stack pages must be a number between 0 and 10, included.'))
-        case 'codeHashId':
-            if (/^\d+\s*$/.test(MacroToken.value)) {
-                Program.Config.PCodeHashId = MacroToken.value.trim()
-                return
-            }
-            throw new Error(Program.Context.formatError(MacroToken.line,
-                'Program code hash id must be a decimal number. Use 0 to let compiler fill the value at assembly output.'))
-        case 'compilerVersion':
-            // Nothing to do. compilerVersion is a reminder for programmers.
-            break
-        default:
-            throw new Error(Program.Context.formatError(MacroToken.line,
-                `Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +
-                ' Please check valid values on Help page'))
-        }
     }
 
     function addRegistersInMemory (howMany: number) : MEMORY_SLOT[] {

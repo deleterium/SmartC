@@ -266,11 +266,118 @@ export default function preprocessor (sourcecode: string) : string {
         case 'UNDEF':
             preprocessorReplacements = preprocessorReplacements.filter(obj => obj.cname !== PrepRule.parts[1])
             return ''
-        case 'MATCHES_REMAINING':
-            return replaceDefines(currentLine, lineNo)
+    /** Reads/verifies one macro token and add it into Program.Config object */
+    function getBoolVal (currTokenLine: PREP_LINE) : boolean {
+        switch (currTokenLine.value) {
+        case undefined:
+        case '':
+        case 'true':
+        case '1':
+            return true
+        case 'false':
+        case '0':
+            return false
         default:
-            // Never reached code.
-            throw new Error('Internal error.')
+            throw new Error(Program.Context.formatError(currTokenLine.line,
+                `Macro: '#${currTokenLine.type} ${currTokenLine.property}' with wrong value. Please check valid values on Help page.`))
+        }
+    }
+
+    /** Process all macro pragma options. */
+    function processPragma (MacroToken: PREP_LINE) {
+        const num = parseInt(MacroToken.value)
+        switch (MacroToken.property) {
+        case 'maxAuxVars':
+            if (num >= 0 && num <= 10) {
+                Program.Config.maxAuxVars = num
+                return
+            }
+            throw new Error(Program.Context.formatError(MacroToken.line, 'Value out of permitted range 1..10.'))
+        case 'maxConstVars':
+            if (num >= 0 && num <= 10) {
+                Program.Config.maxConstVars = num
+                return
+            }
+            throw new Error(Program.Context.formatError(MacroToken.line, 'Value out of permitted range 0..10.'))
+        case 'reuseAssignedVar':
+            Program.Config.reuseAssignedVar = getBoolVal(MacroToken)
+            return
+        case 'optimizationLevel':
+            if (num >= 0 && num <= 4) {
+                Program.Config.optimizationLevel = num
+                return
+            }
+            throw new Error(Program.Context.formatError(MacroToken.line, 'Value out of permitted range 0..3.'))
+        case 'version':
+            // Nothing to do. 'version' is a reminder for programmers.
+            return false
+        case 'verboseAssembly':
+            Program.Config.verboseAssembly = getBoolVal(MacroToken)
+            return true
+        case 'verboseScope':
+            Program.Config.verboseScope = getBoolVal(MacroToken)
+            return true
+        default:
+            throw new Error(Program.Context.formatError(MacroToken.line,
+                `Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +
+                ' Please check valid values on Help page'))
+        }
+    }
+
+    /** Process all macro Program options */
+    function processProgram (MacroToken: PREP_LINE) : void {
+        switch (MacroToken.property) {
+        case 'name':
+            if (/^[0-9a-zA-Z]{1,30}$/.test(MacroToken.value)) {
+                Program.Config.PName = MacroToken.value
+                return
+            }
+            throw new Error(Program.Context.formatError(MacroToken.line,
+                'Program name must contains only letters [a-z][A-Z][0-9], from 1 to 30 chars.'))
+        case 'description':
+            if (MacroToken.value.length >= 1000) {
+                throw new Error(Program.Context.formatError(MacroToken.line,
+                    `Program description max lenght is 1000 chars. It is ${MacroToken.value.length} chars.`))
+            }
+            Program.Config.PDescription = MacroToken.value
+            return
+        case 'activationAmount':
+            Program.Config.PActivationAmount = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
+            return
+        case 'creator':
+            Program.Config.PCreator = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
+            return
+        case 'contract':
+            Program.Config.PContract = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
+            return
+        case 'userStackPages':
+            if (/^\d\s*$|^10\s*$/.test(MacroToken.value)) {
+                Program.Config.PUserStackPages = Number(MacroToken.value)
+                return
+            }
+            throw new Error(Program.Context.formatError(MacroToken.line,
+                'Program user stack pages must be a number between 0 and 10, included.'))
+        case 'codeStackPages':
+            if (/^\d\s*$|^10\s*$/.test(MacroToken.value)) {
+                Program.Config.PCodeStackPages = Number(MacroToken.value)
+                return
+            }
+            throw new Error(Program.Context.formatError(MacroToken.line,
+                'Program code stack pages must be a number between 0 and 10, included.'))
+        case 'codeHashId':
+            if (/^\d+\s*$/.test(MacroToken.value)) {
+                Program.Config.PCodeHashId = MacroToken.value.trim()
+                return
+            }
+            throw new Error(Program.Context.formatError(MacroToken.line,
+                'Program code hash id must be a decimal number. Use 0 to let compiler fill the value at assembly output.'))
+        case 'compilerVersion':
+            // Nothing to do. compilerVersion is a reminder for programmers.
+            break
+        default:
+            throw new Error(Program.Context.formatError(MacroToken.line,
+                `Unknow macro property: '#${MacroToken.type} ${MacroToken.property}'.` +
+                ' Please check valid values on Help page'))
         }
     }
 
