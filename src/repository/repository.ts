@@ -397,6 +397,10 @@ export class StringStream {
         return this._index
     }
 
+    public set index (value) {
+        this._index = value
+    }
+
     public advance () : STREAM_PAIR {
         this._index++
         this._lastChar = this._explodedInput[this._index]
@@ -412,6 +416,23 @@ export class StringStream {
         this._lastLineLength = this.col
         return {
             char: this._lastChar,
+            code: this._explodedInputCode[this._index]
+        }
+    }
+
+    /** Only use for one line string and back() parsing */
+    public setBack () : void {
+        this._line = -1
+        this._index = this._explodedInput.length
+        this._col = this._explodedInput.length + 1
+    }
+
+    /** Not compatible with advance(), rewind() nor line. Only use for one line string and with setBack()  */
+    public back () : STREAM_PAIR {
+        this._index--
+        this._col--
+        return {
+            char: this._explodedInput[this._index],
             code: this._explodedInputCode[this._index]
         }
     }
