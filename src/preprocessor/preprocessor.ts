@@ -1,4 +1,4 @@
-import { BitField, StringStream, parseDecimalNumber } from '../repository/repository'
+import { BitField, STREAM_PAIR, StringStream, parseDecimalNumber } from '../repository/repository'
 import { CONTRACT } from '../typings/contractTypes'
 
 type IF_INFO = {
@@ -60,7 +60,7 @@ export default function preprocessor (Program: CONTRACT) : string {
         return retLines.join('\n')
     }
 
-    /** Moves escaped lines (ended with \ ) to the first line */
+    /** Moves escaped lines (ended with \ ) to the first line, analizes and return the preprocessor token line */
     function prepare () : PREP_LINE[] {
         const retTokens : PREP_LINE[] = []
         let afterEscapedLine = false
@@ -112,6 +112,7 @@ export default function preprocessor (Program: CONTRACT) : string {
         return retTokens
     }
 
+    /** Parse the line finding a directive and extracting the fields */
     function parseDirective (codeLine: string, line: number) : string[] {
         const Stream = new StringStream(codeLine)
         const firstField = findFirstField()
@@ -193,79 +194,127 @@ export default function preprocessor (Program: CONTRACT) : string {
         }
     }
 
+    /** OK... We parse the line backwards to find the string to be replaced.
+     * This way we can maintain the right collumn index for the remaining string
+     * in the most of cases. Collumns still wrong if there was a escaped line or
+     * a replacement inside other replacement.
+     */
     function replaceDefines (codeline: string, line: string) : string {
         let retLine = codeline
-        preprocessorReplacements.forEach((Replacement) => {
-            if (Replacement.macro) {
-                while (true) {
-                    const foundCname = Replacement.regex.exec(retLine)
-                    if (foundCname === null) {
-                        return
+        let current : STREAM_PAIR
+        let state = 0
+        let wordEndIndex = 0
+        let word : string
+        let Replacement: REPLACEMENTS | undefined
+        while (true) {
+            let wasReplaced = false
+            const Stream = new StringStream(retLine)
+            Stream.setBack()
+            while (true) {
+                current = Stream.back()
+                switch (state) {
+                case 0:
+                    if (BitField.typeTable[current.code] & BitField.isWord || BitField.typeTable[current.code] & BitField.isDigit) {
+                        wordEndIndex = Stream.col
+                        state = 1
                     }
-                    let replaced = Replacement.macro
-                    const currExtArgs = extractArgs(retLine, foundCname.index + 1, line)
-                    const origExtArgs = extractArgs(Replacement.value, 0, line)
-                    if (origExtArgs.argArray.length !== currExtArgs.argArray.length) {
-                        throw new Error(Program.Context.formatError(line,
-                            `Wrong number of arguments for macro '${Replacement.cname}'. ` +
-                            `Expected ${origExtArgs.argArray.length}, got ${currExtArgs.argArray.length}.`))
+                    if (current.char) {
+                        continue
                     }
-                    for (let currArg = 0; currArg < origExtArgs.argArray.length; currArg++) {
-                        replaced = replaced.replace(new RegExp(`\\b${origExtArgs.argArray[currArg]}\\b`, 'g'), currExtArgs.argArray[currArg])
+                    break
+                case 1:
+                    if (BitField.typeTable[current.code] & BitField.isWord || BitField.typeTable[current.code] & BitField.isDigit) {
+                        continue
                     }
-                    retLine = retLine.slice(0, foundCname.index) + replaced + retLine.slice(currExtArgs.endPosition)
+                    word = retLine.slice(Stream.col, wordEndIndex)
+                    Replacement = preprocessorReplacements.find(item => item.cname === word)
+                    if (Replacement) {
+                        retLine = executeReplacement(Replacement, retLine, Stream.col, wordEndIndex, line)
+                        wasReplaced = true
+                    }
+                    state = 0
+                }
+                if (wasReplaced || current.char === undefined) {
+                    // We need to reload the string OR end of parse
+                    break
                 }
             }
-            retLine = retLine.replace(Replacement.regex, Replacement.value)
-        })
+            if (Stream.index < 0) {
+                break
+            }
+        }
         return retLine
+    }
+
+    function executeReplacement (Replacement: REPLACEMENTS, code: string, startIndex: number, endIndex: number, line: string) {
+        if (Replacement.macro === undefined) {
+            return code.slice(0, startIndex) + Replacement.value + '#' + endIndex + '#' + code.slice(endIndex)
+        }
+        let replaced = Replacement.macro
+        const currExtArgs = extractArgs(code, startIndex + 1, line)
+        const origExtArgs = extractArgs(Replacement.value, 0, line)
+        if (origExtArgs.argArray.length !== currExtArgs.argArray.length) {
+            throw new Error(Program.Context.formatError(line,
+                `Wrong number of arguments for macro '${Replacement.cname}'. ` +
+                `Expected ${origExtArgs.argArray.length}, got ${currExtArgs.argArray.length}.`))
+        }
+        for (let currArg = 0; currArg < origExtArgs.argArray.length; currArg++) {
+            replaced = replaced.replace(new RegExp(`\\b${origExtArgs.argArray[currArg]}\\b`, 'g'), currExtArgs.argArray[currArg])
+        }
+        return code.slice(0, startIndex) + replaced + `#${currExtArgs.endPosition}#` + code.slice(currExtArgs.endPosition)
     }
 
     function extractArgs (fnArgString: string, needle: number, line: string): { argArray: string[], endPosition: number} {
         const argArray : string [] = []
         let currArg: string = ''
         let pLevel = 0
-        let started = false
-        for (;;needle++) {
-            const currChar = fnArgString.charAt(needle)
-            if (currChar === '') {
+        const Stream = new StringStream(fnArgString)
+        Stream.index = needle - 1
+        let stage = 0
+        while (true) {
+            const current = Stream.advance()
+            if (current.char === undefined) {
                 throw new Error(Program.Context.formatError(line, 'Unmatched parenthesis or unexpected end of line.'))
             }
-            if (currChar === '(') {
-                pLevel++
-                if (pLevel === 1) {
-                    started = true
+            switch (stage) {
+            case 0:
+                if (current.char === '(') {
+                    pLevel = 1
+                    stage = 1
+                }
+                continue
+            case 1:
+                if (current.char === '(') {
+                    pLevel++
+                    break
+                }
+                if (current.char === ')') {
+                    pLevel--
+                    if (pLevel === 0) {
+                        const endArg = currArg.trim()
+                        if (endArg.length === 0 && argArray.length !== 0) {
+                            throw new Error(Program.Context.formatError(line, 'Found empty argument on macro declaration.'))
+                        }
+                        if (endArg.length !== 0) {
+                            argArray.push(currArg.trim())
+                        }
+                        return {
+                            argArray,
+                            endPosition: Stream.index + 1
+                        }
+                    }
+                }
+                if (current.char === ',' && pLevel === 1) {
+                    const newArg = currArg.trim()
+                    if (newArg.length === 0) {
+                        throw new Error(Program.Context.formatError(line, 'Found empty argument on macro declaration.'))
+                    }
+                    argArray.push(currArg.trim())
+                    currArg = ''
                     continue
                 }
             }
-            if (!started) continue
-            if (currChar === ')') {
-                pLevel--
-                if (pLevel === 0) {
-                    const endArg = currArg.trim()
-                    if (endArg.length === 0 && argArray.length !== 0) {
-                        throw new Error(Program.Context.formatError(line, 'Found empty argument on macro declaration.'))
-                    }
-                    if (endArg.length !== 0) {
-                        argArray.push(currArg.trim())
-                    }
-                    break
-                }
-            }
-            if (currChar === ',' && pLevel === 1) {
-                const newArg = currArg.trim()
-                if (newArg.length === 0) {
-                    throw new Error(Program.Context.formatError(line, 'Found empty argument on macro declaration.'))
-                }
-                argArray.push(currArg.trim())
-                currArg = ''
-                continue
-            }
-            currArg += currChar
-        }
-        return {
-            argArray,
-            endPosition: needle + 1
+            currArg += current.char
         }
     }
 

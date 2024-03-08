@@ -251,15 +251,23 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
         }
     }
 
-    function stateReadMacro () : PRE_TOKEN {
+    function stateReadMacro () : undefined {
         const line = Stream.lineCol
         const tokenStartIndex = Stream.index
         let current: STREAM_PAIR
-        do {
+        while (true) {
             current = Stream.advance()
-        } while (current.char && current.code !== '\n'.charCodeAt(0))
+            if (BitField.typeTable[current.code] & BitField.isDigit) {
+                continue
+            }
+            if (current.char === '#') {
+                break
+            }
+            throw new Error(Program.Context.formatError(line, 'Wrong use of preprocessor directive'))
+        }
         const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, Stream.index)
-        return { type: 'Macro', precedence: 0, value: tokenValue, line }
+        Stream.col = parseInt(tokenValue)
+        return undefined
     }
 
     function stateReadString () : PRE_TOKEN {

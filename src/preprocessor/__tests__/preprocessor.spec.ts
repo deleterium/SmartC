@@ -33,68 +33,68 @@ function createFakeProgram (sourceCode: string) {
 describe('preprocessor right tests', () => {
     it('#define test', () => {
         const code = createFakeProgram('#define MAX 4\nlong a; a=MAX; long MAXimus=2;')
-        const result = '\nlong a; a=4; long MAXimus=2;'
+        const result = '\nlong a; a=4#13#; long MAXimus=2;'
         // @ts-expect-error TS2345
         expect(preprocessor(code)).toBe(result)
     })
     it('#define test', () => {
         const code = createFakeProgram('#define MAX 4\n long a; a=MAX;\n #define MAX 2\n long MAXimus=MAX;')
-        const result = '\n long a; a=4;\n\n long MAXimus=2;'
+        const result = '\n long a; a=4#14#;\n\n long MAXimus=2#17#;'
         // @ts-expect-error TS2345
         expect(preprocessor(code)).toBe(result)
     })
     it('#define test', () => {
         const code = createFakeProgram('#define MAX 4\n long a; a=MAX;\n #define MAX \n long MAXimus=MAX;')
-        const result = '\n long a; a=4;\n\n long MAXimus=;'
+        const result = '\n long a; a=4#14#;\n\n long MAXimus=#17#;'
         // @ts-expect-error TS2345
         expect(preprocessor(code)).toBe(result)
     })
     it('#define test', () => {
         const code = createFakeProgram('#define 444 4\nlong a; a=444;\n #undef 444\nlong MAXimus=444;')
-        const result = '\nlong a; a=4;\n\nlong MAXimus=444;'
+        const result = '\nlong a; a=4#13#;\n\nlong MAXimus=444;'
         // @ts-expect-error TS2345
         expect(preprocessor(code)).toBe(result)
     })
     it('#define test', () => {
         const code = createFakeProgram('#define MAX 4\n#define MAX1 (MAX + 1)\n long a; if (a > MAX1) a++;')
-        const result = '\n\n long a; if (a > (4 + 1)) a++;'
+        const result = '\n\n long a; if (a > (4#4# + 1)#21#) a++;'
         // @ts-expect-error TS2345
         expect(preprocessor(code)).toBe(result)
     })
     it('#define test', () => {
         const code = createFakeProgram('#define MAX 4\n#define MAX1 (MAX + 1)\n#undef MAX\n long a; if (a > MAX1) a++;')
-        const result = '\n\n\n long a; if (a > (4 + 1)) a++;'
+        const result = '\n\n\n long a; if (a > (4#4# + 1)#21#) a++;'
         // @ts-expect-error TS2345
         expect(preprocessor(code)).toBe(result)
     })
 
     it('#define macro (simple)', () => {
         const code = createFakeProgram('#define DEF(top, bottom) (((top) << 8) | (bottom))\nlong a,b,c;\na = DEF(b, c);\n')
-        const result = '\nlong a,b,c;\na = (((b) << 8) | (c));\n'
+        const result = '\nlong a,b,c;\na = (((b) << 8) | (c))#13#;\n'
         // @ts-expect-error TS2345
         expect(preprocessor(code)).toBe(result)
     })
     it('#define macro (empty argument)', () => {
         const code = createFakeProgram('#define DEF() (Get_Current_Timestamp(  ) >> 32)\nlong a;\na = DEF() ;\n')
-        const result = '\nlong a;\na = (Get_Current_Timestamp(  ) >> 32) ;\n'
+        const result = '\nlong a;\na = (Get_Current_Timestamp(  ) >> 32)#9# ;\n'
         // @ts-expect-error TS2345
         expect(preprocessor(code)).toBe(result)
     })
     it('#define macro (complex)', () => {
         const code = createFakeProgram('#define DEF(top, bottom) (((top) << 8) | (bottom))\nlong a,b,c;\na = DEF(mdv(a,b, c), c) + DEF(22, 25);\n')
-        const result = '\nlong a,b,c;\na = (((mdv(a,b, c)) << 8) | (c)) + (((22) << 8) | (25));\n'
+        const result = '\nlong a,b,c;\na = (((mdv(a,b, c)) << 8) | (c))#23# + (((22) << 8) | (25))#37#;\n'
         // @ts-expect-error TS2345
         expect(preprocessor(code)).toBe(result)
     })
     it('#define macro (with define constant)', () => {
         const code = createFakeProgram('#define ONE n1\n#define DEF(top, bottom) (((top) << 8) | (bottom + ONE))\n#undef ONE\nlong a,b,c;\na = DEF(mdv(a,b, c), c);\n')
-        const result = '\n\n\nlong a,b,c;\na = (((mdv(a,b, c)) << 8) | (c + n1));\n'
+        const result = '\n\n\nlong a,b,c;\na = (((mdv(a,b, c)) << 8) | (c + n1#29#))#23#;\n'
         // @ts-expect-error TS2345
         expect(preprocessor(code)).toBe(result)
     })
     it('#define replace multiple times same line', () => {
         const code = createFakeProgram('long a, b, c; if (a == NULL && b == NULL) c++;')
-        const result = 'long a, b, c; if (a == (void *)(0) && b == (void *)(0)) c++;'
+        const result = 'long a, b, c; if (a == (void *)(0)#27# && b == (void *)(0)#40#) c++;'
         // @ts-expect-error TS2345
         expect(preprocessor(code)).toBe(result)
     })
@@ -166,13 +166,13 @@ describe('preprocessor right tests', () => {
     })
     it('#define, #undef at line not active test', () => {
         const code = createFakeProgram('#ifdef debug\n#define A1 44\n#ifndef impossible\na++;\n#endif\n#define A2\n#undef true\n#endif\nlong a; a=A1+A2+true;')
-        const result = '\n\n\n\n\n\n\n\nlong a; a=A1+A2+1;'
+        const result = '\n\n\n\n\n\n\n\nlong a; a=A1+A2+1#20#;'
         // @ts-expect-error TS2345
         expect(preprocessor(code)).toBe(result)
     })
     it('#define, #undef at line active test', () => {
         const code = createFakeProgram('#define debug \n#ifdef debug\n#define A1 44\n#define A2\n#undef true\n#endif\nlong a; a=A1+A2+true;')
-        const result = '\n\n\n\n\n\nlong a; a=44++true;'
+        const result = '\n\n\n\n\n\nlong a; a=44#12#+#15#+true;'
         // @ts-expect-error TS2345
         expect(preprocessor(code)).toBe(result)
     })
