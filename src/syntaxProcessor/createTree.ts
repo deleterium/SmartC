@@ -71,7 +71,7 @@ function findSplitTokenIndex (tokens: TOKEN[]) : number {
 
 function ConstantToAST (Program: CONTRACT, tokens: TOKEN[]) : AST {
     if (tokens.length !== 1) {
-        throw new Error(Program.Context.formatError(tokens[0].line, 'Constants cannot have modifiers.'))
+        throw new Error(Program.Context.formatError(tokens[1].line, 'Constants cannot have modifiers.'))
     }
     return { type: 'endASN', Token: tokens[0] }
 }
@@ -176,11 +176,11 @@ function CodeCaveToAST (Program: CONTRACT, tokens: TOKEN[]) : AST {
 
 function BinariesToAST (Program: CONTRACT, tokens: TOKEN[], operatorLoc: number) : AST {
     if (operatorLoc === 0) {
-        throw new Error(Program.Context.formatError(tokens[0].line,
+        throw new Error(Program.Context.formatError(tokens[operatorLoc].line,
             `Missing left value for binary operator '${tokens[operatorLoc].value}'.`))
     }
     if (operatorLoc === tokens.length - 1) {
-        throw new Error(Program.Context.formatError(tokens[0].line,
+        throw new Error(Program.Context.formatError(tokens[operatorLoc].line,
             `Missing right value for binary operator '${tokens[operatorLoc].value}'.`))
     }
     return {
@@ -217,7 +217,7 @@ function KeywordToAST (Program: CONTRACT, tokens: TOKEN[], keywordLoc: number) :
     case 'label':
     case 'asm':
         if (tokens.length !== 1) {
-            throw new Error(Program.Context.formatError(tokens[0].line,
+            throw new Error(Program.Context.formatError(tokens[1].line,
                 `Keyword '${tokens[0].value}' does not accept arguments.`))
         }
         return { type: 'endASN', Token: tokens[0] }
@@ -285,14 +285,14 @@ function preSetUnaryToAST (Program: CONTRACT, tokens: TOKEN[]) : AST {
             `Missing value to apply 'SetUnaryOperator' '${tokens[0].value}'.`))
     }
     if (tokens[1].type !== 'Variable') {
-        throw new Error(Program.Context.formatError(tokens[0].line,
+        throw new Error(Program.Context.formatError(tokens[1].line,
             `'SetUnaryOperator' '${tokens[0].value}' expecting a variable, got a '${tokens[1].type}'.`))
     }
     for (let j = 1; j < tokens.length; j++) {
         if (tokens[j].type === 'Variable' || tokens[j].type === 'Member') {
             continue
         }
-        throw new Error(Program.Context.formatError(tokens[0].line,
+        throw new Error(Program.Context.formatError(tokens[j].line,
             `Can not use 'SetUnaryOperator' with types '${tokens[j].type}'.`))
     }
     return {
@@ -313,7 +313,7 @@ function postSetUnaryToAST (Program: CONTRACT, tokens: TOKEN[]) : AST {
         if (tokens[j].type === 'Variable' || tokens[j].type === 'Member') {
             continue
         }
-        throw new Error(Program.Context.formatError(tokens[0].line,
+        throw new Error(Program.Context.formatError(tokens[j].line,
             `Can not use 'SetUnaryOperator' with types  '${tokens[j].type}'.`))
     }
     return {
