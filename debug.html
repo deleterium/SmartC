@@ -46,8 +46,18 @@
             }
         }
 
+        function toggleNewLines () {
+            const sourceCode = document.getElementById('sourcecode').value;
+            if (sourceCode.includes('\\n')) {
+                document.getElementById('sourcecode').value = sourceCode.replace(/\\n/g, '\n')
+                return
+            }
+            document.getElementById('sourcecode').value = sourceCode.replace(/\n/g, '\\n')
+        }
+
         window.onload = () => {
             document.getElementById("compile").addEventListener('click', compileCode);
+            document.getElementById("toggleNL").addEventListener('click', toggleNewLines);
             startUpTest();
         }
     </script>
@@ -93,7 +103,9 @@
     <main>
         <div style="width: 100%;">
             <div style="width: 50vw; float: left;"> 
-                <textarea id="sourcecode" spellcheck="false"></textarea><br><button id="compile" accesskey="c">Compile</button>
+                <textarea id="sourcecode" spellcheck="false"></textarea><br>
+                <button id="compile" accesskey="c"><u>C</u>ompile</button>
+                <button id="toggleNL" accesskey="t"><u>T</u>oggle NewLine</button>
             </div>
             <div style="margin-left: 53vw;"> 
                 <pre id="status"></pre>
