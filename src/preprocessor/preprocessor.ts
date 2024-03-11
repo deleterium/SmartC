@@ -253,51 +253,43 @@ export default function preprocessor (Program: CONTRACT) : string {
     function extractArgs (fnArgString: string, needle: number, line: string): { argArray: string[], endPosition: number} {
         const argArray : string [] = []
         let currArg: string = ''
-        let pLevel = 0
         const Stream = new StringStream(fnArgString)
-        Stream.index = needle - 1
-        let stage = 0
+        Stream.index = fnArgString.indexOf('(', needle)
+        let pLevel = 1
         while (!Stream.EOF()) {
             const current = Stream.advance()
-            switch (stage) {
-            case 0:
-                if (current.char === '(') {
-                    pLevel = 1
-                    stage = 1
-                }
+            if (current.char === '(') {
+                pLevel++
+                currArg += current.char
                 continue
-            case 1:
-                if (current.char === '(') {
-                    pLevel++
-                    break
-                }
-                if (current.char === ')') {
-                    pLevel--
-                    if (pLevel !== 0) {
-                        break
-                    }
-                    // end of arguments
-                    const endArg = currArg.trim()
-                    if (endArg.length === 0 && argArray.length !== 0) {
-                        throw new Error(Program.Context.formatError(line, 'Found empty argument on macro declaration.'))
-                    }
-                    if (endArg.length !== 0) {
-                        argArray.push(currArg.trim())
-                    }
-                    return {
-                        argArray,
-                        endPosition: Stream.index + 1
-                    }
-                }
-                if (current.char === ',' && pLevel === 1) {
-                    const newArg = currArg.trim()
-                    if (newArg.length === 0) {
-                        throw new Error(Program.Context.formatError(line, 'Found empty argument on macro declaration.'))
-                    }
-                    argArray.push(currArg.trim())
-                    currArg = ''
+            }
+            if (current.char === ')') {
+                pLevel--
+                if (pLevel !== 0) {
+                    currArg += current.char
                     continue
                 }
+                // end of arguments
+                const endArg = currArg.trim()
+                if (endArg.length === 0 && argArray.length !== 0) {
+                    throw new Error(Program.Context.formatError(line, 'Found empty argument on macro declaration.'))
+                }
+                if (endArg.length !== 0) {
+                    argArray.push(currArg.trim())
+                }
+                return {
+                    argArray,
+                    endPosition: Stream.index + 1
+                }
+            }
+            if (current.char === ',' && pLevel === 1) {
+                const newArg = currArg.trim()
+                if (newArg.length === 0) {
+                    throw new Error(Program.Context.formatError(line, 'Found empty argument on macro declaration.'))
+                }
+                argArray.push(currArg.trim())
+                currArg = ''
+                continue
             }
             currArg += current.char
         }
