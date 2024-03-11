@@ -200,50 +200,36 @@ export default function preprocessor (Program: CONTRACT) : string {
      * a replacement inside other replacement.
      */
     function replaceDefines (codeline: string, line: string) : string {
-        let retLine = codeline
         let current : STREAM_PAIR
         let state = 0
         let wordEndIndex = 0
         let word : string
         let Replacement: REPLACEMENTS | undefined
-        while (true) {
-            let wasReplaced = false
-            const Stream = new StringStream(retLine)
-            Stream.setBack()
-            while (true) {
-                current = Stream.back()
-                switch (state) {
-                case 0:
-                    if (BitField.typeTable[current.code] & BitField.isWord || BitField.typeTable[current.code] & BitField.isDigit) {
-                        wordEndIndex = Stream.col
-                        state = 1
-                    }
-                    if (current.char) {
-                        continue
-                    }
-                    break
-                case 1:
-                    if (BitField.typeTable[current.code] & BitField.isWord || BitField.typeTable[current.code] & BitField.isDigit) {
-                        continue
-                    }
-                    word = retLine.slice(Stream.col, wordEndIndex)
-                    Replacement = preprocessorReplacements.find(item => item.cname === word)
-                    if (Replacement) {
-                        retLine = executeReplacement(Replacement, retLine, Stream.col, wordEndIndex, line)
-                        wasReplaced = true
-                    }
-                    state = 0
+        const Stream = new StringStream(codeline)
+        Stream.setBack()
+        do {
+            current = Stream.back()
+            switch (state) {
+            case 0:
+                if (BitField.typeTable[current.code] & BitField.isWord || BitField.typeTable[current.code] & BitField.isDigit) {
+                    wordEndIndex = Stream.col
+                    state = 1
                 }
-                if (wasReplaced || current.char === undefined) {
-                    // We need to reload the string OR end of parse
-                    break
-                }
-            }
-            if (Stream.index < 0) {
                 break
+            case 1:
+                if (BitField.typeTable[current.code] & BitField.isWord || BitField.typeTable[current.code] & BitField.isDigit) {
+                    continue
+                }
+                word = codeline.slice(Stream.col, wordEndIndex)
+                Replacement = preprocessorReplacements.find(item => item.cname === word)
+                if (Replacement) {
+                    return replaceDefines(executeReplacement(Replacement, codeline, Stream.col, wordEndIndex, line), line)
+                }
+                state = 0
             }
-        }
-        return retLine
+        } while (current.char)
+
+        return codeline
     }
 
     function executeReplacement (Replacement: REPLACEMENTS, code: string, startIndex: number, endIndex: number, line: string) {
@@ -271,11 +257,8 @@ export default function preprocessor (Program: CONTRACT) : string {
         const Stream = new StringStream(fnArgString)
         Stream.index = needle - 1
         let stage = 0
-        while (true) {
+        while (!Stream.EOF()) {
             const current = Stream.advance()
-            if (current.char === undefined) {
-                throw new Error(Program.Context.formatError(line, 'Unmatched parenthesis or unexpected end of line.'))
-            }
             switch (stage) {
             case 0:
                 if (current.char === '(') {
@@ -290,18 +273,20 @@ export default function preprocessor (Program: CONTRACT) : string {
                 }
                 if (current.char === ')') {
                     pLevel--
-                    if (pLevel === 0) {
-                        const endArg = currArg.trim()
-                        if (endArg.length === 0 && argArray.length !== 0) {
-                            throw new Error(Program.Context.formatError(line, 'Found empty argument on macro declaration.'))
-                        }
-                        if (endArg.length !== 0) {
-                            argArray.push(currArg.trim())
-                        }
-                        return {
-                            argArray,
-                            endPosition: Stream.index + 1
-                        }
+                    if (pLevel !== 0) {
+                        break
+                    }
+                    // end of arguments
+                    const endArg = currArg.trim()
+                    if (endArg.length === 0 && argArray.length !== 0) {
+                        throw new Error(Program.Context.formatError(line, 'Found empty argument on macro declaration.'))
+                    }
+                    if (endArg.length !== 0) {
+                        argArray.push(currArg.trim())
+                    }
+                    return {
+                        argArray,
+                        endPosition: Stream.index + 1
                     }
                 }
                 if (current.char === ',' && pLevel === 1) {
@@ -316,6 +301,7 @@ export default function preprocessor (Program: CONTRACT) : string {
             }
             currArg += current.char
         }
+        throw new Error(Program.Context.formatError(line, 'Unmatched parenthesis or unexpected end of line.'))
     }
 
     function processLine (prepLine: PREP_LINE) : string {
@@ -366,6 +352,7 @@ export default function preprocessor (Program: CONTRACT) : string {
         Context.ifActive.push(IfTemplateObj)
         return ''
     }
+
     function processIfndef (currTokenLine: PREP_LINE) : '' {
         const lastIf = Context.getLastIfActive()
         const IfTemplateObj = { active: true, flipped: false }
@@ -376,6 +363,7 @@ export default function preprocessor (Program: CONTRACT) : string {
         Context.ifActive.push(IfTemplateObj)
         return ''
     }
+
     function processElse (currTokenLine: PREP_LINE) : '' {
         const LastIfInfo = Context.getLastIfActive()
         if (LastIfInfo.flipped === true) {
@@ -385,6 +373,7 @@ export default function preprocessor (Program: CONTRACT) : string {
         LastIfInfo.active = !LastIfInfo.active
         return ''
     }
+
     function processEndif (currTokenLine: PREP_LINE) : '' {
         if (Context.ifActive.length - 1 === Context.currentIfLevel) {
             Context.currentIfLevel--
@@ -395,7 +384,8 @@ export default function preprocessor (Program: CONTRACT) : string {
         Context.ifActive.pop()
         return ''
     }
-    function processDefine (currTokenLine: PREP_LINE) {
+
+    function processDefine (currTokenLine: PREP_LINE): '' {
         let idx: number
         if (currTokenLine.value === '') {
             idx = preprocessorReplacements.findIndex(Obj => Obj.cname === currTokenLine.property)
@@ -438,6 +428,7 @@ export default function preprocessor (Program: CONTRACT) : string {
         })
         return ''
     }
+
     function processInclude (currTokenLine: PREP_LINE) : '' {
         if (currTokenLine.property === 'APIFunctions') {
             Program.Config.APIFunctions = getBoolVal(currTokenLine)
