@@ -359,6 +359,7 @@ export function createBuiltinInstruction (
                 `FUN set_B1_B2 $${tempArgsMem[2].FlatMem.asmName} $${tempArgsMem[1].FlatMem.asmName}\n` +
                 `FUN set_B3 $${auxFlatMem.FlatMem.asmName}\n` +
                 `FUN send_to_Address_in_B $${tempArgsMem[0].FlatMem.asmName}\n`
+            Program.Context.freeRegister(auxFlatMem.FlatMem.address)
             break
         case 'sendMessage':
         case 'sendAmountAndMessage':
