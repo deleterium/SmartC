@@ -92,7 +92,7 @@ export class SmartC {
         }
         switch (this.language) {
         case 'C':
-            preprocessed = preprocessor(this.sourceCode)
+            preprocessed = preprocessor(this.Program)
             tokenized = tokenizer(this.Program, preprocessed)
             parsed = parser(this.Program, tokenized)
             shaper(this.Program, parsed)

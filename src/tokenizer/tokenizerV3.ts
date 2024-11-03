@@ -1,4 +1,4 @@
-import { ReedSalomonAddressDecode, parseDecimalNumber, stringToHexstring } from '../repository/repository'
+import { BitField, ReedSalomonAddressDecode, STREAM_PAIR, StringStream, parseDecimalNumber, stringToHexstring } from '../repository/repository'
 import { CONTRACT } from '../typings/contractTypes'
 import { PRE_TOKEN } from '../typings/syntaxTypes'
 
@@ -9,35 +9,10 @@ import { PRE_TOKEN } from '../typings/syntaxTypes'
  * @returns array of pre tokens
  */
 export default function tokenizer (Program: CONTRACT, inputSourceCode: string): PRE_TOKEN[] {
-    const explodedText = inputSourceCode.split('')
-    const explodedTextCodes = explodedText.map(str => str.charCodeAt(0))
     const preTokens: PRE_TOKEN[] = []
     let detectionHasFixed: boolean = false
     let detectionHasAutoCounter: boolean = false
-
-    let streamCurrentLine = 1
-    let streamCurrentCol = 0
-    let streamCurrentIndex = -1
-    let streamLastLineLength = 0
-    let streamLastChar = ''
-
-    const bitFieldIsBlank = 0x01 // matches '/r', '/t', '/n', ' '
-    const bitFieldIsDigit = 0x02 // matches 0-9
-    const bitFieldIsWord = 0x04 // matches a-zA-Z_
-    const bitFieldIsNumber = 0x08 // matches 0-9._
-    const bitFieldIsNumberHex = 0x10 // matches 0-9a-fA-F_
-
-    /* These are charCodes from 0 to 122 and the char classes as used here.
-     * Bit field: isBlank isDigit isWord isNumber isNumberHex */
-    const bitFieldTypeTable = [
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 8, 0, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 0, 0,
-        0, 0, 0, 0, 0, 20, 20, 20, 20, 20, 20, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 28, 0, 20, 20, 20,
-        20, 20, 20, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4
-    ]
+    const Stream = new StringStream(inputSourceCode)
 
     /* These are charCodes from 0 to 126 and the next state function for state 'start'. Summary:
      * Function           |  Char code of
@@ -79,94 +54,61 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
             if (nextToken) {
                 preTokens.push(nextToken)
             }
-        } while (streamCurrentIndex < inputSourceCode.length)
+        } while (!Stream.EOF())
         return preTokens
     }
 
-    function streamAdvance () {
-        streamCurrentIndex++
-        streamLastChar = explodedText[streamCurrentIndex]
-        if (streamLastChar === '\n') {
-            streamCurrentLine++
-            streamCurrentCol = 0
-            return streamLastChar
-        }
-        streamCurrentCol++
-        streamLastLineLength = streamCurrentCol
-        return streamLastChar
-    }
-
-    function streamRead () {
-        streamLastChar = explodedText[streamCurrentIndex]
-        return streamLastChar
-    }
-
-    function streamRewind () {
-        if (streamLastChar === '\n') {
-            streamCurrentLine--
-            streamCurrentCol = streamLastLineLength
-        }
-        streamCurrentIndex--
-        streamCurrentCol--
-        streamLastChar = ''
-    }
-
     function stateStart () : PRE_TOKEN | undefined {
-        let currentChar: string
-        let currentCharCode: number
+        let current: STREAM_PAIR
         while (true) {
-            currentChar = streamAdvance()
-            currentCharCode = explodedTextCodes[streamCurrentIndex]
-            if (currentChar === undefined) {
+            current = Stream.advance()
+            if (current.char === undefined) {
                 return undefined
             }
-            if (bitFieldTypeTable[currentCharCode] & bitFieldIsBlank) {
+            if (BitField.typeTable[current.code] & BitField.isBlank) {
                 continue
             }
-            const nextStateFunction = startStateFunctionTable[currentCharCode]
+            const nextStateFunction = startStateFunctionTable[current.code]
             if (nextStateFunction) {
                 return nextStateFunction()
             }
-            throw new Error(Program.Context.formatError(streamCurrentLine + ':' + streamCurrentCol,
-                `Invalid character '${currentChar}' found.`))
+            throw new Error(Program.Context.formatError(Stream.lineCol,
+                `Invalid character '${current.char}' found.`))
         }
     }
 
     function stateReadDot () : PRE_TOKEN { // char .
-        const tokenLine = streamCurrentLine
-        const tokenCol = streamCurrentCol
-        const nextChar = explodedText[streamCurrentIndex + 1]
-        if (nextChar && bitFieldTypeTable[nextChar.charCodeAt(0)] & bitFieldIsDigit) {
+        const tokenLineCol = Stream.lineCol
+        const next = Stream.testNext()
+        if (next.char && BitField.typeTable[next.code] & BitField.isDigit) {
             return stateReadNumber()
         }
-        return { type: 'Member', precedence: 0, value: '.', line: `${tokenLine}:${tokenCol}` }
+        return { type: 'Member', precedence: 0, value: '.', line: tokenLineCol }
     }
 
     function stateReadWord () : PRE_TOKEN {
-        const tokenLine = streamCurrentLine
-        const tokenCol = streamCurrentCol
-        const tokenStartIndex = streamCurrentIndex
-        let currentChar: string
+        const tokenLineCol = Stream.lineCol
+        const tokenStartIndex = Stream.index
+        let current: STREAM_PAIR
         do {
-            currentChar = streamAdvance()
-        } while (currentChar && bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsWord)
-        const tokenValue = inputSourceCode.slice(tokenStartIndex, streamCurrentIndex)
-        streamRewind()
-        return stateCheckWord(tokenValue, tokenLine, tokenCol)
+            current = Stream.advance()
+        } while (current.char && BitField.typeTable[current.code] & BitField.isWord)
+        const tokenValue = inputSourceCode.slice(tokenStartIndex, Stream.index)
+        Stream.rewind()
+        return stateCheckWord(tokenValue, tokenLineCol)
     }
 
-    function stateCheckWord (tokenValue: string, tokenLine: number, tokenCol: number) : PRE_TOKEN {
-        const line = `${tokenLine}:${tokenCol}`
+    function stateCheckWord (tokenValue: string, lineCol: string) : PRE_TOKEN {
         if (easyKeywordTokens.includes(tokenValue)) {
             if (!detectionHasFixed && tokenValue === 'fixed') {
                 detectionHasFixed = true
                 Program.Context.TokenizerDetection.hasFixed = true
             }
-            return { type: 'Keyword', precedence: 12, value: tokenValue, line }
+            return { type: 'Keyword', precedence: 12, value: tokenValue, line: lineCol }
         }
         switch (tokenValue) {
         case 'sizeof':
-            return { type: 'Keyword', precedence: 2, value: tokenValue, line }
+            return { type: 'Keyword', precedence: 2, value: tokenValue, line: lineCol }
         case 'asm':
             return stateReadAsmStart()
         case 'struct':
@@ -176,47 +118,46 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
             detectionHasAutoCounter = true
             Program.Context.TokenizerDetection.hasAutoCounter = true
         }
-        return { type: 'Variable', precedence: 0, value: tokenValue, line }
+        return { type: 'Variable', precedence: 0, value: tokenValue, line: lineCol }
     }
 
     function stateReadAsmStart () : PRE_TOKEN {
-        const tokenLine = streamCurrentLine
-        const tokenCol = streamCurrentCol
-        let currentChar: string
+        const tokenLineCol = Stream.lineCol
+        let current: STREAM_PAIR
         do {
-            currentChar = streamAdvance()
-            if (currentChar === undefined) {
-                throw new Error(Program.Context.formatError(tokenLine + ':' + tokenCol,
+            current = Stream.advance()
+            if (current.char === undefined) {
+                throw new Error(Program.Context.formatError(tokenLineCol,
                     "Invalid asm { ... } sentence. Expecting '{', found end of file."))
             }
-            if (bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsBlank) {
+            if (BitField.typeTable[current.code] & BitField.isBlank) {
                 continue
             }
-            if (currentChar === '{') {
+            if (current.char === '{') {
                 return stateReadAsmBrackets()
             }
-            throw new Error(Program.Context.formatError(streamCurrentLine + ':' + streamCurrentCol,
-                `Invalid asm { ... } sentence. Expecting '{', found '${currentChar}'.`))
+            throw new Error(Program.Context.formatError(Stream.lineCol,
+                `Invalid asm { ... } sentence. Expecting '{', found '${current.char}'.`))
         } while (true)
     }
 
     function stateReadAsmBrackets () : PRE_TOKEN {
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const tokenStartIndex = streamCurrentIndex
-        let currentChar: string
+        const line = Stream.lineCol
+        const tokenStartIndex = Stream.index
+        let current: STREAM_PAIR
         do {
-            currentChar = streamAdvance()
-            if (currentChar === undefined) {
+            current = Stream.advance()
+            if (current.char === undefined) {
                 throw new Error(Program.Context.formatError(line,
                     "Invalid asm { ... } sentence. Expecting '}', found end of file."))
             }
-        } while (currentChar !== '}')
-        const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, streamCurrentIndex)
+        } while (current.char !== '}')
+        const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, Stream.index)
         return { type: 'Keyword', precedence: 12, value: 'asm', line, extValue: tokenValue }
     }
 
     function stateReadStructStart () : PRE_TOKEN {
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const line = Stream.lineCol
         const nextToken = stateStart()
         if (nextToken === undefined) {
             throw new Error(Program.Context.formatError(line,
@@ -225,19 +166,19 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
         if (nextToken.type === 'Variable') {
             return { type: 'Keyword', precedence: 12, value: 'struct', line, extValue: nextToken.value }
         }
-        throw new Error(Program.Context.formatError(streamCurrentLine + ':' + streamCurrentCol,
+        throw new Error(Program.Context.formatError(Stream.lineCol,
             `Invalid struct sentence. Expecting a type name, found '${nextToken.value}'`))
     }
 
     function stateReadNumber () : PRE_TOKEN {
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const tokenStartIndex = streamCurrentIndex
-        let currentChar: string
+        const line = Stream.lineCol
+        const tokenStartIndex = Stream.index
+        let current: STREAM_PAIR
         do {
-            currentChar = streamAdvance()
-        } while (currentChar && bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsNumber)
-        const tokenValue = inputSourceCode.slice(tokenStartIndex, streamCurrentIndex)
-        streamRewind()
+            current = Stream.advance()
+        } while (current.char && BitField.typeTable[current.code] & BitField.isNumber)
+        const tokenValue = inputSourceCode.slice(tokenStartIndex, Stream.index)
+        Stream.rewind()
 
         const Parsed = parseDecimalNumber(tokenValue, line)
         const valString = Parsed.value.toString(16)
@@ -250,18 +191,18 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
     }
 
     function stateReadNumberHex () : PRE_TOKEN {
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const tokenStartIndex = streamCurrentIndex
-        const currentChar = streamAdvance()
-        if (currentChar !== 'x' && currentChar !== 'X') {
-            streamRewind()
+        const line = Stream.lineCol
+        const tokenStartIndex = Stream.index
+        let current = Stream.advance()
+        if (current.char !== 'x' && current.char !== 'X') {
+            Stream.rewind()
             return stateReadNumber()
         }
         do {
-            streamAdvance()
-        } while (bitFieldTypeTable[explodedTextCodes[streamCurrentIndex]] & bitFieldIsNumberHex)
-        const tokenValue = inputSourceCode.slice(tokenStartIndex + 2, streamCurrentIndex)
-        streamRewind()
+            current = Stream.advance()
+        } while (BitField.typeTable[current.code] & BitField.isNumberHex)
+        const tokenValue = inputSourceCode.slice(tokenStartIndex + 2, Stream.index)
+        Stream.rewind()
 
         let val = tokenValue.replace(/_/g, '').toLowerCase()
         val = val.padStart((Math.floor((val.length - 1) / 16) + 1) * 16, '0')
@@ -269,9 +210,9 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
     }
 
     function stateSlashStart () : PRE_TOKEN | undefined {
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const currentChar = streamAdvance()
-        switch (currentChar) {
+        const line = Stream.lineCol
+        const current = Stream.advance()
+        switch (current.char) {
         case '/':
             return stateReadCommentSingleLine()
         case '*':
@@ -279,68 +220,76 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
         case '=':
             return { type: 'SetOperator', precedence: 10, value: '/=', line }
         }
-        streamRewind()
+        Stream.rewind()
         return { type: 'Operator', precedence: 3, value: '/', line }
     }
 
     function stateReadCommentSingleLine () : undefined {
-        let currentChar: string
+        let current: STREAM_PAIR
         do {
-            currentChar = streamAdvance()
-        } while (currentChar && explodedTextCodes[streamCurrentIndex] !== '\n'.charCodeAt(0))
+            current = Stream.advance()
+        } while (current.char && current.code !== '\n'.charCodeAt(0))
         return undefined
     }
 
     function stateReadCommentMultiLine () : undefined {
-        const tokenLine = streamCurrentLine
-        const tokenCol = streamCurrentCol
-        let currentChar: string
+        const tokenLine = Stream.line
+        const tokenCol = Stream.col
+        let current: STREAM_PAIR
         while (true) {
-            currentChar = streamAdvance()
-            if (currentChar === undefined) {
+            current = Stream.advance()
+            if (current.char === undefined) {
                 throw new Error(Program.Context.formatError(tokenLine + ':' + (tokenCol - 1),
                     "End of file reached while trying to find '*/' to end this comment section."))
             }
-            if (currentChar === '*') {
-                currentChar = streamAdvance()
-                if (currentChar === '/') {
+            if (current.char === '*') {
+                current = Stream.advance()
+                if (current.char === '/') {
                     return undefined
                 }
             }
         }
     }
 
-    function stateReadMacro () : PRE_TOKEN {
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const tokenStartIndex = streamCurrentIndex
-        let currentChar: string
-        do {
-            currentChar = streamAdvance()
-        } while (currentChar && explodedTextCodes[streamCurrentIndex] !== '\n'.charCodeAt(0))
-        const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, streamCurrentIndex)
-        return { type: 'Macro', precedence: 0, value: tokenValue, line }
+    function stateReadMacro () : undefined {
+        const line = Stream.lineCol
+        const tokenStartIndex = Stream.index
+        let current: STREAM_PAIR
+        while (true) {
+            current = Stream.advance()
+            if (BitField.typeTable[current.code] & BitField.isDigit) {
+                continue
+            }
+            if (current.char === '#') {
+                break
+            }
+            throw new Error(Program.Context.formatError(line, 'Wrong use of preprocessor directive'))
+        }
+        const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, Stream.index)
+        Stream.col = parseInt(tokenValue)
+        return undefined
     }
 
     function stateReadString () : PRE_TOKEN {
-        const delimitator = streamRead()
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const tokenStartIndex = streamCurrentIndex
-        let currentChar: string
+        const delimitator = Stream.read()
+        const line = Stream.lineCol
+        const tokenStartIndex = Stream.index
+        let current: STREAM_PAIR
         do {
-            currentChar = streamAdvance()
-            if (currentChar === '\\') {
-                currentChar = streamAdvance()
-                if (currentChar === delimitator) {
+            current = Stream.advance()
+            if (current.char === '\\') {
+                current = Stream.advance()
+                if (current.char === delimitator.char) {
                     // escaped quote, read next
-                    currentChar = streamAdvance()
+                    current = Stream.advance()
                 }
             }
-            if (currentChar === undefined) {
+            if (current.char === undefined) {
                 throw new Error(Program.Context.formatError(line,
                     `End of file reached while trying to find \`${delimitator}\` string delimitator.`))
             }
-        } while (currentChar !== delimitator)
-        const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, streamCurrentIndex)
+        } while (current.char !== delimitator.char)
+        const tokenValue = inputSourceCode.slice(tokenStartIndex + 1, Stream.index)
 
         let val = stringToHexstring(tokenValue, line)
         const parts = /^(BURST-|S-|TS-)([0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{5})/.exec(tokenValue)
@@ -351,15 +300,15 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
     }
 
     function stateReadStar () : PRE_TOKEN { // char *
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const currentChar = streamAdvance()
-        if (currentChar === '=') {
+        const line = Stream.lineCol
+        const current = Stream.advance()
+        if (current.char === '=') {
             return { type: 'SetOperator', precedence: 10, value: '*=', line }
         }
-        if (currentChar === '/') {
+        if (current.char === '/') {
             throw new Error(Program.Context.formatError(line, 'Ending a comment that was not started.'))
         }
-        streamRewind()
+        Stream.rewind()
         if (isBinaryOperator()) {
             return { type: 'Operator', precedence: 3, value: '*', line }
         }
@@ -367,61 +316,61 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
     }
 
     function stateReadLess () : PRE_TOKEN { // char <
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        let currentChar = streamAdvance()
-        if (currentChar === '<') {
-            currentChar = streamAdvance()
-            if (currentChar === '=') {
+        const line = Stream.lineCol
+        let current = Stream.advance()
+        if (current.char === '<') {
+            current = Stream.advance()
+            if (current.char === '=') {
                 return { type: 'SetOperator', precedence: 10, value: '<<=', line }
             }
-            streamRewind()
+            Stream.rewind()
             return { type: 'Operator', precedence: 5, value: '<<', line }
         }
-        if (currentChar === '=') {
+        if (current.char === '=') {
             return { type: 'Comparision', precedence: 6, value: '<=', line }
         }
-        streamRewind()
+        Stream.rewind()
         return { type: 'Comparision', precedence: 6, value: '<', line }
     }
 
     function stateReadEqual () : PRE_TOKEN { // char =
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const currentChar = streamAdvance()
-        if (currentChar === '=') {
+        const line = Stream.lineCol
+        const current = Stream.advance()
+        if (current.char === '=') {
             return { type: 'Comparision', precedence: 6, value: '==', line }
         }
-        streamRewind()
+        Stream.rewind()
         return { type: 'Assignment', precedence: 10, value: '=', line }
     }
 
     function stateReadGreater () : PRE_TOKEN { // char >
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        let currentChar = streamAdvance()
-        if (currentChar === '>') {
-            currentChar = streamAdvance()
-            if (currentChar === '=') {
+        const line = Stream.lineCol
+        let current = Stream.advance()
+        if (current.char === '>') {
+            current = Stream.advance()
+            if (current.char === '=') {
                 return { type: 'SetOperator', precedence: 10, value: '>>=', line }
             }
-            streamRewind()
+            Stream.rewind()
             return { type: 'Operator', precedence: 5, value: '>>', line }
         }
-        if (currentChar === '=') {
+        if (current.char === '=') {
             return { type: 'Comparision', precedence: 6, value: '>=', line }
         }
-        streamRewind()
+        Stream.rewind()
         return { type: 'Comparision', precedence: 6, value: '>', line }
     }
 
     function stateReadPlus () : PRE_TOKEN { // char +
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const currentChar = streamAdvance()
-        if (currentChar === '+') {
+        const line = Stream.lineCol
+        const current = Stream.advance()
+        if (current.char === '+') {
             return { type: 'SetUnaryOperator', precedence: 1, value: '++', line }
         }
-        if (currentChar === '=') {
+        if (current.char === '=') {
             return { type: 'SetOperator', precedence: 10, value: '+=', line }
         }
-        streamRewind()
+        Stream.rewind()
         if (isBinaryOperator()) {
             return { type: 'Operator', precedence: 4, value: '+', line }
         }
@@ -429,9 +378,9 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
     }
 
     function stateReadMinus () : PRE_TOKEN { // char -
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const currentChar = streamAdvance()
-        switch (currentChar) {
+        const line = Stream.lineCol
+        const current = Stream.advance()
+        switch (current.char) {
         case '-':
             return { type: 'SetUnaryOperator', precedence: 1, value: '--', line }
         case '=':
@@ -439,7 +388,7 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
         case '>':
             return { type: 'Member', precedence: 0, value: '->', line }
         }
-        streamRewind()
+        Stream.rewind()
         if (isBinaryOperator()) {
             return { type: 'Operator', precedence: 4, value: '-', line }
         }
@@ -447,15 +396,15 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
     }
 
     function stateReadAnd () : PRE_TOKEN { // char &
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const currentChar = streamAdvance()
-        if (currentChar === '&') {
+        const line = Stream.lineCol
+        const current = Stream.advance()
+        if (current.char === '&') {
             return { type: 'Comparision', precedence: 8, value: '&&', line }
         }
-        if (currentChar === '=') {
+        if (current.char === '=') {
             return { type: 'SetOperator', precedence: 10, value: '&=', line }
         }
-        streamRewind()
+        Stream.rewind()
         if (isBinaryOperator()) {
             return { type: 'Operator', precedence: 7, value: '&', line }
         }
@@ -463,71 +412,71 @@ export default function tokenizer (Program: CONTRACT, inputSourceCode: string): 
     }
 
     function stateReadPipe () : PRE_TOKEN { // char |
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const currentChar = streamAdvance()
-        if (currentChar === '|') {
+        const line = Stream.lineCol
+        const current = Stream.advance()
+        if (current.char === '|') {
             return { type: 'Comparision', precedence: 9, value: '||', line }
         }
-        if (currentChar === '=') {
+        if (current.char === '=') {
             return { type: 'SetOperator', precedence: 10, value: '|=', line }
         }
-        streamRewind()
+        Stream.rewind()
         return { type: 'Operator', precedence: 7, value: '|', line }
     }
 
     function stateReadCaret () : PRE_TOKEN { // char ^
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const currentChar = streamAdvance()
-        if (currentChar === '=') {
+        const line = Stream.lineCol
+        const current = Stream.advance()
+        if (current.char === '=') {
             return { type: 'SetOperator', precedence: 10, value: '^=', line }
         }
-        streamRewind()
+        Stream.rewind()
         return { type: 'Operator', precedence: 7, value: '^', line }
     }
 
     function stateReadPercent () : PRE_TOKEN { // char %
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const currentChar = streamAdvance()
-        if (currentChar === '=') {
+        const line = Stream.lineCol
+        const current = Stream.advance()
+        if (current.char === '=') {
             return { type: 'SetOperator', precedence: 10, value: '%=', line }
         }
-        streamRewind()
+        Stream.rewind()
         return { type: 'Operator', precedence: 3, value: '%', line }
     }
 
     function stateReadExclamation () : PRE_TOKEN { // char !
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        const currentChar = streamAdvance()
-        if (currentChar === '=') {
+        const line = Stream.lineCol
+        const current = Stream.advance()
+        if (current.char === '=') {
             return { type: 'Comparision', precedence: 6, value: '!=', line }
         }
-        streamRewind()
+        Stream.rewind()
         return { type: 'UnaryOperator', precedence: 2, value: '!', line }
     }
 
     function stateReadTilde () : PRE_TOKEN { // char ~
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const line = Stream.lineCol
         return { type: 'UnaryOperator', precedence: 2, value: '~', line }
     }
 
     function stateReadComma () : PRE_TOKEN { // char ,
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const line = Stream.lineCol
         return { type: 'Delimiter', precedence: 11, value: ',', line }
     }
 
     function stateReadSemicolon () : PRE_TOKEN { // char ;
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const line = Stream.lineCol
         return { type: 'Terminator', precedence: 12, value: ';', line }
     }
 
     function stateReadColon () : PRE_TOKEN { // char :
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
+        const line = Stream.lineCol
         return { type: 'Colon', precedence: 0, value: ':', line }
     }
 
     function stateReadRecursive () : PRE_TOKEN { // chars { } ( ) [ ]
-        const line = `${streamCurrentLine}:${streamCurrentCol}`
-        return { type: 'PreToken', precedence: -1, value: streamRead(), line }
+        const line = Stream.lineCol
+        return { type: 'PreToken', precedence: -1, value: Stream.read().char, line }
     }
 
     function isBinaryOperator () {

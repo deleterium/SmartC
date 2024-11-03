@@ -336,3 +336,132 @@ export function isDeclarationType (str: string) : str is DECLARATION_TYPES {
     }
     return false
 }
+
+export const BitField = {
+    isBlank: 0x01, // matches '/r', '/t', '/n', ' '
+    isDigit: 0x02, // matches 0-9
+    isWord: 0x04, // matches a-zA-Z_
+    isNumber: 0x08, // matches 0-9._
+    isNumberHex: 0x10, // matches 0-9a-fA-F_
+
+    /* These are charCodes from 0 to 122 and the char classes as used here.
+    * Bit field: isBlank isDigit isWord isNumber isNumberHex */
+    typeTable: [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 8, 0, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 0, 0,
+        0, 0, 0, 0, 0, 20, 20, 20, 20, 20, 20, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 28, 0, 20, 20, 20,
+        20, 20, 20, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4
+    ]
+}
+
+export type STREAM_PAIR = { char: string, code: number }
+
+export class StringStream {
+    private _index = -1
+    private _explodedInput: string[]
+    private _explodedInputCode: number[]
+    private _lastLineLength = 0
+    private _lastChar = ''
+    private _line = 1
+    private _col = 0
+
+    constructor (input: string) {
+        this._explodedInput = input.split('')
+        this._explodedInputCode = this._explodedInput.map(char => char.charCodeAt(0))
+    }
+
+    public get line () {
+        return this._line
+    }
+
+    public set line (value: number) {
+        this._line = value
+    }
+
+    public get col () {
+        return this._col
+    }
+
+    public set col (value) {
+        this._col = value
+    }
+
+    public get lineCol () {
+        return `${this._line}:${this._col}`
+    }
+
+    public get index () {
+        return this._index
+    }
+
+    public set index (value) {
+        this._index = value
+    }
+
+    public advance () : STREAM_PAIR {
+        this._index++
+        this._lastChar = this._explodedInput[this._index]
+        if (this._lastChar === '\n') {
+            this._line++
+            this._col = 0
+            return {
+                char: this._lastChar,
+                code: this._explodedInputCode[this._index]
+            }
+        }
+        this._col++
+        this._lastLineLength = this.col
+        return {
+            char: this._lastChar,
+            code: this._explodedInputCode[this._index]
+        }
+    }
+
+    /** Only use for one line string and back() parsing */
+    public setBack () : void {
+        this._line = -1
+        this._index = this._explodedInput.length
+        this._col = this._explodedInput.length + 1
+    }
+
+    /** Not compatible with advance(), rewind() nor line. Only use for one line string and with setBack()  */
+    public back () : STREAM_PAIR {
+        this._index--
+        this._col--
+        return {
+            char: this._explodedInput[this._index],
+            code: this._explodedInputCode[this._index]
+        }
+    }
+
+    public read () : STREAM_PAIR {
+        return {
+            char: this._explodedInput[this._index],
+            code: this._explodedInputCode[this._index]
+        }
+    }
+
+    public rewind () : void {
+        if (this._lastChar === '\n') {
+            this.line--
+            this.col = this._lastLineLength
+        }
+        this._index--
+        this.col--
+        this._lastChar = ''
+    }
+
+    public testNext () : STREAM_PAIR {
+        return {
+            char: this._explodedInput[this._index + 1],
+            code: this._explodedInputCode[this._index + 1]
+        }
+    }
+
+    public EOF () : boolean {
+        return this._index >= this._explodedInput.length
+    }
+}
