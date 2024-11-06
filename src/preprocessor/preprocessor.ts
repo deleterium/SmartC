@@ -513,7 +513,10 @@ export default function preprocessor (Program: CONTRACT) : string {
             Program.Config.PDescription = MacroToken.value
             return
         case 'activationAmount':
-            Program.Config.PActivationAmount = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)
+            Program.Config.PActivationAmount = parseDecimalNumber(
+                replaceDefines(MacroToken.value, MacroToken.line).split('#')[0],
+                MacroToken.line
+            ).value.toString(10)
             return
         case 'creator':
             Program.Config.PCreator = parseDecimalNumber(MacroToken.value, MacroToken.line).value.toString(10)

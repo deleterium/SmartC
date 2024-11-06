@@ -80,6 +80,16 @@ describe('#program', () => {
         expect(compiler.getAssemblyCode()).toBe(assembly)
         expect(compiler.getMachineCode().PActivationAmount).toBe('500000000')
     })
+    it('should compile: replacing defines at activation amount', () => {
+        expect(() => {
+            const code = '#define ACTIVATION_AMOUNT 4200_0000\n#program activationAmount ACTIVATION_AMOUNT'
+            const assembly = '^program activationAmount 42000000\n^declare r0\n^declare r1\n^declare r2\n\nFIN\n'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+            expect(compiler.getAssemblyCode()).toBe(assembly)
+            expect(compiler.getMachineCode().PActivationAmount).toBe('42000000')
+        })
+    })
     it('should compile: codeStackPages', () => {
         const code = '#pragma optimizationLevel 0\n#program codeStackPages    10   \nlong a; void test(void) { a++; return; a++; }'
         const assembly = '^program codeStackPages 10\n^declare r0\n^declare r1\n^declare r2\n^declare a\n\nFIN\n\n__fn_test:\nINC @a\nRET\nINC @a\nRET\n'
