@@ -45,6 +45,7 @@ export default function endAsnProcessor (
             return { SolvedMem: utils.createVoidMemObj(), asmCode: '' }
         }
         const RetMemObj = utils.createConstantMemObj(CurrentNode.Token.value)
+        RetMemObj.line = CurrentNode.Token.line
         if (CurrentNode.Token.extValue === 'fixed') {
             RetMemObj.declaration = 'fixed'
         }

@@ -231,6 +231,20 @@ describe('Wrong code to check error safeguards', () => {
             compiler.compile()
         }).toThrowError(/^At line/)
     })
+    test('should throw: Overflow on comparision: number', () => {
+        expect(() => {
+            const code = 'long a, b;\n\nif (18446744073709551616 < a) {\n   b++;\n}\n'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
+    test('should throw: Overflow on comparision: text', () => {
+        expect(() => {
+            const code = 'long a, b;\n\nswitch (a) {\n   case "thisislong":\n   b++;\n}\n'
+            const compiler = new SmartC({ language: 'C', sourceCode: code })
+            compiler.compile()
+        }).toThrowError(/^At line/)
+    })
 })
 
 describe('Warnings', () => {

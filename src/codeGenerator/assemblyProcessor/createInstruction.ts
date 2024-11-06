@@ -1,4 +1,4 @@
-import { assertExpression, assertNotUndefined } from '../../repository/repository'
+import { assertNotUndefined } from '../../repository/repository'
 import { CONTRACT } from '../../typings/contractTypes'
 import { MEMORY_SLOT, OFFSET_MODIFIER_CONSTANT, TOKEN } from '../../typings/syntaxTypes'
 import { FLATTEN_MEMORY_RETURN_OBJECT, GENCODE_SOLVED_OBJECT } from '../codeGeneratorTypes'
@@ -198,7 +198,10 @@ export function flattenMemory (
             hexString = hexParam
         }
         hexString = hexString.padStart(16, '0')
-        assertExpression(hexString.length <= 16)
+        if (hexString.length > 16) {
+            throw new Error(Program.Context.formatError(StuffedMemory.line,
+                'Value overflow. Is the string longer than 8 bytes, or the number greater than 64-bits?'))
+        }
         let prefix = 'n'
         if (paramDec === 'fixed') {
             prefix = 'f'
