@@ -1,3 +1,10 @@
+## [v2.3](https://github.com/deleterium/SmartC/tree/v2.3) (2024-12-08)
+
+[Commits](https://github.com/deleterium/SmartC/commits/v2.3)
+* Feat: More detailed warnings and errors.
+* New keyword 'register' as modifier for variables. They are scoped and use a free register as variable.
+* Refactored preprocessor and code generation.
+
 ## [v2.2](https://github.com/deleterium/SmartC/tree/v2.2) (2024-02-12)
 
 [Commits](https://github.com/deleterium/SmartC/commits/v2.2)
